@@ -9,6 +9,7 @@ import { EstadioCard } from '@/components/estadio-card';
 import { MapaJogo } from '@/components/mapa-jogo';
 import { MeteorologiaCard } from '@/components/meteorologia-card';
 import { PontoEncontroCard } from '@/components/ponto-encontro-card';
+import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -19,6 +20,7 @@ import { plural } from '@/lib/formatos';
 import { eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
 import { avisoDeChuva } from '@/lib/meteorologia';
+import { mostrarRelogio } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { nomesCompeticao, obterJogo } from '@/mocks/jogos';
@@ -72,6 +74,7 @@ export default function JogoScreen() {
   }
 
   const estado = estadoDoJogo(jogo, agora);
+  const relogioVisivel = mostrarRelogio(jogo, agora);
   const aviso = estado === 'terminado' ? null : avisoDeChuva(jogo.meteorologia, estadio);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
 
@@ -85,7 +88,8 @@ export default function JogoScreen() {
   );
 
   return (
-    <Screen>
+    <Screen
+      cabecalhoFixo={relogioVisivel ? <RelogioDiaDeJogo jogo={jogo} venue={estadio} /> : undefined}>
       <Stack.Screen options={{ title: `${casa.nomeCurto} x ${fora.nomeCurto}` }} />
 
       <Card style={styles.destaque}>
@@ -114,7 +118,7 @@ export default function JogoScreen() {
 
       {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
 
-      {estado === 'terminado' ? avaliacao : null}
+      {estado === 'terminado' && !relogioVisivel ? avaliacao : null}
 
       {eCompeticaoEuropeia(jogo.competicao) ? (
         <>
@@ -151,7 +155,7 @@ export default function JogoScreen() {
         onPress={() => router.navigate({ pathname: '/locais', params: { estadio: estadio.id } })}
       />
 
-      {estado === 'terminado' ? null : avaliacao}
+      {estado === 'terminado' && !relogioVisivel ? null : avaliacao}
     </Screen>
   );
 }

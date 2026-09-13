@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { HistoricoAvaliacoes } from '@/components/historico-avaliacoes';
 import { HistoricoTascos } from '@/components/historico-tascos';
 import { MissoesCard } from '@/components/missoes-card';
+import { ModoDemoCard } from '@/components/modo-demo-card';
 import { PassaporteCard } from '@/components/passaporte-card';
 import { RankingCard } from '@/components/ranking-card';
 import { Spacing } from '@/constants/theme';
@@ -14,19 +16,32 @@ import { nomesDivisao, obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { TIPOS_NOTIFICACAO } from '@/mocks/notificacoes';
 import { rankingMock } from '@/mocks/ranking';
-import { useAppState } from '@/state/app-state';
+import { useAppState, type EstadoPermissao } from '@/state/app-state';
+import { useRelogio } from '@/state/relogio';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Escudo } from '@/ui/escudo';
+import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { ListRow } from '@/ui/list-row';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
+/** Toques seguidos no cartão do perfil para revelar o modo demo. */
+const TOQUES_MODO_DEMO = 5;
+const JANELA_TOQUES_MS = 3000;
+
+function textoPermissao(estado: EstadoPermissao) {
+  if (estado === 'aceite') return 'Aceite na introdução (simulado)';
+  if (estado === 'recusada') return 'Continuas sem (simulado)';
+  return 'Ainda não decidiste';
+}
+
 export default function PerfilScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { simulacao } = useRelogio();
   const {
     clubeFavoritoId,
     clubeDaTerraId,
@@ -36,7 +51,11 @@ export default function PerfilScreen() {
     sonsLigados,
     alternarSons,
     notificacoes,
+    permissoes,
+    reverIntroducao,
   } = useAppState();
+  const [modoDemoVisivel, setModoDemoVisivel] = useState(false);
+  const [toques, setToques] = useState<readonly number[]>([]);
 
   const clube = obterClube(clubeFavoritoId);
   const estadioDoClube = clube ? obterEstadio(clube.estadioId) : undefined;
@@ -51,9 +70,20 @@ export default function PerfilScreen() {
   const notificacoesLigadas = TIPOS_NOTIFICACAO.filter((tipo) => notificacoes[tipo]).length;
   const chevron = <Icon name={icons.seguinte} size={16} color={theme.textSecondary} />;
 
+  function tocarNoPerfil() {
+    const agora = Date.now();
+    const recentes = [...toques.filter((toque) => agora - toque < JANELA_TOQUES_MS), agora];
+    if (recentes.length >= TOQUES_MODO_DEMO) {
+      setModoDemoVisivel((visivel) => !visivel);
+      setToques([]);
+    } else {
+      setToques(recentes);
+    }
+  }
+
   return (
     <Screen>
-      <Card style={styles.perfil}>
+      <Card style={styles.perfil} onPress={tocarNoPerfil} accessibilityLabel="O teu perfil">
         <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
           <ThemedText style={styles.avatarEmoji}>🧣</ThemedText>
         </View>
@@ -66,6 +96,11 @@ export default function PerfilScreen() {
           </ThemedText>
         </View>
       </Card>
+      {simulacao ? (
+        <View style={styles.etiqueta}>
+          <Etiqueta icon={icons.demo} label="Hora simulada ativa" tone="aviso" />
+        </View>
+      ) : null}
 
       <SectionHeader title="Clube que apoio" />
       {clube ? (
@@ -116,10 +151,7 @@ export default function PerfilScreen() {
       )}
 
       <SectionHeader title="Passaporte de estádios" />
-      <PassaporteCard
-        estadiosVisitados={estadiosVisitados}
-        avaliacoes={avaliacoes}
-      />
+      <PassaporteCard estadiosVisitados={estadiosVisitados} avaliacoes={avaliacoes} />
 
       <SectionHeader title="Missões do passaporte" />
       <MissoesCard />
@@ -170,6 +202,28 @@ export default function PerfilScreen() {
           trailing={chevron}
         />
       </Card>
+      <Card>
+        <ListRow
+          leading={<IconCircle name={icons.localizacao} />}
+          title="Localização"
+          subtitle={textoPermissao(permissoes.localizacao)}
+        />
+      </Card>
+      <Card onPress={reverIntroducao} accessibilityLabel="Rever a introdução">
+        <ListRow
+          leading={<IconCircle name={icons.introducao} />}
+          title="Rever a introdução"
+          subtitle="Os três ecrãs do início, outra vez."
+          trailing={chevron}
+        />
+      </Card>
+
+      {modoDemoVisivel || simulacao ? (
+        <>
+          <SectionHeader title="Modo demo" />
+          <ModoDemoCard />
+        </>
+      ) : null}
     </Screen>
   );
 }
@@ -197,5 +251,8 @@ const styles = StyleSheet.create({
   nome: {
     fontSize: 18,
     lineHeight: 24,
+  },
+  etiqueta: {
+    flexDirection: 'row',
   },
 });

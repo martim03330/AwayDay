@@ -5,7 +5,11 @@
 import { createContext, use, useState, type ReactNode } from 'react';
 
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
-import { preferenciasIniciais, type TipoNotificacao } from '@/mocks/notificacoes';
+import {
+  preferenciasIniciais,
+  TIPOS_NOTIFICACAO,
+  type TipoNotificacao,
+} from '@/mocks/notificacoes';
 import type { AvaliacaoVisita, Local, Nota, VisitaLocal } from '@/mocks/tipos';
 import { visitasIniciais } from '@/mocks/visitas';
 
@@ -22,7 +26,21 @@ export type NovaAvaliacao = Omit<AvaliacaoVisita, 'id' | 'atualizadaEm'>;
 
 type PreferenciasNotificacoes = Readonly<Record<TipoNotificacao, boolean>>;
 
+/** `null` enquanto o utilizador não decidiu. Na demo nada é pedido ao sistema. */
+export type EstadoPermissao = 'aceite' | 'recusada' | null;
+
+export type Permissoes = { localizacao: EstadoPermissao; notificacoes: EstadoPermissao };
+
 type AppState = {
+  /** Em memória: cada arranque da app volta a mostrar o onboarding. */
+  onboardingConcluido: boolean;
+  /** Já passou pelo onboarding pelo menos uma vez (ao rever, as escolhas vêm preenchidas). */
+  introducaoVista: boolean;
+  permissoes: Permissoes;
+  concluirOnboarding: (permissoes: Permissoes) => void;
+  /** Só para o deep link de demo: entra nas tabs sem mexer nas escolhas. */
+  saltarOnboarding: () => void;
+  reverIntroducao: () => void;
   clubeFavoritoId: string;
   escolherClube: (clubeId: string) => void;
   /** Só muda quando o utilizador confirma; a sugestão nunca é aplicada sozinha. */
@@ -70,6 +88,12 @@ function alternarEmConjunto(conjunto: ReadonlySet<string>, id: string): Readonly
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const [onboardingConcluido, setOnboardingConcluido] = useState(false);
+  const [introducaoVista, setIntroducaoVista] = useState(false);
+  const [permissoes, setPermissoes] = useState<Permissoes>({
+    localizacao: null,
+    notificacoes: null,
+  });
   const [clubeFavoritoId, setClubeFavoritoId] = useState('benfica');
   const [clubeDaTerraId, setClubeDaTerraId] = useState<string | null>(null);
   const [checkIns, setCheckIns] = useState<ReadonlySet<string>>(new Set());
@@ -124,7 +148,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  function concluirOnboarding(escolhas: Permissoes) {
+    const ligar = escolhas.notificacoes === 'aceite';
+    setPermissoes(escolhas);
+    setNotificacoes(
+      Object.fromEntries(TIPOS_NOTIFICACAO.map((tipo) => [tipo, ligar])) as Record<
+        TipoNotificacao,
+        boolean
+      >
+    );
+    setIntroducaoVista(true);
+    setOnboardingConcluido(true);
+  }
+
   const value: AppState = {
+    onboardingConcluido,
+    introducaoVista,
+    permissoes,
+    concluirOnboarding,
+    saltarOnboarding: () => setOnboardingConcluido(true),
+    reverIntroducao: () => setOnboardingConcluido(false),
     clubeFavoritoId,
     escolherClube: setClubeFavoritoId,
     clubeDaTerraId,

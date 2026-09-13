@@ -33,6 +33,14 @@ export type OpcaoTransporte = {
   precoEuros: number;
 };
 
+/** Último transporte público de regresso depois do jogo. */
+export type UltimoTransporte = {
+  modo: ModoTransporte;
+  descricao: string;
+  /** Hora de partida em Lisboa (HH:MM); se for antes do fim do jogo, é no dia seguinte. */
+  hora: string;
+};
+
 export type RoofCoverage = 'total' | 'parcial' | 'nenhuma';
 
 export type Venue = {

@@ -1,0 +1,111 @@
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+
+import { Spacing } from '@/constants/theme';
+import { useNow } from '@/hooks/use-now';
+import { formatarDiaEHora } from '@/lib/datas';
+import { FASES_DIA_DE_JOGO, nomesFase } from '@/lib/relogio';
+import { obterClube } from '@/mocks/clubes';
+import { JOGOS_DEMO } from '@/mocks/demo';
+import { obterJogo } from '@/mocks/jogos';
+import type { Jogo } from '@/mocks/tipos';
+import { useRelogio } from '@/state/relogio';
+import { Button } from '@/ui/button';
+import { Card } from '@/ui/card';
+import { Chip } from '@/ui/chip';
+import { icons } from '@/ui/icon';
+import { ThemedText } from '@/ui/themed-text';
+
+const jogosDemo: Jogo[] = JOGOS_DEMO.flatMap((id) => {
+  const jogo = obterJogo(id);
+  return jogo ? [jogo] : [];
+});
+
+function nomeDoJogo(jogo: Jogo) {
+  return `${obterClube(jogo.casaId)?.nomeCurto ?? jogo.casaId} x ${obterClube(jogo.foraId)?.nomeCurto ?? jogo.foraId}`;
+}
+
+/** Seletor de fase do dia de jogo, escondido no perfil para demos. */
+export function ModoDemoCard() {
+  const router = useRouter();
+  const agora = useNow(1000);
+  const { simulacao, simularFase, usarHoraReal } = useRelogio();
+  const [jogoId, setJogoId] = useState(simulacao?.jogoId ?? jogosDemo[0]?.id ?? '');
+  const jogo = jogosDemo.find((candidato) => candidato.id === jogoId);
+
+  function escolherJogo(novo: Jogo) {
+    setJogoId(novo.id);
+    if (simulacao) simularFase(novo, simulacao.fase);
+  }
+
+  return (
+    <Card style={styles.card}>
+      <ThemedText type="small" themeColor="textSecondary">
+        Para demos: muda a hora da app e vê cada fase do relógio do dia de jogo.
+      </ThemedText>
+      <ThemedText type="smallBold">
+        {`Hora na app: ${formatarDiaEHora(new Date(agora), agora)}${simulacao ? ' (simulada)' : ''}`}
+      </ThemedText>
+
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rotulo}>
+        Jogo
+      </ThemedText>
+      <View style={styles.chips}>
+        {jogosDemo.map((opcao) => (
+          <Chip
+            key={opcao.id}
+            label={nomeDoJogo(opcao)}
+            selected={opcao.id === jogoId}
+            onPress={() => escolherJogo(opcao)}
+            emCartao
+          />
+        ))}
+      </View>
+
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rotulo}>
+        Fase
+      </ThemedText>
+      <View style={styles.chips}>
+        {FASES_DIA_DE_JOGO.map((fase) => (
+          <Chip
+            key={fase}
+            label={nomesFase[fase]}
+            selected={simulacao?.fase === fase}
+            onPress={() => {
+              if (jogo) simularFase(jogo, fase);
+            }}
+            emCartao
+          />
+        ))}
+        <Chip label="Hora real" selected={!simulacao} onPress={usarHoraReal} emCartao />
+      </View>
+
+      {jogo ? (
+        <Button
+          label="Abrir ficha do jogo"
+          variant="secondary"
+          icon={icons.jogos}
+          onPress={() => router.push({ pathname: '/jogos/[jogoId]', params: { jogoId: jogo.id } })}
+        />
+      ) : null}
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    gap: Spacing.three,
+  },
+  rotulo: {
+    fontSize: 12,
+    lineHeight: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+});

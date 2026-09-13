@@ -2,24 +2,13 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { OpcaoClube } from '@/components/opcao-clube';
+import { ListaClubeDaTerra } from '@/components/lista-clube-terra';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { clubesMaisPerto } from '@/lib/clubes';
-import { formatarKm, formatarNumero } from '@/lib/formatos';
-import { clubes, obterClube } from '@/mocks/clubes';
-import { estadios } from '@/mocks/estadios';
-import { localizacaoUtilizador } from '@/mocks/utilizador';
+import { obterClube } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
-import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
-
-const sugestoes = clubesMaisPerto(localizacaoUtilizador.coordenadas, clubes, estadios);
-const idsSugeridos = new Set(sugestoes.map(({ clube }) => clube.id));
-const outrosClubes = clubes
-  .filter((clube) => clube.divisao !== null && !idsSugeridos.has(clube.id))
-  .sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto, 'pt'));
 
 /** Índice do filho do ScrollView que fica fixo no topo (a barra de confirmação). */
 const INDICE_BARRA_CONFIRMAR = 1;
@@ -54,7 +43,8 @@ export default function ClubeDaTerraScreen() {
         </ThemedText>
       </View>
 
-      <View style={[styles.barra, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+      <View
+        style={[styles.barra, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
         <Button
           label={selecionado ? `Confirmar ${selecionado.nomeCurto}` : 'Escolhe um clube'}
           disabled={!selecionado || selecionado.id === clubeDaTerraId}
@@ -63,27 +53,7 @@ export default function ClubeDaTerraScreen() {
       </View>
 
       <View style={styles.lista}>
-        <SectionHeader title="Perto de ti" trailing="Localização simulada" />
-        {sugestoes.map(({ clube, km }) => (
-          <OpcaoClube
-            key={clube.id}
-            clube={clube}
-            detalhe={`Estádio a ${formatarKm(km)} · ${formatarNumero(clube.adeptosNaApp)} adeptos`}
-            selecionado={clube.id === selecionadoId}
-            onPress={() => setSelecionadoId(clube.id)}
-          />
-        ))}
-
-        <SectionHeader title="Outros clubes" />
-        {outrosClubes.map((clube) => (
-          <OpcaoClube
-            key={clube.id}
-            clube={clube}
-            detalhe={`${formatarNumero(clube.adeptosNaApp)} adeptos na app`}
-            selecionado={clube.id === selecionadoId}
-            onPress={() => setSelecionadoId(clube.id)}
-          />
-        ))}
+        <ListaClubeDaTerra selecionadoId={selecionadoId} onSelecionar={setSelecionadoId} />
       </View>
     </ScrollView>
   );
@@ -109,7 +79,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   lista: {
-    gap: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
   },

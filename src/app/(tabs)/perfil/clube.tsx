@@ -5,17 +5,10 @@ import { OpcaoClube } from '@/components/opcao-clube';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero } from '@/lib/formatos';
-import { clubes, DIVISOES, nomesDivisao } from '@/mocks/clubes';
+import { clubesPorDivisao, nomesDivisao } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
-
-const gruposDeClubes = DIVISOES.map((divisao) => ({
-  divisao,
-  clubes: clubes
-    .filter((clube) => clube.divisao === divisao)
-    .sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto, 'pt')),
-}));
 
 export default function EscolherClubeScreen() {
   const router = useRouter();
@@ -30,7 +23,7 @@ export default function EscolherClubeScreen() {
         Clube que apoio
       </ThemedText>
 
-      {gruposDeClubes.map((grupo) => (
+      {clubesPorDivisao.map((grupo) => (
         <View key={grupo.divisao} style={styles.grupo}>
           <SectionHeader title={nomesDivisao[grupo.divisao]} />
           {grupo.clubes.map((clube) => (

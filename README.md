@@ -8,12 +8,17 @@ check-ins e um passaporte de estádios.
 
 ## Funcionalidades
 
+**Onboarding**
+- Três ecrãs antes das tabs: clube que apoias, clube da terra (sugestão pela localização simulada, sempre com confirmação e opção de saltar) e permissões de localização e notificações (simuladas, nada é pedido ao sistema).
+- Como o estado vive em memória, aparece em cada arranque da app. Pode ser revisto em Perfil → Definições → Rever a introdução.
+
 **Jogos**
 - Próximos jogos agrupados por dia (hora de Lisboa), com filtros por competição e pelo teu clube.
 - Liga Portugal Betclic, Liga 2, Liga 3, taças e competições europeias.
 - Estados "a decorrer" e "terminado", com carregamento e vazios simulados.
 
 **Ficha do jogo**
+- Relógio do dia de jogo, fixo no topo e só no próprio dia (até 3 h depois do apito final): contagem decrescente e uma sugestão por fase — tasco para almoçar, check-in onde há mais gente, hora de sair a pé com aviso de meteorologia, bloco discreto durante o jogo e, no fim, avaliação e último transporte de regresso.
 - Estádio com cobertura, sombra e abrigo, e aviso quando há chuva prevista e a cobertura não é total.
 - WC mais próximo do estádio, com distância a pé, horário, preço, acessibilidade e tipo de acesso.
 - Mapa da cidade com o escudo do clube da casa; ao tocar no escudo, faz zoom e mostra os tascos e os WC à volta.
@@ -55,6 +60,17 @@ npx expo start
 ```
 
 Lê o QR code com a câmara (iOS) ou com o Expo Go (Android). O telemóvel tem de estar na mesma rede que o computador.
+
+## Modo demo
+
+A hora da app é injetável, para testar todas as fases do relógio do dia de jogo sem esperar por um jogo.
+
+- **No Perfil:** toca 5 vezes seguidas no cartão do perfil para abrir a secção "Modo demo". Escolhe o jogo e a fase; "Hora real" volta ao normal. Enquanto a hora estiver simulada, aparece a etiqueta "Hora simulada".
+- **Por deep link:** acrescenta `?demoFase=<fase>&jogo=<id>` a qualquer rota. Fases: `almoco`, `check-in`, `a-caminho`, `a-decorrer`, `depois` ou `real`. Este link também salta o onboarding. Exemplo no Expo Go:
+
+  ```
+  exp://<ip-do-computador>:8081/--/jogos/benfica-moreirense?demoFase=depois
+  ```
 
 ## Scripts
 

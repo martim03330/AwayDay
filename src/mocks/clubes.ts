@@ -396,3 +396,11 @@ export const clubes: Clube[] = [
 export function obterClube(id: string) {
   return clubes.find((clube) => clube.id === id);
 }
+
+/** Clubes portugueses agrupados por divisão, por ordem alfabética. */
+export const clubesPorDivisao = DIVISOES.map((divisao) => ({
+  divisao,
+  clubes: clubes
+    .filter((clube) => clube.divisao === divisao)
+    .sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto, 'pt')),
+}));

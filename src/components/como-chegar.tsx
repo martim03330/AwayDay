@@ -9,7 +9,7 @@ import { Card } from '@/ui/card';
 import { IconCircle, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-const modos: Record<ModoTransporte, { nome: string; icon: IconName }> = {
+export const modosTransporte: Record<ModoTransporte, { nome: string; icon: IconName }> = {
   metro: { nome: 'Metro', icon: icons.metro },
   autocarro: { nome: 'Autocarro', icon: icons.autocarro },
   comboio: { nome: 'Comboio', icon: icons.comboio },
@@ -25,7 +25,7 @@ export function ComoChegar({ opcoes }: { opcoes: readonly OpcaoTransporte[] }) {
   return (
     <Card>
       {opcoes.map((opcao, index) => {
-        const modo = modos[opcao.modo];
+        const modo = modosTransporte[opcao.modo];
         return (
           <View
             key={`${opcao.modo}-${index}`}

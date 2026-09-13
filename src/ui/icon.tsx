@@ -59,6 +59,9 @@ export const icons = {
   quente: { ios: 'flame.fill', android: 'local_fire_department', web: 'local_fire_department' },
   agua: { ios: 'waterbottle.fill', android: 'water_full', web: 'water_full' },
   missao: { ios: 'flag.checkered', android: 'sports_score', web: 'sports_score' },
+  voltar: { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' },
+  introducao: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
+  demo: { ios: 'wand.and.stars', android: 'science', web: 'science' },
 } satisfies Record<string, IconName>;
 
 type IconProps = {

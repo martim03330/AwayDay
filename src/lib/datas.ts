@@ -52,13 +52,18 @@ function desvioDeLisboaEmMinutos(data: Date) {
   return Math.round((comoSeFosseUtc - data.getTime()) / MINUTO_MS);
 }
 
-/** Instante correspondente a `hora` (HH:MM) em Lisboa, daqui a `dias` dias. */
-export function dataEmLisboa(dias: number, hora: string) {
-  const hoje = partesEmLisboa(new Date());
+/** Instante correspondente a `hora` (HH:MM) em Lisboa, `dias` dias depois do dia (em Lisboa) de `referencia`. */
+export function dataEmLisboaAPartirDe(referencia: Date, dias: number, hora: string) {
+  const dia = partesEmLisboa(referencia);
   const [horas, minutos] = hora.split(':').map(Number);
-  const relogioDeLisboa = Date.UTC(hoje.ano, hoje.mes - 1, hoje.dia + dias, horas, minutos);
+  const relogioDeLisboa = Date.UTC(dia.ano, dia.mes - 1, dia.dia + dias, horas, minutos);
   const desvio = desvioDeLisboaEmMinutos(new Date(relogioDeLisboa));
   return new Date(relogioDeLisboa - desvio * MINUTO_MS);
+}
+
+/** Instante correspondente a `hora` (HH:MM) em Lisboa, daqui a `dias` dias. */
+export function dataEmLisboa(dias: number, hora: string) {
+  return dataEmLisboaAPartirDe(new Date(), dias, hora);
 }
 
 /** Minutos desde a meia-noite em Lisboa (0–1439). */
@@ -78,10 +83,12 @@ export function formatarHora(data: Date) {
   return formatoHora.format(data);
 }
 
-/** "Hoje", "Amanhã", "Ontem" ou "sábado, 19 de setembro" */
-export function formatarDia(data: Date) {
+/**
+ * "Hoje", "Amanhã", "Ontem" ou "sábado, 19 de setembro".
+ * `agora` permite usar a hora simulada do modo demo.
+ */
+export function formatarDia(data: Date, agora = Date.now()) {
   const chave = chaveDoDia(data);
-  const agora = Date.now();
   if (chave === chaveDoDia(new Date(agora))) return 'Hoje';
   if (chave === chaveDoDia(new Date(agora + DIA_MS))) return 'Amanhã';
   if (chave === chaveDoDia(new Date(agora - DIA_MS))) return 'Ontem';
@@ -89,6 +96,6 @@ export function formatarDia(data: Date) {
 }
 
 /** "Hoje às 20:30" ou "sábado, 19 de setembro às 20:30" */
-export function formatarDiaEHora(data: Date) {
-  return `${formatarDia(data)} às ${formatarHora(data)}`;
+export function formatarDiaEHora(data: Date, agora = Date.now()) {
+  return `${formatarDia(data, agora)} às ${formatarHora(data)}`;
 }
