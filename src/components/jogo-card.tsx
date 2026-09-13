@@ -9,7 +9,7 @@ import { notaMedia, type EstadoJogo } from '@/lib/jogos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { nomesCompeticao } from '@/mocks/jogos';
-import type { Avaliacao, Jogo } from '@/mocks/tipos';
+import type { AvaliacaoVisita, Jogo } from '@/mocks/tipos';
 import { Badge } from '@/ui/badge';
 import { Card } from '@/ui/card';
 import { Icon, icons } from '@/ui/icon';
@@ -19,7 +19,7 @@ import { ThemedView } from '@/ui/themed-view';
 type JogoCardProps = {
   jogo: Jogo;
   estado: EstadoJogo;
-  avaliacao: Avaliacao | undefined;
+  avaliacao: AvaliacaoVisita | undefined;
   onPress: () => void;
 };
 

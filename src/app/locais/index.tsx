@@ -7,7 +7,7 @@ import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
 import { obterClube } from '@/mocks/clubes';
-import { estadios, obterEstadio } from '@/mocks/estadios';
+import { estadiosNacionais, obterEstadio } from '@/mocks/estadios';
 import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
 import { Chip } from '@/ui/chip';
@@ -24,7 +24,7 @@ function temLocaisPerto(estadioId: string) {
 }
 
 /** Estádios com locais perto primeiro, mantendo a ordem original dentro de cada grupo. */
-const estadiosOrdenados = [...estadios].sort(
+const estadiosOrdenados = [...estadiosNacionais].sort(
   (a, b) => Number(temLocaisPerto(b.id)) - Number(temLocaisPerto(a.id))
 );
 
@@ -35,7 +35,7 @@ export default function LocaisScreen() {
 
   const estadioDoClube = obterClube(clubeFavoritoId)?.estadioId ?? ESTADIO_COM_LOCAIS;
   const estadio =
-    obterEstadio(params.estadio ?? estadioDoClube) ?? obterEstadio(estadioDoClube) ?? estadios[0];
+    obterEstadio(params.estadio ?? estadioDoClube) ?? obterEstadio(estadioDoClube) ?? estadiosNacionais[0];
   const { perto, maisLonge } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
   const { loading, refreshing, refresh } = useSimulatedLoading(`locais-${estadio.id}`);
 
@@ -54,14 +54,14 @@ export default function LocaisScreen() {
       return (
         <EmptyState
           icon={icons.semLocais}
-          title="Ainda sem locais"
+          title="Zona sem tasco à vista"
           message={
             maisLonge > 0
-              ? `Os locais que conhecemos perto do ${estadio.nome} ficam a mais de ${MAX_MINUTOS_A_PE} min a pé.`
-              : `Ainda não temos sítios recomendados perto do ${estadio.nome}.`
+              ? `Os tascos que conhecemos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé do ${estadio.nome}. Longe demais para ir a pé.`
+              : `Ainda não mapeámos tascos perto do ${estadio.nome}.`
           }
           action={{
-            label: 'Ver locais perto da Luz',
+            label: 'Ver tascos perto da Luz',
             onPress: () => router.setParams({ estadio: ESTADIO_COM_LOCAIS }),
           }}
         />
@@ -84,8 +84,8 @@ export default function LocaisScreen() {
         {maisLonge > 0 ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
             {maisLonge === 1
-              ? `1 local fica a mais de ${MAX_MINUTOS_A_PE} min a pé e não aparece.`
-              : `${maisLonge} locais ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e não aparecem.`}
+              ? `1 tasco fica a mais de ${MAX_MINUTOS_A_PE} min a pé e ficou no banco.`
+              : `${maisLonge} tascos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e ficaram no banco.`}
           </ThemedText>
         ) : null}
       </>

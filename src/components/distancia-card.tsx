@@ -10,11 +10,11 @@ import { IconCircle, icons } from '@/ui/icon';
 import { ListRow } from '@/ui/list-row';
 import { ThemedText } from '@/ui/themed-text';
 
-const nomesIlha = {
-  madeira: 'na Madeira',
-  acores: 'nos Açores',
-  continente: 'no continente',
-} as const;
+function ondeFica(venue: Venue) {
+  if (venue.regiao === 'madeira') return 'na Madeira';
+  if (venue.regiao === 'acores') return 'nos Açores';
+  return `em ${venue.pais}`;
+}
 
 export function DistanciaCard({ venue }: { venue: Venue }) {
   const { coordenadas, descricao, regiao } = localizacaoUtilizador;
@@ -29,7 +29,7 @@ export function DistanciaCard({ venue }: { venue: Venue }) {
 
   const subtitulo = deCarro
     ? `A partir de ${descricao} (localização simulada)`
-    : `O estádio fica ${nomesIlha[venue.regiao]}: não há percurso de carro a partir de ${descricao}.`;
+    : `O estádio fica ${ondeFica(venue)}: aqui só mostramos a distância em linha reta a partir de ${descricao}.`;
 
   return (
     <Card>

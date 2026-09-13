@@ -1,15 +1,30 @@
-import { dataEmLisboa } from '@/lib/datas';
-import type { Avaliacao } from '@/mocks/tipos';
+import { obterJogo } from '@/mocks/jogos';
+import type { AvaliacaoVisita, Nota } from '@/mocks/tipos';
 
-/** Avaliações de exemplo, para o histórico do perfil ter conteúdo desde o arranque. */
-export const avaliacoesIniciais: Avaliacao[] = [
+type AvaliacaoMock = {
+  jogoId: string;
+  estadio: Nota;
+  ambiente: Nota;
+  acessos: Nota;
+  comentario: string;
+};
+
+const HORA_MS = 60 * 60 * 1000;
+
+const avaliacoesMock: AvaliacaoMock[] = [
+  {
+    jogoId: 'benfica-famalicao',
+    estadio: 5,
+    ambiente: 4,
+    acessos: 4,
+    comentario: 'Casa cheia e bifana antes do jogo. Assim sim.',
+  },
   {
     jogoId: 'benfica-arouca',
     estadio: 4,
     ambiente: 5,
     acessos: 3,
     comentario: 'Ambiente incrível na segunda parte. A saída pelo metro demorou 40 minutos.',
-    criadaEm: dataEmLisboa(-2, '23:15').toISOString(),
   },
   {
     jogoId: 'porto-gil-vicente',
@@ -17,6 +32,20 @@ export const avaliacoesIniciais: Avaliacao[] = [
     ambiente: 4,
     acessos: 4,
     comentario: 'Choveu o jogo todo, mas a bancada é toda coberta.',
-    criadaEm: dataEmLisboa(-1, '20:40').toISOString(),
   },
 ];
+
+/** Avaliações de exemplo: duas visitas à Luz e uma ao Dragão. */
+export const avaliacoesIniciais: AvaliacaoVisita[] = avaliacoesMock.flatMap((mock) => {
+  const jogo = obterJogo(mock.jogoId);
+  if (!jogo) return [];
+  return [
+    {
+      ...mock,
+      id: `avaliacao-${mock.jogoId}`,
+      estadioId: jogo.estadioId,
+      dataVisita: jogo.inicio,
+      atualizadaEm: new Date(Date.parse(jogo.inicio) + 3 * HORA_MS).toISOString(),
+    },
+  ];
+});

@@ -7,11 +7,14 @@ import { formatarDistancia, plural } from '@/lib/formatos';
 import { obterEstadio } from '@/mocks/estadios';
 import { nomesTipoLocal, obterLocal } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
+import { useSons } from '@/state/sons';
 import { Badge } from '@/ui/badge';
+import { BotaoAlternar } from '@/ui/botao-alternar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { ContadorPessoas } from '@/ui/contador-pessoas';
 import { EmptyState } from '@/ui/empty-state';
+import { Etiqueta } from '@/ui/etiqueta';
 import { IconCircle, icons } from '@/ui/icon';
 import { ListRow } from '@/ui/list-row';
 import { Medidor } from '@/ui/medidor';
@@ -24,7 +27,9 @@ export default function LocalScreen() {
   const router = useRouter();
   const { localId } = useLocalSearchParams<{ localId: string }>();
   const { loading } = useSimulatedLoading(`local-${localId}`);
-  const { fezCheckIn, alternarCheckIn, pessoasAqui } = useAppState();
+  const { fezCheckIn, alternarCheckIn, pessoasAqui, visitaDoLocal, registarVisitaManual } =
+    useAppState();
+  const { tocarCheckIn } = useSons();
 
   const local = obterLocal(localId);
   const estadio = local ? obterEstadio(local.estadioId) : undefined;
@@ -45,8 +50,8 @@ export default function LocalScreen() {
       <Screen>
         <EmptyState
           icon={icons.naoEncontrado}
-          title="Local não encontrado"
-          message="Este local já não está disponível."
+          title="Tasco não encontrado"
+          message="Este tasco fechou as portas ou nunca existiu."
           action={{ label: 'Voltar aos locais', onPress: () => router.back() }}
         />
       </Screen>
@@ -54,7 +59,15 @@ export default function LocalScreen() {
   }
 
   const checkedIn = fezCheckIn(local.id);
+  const visita = visitaDoLocal(local.id);
   const distancia = `${formatarDistancia(local.distanciaMetros)} · ${local.minutosAPe} min a pé`;
+
+  function alternar() {
+    if (!local) return;
+    // O som só toca ao fazer check-in, nunca ao anular.
+    if (!checkedIn) tocarCheckIn();
+    alternarCheckIn(local.id);
+  }
 
   return (
     <Screen>
@@ -73,17 +86,39 @@ export default function LocalScreen() {
         <ContadorPessoas count={pessoasAqui(local)} large />
       </Card>
 
-      <Button
-        label={checkedIn ? 'Check-in feito' : 'Fazer check-in'}
-        variant={checkedIn ? 'secondary' : 'primary'}
-        icon={checkedIn ? icons.checkInFeito : icons.checkIn}
-        onPress={() => alternarCheckIn(local.id)}
+      <BotaoAlternar
+        ativo={checkedIn}
+        onPress={alternar}
+        label={{ ativo: 'Check-in feito', inativo: 'Fazer check-in' }}
+        icon={{ ativo: icons.checkInFeito, inativo: icons.checkIn }}
       />
       <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
         {checkedIn
-          ? `Estás aqui com mais ${plural(local.pessoasAqui, 'adepto', 'adeptos')}. Toca outra vez para anular.`
-          : 'Avisa os outros adeptos de que estás aqui.'}
+          ? `Já contas para a claque: tu e mais ${plural(local.pessoasAqui, 'adepto', 'adeptos')}. Toca outra vez para anular.`
+          : 'Diz à malta que já cá estás.'}
       </ThemedText>
+
+      {visita ? (
+        <View style={styles.visita}>
+          <Etiqueta
+            icon={visita.verificado ? icons.selecionado : icons.porVerificar}
+            label={visita.verificado ? 'Visita verificada' : 'Visita por verificar'}
+            tone={visita.verificado ? 'positivo' : 'aviso'}
+          />
+          {visita.verificado ? null : (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
+              Só conta para a pontuação depois de fazeres check-in no local.
+            </ThemedText>
+          )}
+        </View>
+      ) : (
+        <Button
+          label="Já estive aqui"
+          variant="secondary"
+          icon={icons.tasco}
+          onPress={() => registarVisitaManual(local.id)}
+        />
+      )}
 
       <SectionHeader title="Avaliação dos adeptos" />
       <Card style={styles.medidores}>
@@ -135,6 +170,10 @@ const styles = StyleSheet.create({
   },
   centro: {
     textAlign: 'center',
+  },
+  visita: {
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   medidores: {
     gap: Spacing.three,

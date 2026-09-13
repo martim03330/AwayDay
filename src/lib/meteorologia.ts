@@ -17,10 +17,10 @@ export function avisoDeChuva(meteorologia: Meteorologia, venue: Pick<Venue, 'roo
 
   const probabilidade = `${meteorologia.probabilidadeChuva}%`;
   return {
-    titulo: 'Previsão de chuva',
+    titulo: 'Vem aí chuva',
     mensagem:
       venue.roofCoverage === 'parcial'
-        ? `${probabilidade} de probabilidade de chuva e o estádio só tem cobertura parcial. Leva impermeável ou escolhe um lugar coberto.`
-        : `${probabilidade} de probabilidade de chuva e o estádio não tem cobertura. Leva impermeável.`,
+        ? `${probabilidade} de probabilidade de chuva e o estádio só tem cobertura parcial. Leva impermeável ou escolhe bem o lugar.`
+        : `${probabilidade} de probabilidade de chuva e o estádio não tem cobertura. Impermeável no bolso.`,
   };
 }

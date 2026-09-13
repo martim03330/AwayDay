@@ -6,13 +6,16 @@ import { ComoChegar } from '@/components/como-chegar';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
 import { EstadioCard } from '@/components/estadio-card';
+import { MapaJogo } from '@/components/mapa-jogo';
 import { MeteorologiaCard } from '@/components/meteorologia-card';
+import { PontoEncontroCard } from '@/components/ponto-encontro-card';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
+import { notaDoEstadio } from '@/lib/avaliacoes';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { estadoDoJogo } from '@/lib/jogos';
+import { eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
 import { avisoDeChuva } from '@/lib/meteorologia';
 import { obterClube } from '@/mocks/clubes';
@@ -36,7 +39,7 @@ export default function JogoScreen() {
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
-  const { avaliacoes } = useAppState();
+  const { avaliacoes, avaliacaoDoJogo } = useAppState();
 
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -60,7 +63,7 @@ export default function JogoScreen() {
         <EmptyState
           icon={icons.naoEncontrado}
           title="Jogo não encontrado"
-          message="Este jogo já não está disponível."
+          message="Este jogo foi adiado para parte incerta."
           action={{ label: 'Voltar aos jogos', onPress: () => router.back() }}
         />
       </Screen>
@@ -75,7 +78,7 @@ export default function JogoScreen() {
     <AvaliacaoJogo
       jogo={jogo}
       agora={agora}
-      avaliacao={avaliacoes[jogo.id]}
+      avaliacao={avaliacaoDoJogo(jogo.id)}
       onAvaliar={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
     />
   );
@@ -112,8 +115,18 @@ export default function JogoScreen() {
 
       {estado === 'terminado' ? avaliacao : null}
 
+      {eCompeticaoEuropeia(jogo.competicao) ? (
+        <>
+          <SectionHeader title="Ponto de encontro oficial" />
+          <PontoEncontroCard ponto={jogo.pontoEncontro} />
+        </>
+      ) : null}
+
       <SectionHeader title="Estádio" />
-      <EstadioCard venue={estadio} />
+      <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
+
+      <SectionHeader title="Mapa" />
+      <MapaJogo venue={estadio} />
 
       <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
       <MeteorologiaCard meteorologia={jogo.meteorologia} />

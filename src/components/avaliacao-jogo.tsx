@@ -5,7 +5,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { formatarNota } from '@/lib/formatos';
 import { estadoDoJogo, fimDoJogo, notaMedia } from '@/lib/jogos';
-import type { Avaliacao, Jogo } from '@/mocks/tipos';
+import type { AvaliacaoVisita, Jogo } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { IconCircle, icons } from '@/ui/icon';
@@ -15,7 +15,7 @@ import { ThemedText } from '@/ui/themed-text';
 type AvaliacaoJogoProps = {
   jogo: Jogo;
   agora: number;
-  avaliacao: Avaliacao | undefined;
+  avaliacao: AvaliacaoVisita | undefined;
   onAvaliar: () => void;
 };
 
@@ -28,7 +28,7 @@ export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJo
         <ListRow
           leading={<IconCircle name={icons.estrela} />}
           title="Avaliação da experiência"
-          subtitle={`Abre ${formatarDiaEHora(fimDoJogo(jogo)).toLowerCase()}, no fim do jogo.`}
+          subtitle={`Abre ${formatarDiaEHora(fimDoJogo(jogo)).toLowerCase()}, depois do apito final.`}
         />
       </Card>
     );
@@ -40,7 +40,7 @@ export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJo
         <ListRow
           leading={<IconCircle name={icons.estrela} />}
           title="Como foi o jogo?"
-          subtitle="Avalia o estádio, o ambiente e os acessos."
+          subtitle="Dá nota ao estádio, ao ambiente e aos acessos."
         />
         <Button label="Avaliar experiência" icon={icons.estrela} onPress={onAvaliar} />
       </Card>

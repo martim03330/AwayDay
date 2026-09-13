@@ -20,12 +20,13 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 
-const filtrosCompeticao: { id: FiltroCompeticao; label: string }[] = [
-  { id: 'todas', label: 'Todas' },
-  { id: 'liga', label: 'Liga Betclic' },
-  { id: 'liga-2', label: 'Liga 2' },
-  { id: 'liga-3', label: 'Liga 3' },
-  { id: 'tacas', label: 'Taças' },
+const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
+  { id: 'todas', label: 'Todas', emTexto: '' },
+  { id: 'liga', label: 'Liga Betclic', emTexto: ' na Liga Betclic' },
+  { id: 'liga-2', label: 'Liga 2', emTexto: ' na Liga 2' },
+  { id: 'liga-3', label: 'Liga 3', emTexto: ' na Liga 3' },
+  { id: 'europa', label: 'Europa', emTexto: ' nas competições europeias' },
+  { id: 'tacas', label: 'Taças', emTexto: ' nas taças' },
 ];
 
 type GrupoDeJogos = {
@@ -52,7 +53,7 @@ function agruparPorDia(lista: Jogo[]) {
 export default function JogosScreen() {
   const router = useRouter();
   const agora = useNow();
-  const { clubeFavoritoId, avaliacoes } = useAppState();
+  const { clubeFavoritoId, avaliacaoDoJogo } = useAppState();
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   const [soMeuClube, setSoMeuClube] = useState(false);
   const { loading, refreshing, refresh } = useSimulatedLoading('jogos');
@@ -80,7 +81,7 @@ export default function JogosScreen() {
         key={jogo.id}
         jogo={jogo}
         estado={estadoDoJogo(jogo, agora)}
-        avaliacao={avaliacoes[jogo.id]}
+        avaliacao={avaliacaoDoJogo(jogo.id)}
         onPress={() => router.push({ pathname: '/jogos/[jogoId]', params: { jogoId: jogo.id } })}
       />
     );
@@ -98,16 +99,16 @@ export default function JogosScreen() {
     }
 
     if (filtrados.length === 0) {
-      const nomeCompeticao = filtrosCompeticao.find((filtro) => filtro.id === competicao)?.label;
-      const emCompeticao = competicao === 'todas' ? '' : ` na ${nomeCompeticao}`;
+      const emCompeticao =
+        filtrosCompeticao.find((filtro) => filtro.id === competicao)?.emTexto ?? '';
       return (
         <EmptyState
           icon={icons.semJogos}
-          title="Sem jogos com estes filtros"
+          title="Jornada de descanso"
           message={
             soMeuClube
-              ? `${clubeFavorito?.nomeCurto ?? 'O teu clube'} não tem jogos${emCompeticao} nos próximos dias.`
-              : `Não há jogos${emCompeticao} nos próximos dias.`
+              ? `${clubeFavorito?.nomeCurto ?? 'O teu clube'} não joga${emCompeticao} nos próximos dias.`
+              : `Nenhum jogo${emCompeticao} nos próximos dias. Aproveita para descansar a voz.`
           }
           action={{ label: 'Limpar filtros', onPress: limparFiltros }}
         />
@@ -128,7 +129,7 @@ export default function JogosScreen() {
         {terminados.length > 0 ? (
           <View style={styles.grupo}>
             <SectionHeader
-              title="Terminados"
+              title="Já se jogou"
               trailing={plural(terminados.length, 'jogo', 'jogos')}
             />
             {terminados.map(renderJogo)}

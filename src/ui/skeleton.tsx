@@ -22,7 +22,7 @@ export function Skeleton({ width = '100%', height = 16, radius = 8 }: SkeletonPr
   const opacity = useSharedValue(1);
 
   useEffect(() => {
-    opacity.set(withRepeat(withTiming(0.4, { duration: 700 }), -1, true));
+    opacity.set(withRepeat(withTiming(0.4, { duration: 400 }), -1, true));
   }, [opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));

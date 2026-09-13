@@ -5,67 +5,138 @@
 import { createContext, use, useState, type ReactNode } from 'react';
 
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
-import { obterJogo } from '@/mocks/jogos';
-import type { Avaliacao, Local } from '@/mocks/tipos';
+import { preferenciasIniciais, type TipoNotificacao } from '@/mocks/notificacoes';
+import type { AvaliacaoVisita, Local, VisitaLocal } from '@/mocks/tipos';
+import { visitasIniciais } from '@/mocks/visitas';
 
 /** Estádios já visitados antes de qualquer avaliação. */
 const ESTADIOS_VISITADOS_BASE = ['luz', 'alvalade', 'dragao', 'municipal-braga'];
 
-type Avaliacoes = Readonly<Partial<Record<string, Avaliacao>>>;
+export type NovaAvaliacao = Omit<AvaliacaoVisita, 'id' | 'atualizadaEm'>;
+
+type PreferenciasNotificacoes = Readonly<Record<TipoNotificacao, boolean>>;
 
 type AppState = {
   clubeFavoritoId: string;
   escolherClube: (clubeId: string) => void;
-  /** Base mais os estádios dos jogos avaliados. */
+  /** Só muda quando o utilizador confirma; a sugestão nunca é aplicada sozinha. */
+  clubeDaTerraId: string | null;
+  confirmarClubeDaTerra: (clubeId: string) => void;
+  /** Base mais os estádios das visitas avaliadas. */
   estadiosVisitados: readonly string[];
+  /** Estádios registados de novo que ainda não fizeram a animação de carimbo no perfil. */
+  estadiosPorCarimbar: readonly string[];
+  marcarCarimbosVistos: () => void;
   fezCheckIn: (localId: string) => boolean;
   alternarCheckIn: (localId: string) => void;
   pessoasAqui: (local: Local) => number;
-  totalCheckIns: number;
-  avaliacoes: Avaliacoes;
-  guardarAvaliacao: (avaliacao: Avaliacao) => void;
+  visitasLocais: readonly VisitaLocal[];
+  /** A visita verificada, se existir; senão a visita por verificar. */
+  visitaDoLocal: (localId: string) => VisitaLocal | undefined;
+  registarVisitaManual: (localId: string) => void;
+  avaliacoes: readonly AvaliacaoVisita[];
+  avaliacaoDoJogo: (jogoId: string) => AvaliacaoVisita | undefined;
+  /** Cria ou atualiza a avaliação da visita (uma por jogo). */
+  guardarAvaliacao: (avaliacao: NovaAvaliacao) => void;
+  /** Desligados por omissão. */
+  sonsLigados: boolean;
+  alternarSons: () => void;
+  notificacoes: PreferenciasNotificacoes;
+  alternarNotificacao: (tipo: TipoNotificacao) => void;
 };
 
 const AppStateContext = createContext<AppState | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [clubeFavoritoId, setClubeFavoritoId] = useState('benfica');
+  const [clubeDaTerraId, setClubeDaTerraId] = useState<string | null>(null);
   const [checkIns, setCheckIns] = useState<ReadonlySet<string>>(new Set());
-  const [avaliacoes, setAvaliacoes] = useState<Avaliacoes>(() =>
-    Object.fromEntries(avaliacoesIniciais.map((avaliacao) => [avaliacao.jogoId, avaliacao]))
-  );
+  const [visitasLocais, setVisitasLocais] = useState<readonly VisitaLocal[]>(visitasIniciais);
+  const [avaliacoes, setAvaliacoes] = useState<readonly AvaliacaoVisita[]>(avaliacoesIniciais);
+  const [estadiosPorCarimbar, setEstadiosPorCarimbar] = useState<readonly string[]>([]);
+  const [sonsLigados, setSonsLigados] = useState(false);
+  const [notificacoes, setNotificacoes] = useState<PreferenciasNotificacoes>(preferenciasIniciais);
+
+  const estadiosVisitados = [
+    ...new Set([...ESTADIOS_VISITADOS_BASE, ...avaliacoes.map((avaliacao) => avaliacao.estadioId)]),
+  ];
 
   function alternarCheckIn(localId: string) {
-    setCheckIns((atuais) => {
-      const proximos = new Set(atuais);
-      if (proximos.has(localId)) {
+    const idVisita = `check-in-${localId}`;
+
+    if (checkIns.has(localId)) {
+      setCheckIns((atuais) => {
+        const proximos = new Set(atuais);
         proximos.delete(localId);
-      } else {
-        proximos.add(localId);
-      }
-      return proximos;
+        return proximos;
+      });
+      setVisitasLocais((atuais) => atuais.filter((visita) => visita.id !== idVisita));
+      return;
+    }
+
+    setCheckIns((atuais) => new Set(atuais).add(localId));
+    setVisitasLocais((atuais) => [
+      { id: idVisita, localId, data: new Date().toISOString(), verificado: true, origem: 'check-in' },
+      ...atuais,
+    ]);
+  }
+
+  function registarVisitaManual(localId: string) {
+    setVisitasLocais((atuais) => {
+      if (atuais.some((visita) => visita.localId === localId)) return atuais;
+      return [
+        {
+          id: `manual-${localId}`,
+          localId,
+          data: new Date().toISOString(),
+          verificado: false,
+          origem: 'manual',
+        },
+        ...atuais,
+      ];
     });
   }
 
-  function guardarAvaliacao(avaliacao: Avaliacao) {
-    setAvaliacoes((atuais) => ({ ...atuais, [avaliacao.jogoId]: avaliacao }));
-  }
+  function guardarAvaliacao(nova: NovaAvaliacao) {
+    if (!estadiosVisitados.includes(nova.estadioId)) {
+      setEstadiosPorCarimbar((atuais) =>
+        atuais.includes(nova.estadioId) ? atuais : [...atuais, nova.estadioId]
+      );
+    }
 
-  const estadiosAvaliados = Object.keys(avaliacoes).flatMap((jogoId) => {
-    const estadioId = obterJogo(jogoId)?.estadioId;
-    return estadioId ? [estadioId] : [];
-  });
+    const id = `avaliacao-${nova.jogoId}`;
+    const registo: AvaliacaoVisita = { ...nova, id, atualizadaEm: new Date().toISOString() };
+    setAvaliacoes((atuais) =>
+      atuais.some((avaliacao) => avaliacao.id === id)
+        ? atuais.map((avaliacao) => (avaliacao.id === id ? registo : avaliacao))
+        : [registo, ...atuais]
+    );
+  }
 
   const value: AppState = {
     clubeFavoritoId,
     escolherClube: setClubeFavoritoId,
-    estadiosVisitados: [...new Set([...ESTADIOS_VISITADOS_BASE, ...estadiosAvaliados])],
+    clubeDaTerraId,
+    confirmarClubeDaTerra: setClubeDaTerraId,
+    estadiosVisitados,
+    estadiosPorCarimbar,
+    marcarCarimbosVistos: () => setEstadiosPorCarimbar([]),
     fezCheckIn: (localId) => checkIns.has(localId),
     alternarCheckIn,
     pessoasAqui: (local) => local.pessoasAqui + (checkIns.has(local.id) ? 1 : 0),
-    totalCheckIns: checkIns.size,
+    visitasLocais,
+    visitaDoLocal: (localId) =>
+      visitasLocais.find((visita) => visita.localId === localId && visita.verificado) ??
+      visitasLocais.find((visita) => visita.localId === localId),
+    registarVisitaManual,
     avaliacoes,
+    avaliacaoDoJogo: (jogoId) => avaliacoes.find((avaliacao) => avaliacao.jogoId === jogoId),
     guardarAvaliacao,
+    sonsLigados,
+    alternarSons: () => setSonsLigados((ligados) => !ligados),
+    notificacoes,
+    alternarNotificacao: (tipo) =>
+      setNotificacoes((atuais) => ({ ...atuais, [tipo]: !atuais[tipo] })),
   };
 
   return <AppStateContext value={value}>{children}</AppStateContext>;

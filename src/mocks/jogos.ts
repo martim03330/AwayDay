@@ -1,5 +1,10 @@
 import { dataEmLisboa } from '@/lib/datas';
-import type { Competicao, Jogo } from '@/mocks/tipos';
+import {
+  pontoEncontroJuventusBenfica,
+  pontoEncontroRomaPorto,
+  pontoEncontroSalzburgoPorto,
+} from '@/mocks/pontos-encontro';
+import type { Competicao, Jogo, PontoEncontro } from '@/mocks/tipos';
 
 export const nomesCompeticao: Record<Competicao, string> = {
   liga: 'Liga Portugal Betclic',
@@ -7,6 +12,9 @@ export const nomesCompeticao: Record<Competicao, string> = {
   'liga-3': 'Liga 3',
   'taca-de-portugal': 'Taça de Portugal',
   'taca-da-liga': 'Taça da Liga',
+  champions: 'Liga dos Campeões',
+  'liga-europa': 'Liga Europa',
+  conference: 'Liga Conferência',
 };
 
 type Quando =
@@ -15,10 +23,23 @@ type Quando =
   /** Começou há X minutos, relativo ao arranque da app (para haver sempre um jogo a terminar). */
   | { minutosAtras: number };
 
-type JogoMock = Omit<Jogo, 'inicio'> & Quando;
+type JogoMock = Omit<Jogo, 'inicio' | 'pontoEncontro'> & {
+  pontoEncontro?: PontoEncontro | null;
+} & Quando;
 
 const jogosMock: JogoMock[] = [
   // Terminados
+  {
+    id: 'benfica-famalicao',
+    competicao: 'liga',
+    fase: 'Jornada 2',
+    casaId: 'benfica',
+    foraId: 'famalicao',
+    estadioId: 'luz',
+    dias: -16,
+    hora: '20:30',
+    meteorologia: { condicao: 'limpo', temperatura: 24, probabilidadeChuva: 0, ventoKmh: 11 },
+  },
   {
     id: 'benfica-arouca',
     competicao: 'liga',
@@ -262,6 +283,55 @@ const jogosMock: JogoMock[] = [
     hora: '20:15',
     meteorologia: { condicao: 'chuva', temperatura: 15, probabilidadeChuva: 80, ventoKmh: 22 },
   },
+  // Competições europeias
+  {
+    id: 'roma-porto',
+    competicao: 'liga-europa',
+    fase: 'Play-off, 2.ª mão',
+    casaId: 'roma',
+    foraId: 'porto',
+    estadioId: 'olimpico-roma',
+    dias: 2,
+    hora: '17:45',
+    meteorologia: { condicao: 'sol', temperatura: 25, probabilidadeChuva: 5, ventoKmh: 9 },
+    pontoEncontro: pontoEncontroRomaPorto,
+  },
+  {
+    id: 'sporting-arsenal',
+    competicao: 'champions',
+    fase: 'Fase de liga',
+    casaId: 'sporting',
+    foraId: 'arsenal',
+    estadioId: 'alvalade',
+    dias: 3,
+    hora: '20:00',
+    meteorologia: { condicao: 'limpo', temperatura: 21, probabilidadeChuva: 5, ventoKmh: 10 },
+    pontoEncontro: null,
+  },
+  {
+    id: 'juventus-benfica',
+    competicao: 'champions',
+    fase: 'Fase de liga',
+    casaId: 'juventus',
+    foraId: 'benfica',
+    estadioId: 'allianz-stadium',
+    dias: 4,
+    hora: '20:00',
+    meteorologia: { condicao: 'nublado', temperatura: 18, probabilidadeChuva: 40, ventoKmh: 8 },
+    pontoEncontro: pontoEncontroJuventusBenfica,
+  },
+  {
+    id: 'salzburgo-porto',
+    competicao: 'liga-europa',
+    fase: 'Fase de liga',
+    casaId: 'salzburgo',
+    foraId: 'porto',
+    estadioId: 'red-bull-arena',
+    dias: 8,
+    hora: '20:00',
+    meteorologia: { condicao: 'aguaceiros', temperatura: 13, probabilidadeChuva: 60, ventoKmh: 12 },
+    pontoEncontro: pontoEncontroSalzburgoPorto,
+  },
 ];
 
 function calcularInicio(mock: JogoMock) {
@@ -282,6 +352,7 @@ export const jogos: Jogo[] = jogosMock
     foraId: mock.foraId,
     estadioId: mock.estadioId,
     meteorologia: mock.meteorologia,
+    pontoEncontro: mock.pontoEncontro ?? null,
     inicio: calcularInicio(mock).toISOString(),
   }))
   .sort((a, b) => a.inicio.localeCompare(b.inicio));

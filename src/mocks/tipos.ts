@@ -9,15 +9,19 @@ export type Clube = {
   nomeCurto: string;
   /** Até 3 letras, desenhada no escudo. */
   sigla: string;
+  pais: string;
   cores: { primaria: string; secundaria: string };
-  divisao: Divisao;
+  /** `null` para clubes estrangeiros. */
+  divisao: Divisao | null;
+  /** Número de adeptos deste clube na app (valor mock). */
+  adeptosNaApp: number;
   estadioId: string;
 };
 
 export type Coordenadas = { latitude: number; longitude: number };
 
-/** Madeira e Açores não têm ligação por estrada ao continente. */
-export type Regiao = 'continente' | 'madeira' | 'acores';
+/** Madeira, Açores e estádios estrangeiros não têm ligação por estrada a partir de Lisboa. */
+export type Regiao = 'continente' | 'madeira' | 'acores' | 'estrangeiro';
 
 export type ModoTransporte = 'metro' | 'autocarro' | 'comboio' | 'tvde' | 'a-pe' | 'carro';
 
@@ -35,6 +39,7 @@ export type Venue = {
   id: string;
   nome: string;
   cidade: string;
+  pais: string;
   capacidade: number;
   clubeId: string;
   regiao: Regiao;
@@ -49,7 +54,15 @@ export type Venue = {
   transportes: [OpcaoTransporte, OpcaoTransporte, OpcaoTransporte];
 };
 
-export type Competicao = 'liga' | 'liga-2' | 'liga-3' | 'taca-de-portugal' | 'taca-da-liga';
+export type Competicao =
+  | 'liga'
+  | 'liga-2'
+  | 'liga-3'
+  | 'taca-de-portugal'
+  | 'taca-da-liga'
+  | 'champions'
+  | 'liga-europa'
+  | 'conference';
 
 export type CondicaoMeteorologica = 'sol' | 'limpo' | 'nublado' | 'aguaceiros' | 'chuva';
 
@@ -58,6 +71,26 @@ export type Meteorologia = {
   temperatura: number;
   probabilidadeChuva: number;
   ventoKmh: number;
+};
+
+export type OrigemPontoEncontro = 'clube' | 'camara' | 'policia';
+
+/** Ponto de encontro oficial para adeptos visitantes. */
+export type PontoEncontro = {
+  nome: string;
+  morada: string;
+  horario: string;
+  transporte: string;
+  nota: string | null;
+  origem: OrigemPontoEncontro;
+  publicadoPor: string;
+  fonte: {
+    titulo: string;
+    url: string;
+    publicadoEm: string;
+    /** Jogo real para o qual a informação foi publicada. */
+    jogoOriginal: string;
+  };
 };
 
 export type Jogo = {
@@ -70,6 +103,8 @@ export type Jogo = {
   /** Data e hora de início em ISO 8601 (UTC). */
   inicio: string;
   meteorologia: Meteorologia;
+  /** Só nos jogos europeus; `null` quando ninguém indicou um ponto de encontro. */
+  pontoEncontro: PontoEncontro | null;
 };
 
 export type TipoLocal = 'tasca' | 'cervejaria' | 'bar' | 'roulotte' | 'churrasqueira';
@@ -82,6 +117,10 @@ export type Local = {
   distanciaMetros: number;
   /** Tempo a pé até ao estádio, já a contar com subidas e passadeiras. */
   minutosAPe: number;
+  /** Posição aproximada, só para o mapa da demo. */
+  coordenadas: Coordenadas;
+  /** Ponto habitual de adeptos da casa: aparece com outra cor no mapa. */
+  homeFanHeavy: boolean;
   cervejometro: Nota;
   petiscometro: Nota;
   /** Pessoas presentes antes do teu check-in. */
@@ -92,12 +131,34 @@ export type Local = {
   notas: string[];
 };
 
-export type Avaliacao = {
+/** Avaliação de uma visita a um estádio: uma por jogo, várias por estádio. */
+export type AvaliacaoVisita = {
+  id: string;
   jogoId: string;
+  estadioId: string;
   estadio: Nota;
   ambiente: Nota;
   acessos: Nota;
   comentario: string;
+  /** Data da visita (início do jogo) em ISO 8601. */
+  dataVisita: string;
   /** Data da última gravação em ISO 8601. */
-  criadaEm: string;
+  atualizadaEm: string;
+};
+
+export type VisitaLocal = {
+  id: string;
+  localId: string;
+  /** Data do registo em ISO 8601. */
+  data: string;
+  /** Check-in no local conta como verificado; "Já estive aqui" fica por verificar. */
+  verificado: boolean;
+  origem: 'check-in' | 'manual';
+};
+
+export type UtilizadorRanking = {
+  id: string;
+  nome: string;
+  clubeId: string;
+  tascosVerificados: number;
 };

@@ -41,6 +41,17 @@ export const icons = {
   rota: { ios: 'arrow.triangle.turn.up.right.diamond.fill', android: 'directions', web: 'directions' },
   aviao: { ios: 'airplane', android: 'flight', web: 'flight' },
   estrela: { ios: 'star.fill', android: 'star', web: 'star' },
+  pontoEncontro: { ios: 'flag.fill', android: 'flag', web: 'flag' },
+  fonte: { ios: 'doc.text', android: 'description', web: 'description' },
+  ranking: { ios: 'trophy.fill', android: 'emoji_events', web: 'emoji_events' },
+  tasco: { ios: 'mug.fill', android: 'sports_bar', web: 'sports_bar' },
+  porVerificar: { ios: 'hourglass', android: 'hourglass_empty', web: 'hourglass_empty' },
+  localizacao: { ios: 'location.fill', android: 'near_me', web: 'near_me' },
+  casa: { ios: 'house.and.flag.fill', android: 'home_pin', web: 'home_pin' },
+  fechar: { ios: 'xmark', android: 'close', web: 'close' },
+  cidade: { ios: 'map.fill', android: 'map', web: 'map' },
+  som: { ios: 'speaker.wave.2.fill', android: 'volume_up', web: 'volume_up' },
+  notificacoes: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
 } satisfies Record<string, IconName>;
 
 type IconProps = {

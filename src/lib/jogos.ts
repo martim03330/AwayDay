@@ -1,4 +1,4 @@
-import type { Avaliacao, Jogo } from '@/mocks/tipos';
+import type { AvaliacaoVisita, Competicao, Jogo } from '@/mocks/tipos';
 
 const MINUTO_MS = 60 * 1000;
 
@@ -7,7 +7,7 @@ export const DURACAO_JOGO_MINUTOS = 115;
 
 export type EstadoJogo = 'agendado' | 'a-decorrer' | 'terminado';
 
-export type FiltroCompeticao = 'todas' | 'liga' | 'liga-2' | 'liga-3' | 'tacas';
+export type FiltroCompeticao = 'todas' | 'liga' | 'liga-2' | 'liga-3' | 'europa' | 'tacas';
 
 export function fimDoJogo(jogo: Pick<Jogo, 'inicio'>) {
   return new Date(Date.parse(jogo.inicio) + DURACAO_JOGO_MINUTOS * MINUTO_MS);
@@ -19,14 +19,19 @@ export function estadoDoJogo(jogo: Pick<Jogo, 'inicio'>, agora: number): EstadoJ
   return 'terminado';
 }
 
+export function eCompeticaoEuropeia(competicao: Competicao) {
+  return competicao === 'champions' || competicao === 'liga-europa' || competicao === 'conference';
+}
+
 export function correspondeCompeticao(jogo: Pick<Jogo, 'competicao'>, filtro: FiltroCompeticao) {
   if (filtro === 'todas') return true;
+  if (filtro === 'europa') return eCompeticaoEuropeia(jogo.competicao);
   if (filtro === 'tacas') {
     return jogo.competicao === 'taca-de-portugal' || jogo.competicao === 'taca-da-liga';
   }
   return jogo.competicao === filtro;
 }
 
-export function notaMedia(avaliacao: Pick<Avaliacao, 'estadio' | 'ambiente' | 'acessos'>) {
+export function notaMedia(avaliacao: Pick<AvaliacaoVisita, 'estadio' | 'ambiente' | 'acessos'>) {
   return (avaliacao.estadio + avaliacao.ambiente + avaliacao.acessos) / 3;
 }
