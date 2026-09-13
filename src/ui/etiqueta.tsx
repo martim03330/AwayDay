@@ -40,11 +40,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
+    // Nunca passa a largura disponível: textos longos partem linha dentro da etiqueta.
+    flexShrink: 1,
+    maxWidth: '100%',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 14,
   },
   label: {
+    flexShrink: 1,
     fontSize: 13,
     lineHeight: 18,
   },

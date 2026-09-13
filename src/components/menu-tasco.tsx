@@ -8,6 +8,7 @@ import type { Prato } from '@/mocks/tipos';
 import { Badge } from '@/ui/badge';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
+import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { ThemedText } from '@/ui/themed-text';
 
 type MenuTascoProps = {
@@ -28,33 +29,38 @@ export function MenuTasco({ pratos, recomendados, onAlternarRecomendacao }: Menu
           <View
             key={prato.id}
             style={[
-              styles.linha,
+              styles.prato,
               indice > 0 && {
                 borderTopWidth: StyleSheet.hairlineWidth,
                 borderTopColor: theme.border,
                 paddingTop: Spacing.three,
               },
             ]}>
-            <View style={styles.flex}>
-              <View style={styles.nome}>
-                <ThemedText type="smallBold">{prato.nome}</ThemedText>
-                {prato.especialidade ? <Badge label="Especialidade" /> : null}
-              </View>
-              <ThemedText type="small" themeColor="textSecondary">
-                {`${formatarPreco(prato.precoEuros)} · pronto em ${prato.minutosPreparacao} min · ${plural(total, 'recomendação', 'recomendações')}`}
-              </ThemedText>
-            </View>
-            <Chip
-              label={recomendado ? 'Recomendado' : 'Recomendo'}
-              selected={recomendado}
-              onPress={() => onAlternarRecomendacao(prato.id)}
-              emCartao
-              accessibilityLabel={
-                recomendado
-                  ? `Retirar a tua recomendação de ${prato.nome}`
-                  : `Recomendar ${prato.nome}`
-              }
+            {/* O nome usa a largura toda: o botão fica numa linha própria e não o empurra. */}
+            <ThemedText type="smallBold" style={styles.nome}>
+              {prato.nome}
+            </ThemedText>
+            {prato.especialidade ? <Badge label="Especialidade" /> : null}
+            <LinhaDetalhes
+              partes={[
+                formatarPreco(prato.precoEuros),
+                `pronto em ${prato.minutosPreparacao} min`,
+                plural(total, 'recomendação', 'recomendações'),
+              ]}
             />
+            <View style={styles.acao}>
+              <Chip
+                label={recomendado ? 'Recomendado' : 'Recomendo'}
+                selected={recomendado}
+                onPress={() => onAlternarRecomendacao(prato.id)}
+                emCartao
+                accessibilityLabel={
+                  recomendado
+                    ? `Retirar a tua recomendação de ${prato.nome}`
+                    : `Recomendar ${prato.nome}`
+                }
+              />
+            </View>
           </View>
         );
       })}
@@ -69,19 +75,15 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
   },
-  linha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-  },
-  flex: {
-    flex: 1,
-    gap: Spacing.half,
+  prato: {
+    gap: Spacing.one,
   },
   nome: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  acao: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: Spacing.two,
+    marginTop: Spacing.one,
   },
 });

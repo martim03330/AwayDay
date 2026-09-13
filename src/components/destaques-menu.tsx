@@ -8,6 +8,7 @@ import type { Prato } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, IconCircle, icons, type IconName } from '@/ui/icon';
+import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { ThemedText } from '@/ui/themed-text';
 
 type Lembrete = { tipo: 'calor' | 'frio'; texto: string };
@@ -19,7 +20,7 @@ type DestaquesMenuProps = {
   lembrete: Lembrete | null;
 };
 
-type Destaque = PratoComContagem & { rotulo: string; icon: IconName; detalhe: string };
+type Destaque = PratoComContagem & { rotulo: string; icon: IconName; detalhes: string[] };
 
 export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuProps) {
   const theme = useTheme();
@@ -43,19 +44,22 @@ export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuP
       ...maisRecomendado,
       rotulo: 'Mais recomendado',
       icon: icons.estrela,
-      detalhe: plural(maisRecomendado.recomendacoes, 'recomendação', 'recomendações'),
+      detalhes: [plural(maisRecomendado.recomendacoes, 'recomendação', 'recomendações')],
     },
     {
       ...maisBarato,
       rotulo: 'Mais barato',
       icon: icons.preco,
-      detalhe: `pronto em ${maisBarato.prato.minutosPreparacao} min`,
+      detalhes: [`pronto em ${maisBarato.prato.minutosPreparacao} min`],
     },
     {
       ...maisRapido,
       rotulo: 'Mais rápido',
       icon: icons.horario,
-      detalhe: `pronto em ${maisRapido.prato.minutosPreparacao} min · para quem tem o jogo já a seguir`,
+      detalhes: [
+        `pronto em ${maisRapido.prato.minutosPreparacao} min`,
+        'para quem tem o jogo já a seguir',
+      ],
     },
   ];
 
@@ -65,7 +69,7 @@ export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuP
         <Card
           key={item.rotulo}
           style={styles.card}
-          accessibilityLabel={`${item.rotulo}: ${item.prato.nome}, ${formatarPreco(item.prato.precoEuros)}, ${item.detalhe}`}>
+          accessibilityLabel={`${item.rotulo}: ${item.prato.nome}, ${formatarPreco(item.prato.precoEuros)}, ${item.detalhes.join(', ')}`}>
           <View style={styles.linha}>
             <IconCircle name={item.icon} />
             <View style={styles.flex}>
@@ -75,9 +79,7 @@ export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuP
               <ThemedText type="smallBold" style={styles.nome}>
                 {item.prato.nome}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {`${formatarPreco(item.prato.precoEuros)} · ${item.detalhe}`}
-              </ThemedText>
+              <LinhaDetalhes partes={[formatarPreco(item.prato.precoEuros), ...item.detalhes]} />
             </View>
           </View>
 
