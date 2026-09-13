@@ -1,0 +1,291 @@
+import { dataEmLisboa } from '@/lib/datas';
+import type { Competicao, Jogo } from '@/mocks/tipos';
+
+export const nomesCompeticao: Record<Competicao, string> = {
+  liga: 'Liga Portugal Betclic',
+  'liga-2': 'Liga Portugal 2',
+  'liga-3': 'Liga 3',
+  'taca-de-portugal': 'Taça de Portugal',
+  'taca-da-liga': 'Taça da Liga',
+};
+
+type Quando =
+  /** Dias a partir de hoje e hora de início em Lisboa (HH:MM). */
+  | { dias: number; hora: string }
+  /** Começou há X minutos, relativo ao arranque da app (para haver sempre um jogo a terminar). */
+  | { minutosAtras: number };
+
+type JogoMock = Omit<Jogo, 'inicio'> & Quando;
+
+const jogosMock: JogoMock[] = [
+  // Terminados
+  {
+    id: 'benfica-arouca',
+    competicao: 'liga',
+    fase: 'Jornada 4',
+    casaId: 'benfica',
+    foraId: 'arouca',
+    estadioId: 'luz',
+    dias: -2,
+    hora: '20:30',
+    meteorologia: { condicao: 'limpo', temperatura: 22, probabilidadeChuva: 5, ventoKmh: 10 },
+  },
+  {
+    id: 'porto-gil-vicente',
+    competicao: 'liga',
+    fase: 'Jornada 4',
+    casaId: 'porto',
+    foraId: 'gil-vicente',
+    estadioId: 'dragao',
+    dias: -1,
+    hora: '18:00',
+    meteorologia: { condicao: 'aguaceiros', temperatura: 19, probabilidadeChuva: 65, ventoKmh: 20 },
+  },
+  {
+    id: 'academica-varzim',
+    competicao: 'liga-3',
+    fase: 'Jornada 3',
+    casaId: 'academica',
+    foraId: 'varzim',
+    estadioId: 'cidade-de-coimbra',
+    dias: -1,
+    hora: '16:00',
+    meteorologia: { condicao: 'sol', temperatura: 26, probabilidadeChuva: 0, ventoKmh: 8 },
+  },
+  // A decorrer: termina 5 min depois de abrires a app
+  {
+    id: 'belenenses-amora',
+    competicao: 'liga-3',
+    fase: 'Jornada 4',
+    casaId: 'belenenses',
+    foraId: 'amora',
+    estadioId: 'restelo',
+    minutosAtras: 110,
+    meteorologia: { condicao: 'nublado', temperatura: 21, probabilidadeChuva: 25, ventoKmh: 14 },
+  },
+  // Próximos
+  {
+    id: 'estoril-casa-pia',
+    competicao: 'liga',
+    fase: 'Jornada 5',
+    casaId: 'estoril',
+    foraId: 'casa-pia',
+    estadioId: 'coimbra-da-mota',
+    dias: 0,
+    hora: '18:00',
+    meteorologia: { condicao: 'sol', temperatura: 24, probabilidadeChuva: 5, ventoKmh: 14 },
+  },
+  {
+    id: 'benfica-moreirense',
+    competicao: 'liga',
+    fase: 'Jornada 5',
+    casaId: 'benfica',
+    foraId: 'moreirense',
+    estadioId: 'luz',
+    dias: 0,
+    hora: '20:30',
+    meteorologia: { condicao: 'limpo', temperatura: 21, probabilidadeChuva: 10, ventoKmh: 12 },
+  },
+  {
+    id: 'maritimo-chaves',
+    competicao: 'liga-2',
+    fase: 'Jornada 5',
+    casaId: 'maritimo',
+    foraId: 'chaves',
+    estadioId: 'estadio-maritimo',
+    dias: 1,
+    hora: '14:00',
+    meteorologia: { condicao: 'sol', temperatura: 25, probabilidadeChuva: 5, ventoKmh: 12 },
+  },
+  {
+    id: 'arouca-gil-vicente',
+    competicao: 'liga',
+    fase: 'Jornada 5',
+    casaId: 'arouca',
+    foraId: 'gil-vicente',
+    estadioId: 'municipal-arouca',
+    dias: 1,
+    hora: '15:30',
+    meteorologia: { condicao: 'nublado', temperatura: 19, probabilidadeChuva: 30, ventoKmh: 10 },
+  },
+  {
+    id: 'vitoria-rio-ave',
+    competicao: 'liga',
+    fase: 'Jornada 5',
+    casaId: 'vitoria',
+    foraId: 'rio-ave',
+    estadioId: 'afonso-henriques',
+    dias: 1,
+    hora: '18:00',
+    meteorologia: { condicao: 'aguaceiros', temperatura: 18, probabilidadeChuva: 60, ventoKmh: 18 },
+  },
+  {
+    id: 'porto-braga',
+    competicao: 'liga',
+    fase: 'Jornada 5',
+    casaId: 'porto',
+    foraId: 'braga',
+    estadioId: 'dragao',
+    dias: 1,
+    hora: '20:30',
+    meteorologia: { condicao: 'chuva', temperatura: 17, probabilidadeChuva: 85, ventoKmh: 25 },
+  },
+  {
+    id: 'leixoes-uniao-leiria',
+    competicao: 'liga-2',
+    fase: 'Jornada 5',
+    casaId: 'leixoes',
+    foraId: 'uniao-leiria',
+    estadioId: 'estadio-do-mar',
+    dias: 2,
+    hora: '19:00',
+    meteorologia: { condicao: 'chuva', temperatura: 16, probabilidadeChuva: 80, ventoKmh: 28 },
+  },
+  {
+    id: 'sporting-famalicao',
+    competicao: 'liga',
+    fase: 'Jornada 5',
+    casaId: 'sporting',
+    foraId: 'famalicao',
+    estadioId: 'alvalade',
+    dias: 2,
+    hora: '20:15',
+    meteorologia: { condicao: 'limpo', temperatura: 22, probabilidadeChuva: 0, ventoKmh: 9 },
+  },
+  {
+    id: 'academico-viseu-feirense',
+    competicao: 'liga-2',
+    fase: 'Jornada 5',
+    casaId: 'academico-viseu',
+    foraId: 'feirense',
+    estadioId: 'fontelo',
+    dias: 3,
+    hora: '15:30',
+    meteorologia: { condicao: 'aguaceiros', temperatura: 15, probabilidadeChuva: 50, ventoKmh: 15 },
+  },
+  {
+    id: 'tondela-nacional',
+    competicao: 'taca-da-liga',
+    fase: '1.ª fase',
+    casaId: 'tondela',
+    foraId: 'nacional',
+    estadioId: 'joao-cardoso',
+    dias: 3,
+    hora: '19:00',
+    meteorologia: { condicao: 'nublado', temperatura: 16, probabilidadeChuva: 20, ventoKmh: 8 },
+  },
+  {
+    id: 'avs-estrela',
+    competicao: 'taca-de-portugal',
+    fase: '2.ª eliminatória',
+    casaId: 'avs',
+    foraId: 'estrela',
+    estadioId: 'cd-aves',
+    dias: 3,
+    hora: '20:45',
+    meteorologia: { condicao: 'aguaceiros', temperatura: 17, probabilidadeChuva: 55, ventoKmh: 16 },
+  },
+  {
+    id: 'sp-covilha-caldas',
+    competicao: 'liga-3',
+    fase: 'Jornada 5',
+    casaId: 'sp-covilha',
+    foraId: 'caldas',
+    estadioId: 'santos-pinto',
+    dias: 4,
+    hora: '16:00',
+    meteorologia: { condicao: 'chuva', temperatura: 12, probabilidadeChuva: 90, ventoKmh: 22 },
+  },
+  {
+    id: 'braga-benfica',
+    competicao: 'liga',
+    fase: 'Jornada 6',
+    casaId: 'braga',
+    foraId: 'benfica',
+    estadioId: 'municipal-braga',
+    dias: 5,
+    hora: '20:30',
+    meteorologia: { condicao: 'nublado', temperatura: 18, probabilidadeChuva: 35, ventoKmh: 15 },
+  },
+  {
+    id: 'amora-academica',
+    competicao: 'liga-3',
+    fase: 'Jornada 5',
+    casaId: 'amora',
+    foraId: 'academica',
+    estadioId: 'medideira',
+    dias: 5,
+    hora: '17:00',
+    meteorologia: { condicao: 'nublado', temperatura: 20, probabilidadeChuva: 15, ventoKmh: 11 },
+  },
+  {
+    id: 'moreirense-vitoria',
+    competicao: 'liga',
+    fase: 'Jornada 6',
+    casaId: 'moreirense',
+    foraId: 'vitoria',
+    estadioId: 'comendador-almeida-freitas',
+    dias: 6,
+    hora: '18:00',
+    meteorologia: { condicao: 'sol', temperatura: 23, probabilidadeChuva: 5, ventoKmh: 11 },
+  },
+  {
+    id: 'varzim-belenenses',
+    competicao: 'liga-3',
+    fase: 'Jornada 5',
+    casaId: 'varzim',
+    foraId: 'belenenses',
+    estadioId: 'estadio-varzim',
+    dias: 6,
+    hora: '16:00',
+    meteorologia: { condicao: 'aguaceiros', temperatura: 17, probabilidadeChuva: 45, ventoKmh: 24 },
+  },
+  {
+    id: 'casa-pia-sporting',
+    competicao: 'liga',
+    fase: 'Jornada 6',
+    casaId: 'casa-pia',
+    foraId: 'sporting',
+    estadioId: 'rio-maior',
+    dias: 6,
+    hora: '20:30',
+    meteorologia: { condicao: 'limpo', temperatura: 20, probabilidadeChuva: 0, ventoKmh: 13 },
+  },
+  {
+    id: 'famalicao-porto',
+    competicao: 'liga',
+    fase: 'Jornada 6',
+    casaId: 'famalicao',
+    foraId: 'porto',
+    estadioId: '22-de-junho',
+    dias: 7,
+    hora: '20:15',
+    meteorologia: { condicao: 'chuva', temperatura: 15, probabilidadeChuva: 80, ventoKmh: 22 },
+  },
+];
+
+function calcularInicio(mock: JogoMock) {
+  return 'minutosAtras' in mock
+    ? new Date(Date.now() - mock.minutosAtras * 60 * 1000)
+    : dataEmLisboa(mock.dias, mock.hora);
+}
+
+/**
+ * Jogos ordenados por data de início. Alverca e Santa Clara não têm jogos, para testar o estado vazio.
+ */
+export const jogos: Jogo[] = jogosMock
+  .map((mock) => ({
+    id: mock.id,
+    competicao: mock.competicao,
+    fase: mock.fase,
+    casaId: mock.casaId,
+    foraId: mock.foraId,
+    estadioId: mock.estadioId,
+    meteorologia: mock.meteorologia,
+    inicio: calcularInicio(mock).toISOString(),
+  }))
+  .sort((a, b) => a.inicio.localeCompare(b.inicio));
+
+export function obterJogo(id: string) {
+  return jogos.find((jogo) => jogo.id === id);
+}
