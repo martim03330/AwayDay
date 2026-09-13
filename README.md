@@ -3,8 +3,9 @@
 App móvel para adeptos em dia de jogo: próximos jogos, como chegar ao estádio, tascos à volta,
 check-ins e um passaporte de estádios.
 
-> **Estado: demo navegável, só frontend.** Não há backend, autenticação nem pedidos de rede.
-> Todos os dados vêm de `src/mocks/` e o estado vive em memória: ao recarregar a app, tudo volta ao início.
+> **Estado: demo navegável.** Jogos, estádios, clubes e competições vêm do Supabase (só leitura, sem autenticação),
+> com cache local para a app abrir já com dados e funcionar sem rede. Tudo o resto continua em `src/mocks/` e o
+> estado vive em memória: ao recarregar a app, volta ao início.
 
 ## Funcionalidades
 
@@ -45,6 +46,7 @@ check-ins e um passaporte de estádios.
 - [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/) com React Native 0.86 e React 19.2
 - TypeScript em modo strict, sem `any`
 - Expo Router com tabs nativas
+- Supabase (Postgres + PostGIS) com TanStack Query e cache persistida em AsyncStorage
 - `react-native-maps`, `react-native-reanimated`, `expo-audio` (sons e barulhómetro) e `expo-image-picker` (fotos das missões)
 
 ## Requisitos
@@ -63,6 +65,29 @@ npx expo start
 ```
 
 Lê o QR code com a câmara (iOS) ou com o Expo Go (Android). O telemóvel tem de estar na mesma rede que o computador.
+
+## Supabase
+
+A app lê jogos, estádios, clubes e competições de um projeto Supabase. Sem as variáveis de ambiente, usa o catálogo
+embutido na app.
+
+1. Copia `.env.example` para `.env.local` e preenche `EXPO_PUBLIC_SUPABASE_URL` e
+   `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Só a chave publicável: nunca a `service_role` nem a password da base de dados.
+2. Com a [CLI do Supabase](https://supabase.com/docs/guides/local-development/cli/getting-started):
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push --include-seed        # aplica as migrações e o seed
+supabase gen types typescript --linked > src/lib/database.types.ts
+```
+
+- As tabelas `competition`, `venue`, `club` e `fixture` têm RLS: leitura pública e nenhuma escrita a partir da app.
+- O seed (`supabase/seed/`) é gerado a partir de `src/features/fixtures/snapshot.ts` com `npm run db:seed` e faz
+  upsert, por isso pode correr outra vez.
+- Para mudar o esquema, cria uma migração nova (`supabase migration new <nome>`), nunca edites uma já aplicada, e
+  volta a gerar os tipos.
+- As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).
 
 ## Modo demo
 
@@ -85,6 +110,7 @@ A hora da app é injetável, para testar todas as fases do relógio do dia de jo
 | `npm run android` | Arranca e abre o emulador Android |
 | `npm run web` | Arranca a versão web (sem mapa) |
 | `npm run lint` | Corre o ESLint |
+| `npm run db:seed` | Gera o seed SQL a partir do catálogo embutido |
 | `npx tsc --noEmit` | Verifica os tipos |
 
 ## Estrutura
@@ -94,17 +120,23 @@ src/
   app/          Ecrãs e navegação (Expo Router): jogos/, locais/, perfil/
   components/   Componentes da app (cartões, mapa, passaporte, formulários)
   ui/           Componentes base (texto, cartões, botões, chips, estados vazios)
-  mocks/        Dados tipados: clubes, estádios, jogos, locais, avaliações, pontos de encontro
-  lib/          Funções puras: datas, formatos, distâncias, meteorologia, filtros
+  features/     Feature slices; fixtures/ lê jogos, estádios e clubes do Supabase (api, hooks, store, snapshot)
+  mocks/        Dados tipados que ainda não estão na base de dados: locais, avaliações, pontos de encontro, extras
+  lib/          Funções puras (datas, formatos, distâncias, meteorologia), cliente Supabase, cache e tipos gerados
   state/        Estado em memória (React Context) e sons
   hooks/        Hooks partilhados
 assets/
   sounds/       Sons curtos de check-in e carimbo (placeholders)
+supabase/
+  migrations/   SQL versionado (esquema e RLS)
+  seed/         Dados iniciais gerados (npm run db:seed)
+scripts/        Gerador do seed
+docs/           DECISOES.md: registo de decisões estruturais
 ```
 
 ## Sobre os dados
 
-- **Clubes e estádios** são reais; capacidades e coordenadas são aproximadas. A Liga 2 e a Liga 3 têm uma seleção ilustrativa de clubes.
+- **Clubes e estádios** são reais; capacidades e coordenadas são aproximadas (a confirmar, ver `docs/DECISOES.md`). A Liga 2 e a Liga 3 têm uma seleção ilustrativa de clubes. Vêm do Supabase, e as horas dos jogos são fixas (geradas a 13/09/2026).
 - **Tascos e bares são fictícios**, para não atribuir notas nem contadores inventados a negócios reais. Os pratos, as recomendações e os adeptos presentes em cada tasco também são mock.
 - **Casas de banho** são mock: posições, preços e horários servem só a demo.
 - **Missões** nunca pedem para trocar objetos pessoais nem contacto físico. Na foto com um adepto rival, a app lembra que é preciso pedir autorização antes de abrir a câmara. As duas recordações que a demo já traz são ilustrações, sem ficheiro de imagem.
@@ -126,3 +158,4 @@ assets/
 - O microfone do telemóvel não dá decibéis calibrados, por isso o barulhómetro usa uma escala relativa. As regras contra batota (micro saturado, som aos solavancos, check-in obrigatório, espera entre medições) são heurísticas a afinar com medições reais em estádio. No futuro, um servidor pode comparar cada medição com as de outros adeptos no mesmo estádio e ao mesmo minuto.
 - A presença no estádio conta pelo check-in num tasco perto: a demo não usa localização real.
 - As fotos e as medições vivem em memória, como o resto do estado.
+- Os dados que chegam do Supabase em fundo ficam guardados na cache e só aparecem no arranque seguinte da app.

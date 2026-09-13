@@ -2,6 +2,9 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
 import { LigacaoDemo } from '@/components/ligacao-demo';
+import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalogSync';
+import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatalog';
+import { QueryProvider } from '@/lib/query-client';
 import { AppStateProvider, useAppState } from '@/state/app-state';
 import { RelogioProvider } from '@/state/relogio';
 import { SonsProvider } from '@/state/sons';
@@ -26,15 +29,18 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <RelogioProvider>
-        <AppStateProvider>
-          <SonsProvider>
-            <LigacaoDemo />
-            <NavegacaoRaiz />
-          </SonsProvider>
-        </AppStateProvider>
-      </RelogioProvider>
-    </ThemeProvider>
+    <QueryProvider onRestored={restoreFixtureCatalog}>
+      <FixtureCatalogSync />
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <RelogioProvider>
+          <AppStateProvider>
+            <SonsProvider>
+              <LigacaoDemo />
+              <NavegacaoRaiz />
+            </SonsProvider>
+          </AppStateProvider>
+        </RelogioProvider>
+      </ThemeProvider>
+    </QueryProvider>
   );
 }
