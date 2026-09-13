@@ -2,6 +2,7 @@ import type { Missao } from '@/mocks/tipos';
 
 /**
  * Missões do passaporte. Regra: nenhuma envolve trocar objetos pessoais nem contacto físico.
+ * Todas fecham com uma foto tirada na hora, que fica no álbum de recordações.
  */
 export const missoes: Missao[] = [
   {
@@ -11,6 +12,8 @@ export const missoes: Missao[] = [
     distintivo: { emoji: '🏟️', nome: 'Turista de bancada' },
     meta: 3,
     progresso: 'estadios-visitados',
+    dicaFoto: 'Um dos estádios, por fora ou da bancada.',
+    fotoComOutraPessoa: false,
   },
   {
     id: 'cinco-tascos',
@@ -19,6 +22,8 @@ export const missoes: Missao[] = [
     distintivo: { emoji: '🍺', nome: 'Crítico de tasco' },
     meta: 5,
     progresso: 'tascos-avaliados',
+    dicaFoto: 'A mesa do quinto tasco, com o petisco à vista.',
+    fotoComOutraPessoa: false,
   },
   {
     id: 'especialidade-da-casa',
@@ -27,6 +32,8 @@ export const missoes: Missao[] = [
     distintivo: { emoji: '🍢', nome: 'Paladar da casa' },
     meta: 1,
     progresso: 'especialidade-recomendada',
+    dicaFoto: 'A especialidade, antes da primeira dentada.',
+    fotoComOutraPessoa: false,
   },
   {
     id: 'jogo-a-chuva',
@@ -35,6 +42,8 @@ export const missoes: Missao[] = [
     distintivo: { emoji: '☔', nome: 'Impermeável de ouro' },
     meta: 1,
     progresso: 'jogo-a-chuva',
+    dicaFoto: 'A bancada à chuva. O guarda-chuva pode aparecer.',
+    fotoComOutraPessoa: false,
   },
   {
     id: 'cerveja-com-rival',
@@ -43,14 +52,21 @@ export const missoes: Missao[] = [
     distintivo: { emoji: '🍻', nome: 'Paz à mesa' },
     meta: 1,
     progresso: 'check-in-com-rivais',
+    dicaFoto: 'O balcão ou a mesa, cada um com o seu copo. Se aparecer alguém, pede primeiro.',
+    fotoComOutraPessoa: false,
   },
   {
     id: 'foto-com-rival',
     titulo: 'Tira uma foto com um adepto rival',
-    descricao:
-      'Pede primeiro, cada um com a sua camisola e sem contacto. Confirmas tu: não há verificação.',
+    descricao: 'Pede primeiro. Cada um com a sua camisola, lado a lado e sem contacto. A foto é a prova.',
     distintivo: { emoji: '📸', nome: 'Selfie diplomática' },
     meta: 1,
-    progresso: 'confirmacao-manual',
+    progresso: 'so-foto',
+    dicaFoto: 'Tu e o adepto rival, cada um com a sua camisola, sem contacto.',
+    fotoComOutraPessoa: true,
   },
 ];
+
+export function obterMissao(id: string) {
+  return missoes.find((missao) => missao.id === id);
+}

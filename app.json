@@ -36,8 +36,16 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false,
-          "recordAudioAndroid": false
+          "microphonePermission": "O AwayDay usa o microfone durante 10 segundos para medir o barulho da bancada. Nada é gravado.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "O AwayDay usa a câmara para tirares a foto que prova cada missão.",
+          "photosPermission": false,
+          "microphonePermission": "O AwayDay usa o microfone durante 10 segundos para medir o barulho da bancada. Nada é gravado."
         }
       ]
     ],

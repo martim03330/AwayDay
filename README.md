@@ -25,6 +25,7 @@ check-ins e um passaporte de estádios.
 - Meteorologia simulada, distância e tempo de carro a partir de uma localização simulada, e três opções de transporte.
 - Ponto de encontro oficial para visitantes nos jogos europeus.
 - Avaliação da visita (estádio, ambiente, acessos) a partir do fim do jogo.
+- Barulhómetro no dia do jogo: com o jogo a decorrer e check-in feito perto do estádio, ouve a bancada durante 10 segundos e dá um nível de 0 a 100 numa escala genérica (de "Biblioteca" a "Estádio a ferver"), com um ranking de adeptos. Uma medição a cada 5 minutos.
 
 **Locais**
 - Tascos a menos de 20 minutos a pé do estádio, ordenados por distância.
@@ -34,7 +35,9 @@ check-ins e um passaporte de estádios.
 
 **Perfil**
 - Clube que apoias e clube da terra (a sugestão pela localização exige sempre confirmação).
-- Passaporte de estádios com missões e distintivos, histórico de avaliações editáveis e de tascos verificados, e ranking.
+- Passaporte de estádios com missões e distintivos. Cada missão fecha com uma foto tirada na hora, só com a câmara; cumprida mas sem foto, fica "por comprovar".
+- Álbum de recordações com as fotos das missões: distintivo, estádio, data e se a foto está verificada (tirada em dia de jogo, com check-in perto do estádio).
+- Histórico de avaliações editáveis e de tascos verificados, e ranking.
 - Definições de sons (desligados por omissão) e de notificações (só interface, nada é enviado).
 
 ## Stack
@@ -42,7 +45,7 @@ check-ins e um passaporte de estádios.
 - [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/) com React Native 0.86 e React 19.2
 - TypeScript em modo strict, sem `any`
 - Expo Router com tabs nativas
-- `react-native-maps`, `react-native-reanimated` e `expo-audio`
+- `react-native-maps`, `react-native-reanimated`, `expo-audio` (sons e barulhómetro) e `expo-image-picker` (fotos das missões)
 
 ## Requisitos
 
@@ -71,6 +74,7 @@ A hora da app é injetável, para testar todas as fases do relógio do dia de jo
   ```
   exp://<ip-do-computador>:8081/--/jogos/benfica-moreirense?demoFase=depois
   ```
+- **Barulhómetro:** simula a fase `a-decorrer` e faz check-in num tasco perto do estádio desse jogo para desbloquear a medição.
 
 ## Scripts
 
@@ -103,7 +107,8 @@ assets/
 - **Clubes e estádios** são reais; capacidades e coordenadas são aproximadas. A Liga 2 e a Liga 3 têm uma seleção ilustrativa de clubes.
 - **Tascos e bares são fictícios**, para não atribuir notas nem contadores inventados a negócios reais. Os pratos, as recomendações e os adeptos presentes em cada tasco também são mock.
 - **Casas de banho** são mock: posições, preços e horários servem só a demo.
-- **Missões** nunca pedem para trocar objetos pessoais nem contacto físico. A missão da foto com um adepto rival é confirmada pelo próprio utilizador, sem verificação.
+- **Missões** nunca pedem para trocar objetos pessoais nem contacto físico. Na foto com um adepto rival, a app lembra que é preciso pedir autorização antes de abrir a câmara. As duas recordações que a demo já traz são ilustrações, sem ficheiro de imagem.
+- **Barulhómetro:** o som do microfone é analisado em memória e deitado fora; não se cria ficheiro de áudio e só fica o número. Os outros adeptos do ranking são fictícios.
 - **Meteorologia, distâncias, tempos e preços** são simulados.
 - **Pontos de encontro dos jogos europeus** usam informação real, publicada pelos clubes para jogos já disputados, e indicam sempre a fonte e o jogo original:
   - [FC Porto em Roma](https://www.fcporto.pt/pt/noticias/20250219-pt-informacoes-aos-adeptos-que-vao-a-roma-apoiar-o-fc-porto) (Liga Europa, fev. 2025)
@@ -117,3 +122,7 @@ assets/
 - Uma build de produção para Android vai precisar de uma chave da Google Maps. No Expo Go não é preciso.
 - Na web, o mapa é substituído por um aviso.
 - Os sons são placeholders e as notificações são só interface.
+- O simulador iOS não tem câmara: aí as missões podem fechar com uma foto de exemplo, que nunca fica verificada.
+- O microfone do telemóvel não dá decibéis calibrados, por isso o barulhómetro usa uma escala relativa. As regras contra batota (micro saturado, som aos solavancos, check-in obrigatório, espera entre medições) são heurísticas a afinar com medições reais em estádio. No futuro, um servidor pode comparar cada medição com as de outros adeptos no mesmo estádio e ao mesmo minuto.
+- A presença no estádio conta pelo check-in num tasco perto: a demo não usa localização real.
+- As fotos e as medições vivem em memória, como o resto do estado.

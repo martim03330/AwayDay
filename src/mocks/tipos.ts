@@ -164,9 +164,11 @@ export type ProgressoMissao =
   | 'especialidade-recomendada'
   | 'jogo-a-chuva'
   | 'check-in-com-rivais'
-  | 'confirmacao-manual';
+  /** A própria foto é a missão (ex.: foto com um adepto rival). */
+  | 'so-foto';
 
-export type EstadoMissao = 'por-fazer' | 'em-curso' | 'concluida';
+/** `por-comprovar`: o objetivo está cumprido, mas falta a foto que o prova. */
+export type EstadoMissao = 'por-fazer' | 'em-curso' | 'por-comprovar' | 'concluida';
 
 export type Missao = {
   id: string;
@@ -175,6 +177,45 @@ export type Missao = {
   distintivo: { emoji: string; nome: string };
   meta: number;
   progresso: ProgressoMissao;
+  /** O que a foto de prova deve mostrar. */
+  dicaFoto: string;
+  /** Aparece outra pessoa na foto: pede-se autorização antes de abrir a câmara. */
+  fotoComOutraPessoa: boolean;
+};
+
+/** Foto que prova uma missão; fica no álbum de recordações. */
+export type FotoMissao = {
+  id: string;
+  missaoId: string;
+  /** Ficheiro local tirado com a câmara; `null` nas recordações de exemplo (a demo não traz ficheiros). */
+  uri: string | null;
+  /** Hora da app quando a foto foi tirada, em ISO 8601. */
+  tiradaEm: string;
+  jogoId: string | null;
+  estadioId: string | null;
+  /** Tirada em dia de jogo, com check-in feito nesse dia perto do estádio. */
+  verificada: boolean;
+  /** Foto de exemplo usada num aparelho sem câmara: nunca conta como verificada. */
+  exemplo: boolean;
+};
+
+/** Medição válida do barulhómetro. O som nunca é guardado, só o nível. */
+export type MedicaoBarulho = {
+  id: string;
+  jogoId: string;
+  estadioId: string;
+  /** Hora da app, em ISO 8601. */
+  medidaEm: string;
+  /** Escala relativa de 0 a 100 (não são decibéis). */
+  nivel: number;
+};
+
+/** Melhor medição de outro adepto no mesmo jogo (fictícia na demo). */
+export type MedicaoAdepto = {
+  id: string;
+  nome: string;
+  lado: 'casa' | 'fora';
+  nivel: number;
 };
 
 export type Local = {

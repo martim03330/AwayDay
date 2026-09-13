@@ -4,14 +4,23 @@
 
 import { createContext, use, useState, type ReactNode } from 'react';
 
+import { fotosIniciais } from '@/mocks/album';
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
 import {
   preferenciasIniciais,
   TIPOS_NOTIFICACAO,
   type TipoNotificacao,
 } from '@/mocks/notificacoes';
-import type { AvaliacaoVisita, Local, Nota, VisitaLocal } from '@/mocks/tipos';
+import type {
+  AvaliacaoVisita,
+  FotoMissao,
+  Local,
+  MedicaoBarulho,
+  Nota,
+  VisitaLocal,
+} from '@/mocks/tipos';
 import { visitasIniciais } from '@/mocks/visitas';
+import { useRelogio } from '@/state/relogio';
 
 /** Estádios já visitados antes de qualquer avaliação. */
 const ESTADIOS_VISITADOS_BASE = ['luz', 'alvalade', 'dragao', 'municipal-braga'];
@@ -65,9 +74,14 @@ type AppState = {
   /** A tua nota a cada tasco. */
   notasTascos: Readonly<Partial<Record<string, Nota>>>;
   darNotaTasco: (localId: string, nota: Nota) => void;
-  /** Missões sem verificação possível, confirmadas pelo próprio utilizador. */
-  missoesConfirmadas: ReadonlySet<string>;
-  alternarMissaoConfirmada: (missaoId: string) => void;
+  /** Fotos de prova das missões: formam o álbum de recordações (uma por missão). */
+  fotosMissoes: readonly FotoMissao[];
+  /** Guarda a foto de prova; substitui a anterior da mesma missão. */
+  adicionarFoto: (foto: Omit<FotoMissao, 'id'>) => void;
+  apagarFoto: (fotoId: string) => void;
+  /** Só medições válidas do barulhómetro; o som nunca é guardado. */
+  medicoesBarulho: readonly MedicaoBarulho[];
+  registarMedicao: (medicao: Omit<MedicaoBarulho, 'id'>) => void;
   /** Desligados por omissão. */
   sonsLigados: boolean;
   alternarSons: () => void;
@@ -88,6 +102,7 @@ function alternarEmConjunto(conjunto: ReadonlySet<string>, id: string): Readonly
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const { desvioMs } = useRelogio();
   const [onboardingConcluido, setOnboardingConcluido] = useState(false);
   const [introducaoVista, setIntroducaoVista] = useState(false);
   const [permissoes, setPermissoes] = useState<Permissoes>({
@@ -102,9 +117,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [pratosRecomendados, setPratosRecomendados] = useState<ReadonlySet<string>>(new Set());
   const [notasTascos, setNotasTascos] =
     useState<Readonly<Partial<Record<string, Nota>>>>(NOTAS_TASCOS_INICIAIS);
-  const [missoesConfirmadas, setMissoesConfirmadas] = useState<ReadonlySet<string>>(new Set());
+  const [fotosMissoes, setFotosMissoes] = useState<readonly FotoMissao[]>(fotosIniciais);
+  const [medicoesBarulho, setMedicoesBarulho] = useState<readonly MedicaoBarulho[]>([]);
   const [sonsLigados, setSonsLigados] = useState(false);
   const [notificacoes, setNotificacoes] = useState<PreferenciasNotificacoes>(preferenciasIniciais);
+
+  /** Hora da app (a simulada, no modo demo), para os registos baterem certo com o relógio do dia de jogo. */
+  function agoraDaApp() {
+    return new Date(Date.now() + desvioMs).toISOString();
+  }
 
   function alternarCheckIn(localId: string) {
     const idVisita = `check-in-${localId}`;
@@ -117,7 +138,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     setCheckIns((atuais) => alternarEmConjunto(atuais, localId));
     setVisitasLocais((atuais) => [
-      { id: idVisita, localId, data: new Date().toISOString(), verificado: true, origem: 'check-in' },
+      { id: idVisita, localId, data: agoraDaApp(), verificado: true, origem: 'check-in' },
       ...atuais,
     ]);
   }
@@ -129,7 +150,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         {
           id: `manual-${localId}`,
           localId,
-          data: new Date().toISOString(),
+          data: agoraDaApp(),
           verificado: false,
           origem: 'manual',
         },
@@ -146,6 +167,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ? atuais.map((avaliacao) => (avaliacao.id === id ? registo : avaliacao))
         : [registo, ...atuais]
     );
+  }
+
+  function adicionarFoto(foto: Omit<FotoMissao, 'id'>) {
+    const registo: FotoMissao = { ...foto, id: `foto-${foto.missaoId}-${Date.now()}` };
+    setFotosMissoes((atuais) => [
+      registo,
+      ...atuais.filter((atual) => atual.missaoId !== foto.missaoId),
+    ]);
+  }
+
+  function registarMedicao(medicao: Omit<MedicaoBarulho, 'id'>) {
+    const registo: MedicaoBarulho = { ...medicao, id: `medicao-${medicao.jogoId}-${Date.now()}` };
+    setMedicoesBarulho((atuais) => [registo, ...atuais]);
   }
 
   function concluirOnboarding(escolhas: Permissoes) {
@@ -191,9 +225,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setPratosRecomendados((atuais) => alternarEmConjunto(atuais, pratoId)),
     notasTascos,
     darNotaTasco: (localId, nota) => setNotasTascos((atuais) => ({ ...atuais, [localId]: nota })),
-    missoesConfirmadas,
-    alternarMissaoConfirmada: (missaoId) =>
-      setMissoesConfirmadas((atuais) => alternarEmConjunto(atuais, missaoId)),
+    fotosMissoes,
+    adicionarFoto,
+    apagarFoto: (fotoId) => setFotosMissoes((atuais) => atuais.filter((foto) => foto.id !== fotoId)),
+    medicoesBarulho,
+    registarMedicao,
     sonsLigados,
     alternarSons: () => setSonsLigados((ligados) => !ligados),
     notificacoes,

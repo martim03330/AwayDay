@@ -6,6 +6,18 @@ export default function PerfilLayout() {
       <Stack.Screen name="index">
         <Stack.Screen.Title large>Perfil</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="album">
+        <Stack.Screen.Title>Álbum de recordações</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen
+        name="foto"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.92],
+          sheetGrabberVisible: true,
+          headerShown: false,
+        }}
+      />
       <Stack.Screen name="notificacoes">
         <Stack.Screen.Title>Notificações</Stack.Screen.Title>
       </Stack.Screen>

@@ -31,6 +31,13 @@ const formatoDia = new Intl.DateTimeFormat(IDIOMA, {
   month: 'long',
 });
 
+const formatoData = new Intl.DateTimeFormat(IDIOMA, {
+  timeZone: FUSO,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
 function partesEmLisboa(data: Date) {
   const partes = formatoPartes.formatToParts(data);
   const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
@@ -76,6 +83,11 @@ export function minutosDoDiaEmLisboa(data: Date) {
 export function chaveDoDia(data: Date) {
   const { ano, mes, dia } = partesEmLisboa(data);
   return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
+/** "12/09/2026" */
+export function formatarData(data: Date) {
+  return formatoData.format(data);
 }
 
 /** "20:30" */

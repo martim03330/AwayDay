@@ -16,7 +16,8 @@ export type DadosMissoes = {
   pratosRecomendados: ReadonlySet<string>;
   avaliacoes: readonly AvaliacaoVisita[];
   visitasLocais: readonly VisitaLocal[];
-  missoesConfirmadas: ReadonlySet<string>;
+  /** Missões que já têm foto de prova no álbum. */
+  missoesComFoto: ReadonlySet<string>;
   rivais: readonly string[];
   obterJogo: (id: string) => Jogo | undefined;
   obterLocal: (id: string) => Local | undefined;
@@ -44,14 +45,26 @@ function valorDoProgresso(tipo: ProgressoMissao, missao: Missao, dados: DadosMis
           (dados.obterLocal(visita.localId)?.clubesAqui.some((clube) => dados.rivais.includes(clube)) ??
             false)
       ).length;
-    case 'confirmacao-manual':
-      return dados.missoesConfirmadas.has(missao.id) ? 1 : 0;
+    case 'so-foto':
+      return dados.missoesComFoto.has(missao.id) ? 1 : 0;
   }
 }
 
+/** Uma missão só fica concluída com a foto de prova; antes disso, cumprida fica "por comprovar". */
 export function progressoDaMissao(missao: Missao, dados: DadosMissoes) {
   const atual = Math.min(missao.meta, valorDoProgresso(missao.progresso, missao, dados));
-  const estado: EstadoMissao =
-    atual >= missao.meta ? 'concluida' : atual > 0 ? 'em-curso' : 'por-fazer';
+  const cumprida = atual >= missao.meta;
+  const estado: EstadoMissao = cumprida
+    ? dados.missoesComFoto.has(missao.id)
+      ? 'concluida'
+      : 'por-comprovar'
+    : atual > 0
+      ? 'em-curso'
+      : 'por-fazer';
   return { atual, meta: missao.meta, estado };
+}
+
+/** A câmara só abre quando a foto pode fechar a missão: evita provas tiradas antes do tempo. */
+export function podeTirarFoto(missao: Missao, estado: EstadoMissao) {
+  return estado === 'por-comprovar' || (missao.progresso === 'so-foto' && estado === 'por-fazer');
 }

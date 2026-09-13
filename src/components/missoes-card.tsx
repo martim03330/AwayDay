@@ -1,9 +1,12 @@
-import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { FotoRecordacao } from '@/components/foto-recordacao';
 import { Spacing } from '@/constants/theme';
 import { useCarimbosNovos } from '@/hooks/use-carimbos-novos';
 import { useTheme } from '@/hooks/use-theme';
-import { progressoDaMissao, type DadosMissoes } from '@/lib/missoes';
+import { useTirarFoto } from '@/hooks/use-tirar-foto';
+import { podeTirarFoto, progressoDaMissao, type DadosMissoes } from '@/lib/missoes';
 import { estadiosNacionais } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { obterLocal, obterPrato } from '@/mocks/locais';
@@ -11,25 +14,26 @@ import { missoes } from '@/mocks/missoes';
 import { rivaisDe } from '@/mocks/rivais';
 import type { EstadoMissao } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
-import { useSons } from '@/state/sons';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Carimbo } from '@/ui/carimbo';
 import { Etiqueta, type TomEtiqueta } from '@/ui/etiqueta';
-import { icons, type IconName } from '@/ui/icon';
+import { Icon, icons, type IconName } from '@/ui/icon';
 import { ProgressBar } from '@/ui/progress-bar';
 import { ThemedText } from '@/ui/themed-text';
 
 const estados: Record<EstadoMissao, { label: string; tone: TomEtiqueta; icon: IconName }> = {
   'por-fazer': { label: 'Por fazer', tone: 'neutro', icon: icons.missao },
   'em-curso': { label: 'Em curso', tone: 'aviso', icon: icons.porVerificar },
+  'por-comprovar': { label: 'Falta a foto', tone: 'aviso', icon: icons.camara },
   concluida: { label: 'Concluída', tone: 'positivo', icon: icons.selecionado },
 };
 
 export function MissoesCard() {
   const theme = useTheme();
+  const router = useRouter();
   const app = useAppState();
-  const { tocarCarimbo } = useSons();
+  const tirarFoto = useTirarFoto();
 
   const rivais = rivaisDe(app.clubeFavoritoId);
   const idsNacionais = new Set(estadiosNacionais.map((estadio) => estadio.id));
@@ -39,7 +43,7 @@ export function MissoesCard() {
     pratosRecomendados: app.pratosRecomendados,
     avaliacoes: app.avaliacoes,
     visitasLocais: app.visitasLocais,
-    missoesConfirmadas: app.missoesConfirmadas,
+    missoesComFoto: new Set(app.fotosMissoes.map((foto) => foto.missaoId)),
     rivais,
     obterJogo,
     obterLocal,
@@ -50,6 +54,7 @@ export function MissoesCard() {
   const concluidas = progressos
     .filter(({ estado }) => estado === 'concluida')
     .map(({ missao }) => missao.id);
+  const porComprovar = progressos.filter(({ estado }) => estado === 'por-comprovar').length;
   const eNovo = useCarimbosNovos(concluidas);
 
   return (
@@ -59,13 +64,16 @@ export function MissoesCard() {
           {concluidas.length} de {missoes.length}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          missões concluídas
+          {porComprovar > 0
+            ? `missões concluídas · ${porComprovar} à espera de foto`
+            : 'missões concluídas'}
         </ThemedText>
       </View>
 
       {progressos.map(({ missao, atual, meta, estado }) => {
         const info = estados[estado];
         const concluida = estado === 'concluida';
+        const foto = app.fotosMissoes.find((candidata) => candidata.missaoId === missao.id);
         return (
           <View key={missao.id} style={[styles.missao, { borderTopColor: theme.border }]}>
             <Carimbo
@@ -108,17 +116,43 @@ export function MissoesCard() {
               <ThemedText type="small" themeColor="textSecondary">
                 {`Distintivo: ${missao.distintivo.nome}`}
               </ThemedText>
-              {missao.progresso === 'confirmacao-manual' ? (
-                <Button
-                  label={concluida ? 'Desmarcar' : 'Marcar como feita'}
-                  variant="secondary"
-                  icon={concluida ? icons.fechar : icons.selecionado}
-                  onPress={() => {
-                    // O som do carimbo só toca em resposta direta a este toque.
-                    if (!concluida) tocarCarimbo();
-                    app.alternarMissaoConfirmada(missao.id);
-                  }}
-                />
+
+              {podeTirarFoto(missao, estado) ? (
+                <View style={styles.prova}>
+                  <View style={styles.dica}>
+                    <Icon name={icons.camara} size={14} color={theme.textSecondary} />
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                      {`Prova: ${missao.dicaFoto}`}
+                    </ThemedText>
+                  </View>
+                  <Button
+                    label="Tirar foto"
+                    icon={icons.camara}
+                    variant={estado === 'por-comprovar' ? 'primary' : 'secondary'}
+                    onPress={() => tirarFoto(missao)}
+                  />
+                </View>
+              ) : null}
+
+              {foto && concluida ? (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/perfil/foto', params: { fotoId: foto.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver a foto da missão no álbum, ${foto.verificada ? 'verificada' : 'por verificar'}`}
+                  style={({ pressed }) => [
+                    styles.foto,
+                    { backgroundColor: theme.backgroundSelected },
+                    pressed && styles.pressed,
+                  ]}>
+                  <FotoRecordacao foto={foto} compacta style={styles.miniatura} />
+                  <View style={styles.flex}>
+                    <ThemedText type="smallBold">Ver no álbum</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {foto.verificada ? 'Foto verificada' : 'Foto por verificar'}
+                    </ThemedText>
+                  </View>
+                  <Icon name={icons.seguinte} size={16} color={theme.textSecondary} />
+                </Pressable>
               ) : null}
             </View>
           </View>
@@ -126,7 +160,8 @@ export function MissoesCard() {
       })}
 
       <ThemedText type="small" themeColor="textSecondary">
-        Regra da casa: nenhuma missão pede para trocar objetos pessoais nem contacto físico.
+        Regra da casa: nenhuma missão pede para trocar objetos pessoais nem contacto físico. A prova é
+        sempre uma foto tirada na hora, com a câmara.
       </ThemedText>
     </Card>
   );
@@ -173,6 +208,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+  },
+  prova: {
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  dica: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.one,
+  },
+  foto: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+    padding: Spacing.two,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+  },
+  miniatura: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   flex: {
     flex: 1,

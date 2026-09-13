@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
+import { BarulhometroCard } from '@/components/barulhometro-card';
 import { ComoChegar } from '@/components/como-chegar';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
@@ -15,6 +16,7 @@ import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { notaDoEstadio } from '@/lib/avaliacoes';
+import { mostrarBarulhometro } from '@/lib/barulhometro';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
@@ -42,7 +44,7 @@ export default function JogoScreen() {
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
-  const { avaliacoes, avaliacaoDoJogo } = useAppState();
+  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho } = useAppState();
 
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -117,6 +119,13 @@ export default function JogoScreen() {
       </Card>
 
       {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
+
+      {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
+        <>
+          <SectionHeader title="Barulhómetro" trailing={estado === 'a-decorrer' ? 'Em jogo' : undefined} />
+          <BarulhometroCard jogo={jogo} agora={agora} />
+        </>
+      ) : null}
 
       {estado === 'terminado' && !relogioVisivel ? avaliacao : null}
 

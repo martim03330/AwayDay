@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
+import { AlbumResumo } from '@/components/album-resumo';
 import { HistoricoAvaliacoes } from '@/components/historico-avaliacoes';
 import { HistoricoTascos } from '@/components/historico-tascos';
 import { MissoesCard } from '@/components/missoes-card';
@@ -48,6 +49,7 @@ export default function PerfilScreen() {
     estadiosVisitados,
     avaliacoes,
     visitasLocais,
+    fotosMissoes,
     sonsLigados,
     alternarSons,
     notificacoes,
@@ -155,6 +157,12 @@ export default function PerfilScreen() {
 
       <SectionHeader title="Missões do passaporte" />
       <MissoesCard />
+
+      <SectionHeader
+        title="Álbum de recordações"
+        trailing={fotosMissoes.length > 0 ? plural(fotosMissoes.length, 'foto', 'fotos') : undefined}
+      />
+      <AlbumResumo fotos={fotosMissoes} onAbrir={() => router.push('/perfil/album')} />
 
       <SectionHeader
         title="Avaliações de estádios"

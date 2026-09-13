@@ -62,6 +62,10 @@ export const icons = {
   voltar: { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' },
   introducao: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
   demo: { ios: 'wand.and.stars', android: 'science', web: 'science' },
+  camara: { ios: 'camera.fill', android: 'photo_camera', web: 'photo_camera' },
+  album: { ios: 'photo.on.rectangle.angled', android: 'photo_library', web: 'photo_library' },
+  microfone: { ios: 'mic.fill', android: 'mic', web: 'mic' },
+  apagar: { ios: 'trash', android: 'delete', web: 'delete' },
 } satisfies Record<string, IconName>;
 
 type IconProps = {
