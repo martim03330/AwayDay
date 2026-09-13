@@ -1,3 +1,4 @@
+import { gerarPratos } from '@/mocks/pratos';
 import type { Local, TipoLocal } from '@/mocks/tipos';
 
 export const nomesTipoLocal: Record<TipoLocal, string> = {
@@ -11,7 +12,7 @@ export const nomesTipoLocal: Record<TipoLocal, string> = {
 /**
  * Locais fictícios à volta dos estádios. Só 6 estádios têm locais, para a demo mostrar o estado vazio nos restantes. Alguns ficam a mais de 20 min a pé, para testar o filtro.
  */
-export const locais: Local[] = [
+const locaisBase: Omit<Local, 'pratos'>[] = [
   // Estádio da Luz
   {
     id: 'tasca-terceiro-anel',
@@ -22,6 +23,7 @@ export const locais: Local[] = [
     minutosAPe: 4,
     coordenadas: { latitude: 38.75133, longitude: -9.18740 },
     homeFanHeavy: true,
+    clubesAqui: ['benfica'],
     cervejometro: 4,
     petiscometro: 5,
     pessoasAqui: 42,
@@ -39,6 +41,7 @@ export const locais: Local[] = [
     minutosAPe: 2,
     coordenadas: { latitude: 38.75399, longitude: -9.18476 },
     homeFanHeavy: false,
+    clubesAqui: ['benfica'],
     cervejometro: 3,
     petiscometro: 4,
     pessoasAqui: 27,
@@ -56,6 +59,7 @@ export const locais: Local[] = [
     minutosAPe: 8,
     coordenadas: { latitude: 38.74976, longitude: -9.18935 },
     homeFanHeavy: false,
+    clubesAqui: ['benfica', 'sporting'],
     cervejometro: 5,
     petiscometro: 3,
     pessoasAqui: 64,
@@ -73,6 +77,7 @@ export const locais: Local[] = [
     minutosAPe: 11,
     coordenadas: { latitude: 38.74630, longitude: -9.18585 },
     homeFanHeavy: false,
+    clubesAqui: ['benfica'],
     cervejometro: 4,
     petiscometro: 2,
     pessoasAqui: 18,
@@ -90,6 +95,7 @@ export const locais: Local[] = [
     minutosAPe: 14,
     coordenadas: { latitude: 38.75366, longitude: -9.19476 },
     homeFanHeavy: false,
+    clubesAqui: ['benfica'],
     cervejometro: 3,
     petiscometro: 5,
     pessoasAqui: 31,
@@ -108,6 +114,7 @@ export const locais: Local[] = [
     minutosAPe: 5,
     coordenadas: { latitude: 41.16077, longitude: -8.58736 },
     homeFanHeavy: true,
+    clubesAqui: ['porto'],
     cervejometro: 4,
     petiscometro: 5,
     pessoasAqui: 38,
@@ -125,6 +132,7 @@ export const locais: Local[] = [
     minutosAPe: 3,
     coordenadas: { latitude: 41.16000, longitude: -8.58388 },
     homeFanHeavy: false,
+    clubesAqui: ['porto'],
     cervejometro: 3,
     petiscometro: 4,
     pessoasAqui: 22,
@@ -142,6 +150,7 @@ export const locais: Local[] = [
     minutosAPe: 9,
     coordenadas: { latitude: 41.16033, longitude: -8.59019 },
     homeFanHeavy: false,
+    clubesAqui: ['porto', 'benfica'],
     cervejometro: 5,
     petiscometro: 4,
     pessoasAqui: 55,
@@ -159,6 +168,7 @@ export const locais: Local[] = [
     minutosAPe: 6,
     coordenadas: { latitude: 41.15949, longitude: -8.58746 },
     homeFanHeavy: true,
+    clubesAqui: ['porto'],
     cervejometro: 4,
     petiscometro: 2,
     pessoasAqui: 47,
@@ -177,6 +187,7 @@ export const locais: Local[] = [
     minutosAPe: 6,
     coordenadas: { latitude: 38.75925, longitude: -9.15749 },
     homeFanHeavy: false,
+    clubesAqui: ['sporting', 'porto'],
     cervejometro: 4,
     petiscometro: 4,
     pessoasAqui: 33,
@@ -194,6 +205,7 @@ export const locais: Local[] = [
     minutosAPe: 2,
     coordenadas: { latitude: 38.76012, longitude: -9.16087 },
     homeFanHeavy: false,
+    clubesAqui: ['sporting'],
     cervejometro: 2,
     petiscometro: 4,
     pessoasAqui: 19,
@@ -211,6 +223,7 @@ export const locais: Local[] = [
     minutosAPe: 10,
     coordenadas: { latitude: 38.76317, longitude: -9.15387 },
     homeFanHeavy: false,
+    clubesAqui: ['sporting'],
     cervejometro: 5,
     petiscometro: 4,
     pessoasAqui: 51,
@@ -228,6 +241,7 @@ export const locais: Local[] = [
     minutosAPe: 8,
     coordenadas: { latitude: 38.75717, longitude: -9.15882 },
     homeFanHeavy: true,
+    clubesAqui: ['sporting', 'benfica'],
     cervejometro: 4,
     petiscometro: 2,
     pessoasAqui: 26,
@@ -246,6 +260,7 @@ export const locais: Local[] = [
     minutosAPe: 14,
     coordenadas: { latitude: 41.56862, longitude: -8.43301 },
     homeFanHeavy: true,
+    clubesAqui: ['braga'],
     cervejometro: 3,
     petiscometro: 5,
     pessoasAqui: 24,
@@ -263,6 +278,7 @@ export const locais: Local[] = [
     minutosAPe: 18,
     coordenadas: { latitude: 41.57254, longitude: -8.42926 },
     homeFanHeavy: false,
+    clubesAqui: ['braga', 'vitoria'],
     cervejometro: 4,
     petiscometro: 3,
     pessoasAqui: 29,
@@ -280,6 +296,7 @@ export const locais: Local[] = [
     minutosAPe: 4,
     coordenadas: { latitude: 41.56413, longitude: -8.43209 },
     homeFanHeavy: false,
+    clubesAqui: ['braga'],
     cervejometro: 3,
     petiscometro: 3,
     pessoasAqui: 14,
@@ -298,6 +315,7 @@ export const locais: Local[] = [
     minutosAPe: 7,
     coordenadas: { latitude: 41.44911, longitude: -8.30415 },
     homeFanHeavy: true,
+    clubesAqui: ['vitoria'],
     cervejometro: 4,
     petiscometro: 5,
     pessoasAqui: 36,
@@ -315,6 +333,7 @@ export const locais: Local[] = [
     minutosAPe: 15,
     coordenadas: { latitude: 41.44169, longitude: -8.31086 },
     homeFanHeavy: false,
+    clubesAqui: ['vitoria', 'braga'],
     cervejometro: 5,
     petiscometro: 2,
     pessoasAqui: 21,
@@ -332,6 +351,7 @@ export const locais: Local[] = [
     minutosAPe: 5,
     coordenadas: { latitude: 41.44521, longitude: -8.30459 },
     homeFanHeavy: false,
+    clubesAqui: ['vitoria'],
     cervejometro: 3,
     petiscometro: 4,
     pessoasAqui: 17,
@@ -350,6 +370,7 @@ export const locais: Local[] = [
     minutosAPe: 24,
     coordenadas: { latitude: 38.76252, longitude: -9.17254 },
     homeFanHeavy: false,
+    clubesAqui: ['benfica'],
     cervejometro: 4,
     petiscometro: 5,
     pessoasAqui: 12,
@@ -367,6 +388,7 @@ export const locais: Local[] = [
     minutosAPe: 28,
     coordenadas: { latitude: 41.15824, longitude: -8.56334 },
     homeFanHeavy: false,
+    clubesAqui: ['porto'],
     cervejometro: 3,
     petiscometro: 5,
     pessoasAqui: 9,
@@ -384,6 +406,7 @@ export const locais: Local[] = [
     minutosAPe: 23,
     coordenadas: { latitude: 38.75454, longitude: -9.17502 },
     homeFanHeavy: false,
+    clubesAqui: ['sporting'],
     cervejometro: 5,
     petiscometro: 3,
     pessoasAqui: 20,
@@ -401,6 +424,7 @@ export const locais: Local[] = [
     minutosAPe: 30,
     coordenadas: { latitude: 41.56049, longitude: -8.40827 },
     homeFanHeavy: false,
+    clubesAqui: ['braga'],
     cervejometro: 4,
     petiscometro: 5,
     pessoasAqui: 16,
@@ -419,6 +443,7 @@ export const locais: Local[] = [
     minutosAPe: 5,
     coordenadas: { latitude: 38.70057, longitude: -9.21132 },
     homeFanHeavy: true,
+    clubesAqui: ['belenenses'],
     cervejometro: 3,
     petiscometro: 4,
     pessoasAqui: 11,
@@ -436,6 +461,7 @@ export const locais: Local[] = [
     minutosAPe: 19,
     coordenadas: { latitude: 38.70803, longitude: -9.22108 },
     homeFanHeavy: false,
+    clubesAqui: ['belenenses'],
     cervejometro: 4,
     petiscometro: 3,
     pessoasAqui: 23,
@@ -446,6 +472,9 @@ export const locais: Local[] = [
   },
 ];
 
+/** Locais com o menu de pratos (mock). */
+export const locais: Local[] = locaisBase.map((local) => ({ ...local, pratos: gerarPratos(local) }));
+
 export function obterLocal(id: string) {
   return locais.find((local) => local.id === id);
 }
@@ -454,4 +483,13 @@ export function locaisDoEstadio(estadioId: string) {
   return locais
     .filter((local) => local.estadioId === estadioId)
     .sort((a, b) => a.distanciaMetros - b.distanciaMetros);
+}
+
+/** Prato de qualquer local, pelo id. */
+export function obterPrato(id: string) {
+  for (const local of locais) {
+    const prato = local.pratos.find((candidato) => candidato.id === id);
+    if (prato) return { prato, local };
+  }
+  return undefined;
 }

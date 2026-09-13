@@ -15,18 +15,21 @@ check-ins e um passaporte de estádios.
 
 **Ficha do jogo**
 - Estádio com cobertura, sombra e abrigo, e aviso quando há chuva prevista e a cobertura não é total.
-- Mapa da cidade com o escudo do clube da casa; ao tocar no escudo, faz zoom e mostra os tascos à volta.
+- WC mais próximo do estádio, com distância a pé, horário, preço, acessibilidade e tipo de acesso.
+- Mapa da cidade com o escudo do clube da casa; ao tocar no escudo, faz zoom e mostra os tascos e os WC à volta.
 - Meteorologia simulada, distância e tempo de carro a partir de uma localização simulada, e três opções de transporte.
 - Ponto de encontro oficial para visitantes nos jogos europeus.
 - Avaliação da visita (estádio, ambiente, acessos) a partir do fim do jogo.
 
 **Locais**
 - Tascos a menos de 20 minutos a pé do estádio, ordenados por distância.
-- Cervejómetro, petiscómetro, contador de pessoas e check-in.
+- Cervejómetro, petiscómetro, contador de pessoas, check-in e a tua nota ao tasco.
+- Menu com recomendações dos adeptos e três destaques: mais recomendado, mais barato e mais rápido, com um lembrete de água ou de algo quente conforme a meteorologia do próximo jogo.
+- WC mais próximo do tasco.
 
 **Perfil**
 - Clube que apoias e clube da terra (a sugestão pela localização exige sempre confirmação).
-- Passaporte de estádios, histórico de avaliações editáveis e de tascos verificados, e ranking.
+- Passaporte de estádios com missões e distintivos, histórico de avaliações editáveis e de tascos verificados, e ranking.
 - Definições de sons (desligados por omissão) e de notificações (só interface, nada é enviado).
 
 ## Stack
@@ -82,7 +85,9 @@ assets/
 ## Sobre os dados
 
 - **Clubes e estádios** são reais; capacidades e coordenadas são aproximadas. A Liga 2 e a Liga 3 têm uma seleção ilustrativa de clubes.
-- **Tascos e bares são fictícios**, para não atribuir notas nem contadores inventados a negócios reais.
+- **Tascos e bares são fictícios**, para não atribuir notas nem contadores inventados a negócios reais. Os pratos, as recomendações e os adeptos presentes em cada tasco também são mock.
+- **Casas de banho** são mock: posições, preços e horários servem só a demo.
+- **Missões** nunca pedem para trocar objetos pessoais nem contacto físico. A missão da foto com um adepto rival é confirmada pelo próprio utilizador, sem verificação.
 - **Meteorologia, distâncias, tempos e preços** são simulados.
 - **Pontos de encontro dos jogos europeus** usam informação real, publicada pelos clubes para jogos já disputados, e indicam sempre a fonte e o jogo original:
   - [FC Porto em Roma](https://www.fcporto.pt/pt/noticias/20250219-pt-informacoes-aos-adeptos-que-vao-a-roma-apoiar-o-fc-porto) (Liga Europa, fev. 2025)

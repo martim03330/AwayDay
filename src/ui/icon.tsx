@@ -52,6 +52,13 @@ export const icons = {
   cidade: { ios: 'map.fill', android: 'map', web: 'map' },
   som: { ios: 'speaker.wave.2.fill', android: 'volume_up', web: 'volume_up' },
   notificacoes: { ios: 'bell.fill', android: 'notifications', web: 'notifications' },
+  wc: { ios: 'toilet.fill', android: 'wc', web: 'wc' },
+  preco: { ios: 'eurosign.circle.fill', android: 'euro', web: 'euro' },
+  acessivel: { ios: 'figure.roll', android: 'accessible', web: 'accessible' },
+  acesso: { ios: 'ticket.fill', android: 'confirmation_number', web: 'confirmation_number' },
+  quente: { ios: 'flame.fill', android: 'local_fire_department', web: 'local_fire_department' },
+  agua: { ios: 'waterbottle.fill', android: 'water_full', web: 'water_full' },
+  missao: { ios: 'flag.checkered', android: 'sports_score', web: 'sports_score' },
 } satisfies Record<string, IconName>;
 
 type IconProps = {

@@ -19,6 +19,13 @@ export function estadoDoJogo(jogo: Pick<Jogo, 'inicio'>, agora: number): EstadoJ
   return 'terminado';
 }
 
+/** O próximo jogo (a decorrer ou agendado) num estádio. */
+export function proximoJogoNoEstadio(jogos: readonly Jogo[], estadioId: string, agora: number) {
+  return jogos
+    .filter((jogo) => jogo.estadioId === estadioId && estadoDoJogo(jogo, agora) !== 'terminado')
+    .sort((a, b) => a.inicio.localeCompare(b.inicio))[0];
+}
+
 export function eCompeticaoEuropeia(competicao: Competicao) {
   return competicao === 'champions' || competicao === 'liga-europa' || competicao === 'conference';
 }

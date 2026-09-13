@@ -149,7 +149,7 @@ const jogosMock: JogoMock[] = [
     estadioId: 'dragao',
     dias: 1,
     hora: '20:30',
-    meteorologia: { condicao: 'chuva', temperatura: 17, probabilidadeChuva: 85, ventoKmh: 25 },
+    meteorologia: { condicao: 'chuva', temperatura: 12, probabilidadeChuva: 85, ventoKmh: 25 },
   },
   {
     id: 'leixoes-uniao-leiria',
@@ -171,7 +171,7 @@ const jogosMock: JogoMock[] = [
     estadioId: 'alvalade',
     dias: 2,
     hora: '20:15',
-    meteorologia: { condicao: 'limpo', temperatura: 22, probabilidadeChuva: 0, ventoKmh: 9 },
+    meteorologia: { condicao: 'limpo', temperatura: 27, probabilidadeChuva: 0, ventoKmh: 9 },
   },
   {
     id: 'academico-viseu-feirense',

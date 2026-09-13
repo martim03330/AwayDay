@@ -9,6 +9,7 @@ import { EstadioCard } from '@/components/estadio-card';
 import { MapaJogo } from '@/components/mapa-jogo';
 import { MeteorologiaCard } from '@/components/meteorologia-card';
 import { PontoEncontroCard } from '@/components/ponto-encontro-card';
+import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
@@ -124,6 +125,9 @@ export default function JogoScreen() {
 
       <SectionHeader title="Estádio" />
       <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
+
+      <SectionHeader title="WC mais próximo" />
+      <WcMaisProximo origem={estadio.coordenadas} />
 
       <SectionHeader title="Mapa" />
       <MapaJogo venue={estadio} />

@@ -15,7 +15,7 @@ export function SectionHeader({ title, trailing }: SectionHeaderProps) {
         {title}
       </ThemedText>
       {trailing ? (
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" themeColor="textSecondary" style={styles.trailing}>
           {trailing}
         </ThemedText>
       ) : null}
@@ -33,9 +33,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   title: {
-    flexShrink: 1,
+    // O título fica numa linha; é o texto da direita que encolhe e parte linha.
+    flexShrink: 0,
     fontSize: 13,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  trailing: {
+    flexShrink: 1,
+    textAlign: 'right',
   },
 });

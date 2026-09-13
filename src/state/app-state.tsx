@@ -6,11 +6,17 @@ import { createContext, use, useState, type ReactNode } from 'react';
 
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
 import { preferenciasIniciais, type TipoNotificacao } from '@/mocks/notificacoes';
-import type { AvaliacaoVisita, Local, VisitaLocal } from '@/mocks/tipos';
+import type { AvaliacaoVisita, Local, Nota, VisitaLocal } from '@/mocks/tipos';
 import { visitasIniciais } from '@/mocks/visitas';
 
 /** Estádios já visitados antes de qualquer avaliação. */
 const ESTADIOS_VISITADOS_BASE = ['luz', 'alvalade', 'dragao', 'municipal-braga'];
+
+/** Notas de exemplo, para a missão "Avalia 5 tascos" começar em curso. */
+const NOTAS_TASCOS_INICIAIS: Partial<Record<string, Nota>> = {
+  'tasca-terceiro-anel': 5,
+  'bifanas-campanha': 4,
+};
 
 export type NovaAvaliacao = Omit<AvaliacaoVisita, 'id' | 'atualizadaEm'>;
 
@@ -24,9 +30,6 @@ type AppState = {
   confirmarClubeDaTerra: (clubeId: string) => void;
   /** Base mais os estádios das visitas avaliadas. */
   estadiosVisitados: readonly string[];
-  /** Estádios registados de novo que ainda não fizeram a animação de carimbo no perfil. */
-  estadiosPorCarimbar: readonly string[];
-  marcarCarimbosVistos: () => void;
   fezCheckIn: (localId: string) => boolean;
   alternarCheckIn: (localId: string) => void;
   pessoasAqui: (local: Local) => number;
@@ -38,6 +41,15 @@ type AppState = {
   avaliacaoDoJogo: (jogoId: string) => AvaliacaoVisita | undefined;
   /** Cria ou atualiza a avaliação da visita (uma por jogo). */
   guardarAvaliacao: (avaliacao: NovaAvaliacao) => void;
+  /** Pratos que o utilizador recomendou (cada um soma 1 às recomendações dos adeptos). */
+  pratosRecomendados: ReadonlySet<string>;
+  alternarRecomendacao: (pratoId: string) => void;
+  /** A tua nota a cada tasco. */
+  notasTascos: Readonly<Partial<Record<string, Nota>>>;
+  darNotaTasco: (localId: string, nota: Nota) => void;
+  /** Missões sem verificação possível, confirmadas pelo próprio utilizador. */
+  missoesConfirmadas: ReadonlySet<string>;
+  alternarMissaoConfirmada: (missaoId: string) => void;
   /** Desligados por omissão. */
   sonsLigados: boolean;
   alternarSons: () => void;
@@ -47,34 +59,39 @@ type AppState = {
 
 const AppStateContext = createContext<AppState | null>(null);
 
+function alternarEmConjunto(conjunto: ReadonlySet<string>, id: string): ReadonlySet<string> {
+  const proximo = new Set(conjunto);
+  if (proximo.has(id)) {
+    proximo.delete(id);
+  } else {
+    proximo.add(id);
+  }
+  return proximo;
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [clubeFavoritoId, setClubeFavoritoId] = useState('benfica');
   const [clubeDaTerraId, setClubeDaTerraId] = useState<string | null>(null);
   const [checkIns, setCheckIns] = useState<ReadonlySet<string>>(new Set());
   const [visitasLocais, setVisitasLocais] = useState<readonly VisitaLocal[]>(visitasIniciais);
   const [avaliacoes, setAvaliacoes] = useState<readonly AvaliacaoVisita[]>(avaliacoesIniciais);
-  const [estadiosPorCarimbar, setEstadiosPorCarimbar] = useState<readonly string[]>([]);
+  const [pratosRecomendados, setPratosRecomendados] = useState<ReadonlySet<string>>(new Set());
+  const [notasTascos, setNotasTascos] =
+    useState<Readonly<Partial<Record<string, Nota>>>>(NOTAS_TASCOS_INICIAIS);
+  const [missoesConfirmadas, setMissoesConfirmadas] = useState<ReadonlySet<string>>(new Set());
   const [sonsLigados, setSonsLigados] = useState(false);
   const [notificacoes, setNotificacoes] = useState<PreferenciasNotificacoes>(preferenciasIniciais);
-
-  const estadiosVisitados = [
-    ...new Set([...ESTADIOS_VISITADOS_BASE, ...avaliacoes.map((avaliacao) => avaliacao.estadioId)]),
-  ];
 
   function alternarCheckIn(localId: string) {
     const idVisita = `check-in-${localId}`;
 
     if (checkIns.has(localId)) {
-      setCheckIns((atuais) => {
-        const proximos = new Set(atuais);
-        proximos.delete(localId);
-        return proximos;
-      });
+      setCheckIns((atuais) => alternarEmConjunto(atuais, localId));
       setVisitasLocais((atuais) => atuais.filter((visita) => visita.id !== idVisita));
       return;
     }
 
-    setCheckIns((atuais) => new Set(atuais).add(localId));
+    setCheckIns((atuais) => alternarEmConjunto(atuais, localId));
     setVisitasLocais((atuais) => [
       { id: idVisita, localId, data: new Date().toISOString(), verificado: true, origem: 'check-in' },
       ...atuais,
@@ -98,12 +115,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }
 
   function guardarAvaliacao(nova: NovaAvaliacao) {
-    if (!estadiosVisitados.includes(nova.estadioId)) {
-      setEstadiosPorCarimbar((atuais) =>
-        atuais.includes(nova.estadioId) ? atuais : [...atuais, nova.estadioId]
-      );
-    }
-
     const id = `avaliacao-${nova.jogoId}`;
     const registo: AvaliacaoVisita = { ...nova, id, atualizadaEm: new Date().toISOString() };
     setAvaliacoes((atuais) =>
@@ -118,9 +129,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     escolherClube: setClubeFavoritoId,
     clubeDaTerraId,
     confirmarClubeDaTerra: setClubeDaTerraId,
-    estadiosVisitados,
-    estadiosPorCarimbar,
-    marcarCarimbosVistos: () => setEstadiosPorCarimbar([]),
+    estadiosVisitados: [
+      ...new Set([...ESTADIOS_VISITADOS_BASE, ...avaliacoes.map((avaliacao) => avaliacao.estadioId)]),
+    ],
     fezCheckIn: (localId) => checkIns.has(localId),
     alternarCheckIn,
     pessoasAqui: (local) => local.pessoasAqui + (checkIns.has(local.id) ? 1 : 0),
@@ -132,6 +143,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     avaliacoes,
     avaliacaoDoJogo: (jogoId) => avaliacoes.find((avaliacao) => avaliacao.jogoId === jogoId),
     guardarAvaliacao,
+    pratosRecomendados,
+    alternarRecomendacao: (pratoId) =>
+      setPratosRecomendados((atuais) => alternarEmConjunto(atuais, pratoId)),
+    notasTascos,
+    darNotaTasco: (localId, nota) => setNotasTascos((atuais) => ({ ...atuais, [localId]: nota })),
+    missoesConfirmadas,
+    alternarMissaoConfirmada: (missaoId) =>
+      setMissoesConfirmadas((atuais) => alternarEmConjunto(atuais, missaoId)),
     sonsLigados,
     alternarSons: () => setSonsLigados((ligados) => !ligados),
     notificacoes,

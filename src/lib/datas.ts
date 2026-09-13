@@ -61,6 +61,12 @@ export function dataEmLisboa(dias: number, hora: string) {
   return new Date(relogioDeLisboa - desvio * MINUTO_MS);
 }
 
+/** Minutos desde a meia-noite em Lisboa (0–1439). */
+export function minutosDoDiaEmLisboa(data: Date) {
+  const { hora, minuto } = partesEmLisboa(data);
+  return hora * 60 + minuto;
+}
+
 /** Chave `AAAA-MM-DD` do dia em Lisboa, útil para agrupar. */
 export function chaveDoDia(data: Date) {
   const { ano, mes, dia } = partesEmLisboa(data);

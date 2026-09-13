@@ -3,6 +3,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 
 import { HistoricoAvaliacoes } from '@/components/historico-avaliacoes';
 import { HistoricoTascos } from '@/components/historico-tascos';
+import { MissoesCard } from '@/components/missoes-card';
 import { PassaporteCard } from '@/components/passaporte-card';
 import { RankingCard } from '@/components/ranking-card';
 import { Spacing } from '@/constants/theme';
@@ -30,8 +31,6 @@ export default function PerfilScreen() {
     clubeFavoritoId,
     clubeDaTerraId,
     estadiosVisitados,
-    estadiosPorCarimbar,
-    marcarCarimbosVistos,
     avaliacoes,
     visitasLocais,
     sonsLigados,
@@ -120,9 +119,10 @@ export default function PerfilScreen() {
       <PassaporteCard
         estadiosVisitados={estadiosVisitados}
         avaliacoes={avaliacoes}
-        estadiosPorCarimbar={estadiosPorCarimbar}
-        onCarimbosVistos={marcarCarimbosVistos}
       />
+
+      <SectionHeader title="Missões do passaporte" />
+      <MissoesCard />
 
       <SectionHeader
         title="Avaliações de estádios"

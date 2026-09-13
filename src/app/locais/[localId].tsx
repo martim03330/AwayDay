@@ -1,10 +1,19 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { DestaquesMenu } from '@/components/destaques-menu';
+import { MenuTasco } from '@/components/menu-tasco';
+import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { Spacing } from '@/constants/theme';
+import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
+import { formatarDiaEHora } from '@/lib/datas';
 import { formatarDistancia, plural } from '@/lib/formatos';
+import { proximoJogoNoEstadio } from '@/lib/jogos';
+import { lembretePelaMeteorologia } from '@/lib/pratos';
+import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
+import { jogos } from '@/mocks/jogos';
 import { nomesTipoLocal, obterLocal } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
 import { useSons } from '@/state/sons';
@@ -20,15 +29,26 @@ import { ListRow } from '@/ui/list-row';
 import { Medidor } from '@/ui/medidor';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
+import { SeletorNota } from '@/ui/seletor-nota';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 export default function LocalScreen() {
   const router = useRouter();
+  const agora = useNow();
   const { localId } = useLocalSearchParams<{ localId: string }>();
   const { loading } = useSimulatedLoading(`local-${localId}`);
-  const { fezCheckIn, alternarCheckIn, pessoasAqui, visitaDoLocal, registarVisitaManual } =
-    useAppState();
+  const {
+    fezCheckIn,
+    alternarCheckIn,
+    pessoasAqui,
+    visitaDoLocal,
+    registarVisitaManual,
+    pratosRecomendados,
+    alternarRecomendacao,
+    notasTascos,
+    darNotaTasco,
+  } = useAppState();
   const { tocarCheckIn } = useSons();
 
   const local = obterLocal(localId);
@@ -61,6 +81,11 @@ export default function LocalScreen() {
   const checkedIn = fezCheckIn(local.id);
   const visita = visitaDoLocal(local.id);
   const distancia = `${formatarDistancia(local.distanciaMetros)} · ${local.minutosAPe} min a pé`;
+  const proximoJogo = proximoJogoNoEstadio(jogos, local.estadioId, agora);
+  const lembrete = lembretePelaMeteorologia(proximoJogo?.meteorologia, local.pratos);
+  const clubesAqui = local.clubesAqui
+    .map((clubeId) => obterClube(clubeId)?.nomeCurto)
+    .filter((nome): nome is string => Boolean(nome));
 
   function alternar() {
     if (!local) return;
@@ -84,6 +109,11 @@ export default function LocalScreen() {
           {`Perto do ${estadio.nome} · ${distancia}`}
         </ThemedText>
         <ContadorPessoas count={pessoasAqui(local)} large />
+        {clubesAqui.length > 0 ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Hoje por cá: adeptos do ${clubesAqui.join(' e do ')}`}
+          </ThemedText>
+        ) : null}
       </Card>
 
       <BotaoAlternar
@@ -120,11 +150,41 @@ export default function LocalScreen() {
         />
       )}
 
+      <SectionHeader
+        title="O que pedir"
+        trailing={
+          proximoJogo
+            ? `Jogo ${formatarDiaEHora(new Date(proximoJogo.inicio)).toLowerCase()}`
+            : undefined
+        }
+      />
+      <DestaquesMenu pratos={local.pratos} recomendados={pratosRecomendados} lembrete={lembrete} />
+
+      <SectionHeader title="WC mais próximo" />
+      <WcMaisProximo origem={local.coordenadas} />
+
+      <SectionHeader title="A tua nota" />
+      <Card>
+        <SeletorNota
+          label="Dá nota a este tasco"
+          description="Conta para a missão Crítico de tasco."
+          value={notasTascos[local.id] ?? null}
+          onChange={(nota) => darNotaTasco(local.id, nota)}
+        />
+      </Card>
+
       <SectionHeader title="Avaliação dos adeptos" />
       <Card style={styles.medidores}>
         <Medidor label="Cervejómetro" emoji="🍺" value={local.cervejometro} />
         <Medidor label="Petiscómetro" emoji="🍢" value={local.petiscometro} />
       </Card>
+
+      <SectionHeader title="Menu" trailing={plural(local.pratos.length, 'prato', 'pratos')} />
+      <MenuTasco
+        pratos={local.pratos}
+        recomendados={pratosRecomendados}
+        onAlternarRecomendacao={alternarRecomendacao}
+      />
 
       <SectionHeader title="Detalhes" />
       <Card style={styles.detalhes}>

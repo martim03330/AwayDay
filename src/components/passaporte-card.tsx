@@ -1,9 +1,7 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { BounceIn } from 'react-native-reanimated';
 
 import { Spacing } from '@/constants/theme';
+import { useCarimbosNovos } from '@/hooks/use-carimbos-novos';
 import { useTheme } from '@/hooks/use-theme';
 import { notaDoEstadio } from '@/lib/avaliacoes';
 import { formatarNota } from '@/lib/formatos';
@@ -11,44 +9,20 @@ import { DIVISOES, nomesDivisao, obterClube } from '@/mocks/clubes';
 import { estadiosNacionais } from '@/mocks/estadios';
 import type { AvaliacaoVisita } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
+import { Carimbo } from '@/ui/carimbo';
 import { Escudo } from '@/ui/escudo';
 import { Icon, icons } from '@/ui/icon';
 import { ProgressBar } from '@/ui/progress-bar';
 import { ThemedText } from '@/ui/themed-text';
 
-/** Duração máxima das animações da app. */
-const DURACAO_CARIMBO_MS = 400;
-
 type PassaporteCardProps = {
   estadiosVisitados: readonly string[];
   avaliacoes: readonly AvaliacaoVisita[];
-  /** Estádios novos que ainda não fizeram a animação de carimbo. */
-  estadiosPorCarimbar: readonly string[];
-  onCarimbosVistos: () => void;
 };
 
-export function PassaporteCard({
-  estadiosVisitados,
-  avaliacoes,
-  estadiosPorCarimbar,
-  onCarimbosVistos,
-}: PassaporteCardProps) {
+export function PassaporteCard({ estadiosVisitados, avaliacoes }: PassaporteCardProps) {
   const theme = useTheme();
-  const [focado, setFocado] = useState(false);
-
-  // O carimbo só salta quando o perfil está à vista, não em segundo plano noutra tab.
-  useFocusEffect(
-    useCallback(() => {
-      setFocado(true);
-      return () => setFocado(false);
-    }, [])
-  );
-
-  useEffect(() => {
-    if (!focado || estadiosPorCarimbar.length === 0) return;
-    const timeout = setTimeout(onCarimbosVistos, DURACAO_CARIMBO_MS + 150);
-    return () => clearTimeout(timeout);
-  }, [focado, estadiosPorCarimbar, onCarimbosVistos]);
+  const eNovo = useCarimbosNovos(estadiosVisitados);
 
   const visitado = (estadioId: string) => estadiosVisitados.includes(estadioId);
   const totalVisitados = estadiosNacionais.filter((estadio) => visitado(estadio.id)).length;
@@ -88,17 +62,15 @@ export function PassaporteCard({
               const dono = obterClube(estadio.clubeId);
               const foiVisitado = visitado(estadio.id);
               const nota = notaDoEstadio(avaliacoes, estadio.id);
-              const saltar = focado && estadiosPorCarimbar.includes(estadio.id);
+              const novo = eNovo(estadio.id);
               return (
-                <Animated.View
-                  // Mudar a key volta a montar o carimbo, o que dispara a entrada com ressalto.
-                  key={`${estadio.id}-${saltar ? 'novo' : 'visto'}`}
-                  entering={saltar ? BounceIn.duration(DURACAO_CARIMBO_MS) : undefined}
-                  accessible
+                <Carimbo
+                  key={estadio.id}
+                  novo={novo}
                   accessibilityLabel={[
                     estadio.nome,
                     foiVisitado ? 'visitado' : 'por visitar',
-                    saltar ? 'carimbo novo' : null,
+                    novo ? 'carimbo novo' : null,
                     nota ? `a tua nota: ${formatarNota(nota.media)} de 5` : null,
                   ]
                     .filter(Boolean)
@@ -122,7 +94,7 @@ export function PassaporteCard({
                       ) : null}
                     </View>
                   ) : null}
-                </Animated.View>
+                </Carimbo>
               );
             })}
           </View>

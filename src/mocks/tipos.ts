@@ -109,6 +109,66 @@ export type Jogo = {
 
 export type TipoLocal = 'tasca' | 'cervejaria' | 'bar' | 'roulotte' | 'churrasqueira';
 
+export type Prato = {
+  id: string;
+  nome: string;
+  precoEuros: number;
+  minutosPreparacao: number;
+  temperatura: 'quente' | 'fria';
+  /** Especialidade da casa. */
+  especialidade: boolean;
+  /** Recomendações de outros utilizadores; não é o dono que declara. */
+  recomendacoes: number;
+};
+
+export type TipoRestroom = 'publica' | 'tasco' | 'estadio';
+
+export type AcessoRestroom = 'livre' | 'clientes' | 'bilhete';
+
+export type HorarioRestroom =
+  | { tipo: 'sempre' }
+  /** Horas em Lisboa (HH:MM); se `fecha` for antes de `abre`, fecha depois da meia-noite. */
+  | { tipo: 'intervalo'; abre: string; fecha: string }
+  /** Só abre em dias de jogo, algumas horas antes, e fecha no fim do jogo. */
+  | { tipo: 'dias-de-jogo'; abreHorasAntes: number };
+
+export type Restroom = {
+  id: string;
+  nome: string;
+  tipo: TipoRestroom;
+  estadioId: string;
+  /** Tasco a que pertence, quando `tipo` é 'tasco'. */
+  localId: string | null;
+  coordenadas: Coordenadas;
+  gratuita: boolean;
+  /** 0 quando é gratuita. */
+  precoEuros: number;
+  acessivel: boolean;
+  acesso: AcessoRestroom;
+  horario: HorarioRestroom;
+  /** Nota curta com humor; a informação prática vem sempre antes. */
+  nota: string;
+};
+
+export type ProgressoMissao =
+  | 'estadios-visitados'
+  | 'tascos-avaliados'
+  | 'especialidade-recomendada'
+  | 'jogo-a-chuva'
+  | 'check-in-com-rivais'
+  | 'confirmacao-manual';
+
+export type EstadoMissao = 'por-fazer' | 'em-curso' | 'concluida';
+
+export type Missao = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  distintivo: { emoji: string; nome: string };
+  meta: number;
+  progresso: ProgressoMissao;
+};
+
 export type Local = {
   id: string;
   nome: string;
@@ -121,6 +181,9 @@ export type Local = {
   coordenadas: Coordenadas;
   /** Ponto habitual de adeptos da casa: aparece com outra cor no mapa. */
   homeFanHeavy: boolean;
+  /** Clubes com adeptos presentes hoje (mock). */
+  clubesAqui: string[];
+  pratos: Prato[];
   cervejometro: Nota;
   petiscometro: Nota;
   /** Pessoas presentes antes do teu check-in. */
