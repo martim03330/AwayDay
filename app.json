@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "awayday",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
@@ -48,7 +48,8 @@
           "photosPermission": false,
           "microphonePermission": "O AwayDay usa o microfone durante 10 segundos para medir o barulho da bancada. Nada é gravado."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

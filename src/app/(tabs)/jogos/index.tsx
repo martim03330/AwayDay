@@ -1,26 +1,40 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JogoCard } from '@/components/jogo-card';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { CoachBanner } from '@/features/coach/components/CoachBanner';
+import { NewsTicker } from '@/features/nudges/components/NewsTicker';
+import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
+import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
+import { useTheme } from '@/hooks/use-theme';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { correspondeCompeticao, estadoDoJogo, type FiltroCompeticao } from '@/lib/jogos';
+import {
+  clubesDoUtilizador,
+  correspondeCompeticao,
+  eJogoDosClubes,
+  estadoDoJogo,
+  ficaNaListaDeJogos,
+  type FiltroCompeticao,
+} from '@/lib/jogos';
+import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { jogos } from '@/mocks/jogos';
-import type { Jogo } from '@/mocks/tipos';
+import type { Clube, Jogo } from '@/mocks/tipos';
 import { useAICoach } from '@/state/ai-coach';
 import { useAppState } from '@/state/app-state';
+import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
-import { icons } from '@/ui/icon';
-import { Screen } from '@/ui/screen';
-import { SectionHeader } from '@/ui/section-header';
+import { Escudo } from '@/ui/escudo';
+import { Icon, IconCircle, icons } from '@/ui/icon';
 import { SkeletonCard } from '@/ui/skeleton';
+import { ThemedText } from '@/ui/themed-text';
 
 const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
   { id: 'todas', label: 'Todas', emTexto: '' },
@@ -30,6 +44,14 @@ const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string 
   { id: 'europa', label: 'Europa', emTexto: ' nas competições europeias' },
   { id: 'tacas', label: 'Taças', emTexto: ' nas taças' },
 ];
+
+/** Today's date for the header eyebrow ("segunda-feira, 14 de setembro"), always in Lisbon. */
+const formatoHoje = new Intl.DateTimeFormat('pt-PT', {
+  timeZone: 'Europe/Lisbon',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
 
 type GrupoDeJogos = {
   chave: string;
@@ -52,30 +74,92 @@ function agruparPorDia(lista: Jogo[]) {
   return grupos;
 }
 
+/** Day heading: display font on the left, game count on the right. Muted for finished games. */
+function CabecalhoDia({ titulo, total, apagado = false }: { titulo: string; total: number; apagado?: boolean }) {
+  return (
+    <View style={styles.cabecalhoDia} accessibilityRole="header">
+      <ThemedText
+        type="section"
+        themeColor={apagado ? 'textSecondary' : 'text'}
+        style={styles.tituloDia}
+        numberOfLines={1}>
+        {titulo}
+      </ThemedText>
+      <ThemedText themeColor="textSecondary" style={styles.totalDia}>
+        {plural(total, 'jogo', 'jogos')}
+      </ThemedText>
+    </View>
+  );
+}
+
+/** The way out of "only my clubs": every other club's games, with a wink. */
+function EspreitarConcorrencia({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Espreitar a concorrência. Fica entre nós, não contamos à claque."
+      accessibilityHint="Mostra os jogos de todos os clubes"
+      style={({ pressed }) => [
+        styles.concorrencia,
+        { borderColor: theme.borderStrong, backgroundColor: theme.backgroundElement },
+        pressed && styles.pressed,
+      ]}>
+      <IconCircle name={icons.espreitar} tone="yellow" />
+      <View style={styles.flex}>
+        <ThemedText style={styles.concorrenciaTitulo}>Espreitar a concorrência</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Fica entre nós, não contamos à claque.
+        </ThemedText>
+      </View>
+      <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
+    </Pressable>
+  );
+}
+
+/** "Benfica não joga", "Benfica e SC Braga não jogam". */
+function quemNaoJoga(clubes: readonly Clube[]) {
+  if (clubes.length === 0) return 'Os teus clubes não jogam';
+  if (clubes.length === 1) return `${clubes[0].nomeCurto} não joga`;
+  return `${clubes.map((clube) => clube.nomeCurto).join(' e ')} não jogam`;
+}
+
 export default function JogosScreen() {
+  useBarraDeEstadoClara();
   const router = useRouter();
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const agora = useNow();
-  const { clubeFavoritoId, avaliacaoDoJogo } = useAppState();
+  const { clubeFavoritoId, clubeDaTerraId, avaliacaoDoJogo } = useAppState();
+  const userId = useUserId();
+  const { foste } = useJogosAQueFoste();
   const treinador = useAICoach();
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
-  const [soMeuClube, setSoMeuClube] = useState(false);
+  // Only the user's clubs by default; the rest is one (humorous) tap away.
+  const [verConcorrencia, setVerConcorrencia] = useState(false);
   const { loading, refreshing, refresh } = useSimulatedLoading('jogos');
 
-  const clubeFavorito = obterClube(clubeFavoritoId);
+  const idsMeusClubes = clubesDoUtilizador(clubeFavoritoId, clubeDaTerraId);
+  const meusClubes = idsMeusClubes
+    .map((id) => obterClube(id))
+    .filter((clube): clube is Clube => clube !== undefined);
   const filtrados = jogos.filter(
     (jogo) =>
+      ficaNaListaDeJogos(jogo, agora, foste(jogo.id)) &&
       correspondeCompeticao(jogo, competicao) &&
-      (!soMeuClube || jogo.casaId === clubeFavoritoId || jogo.foraId === clubeFavoritoId)
+      (verConcorrencia || eJogoDosClubes(jogo, idsMeusClubes))
   );
   const proximos = filtrados.filter((jogo) => estadoDoJogo(jogo, agora) !== 'terminado');
   const terminados = filtrados
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado')
     .reverse();
   const grupos = agruparPorDia(proximos);
+  const hoje = formatoHoje.format(new Date(agora));
 
   function limparFiltros() {
     setCompeticao('todas');
-    setSoMeuClube(false);
   }
 
   function renderJogo(jogo: Jogo) {
@@ -93,26 +177,37 @@ export default function JogosScreen() {
   function renderConteudo() {
     if (loading) {
       return (
-        <>
+        <View style={styles.grupo}>
           <SkeletonCard lines={2} />
           <SkeletonCard lines={2} />
           <SkeletonCard lines={2} />
-        </>
+        </View>
       );
     }
 
     if (filtrados.length === 0) {
       const emCompeticao =
         filtrosCompeticao.find((filtro) => filtro.id === competicao)?.emTexto ?? '';
+      if (!verConcorrencia) {
+        return (
+          <View style={styles.grupo}>
+            <EmptyState
+              icon={icons.semJogos}
+              title="Jornada de descanso"
+              message={`${quemNaoJoga(meusClubes)}${emCompeticao} nos próximos dias.`}
+              action={
+                competicao === 'todas' ? undefined : { label: 'Limpar filtros', onPress: limparFiltros }
+              }
+            />
+            <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
+          </View>
+        );
+      }
       return (
         <EmptyState
           icon={icons.semJogos}
           title="Jornada de descanso"
-          message={
-            soMeuClube
-              ? `${clubeFavorito?.nomeCurto ?? 'O teu clube'} não joga${emCompeticao} nos próximos dias.`
-              : `Nenhum jogo${emCompeticao} nos próximos dias. Aproveita para descansar a voz.`
-          }
+          message={`Nenhum jogo${emCompeticao} nos próximos dias. Aproveita para descansar a voz.`}
           action={{ label: 'Limpar filtros', onPress: limparFiltros }}
         />
       );
@@ -122,71 +217,163 @@ export default function JogosScreen() {
       <>
         {grupos.map((grupo) => (
           <View key={grupo.chave} style={styles.grupo}>
-            <SectionHeader
-              title={grupo.titulo}
-              trailing={plural(grupo.jogos.length, 'jogo', 'jogos')}
-            />
+            <CabecalhoDia titulo={grupo.titulo} total={grupo.jogos.length} />
             {grupo.jogos.map(renderJogo)}
           </View>
         ))}
         {terminados.length > 0 ? (
           <View style={styles.grupo}>
-            <SectionHeader
-              title="Já se jogou"
-              trailing={plural(terminados.length, 'jogo', 'jogos')}
-            />
+            <CabecalhoDia titulo="Jogos a que foste" total={terminados.length} apagado />
             {terminados.map(renderJogo)}
           </View>
         ) : null}
+        {verConcorrencia ? null : <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />}
       </>
     );
   }
 
   return (
-    <Screen refreshing={refreshing} onRefresh={refresh}>
-      <CoachBanner message={treinador.message} loading={treinador.loading} />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="never"
-        style={styles.chipsScroll}
-        contentContainerStyle={styles.chips}>
-        {filtrosCompeticao.map((filtro) => (
-          <Chip
-            key={filtro.id}
-            label={filtro.label}
-            selected={competicao === filtro.id}
-            onPress={() => setCompeticao(filtro.id)}
-          />
-        ))}
-      </ScrollView>
-      <View style={styles.filtrosClube}>
-        <Chip label="Todos os clubes" selected={!soMeuClube} onPress={() => setSoMeuClube(false)} />
-        <Chip
-          label={clubeFavorito ? `Só ${clubeFavorito.nomeCurto}` : 'O meu clube'}
-          selected={soMeuClube}
-          onPress={() => setSoMeuClube(true)}
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentInsetAdjustmentBehavior="never"
+      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={refresh}
+          progressViewOffset={insets.top}
+          tintColor={theme.accentText}
         />
+      }>
+      {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
+      <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
+
+      <CabecalhoRelvado title="Jogos" eyebrow={hoje}>
+        <CoachBanner message={treinador.message} loading={treinador.loading} sobreRelvado />
+      </CabecalhoRelvado>
+
+      <View style={styles.largura}>
+        <View style={styles.filtros}>
+          <View style={styles.faixa}>
+            <NewsTicker userId={userId} onPress={() => router.push('/perfil/novidades')} />
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentInsetAdjustmentBehavior="never"
+            contentContainerStyle={styles.chips}>
+            {filtrosCompeticao.map((filtro) => (
+              <Chip
+                key={filtro.id}
+                label={filtro.label}
+                selected={competicao === filtro.id}
+                onPress={() => setCompeticao(filtro.id)}
+              />
+            ))}
+          </ScrollView>
+          {verConcorrencia ? (
+            <View style={styles.filtrosClube}>
+              <Chip
+                label="Voltar aos meus clubes"
+                selected={false}
+                onPress={() => setVerConcorrencia(false)}
+                leading={
+                  <View style={styles.escudos}>
+                    {meusClubes.map((clube) => (
+                      <Escudo key={clube.id} clube={clube} size={18} />
+                    ))}
+                  </View>
+                }
+              />
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.conteudo}>{renderConteudo()}</View>
       </View>
-      {renderConteudo()}
-    </Screen>
+    </ScrollView>
   );
 }
 
+const MARGEM = 20;
+
 const styles = StyleSheet.create({
-  chipsScroll: {
-    marginHorizontal: -Spacing.three,
+  relvadoAcima: {
+    position: 'absolute',
+    top: -1000,
+    left: 0,
+    right: 0,
+    height: 1000,
+  },
+  largura: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
+  filtros: {
+    gap: 10,
+    paddingTop: 18,
   },
   chips: {
     gap: Spacing.two,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: MARGEM,
+  },
+  faixa: {
+    paddingHorizontal: MARGEM,
+  },
+  escudos: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  concorrencia: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
+  concorrenciaTitulo: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: 800,
+  },
+  flex: {
+    flex: 1,
+  },
+  pressed: {
+    opacity: 0.75,
   },
   filtrosClube: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
+    paddingHorizontal: MARGEM,
+  },
+  conteudo: {
+    gap: 26,
+    paddingTop: 22,
+    paddingHorizontal: MARGEM,
   },
   grupo: {
+    gap: 12,
+  },
+  cabecalhoDia: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
     gap: Spacing.two,
+  },
+  tituloDia: {
+    flexShrink: 1,
+    fontSize: 28,
+    lineHeight: 31,
+  },
+  totalDia: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 700,
   },
 });

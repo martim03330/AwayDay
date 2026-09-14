@@ -13,9 +13,44 @@ import {
 } from '@/mocks/notificacoes';
 import { useAppState } from '@/state/app-state';
 import { Card } from '@/ui/card';
+import { Icon } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+
+type LinhaInterruptorProps = {
+  titulo: string;
+  descricao: string;
+  value: boolean;
+  onValueChange: (ligar: boolean) => void;
+  disabled?: boolean;
+  /** Hairline under the row, when another row follows. */
+  divisoria?: boolean;
+};
+
+/** Title, one line of explanation and a switch, as in the "Interruptor e linha" component. */
+function LinhaInterruptor({ titulo, descricao, value, onValueChange, disabled, divisoria }: LinhaInterruptorProps) {
+  const theme = useTheme();
+
+  return (
+    <View style={[styles.linha, divisoria && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected }]}>
+      <View style={styles.flex}>
+        <ThemedText style={styles.tituloLinha}>{titulo}</ThemedText>
+        <ThemedText style={styles.descricao} themeColor="textSecondary">
+          {descricao}
+        </ThemedText>
+      </View>
+      <Switch
+        value={value}
+        disabled={disabled}
+        onValueChange={onValueChange}
+        trackColor={{ true: theme.accent, false: theme.border }}
+        ios_backgroundColor={theme.border}
+        accessibilityLabel={titulo}
+      />
+    </View>
+  );
+}
 
 function ExemploNotificacao({
   exemplo,
@@ -36,21 +71,24 @@ function ExemploNotificacao({
         !ligada && styles.desligada,
       ]}>
       <View style={[styles.iconeApp, { backgroundColor: theme.accent }]}>
-        <ThemedText type="smallBold" style={[styles.iconeAppTexto, { color: theme.accentText }]}>
+        <ThemedText type="section" style={[styles.iconeAppTexto, { color: theme.accentText }]}>
           AD
         </ThemedText>
       </View>
-      <View style={styles.flex}>
+      <View style={styles.corpoNotificacao}>
         <View style={styles.topo}>
-          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.nomeApp}>
-            AWAYDAY
+          <ThemedText type="eyebrow" themeColor="textSecondary">
+            AwayDay
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.quando}>
+          <ThemedText themeColor="textMuted" style={styles.quando}>
             {exemplo.quando}
           </ThemedText>
         </View>
-        <ThemedText type="smallBold">{exemplo.titulo}</ThemedText>
-        <ThemedText type="small">{exemplo.corpo}</ThemedText>
+        <View style={styles.tituloNotificacao}>
+          <Icon name={exemplo.icone} size={15} color={theme.accentInk} strokeWidth={2.4} />
+          <ThemedText style={styles.tituloExemplo}>{exemplo.titulo}</ThemedText>
+        </View>
+        <ThemedText style={styles.descricao}>{exemplo.corpo}</ThemedText>
       </View>
     </View>
   );
@@ -66,7 +104,6 @@ function avisoDePermissao(permissao: PushPermission) {
 
 /** Mensagens escritas pela AwayDay a partir da conta. Só aparece com sessão. */
 function MensagensDaConta() {
-  const theme = useTheme();
   const userId = useUserId();
   const perfil = useMyProfile(userId);
   const guardar = useUpdateMessagePreferences(userId);
@@ -88,39 +125,25 @@ function MensagensDaConta() {
   return (
     <>
       <SectionHeader title="Mensagens da AwayDay" />
-      <Card style={styles.card}>
-        <View style={styles.linha}>
-          <View style={styles.flex}>
-            <ThemedText type="smallBold">Dicas para dias de jogo</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              No máximo uma por dia, a partir do calendário e do que já fizeste na app.
-            </ThemedText>
-          </View>
-          <Switch
-            value={nudgesEnabled}
-            disabled={guardar.isPending}
-            onValueChange={(ligar) => void alternarSugestoes(ligar)}
-            trackColor={{ true: theme.accent, false: theme.backgroundSelected }}
-            accessibilityLabel="Dicas para dias de jogo"
-          />
-        </View>
-        <View style={styles.linha}>
-          <View style={styles.flex}>
-            <ThemedText type="smallBold">Retrospetiva da época</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Um resumo em junho: jogos, estádios novos e o tasco onde mais voltaste.
-            </ThemedText>
-          </View>
-          <Switch
-            value={recapEnabled}
-            disabled={guardar.isPending}
-            onValueChange={(ligar) => guardar.mutate({ recapEnabled: ligar })}
-            trackColor={{ true: theme.accent, false: theme.backgroundSelected }}
-            accessibilityLabel="Retrospetiva da época"
-          />
-        </View>
+      <Card style={styles.cartaoLinhas}>
+        <LinhaInterruptor
+          titulo="Dicas para dias de jogo"
+          descricao="No máximo uma por dia, a partir do calendário e do que já fizeste na app."
+          value={nudgesEnabled}
+          disabled={guardar.isPending}
+          onValueChange={(ligar) => void alternarSugestoes(ligar)}
+          divisoria
+        />
+        <LinhaInterruptor
+          titulo="Retrospetiva da época"
+          descricao="Um resumo em junho: jogos, estádios novos e o tasco onde mais voltaste."
+          value={recapEnabled}
+          disabled={guardar.isPending}
+          onValueChange={(ligar) => guardar.mutate({ recapEnabled: ligar })}
+          divisoria={aviso !== null}
+        />
         {aviso ? (
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText style={[styles.descricao, styles.aviso]} themeColor="textSecondary">
             {aviso}
           </ThemedText>
         ) : null}
@@ -130,7 +153,6 @@ function MensagensDaConta() {
 }
 
 export default function NotificacoesScreen() {
-  const theme = useTheme();
   const { notificacoes, alternarNotificacao } = useAppState();
 
   return (
@@ -138,7 +160,7 @@ export default function NotificacoesScreen() {
       <MensagensDaConta />
 
       <SectionHeader title="Outros avisos" />
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText style={styles.descricao} themeColor="textSecondary">
         Estes ainda não são enviados: escolhe o que queres receber e vê como fica.
       </ThemedText>
 
@@ -146,22 +168,14 @@ export default function NotificacoesScreen() {
         const definicao = definicoesNotificacao[tipo];
         const ligada = notificacoes[tipo];
         return (
-          <Card key={tipo} style={styles.card}>
-            <View style={styles.linha}>
-              <View style={styles.flex}>
-                <ThemedText type="smallBold">{definicao.titulo}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {definicao.descricao}
-                </ThemedText>
-              </View>
-              <Switch
-                value={ligada}
-                onValueChange={() => alternarNotificacao(tipo)}
-                trackColor={{ true: theme.accent, false: theme.backgroundSelected }}
-                accessibilityLabel={definicao.titulo}
-              />
-            </View>
-            <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rotuloExemplo}>
+          <Card key={tipo} style={styles.cartaoExemplo}>
+            <LinhaInterruptor
+              titulo={definicao.titulo}
+              descricao={definicao.descricao}
+              value={ligada}
+              onValueChange={() => alternarNotificacao(tipo)}
+            />
+            <ThemedText type="eyebrow" themeColor="textMuted">
               Exemplo
             </ThemedText>
             <ExemploNotificacao exemplo={definicao.exemplo} ligada={ligada} />
@@ -173,56 +187,82 @@ export default function NotificacoesScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: Spacing.three,
+  cartaoLinhas: {
+    gap: 0,
+    paddingVertical: Spacing.one,
+  },
+  cartaoExemplo: {
+    gap: 10,
+    paddingTop: Spacing.one,
+    paddingBottom: Spacing.three,
   },
   linha: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: 12,
+    paddingVertical: 13,
   },
   flex: {
     flex: 1,
+    gap: 1,
   },
-  rotuloExemplo: {
-    fontSize: 12,
-    lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  tituloLinha: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: 800,
+  },
+  descricao: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  aviso: {
+    paddingVertical: 13,
   },
   notificacao: {
     flexDirection: 'row',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: 18,
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
     borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
   },
   desligada: {
     opacity: 0.45,
   },
   iconeApp: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconeAppTexto: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 17,
+    lineHeight: 20,
+  },
+  corpoNotificacao: {
+    flex: 1,
+    gap: Spacing.half,
   },
   topo: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  nomeApp: {
-    fontSize: 11,
-    lineHeight: 16,
-    letterSpacing: 0.5,
   },
   quando: {
     fontSize: 12,
     lineHeight: 16,
+  },
+  tituloNotificacao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tituloExemplo: {
+    flexShrink: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: 800,
   },
 });

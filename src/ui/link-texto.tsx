@@ -25,8 +25,10 @@ export function LinkTexto({ label, onPress, disabled = false, perigo = false }: 
       accessibilityState={{ disabled }}
       style={({ pressed }) => [styles.link, (pressed || disabled) && styles.apagado]}>
       <ThemedText
-        type="smallBold"
-        style={[styles.texto, { color: perigo ? theme.danger : theme.accent }]}>
+        style={[
+          styles.texto,
+          perigo ? { color: theme.danger } : { color: theme.accentInk, textDecorationLine: 'underline' },
+        ]}>
         {label}
       </ThemedText>
     </Pressable>
@@ -39,6 +41,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   texto: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: 800,
     textAlign: 'center',
   },
   apagado: {

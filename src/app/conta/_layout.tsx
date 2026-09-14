@@ -1,13 +1,19 @@
 import { Stack, useNavigation, useRouter } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
+import { Colors, fontFamily } from '@/constants/theme';
 import { closeAccountFlow } from '@/features/auth/navigation';
 import { Icon, icons } from '@/ui/icon';
 
 function BotaoFechar({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} hitSlop={12} accessibilityRole="button" accessibilityLabel="Fechar">
-      <Icon name={icons.fechar} size={20} />
+    <Pressable
+      onPress={onPress}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel="Fechar"
+      style={({ pressed }) => [styles.fechar, pressed && styles.pressed]}>
+      <Icon name={icons.fechar} size={18} />
     </Pressable>
   );
 }
@@ -19,7 +25,15 @@ export default function ContaLayout() {
   const fechar = () => closeAccountFlow(router, raiz);
 
   return (
-    <Stack screenOptions={{ headerBackButtonDisplayMode: 'minimal' }}>
+    <Stack
+      screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
+        headerShadowVisible: false,
+        headerTintColor: Colors.text,
+        headerStyle: { backgroundColor: Colors.background },
+        headerTitleStyle: { fontFamily: fontFamily('body', 800), fontSize: 16, color: Colors.text },
+        contentStyle: { backgroundColor: Colors.background },
+      }}>
       <Stack.Screen
         name="entrar"
         options={{ title: 'Entrar', headerLeft: () => <BotaoFechar onPress={fechar} /> }}
@@ -38,3 +52,19 @@ export default function ContaLayout() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  fechar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.backgroundElement,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  pressed: {
+    opacity: 0.6,
+  },
+});

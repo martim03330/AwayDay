@@ -2,6 +2,62 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Design «Relvado» nos ecrãs, jogos dos teus clubes, histórico e faixa de novidades
+
+**Design, fases 2 e 3.** Os componentes de futebol e os ecrãs seguem o canvas «AwayDay Relvado»: bilhete de jogo
+picotado, relógio do dia de jogo com cinco passos, carimbos de passaporte na cor do clube, escudo em SVG, pódio,
+mostrador do barulhómetro, cartão de tasco. Não há emoji na interface: as missões (`distintivo.icon`), os níveis do
+barulhómetro (`icone`) e os exemplos de notificação usam ícones. `Medidor` recebe `icon` e `ContadorPessoas` tem
+`variant`. As missões passam a ter ecrã próprio (`perfil/missoes`), como no design aprovado.
+
+**Jogos: só os teus clubes por omissão.** «Os teus clubes» são o clube que apoias e o clube da terra
+(`clubesDoUtilizador`). Os outros jogos ficam atrás de «Espreitar a concorrência». A escolha não é guardada: cada
+vez que a app abre, voltas aos teus clubes.
+
+**Jogos terminados saem da lista, nunca da base de dados.** Um jogo terminado só fica em Jogos para quem foi, até ao
+fim do dia seguinte em Lisboa, para dar tempo de avaliar (`ficaNaListaDeJogos`). Depois passa para «Os teus jogos»
+no Perfil. Os jogos a que não foste deixam de aparecer, mas `fixture` continua intacta: a retrospetiva, as dicas e
+o treinador contam as idas a partir de `fixture_attendance`, e apagar jogos partia essas contas.
+- «Foste» = `going` ou `attended` na conta (lista completa lida com `fetchMyAttendance`, RLS só devolve as tuas)
+  ou uma avaliação feita neste telemóvel. Sem conta, só contam as avaliações.
+- Marcar «Vou a este jogo» invalida a lista inteira (`[attendance, userId]` como prefixo).
+
+**Faixa de novidades.** As novidades (`nudge`) correm numa faixa no topo de Jogos, a 45 px/s, com as 5 mais recentes
+das últimas duas semanas. Tocar abre a lista. Sem conta ou sem novidades recentes, a faixa não aparece. Com «reduzir
+movimento», fica parada na mais recente.
+
+**Perfil arrumado.** O Perfil fica com a conta, os clubes e resumos (passaporte com os 3 carimbos mais recentes,
+missões, os teus jogos, álbum, tascos, ranking). Ecrãs próprios: `perfil/passaporte`, `perfil/os-meus-jogos` e
+`perfil/definicoes` (sons, notificações, localização, rever a introdução e o modo demo, que os 5 toques no cabeçalho
+passam a abrir). A linha de grupo passou para `src/ui/linha-grupo.tsx`. O histórico de avaliações deixou de ter
+secção própria: cada jogo em «Os teus jogos» mostra a nota e abre a ficha, onde se edita a avaliação.
+
+**Barra de estado.** Branca nos ecrãs com cabeçalho verde (`useBarraDeEstadoClara`), a seguir o foco e não a
+montagem, porque as tabs ficam montadas.
+
+## 2026-09-14 — Design «Relvado», fase 1: fundamentos e componentes base
+
+**Contexto.** O design está no canvas «AwayDay Relvado»: verde de relvado com riscas de corte, fundo cor de
+cal, amarelo de cartão para destacar e tinta verde-escura em vez de preto. Vai entrar por fases: fundamentos e
+componentes base (esta), componentes de futebol e depois os ecrãs.
+
+- **Só modo claro.** O design só tem versão clara. O `app.json` passa a `userInterfaceStyle: "light"` e o
+  `Colors` do tema é uma paleta única. Os nomes antigos (`accent`, `background`, `backgroundElement`, …) ficam
+  iguais, para os ecrãs mudarem de cor sem mexer neles. Os hooks `use-color-scheme` saíram, porque ninguém mais
+  os usava. A versão escura fica para depois.
+- **Fontes: `@expo-google-fonts/big-shoulders`, `big-shoulders-stencil` e `figtree`**, carregadas com
+  `useFonts` no layout raiz, com o ecrã de arranque à espera. Big Shoulders para títulos, Stencil para horas e
+  números, Figtree para o texto. Os pacotes `big-shoulders-display` são uma versão antiga da mesma família.
+- **Um ficheiro de fonte por peso.** O Android ignora o `fontWeight` em fontes próprias, por isso o
+  `ThemedText` escolhe a fonte a partir do peso (`fontFamily(role, peso)`) e põe o `fontWeight` a `normal`.
+  Os estilos dos ecrãs continuam a escrever `fontWeight: 700`. Os três `Text` diretos que ainda existem
+  (escudo e fotos) ficam com a fonte do sistema até à fase 2.
+- **Ícones em SVG (`react-native-svg`)** em vez de SF Symbols e Material Symbols: o mesmo traço de 2 px em iOS,
+  Android e web, como no design. Os nomes (`icons.jogos`, …) não mudaram. A barra de separadores continua nativa
+  e por isso continua com SF Symbols e Material, só com as cores novas.
+- **Pedido de dependências aprovado** nesta sessão: `react-native-svg` e os três pacotes de fontes. O
+  `expo install` juntou também o plugin `expo-font` ao `app.json`.
+
 ## 2026-09-14 — Correções da auditoria de segurança
 
 **Contexto.** Auditoria completa ao código: RLS, Edge Functions, autenticação, segredos, dependências. Não houve

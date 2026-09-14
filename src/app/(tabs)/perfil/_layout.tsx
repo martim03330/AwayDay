@@ -3,8 +3,21 @@ import { Stack } from 'expo-router';
 export default function PerfilLayout() {
   return (
     <Stack>
-      <Stack.Screen name="index">
-        <Stack.Screen.Title large>Perfil</Stack.Screen.Title>
+      {/* The profile draws its own green header. */}
+      <Stack.Screen name="index" options={{ headerShown: false }}>
+        <Stack.Screen.Title>Perfil</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="missoes" options={{ headerShown: false }}>
+        <Stack.Screen.Title>Missões</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="passaporte">
+        <Stack.Screen.Title>Passaporte de estádios</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="os-meus-jogos">
+        <Stack.Screen.Title>Os teus jogos</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="definicoes">
+        <Stack.Screen.Title>Definições</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="album">
         <Stack.Screen.Title>Álbum de recordações</Stack.Screen.Title>

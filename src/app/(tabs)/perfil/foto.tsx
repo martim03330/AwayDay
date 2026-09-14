@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { FotoRecordacao } from '@/components/foto-recordacao';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { obterClube } from '@/mocks/clubes';
@@ -15,7 +15,7 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { IconCircle, icons } from '@/ui/icon';
+import { Icon, IconCircle, icons } from '@/ui/icon';
 import { ListRow } from '@/ui/list-row';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -80,9 +80,11 @@ export default function FotoScreen() {
       <FotoRecordacao foto={foto} style={styles.foto} />
 
       <View style={styles.cabecalho}>
-        <ThemedText style={styles.emoji}>{missao.distintivo.emoji}</ThemedText>
+        <View style={[styles.distintivo, { backgroundColor: theme.successBackground }]}>
+          <Icon name={missao.distintivo.icon} size={26} color={theme.accentInk} />
+        </View>
         <View style={styles.flex}>
-          <ThemedText type="smallBold" style={styles.titulo} accessibilityRole="header">
+          <ThemedText type="section" style={styles.titulo} accessibilityRole="header">
             {missao.distintivo.nome}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -139,20 +141,23 @@ const styles = StyleSheet.create({
   foto: {
     aspectRatio: 1,
     marginTop: Spacing.two,
-    borderRadius: 20,
+    borderRadius: Radius.card,
   },
   cabecalho: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
   },
-  emoji: {
-    fontSize: 36,
-    lineHeight: 44,
+  distintivo: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titulo: {
-    fontSize: 20,
-    lineHeight: 28,
+    lineHeight: 30,
   },
   flex: {
     flex: 1,
@@ -161,6 +166,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   detalhes: {
-    gap: Spacing.three,
+    gap: 14,
   },
 });

@@ -2,7 +2,8 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { modosTransporte } from '@/components/como-chegar';
-import { Spacing } from '@/constants/theme';
+import { PontoAoVivo } from '@/components/jogo-card';
+import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarHora } from '@/lib/datas';
@@ -12,12 +13,15 @@ import { filtrarPorTempoAPe } from '@/lib/locais';
 import { avisoDeChuva } from '@/lib/meteorologia';
 import { LIMIAR_CALOR } from '@/lib/pratos';
 import {
+  FASES_DIA_DE_JOGO,
   faseDoDiaDeJogo,
   formatarContagem,
   horaLimiteParaSair,
+  nomesFase,
   partidaDoUltimoTransporte,
   tascoMaisConcorrido,
   tascoParaAlmocar,
+  type FaseDiaDeJogo,
 } from '@/lib/relogio';
 import { locaisDoEstadio } from '@/mocks/locais';
 import { ultimoTransporteDe } from '@/mocks/regressos';
@@ -27,9 +31,8 @@ import { useRelogio } from '@/state/relogio';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
 import { Etiqueta } from '@/ui/etiqueta';
-import { Icon, IconCircle, icons, type IconName } from '@/ui/icon';
+import { Icon, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
-import { ThemedView } from '@/ui/themed-view';
 
 const MEIA_HORA_MS = 30 * 60 * 1000;
 
@@ -40,10 +43,34 @@ function LinhaAviso({ icon, texto }: { icon: IconName; texto: string }) {
       accessible
       accessibilityLabel={texto}
       style={[styles.aviso, { backgroundColor: theme.warningBackground }]}>
-      <Icon name={icon} size={16} color={theme.warning} />
-      <ThemedText type="small" style={styles.flex}>
-        {texto}
-      </ThemedText>
+      <Icon name={icon} size={16} color={theme.warningText} />
+      <ThemedText style={[styles.avisoTexto, { color: theme.warningText }]}>{texto}</ThemedText>
+    </View>
+  );
+}
+
+/** Five-step bar: past phases green, the current one yellow, the rest empty. */
+function PassosDoDia({ fase }: { fase: FaseDiaDeJogo }) {
+  const theme = useTheme();
+  const atual = FASES_DIA_DE_JOGO.indexOf(fase);
+
+  return (
+    <View
+      style={styles.passos}
+      accessible
+      accessibilityLabel={`Fase ${atual + 1} de ${FASES_DIA_DE_JOGO.length}: ${nomesFase[fase]}`}>
+      {FASES_DIA_DE_JOGO.map((passo, index) => (
+        <View
+          key={passo}
+          style={[
+            styles.passo,
+            {
+              backgroundColor:
+                index < atual ? theme.accent : index === atual ? theme.highlight : theme.border,
+            },
+          ]}
+        />
+      ))}
     </View>
   );
 }
@@ -68,20 +95,23 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
 
   if (fase === 'a-decorrer') {
     return (
-      <ThemedView
-        type="backgroundElement"
-        style={[styles.bloco, styles.discreto]}
+      <View
+        style={[styles.aoVivo, { backgroundColor: theme.accent }]}
         accessible
         accessibilityLabel={`Em jogo. Termina por volta das ${formatarHora(fim)}.`}>
-        <View style={[styles.pontoAoVivo, { backgroundColor: theme.success }]} />
-        <ThemedText type="smallBold">Em jogo</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+        <PontoAoVivo />
+        <ThemedText style={[styles.aoVivoTitulo, { color: theme.accentText }]}>Em jogo</ThemedText>
+        <ThemedText style={[styles.aoVivoHora, { color: theme.accentText }]}>
           {`até cerca das ${formatarHora(fim)}`}
         </ThemedText>
         {etiquetaSimulada}
-      </ThemedView>
+      </View>
     );
   }
+
+  // The one moment with a key action (go and check in) gets the yellow button and ring.
+  const tascoCheckIn = fase === 'check-in' ? tascoMaisConcorrido(perto, pessoasAqui) : undefined;
+  const destaque = Boolean(tascoCheckIn);
 
   function abrirLocal(local: Local) {
     router.push({ pathname: '/locais/[localId]', params: { localId: local.id } });
@@ -111,7 +141,7 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
     }
 
     if (fase === 'check-in') {
-      const tasco = tascoMaisConcorrido(perto, pessoasAqui);
+      const tasco = tascoCheckIn;
       if (!tasco) {
         return (
           <ThemedText type="small">
@@ -124,7 +154,12 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
           <ThemedText type="small">
             {`A malta já se está a juntar. ${tasco.nome}: já lá estão ${plural(pessoasAqui(tasco), 'pessoa', 'pessoas')}.`}
           </ThemedText>
-          <Button label="Ir fazer check-in" icon={icons.checkIn} onPress={() => abrirLocal(tasco)} />
+          <Button
+            label="Ir fazer check-in"
+            variant="highlight"
+            icon={icons.checkIn}
+            onPress={() => abrirLocal(tasco)}
+          />
         </>
       );
     }
@@ -185,28 +220,28 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
 
     return (
       <>
-        <ThemedText style={styles.titulo}>Apito final. Como foi?</ThemedText>
+        <ThemedText type="section" style={styles.apitoFinal}>
+          Apito final. Como foi?
+        </ThemedText>
         <Button
           label={avaliacao ? 'Editar avaliação' : 'Avaliar experiência'}
+          variant="highlight"
           icon={icons.estrela}
           onPress={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
         />
         {transporte ? (
-          <View style={styles.transporte}>
-            <IconCircle name={modosTransporte[transporte.modo].icon} />
+          <View style={[styles.transporte, { borderTopColor: theme.border }]}>
+            <Icon name={modosTransporte[transporte.modo].icon} size={20} color={theme.info} />
             <View style={styles.flex}>
-              <ThemedText type="smallBold">{`Último regresso às ${transporte.hora}`}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText style={styles.transporteTitulo}>{`Último regresso às ${transporte.hora}`}</ThemedText>
+              <ThemedText themeColor="textSecondary" style={styles.transporteDescricao}>
                 {transporte.descricao}
               </ThemedText>
-              <View style={styles.etiqueta}>
-                <Etiqueta
-                  icon={icons.horario}
-                  label={falta > 0 ? `Sai daqui a ${formatarContagem(falta)}` : 'Já saiu · resta TVDE'}
-                  tone={falta <= 0 ? 'negativo' : falta < MEIA_HORA_MS ? 'aviso' : 'positivo'}
-                />
-              </View>
             </View>
+            <Etiqueta
+              label={falta > 0 ? `Sai daqui a ${formatarContagem(falta)}` : 'Já saiu · resta TVDE'}
+              tone={falta <= 0 ? 'negativo' : falta < MEIA_HORA_MS ? 'aviso' : 'positivo'}
+            />
           </View>
         ) : (
           <ThemedText type="small" themeColor="textSecondary">
@@ -217,64 +252,119 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
     );
   }
 
+  const contagem = formatarContagem(Date.parse(jogo.inicio) - agora);
+
   return (
-    <ThemedView type="backgroundElement" style={styles.bloco}>
+    <View
+      style={[
+        styles.bloco,
+        { backgroundColor: theme.backgroundElement },
+        destaque && { borderColor: theme.highlight },
+      ]}>
       <View style={styles.topo}>
-        <Icon name={icons.horario} size={14} color={theme.textSecondary} />
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rotulo}>
-          Dia de jogo
-        </ThemedText>
-        <View style={styles.flex} />
-        {etiquetaSimulada}
+        <View style={styles.fase}>
+          <Icon name={icons.horario} size={16} color={theme.accentInk} />
+          <ThemedText type="eyebrow" themeColor="accentInk" style={styles.flexEncolhe}>
+            {nomesFase[fase]}
+          </ThemedText>
+          {etiquetaSimulada}
+        </View>
+        {fase === 'depois' ? null : (
+          <View style={styles.contagem}>
+            <ThemedText themeColor="textSecondary" style={styles.contagemRotulo}>
+              Apito daqui a
+            </ThemedText>
+            <ThemedText
+              type="score"
+              style={styles.contagemValor}
+              accessibilityRole="timer"
+              accessibilityLabel={`Apito daqui a ${contagem}`}>
+              {contagem}
+            </ThemedText>
+          </View>
+        )}
       </View>
 
-      {fase === 'depois' ? (
-        renderDepois()
-      ) : (
-        <>
-          <ThemedText style={styles.titulo} accessibilityRole="timer">
-            {`Apito daqui a ${formatarContagem(Date.parse(jogo.inicio) - agora)}`}
-          </ThemedText>
-          {renderSugestao()}
-        </>
-      )}
-    </ThemedView>
+      <PassosDoDia fase={fase} />
+
+      {fase === 'depois' ? renderDepois() : renderSugestao()}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   bloco: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: 20,
+    gap: 12,
+    padding: 14,
+    borderRadius: Radius.card,
     borderCurve: 'continuous',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    ...CardShadow,
   },
-  discreto: {
+  aoVivo: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.two,
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 18,
+    borderCurve: 'continuous',
   },
-  pontoAoVivo: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  aoVivoTitulo: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: 800,
+  },
+  aoVivoHora: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 600,
+    opacity: 0.85,
   },
   topo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.one,
+    justifyContent: 'space-between',
+    gap: Spacing.two,
   },
-  rotulo: {
-    fontSize: 12,
-    lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  fase: {
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  titulo: {
-    fontSize: 22,
-    lineHeight: 28,
+  flexEncolhe: {
+    flexShrink: 1,
+  },
+  contagem: {
+    alignItems: 'flex-end',
+  },
+  contagemRotulo: {
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: 700,
+  },
+  contagemValor: {
+    fontSize: 24,
+    lineHeight: 27,
     fontVariant: ['tabular-nums'],
+  },
+  passos: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  passo: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+  },
+  apitoFinal: {
+    fontSize: 28,
+    lineHeight: 31,
+    fontWeight: 900,
   },
   flex: {
     flex: 1,
@@ -283,16 +373,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    padding: Spacing.two,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 12,
+  },
+  avisoTexto: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 700,
   },
   transporte: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.three,
+    alignItems: 'center',
+    gap: 10,
+    paddingTop: 10,
+    borderTopWidth: 1.5,
+    borderStyle: 'dashed',
   },
-  etiqueta: {
-    flexDirection: 'row',
-    marginTop: Spacing.one,
+  transporteTitulo: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: 800,
+  },
+  transporteDescricao: {
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

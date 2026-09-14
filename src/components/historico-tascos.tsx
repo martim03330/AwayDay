@@ -51,7 +51,7 @@ export function HistoricoTascos({ visitas, onAbrirLocal }: HistoricoTascosProps)
             accessibilityLabel={`${local.nome}, ${dia}, ${visita.verificado ? 'verificado' : 'por verificar'}. Abrir local.`}>
             <View style={styles.linha}>
               <View style={styles.flex}>
-                <ThemedText type="smallBold" numberOfLines={1}>
+                <ThemedText numberOfLines={1} style={styles.nome}>
                   {local.nome}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
@@ -82,5 +82,11 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+    gap: Spacing.half,
+  },
+  nome: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: 800,
   },
 });

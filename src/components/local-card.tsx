@@ -1,12 +1,14 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { formatarDistancia } from '@/lib/formatos';
 import { nomesTipoLocal } from '@/mocks/locais';
 import type { Local } from '@/mocks/tipos';
-import { Badge } from '@/ui/badge';
 import { Card } from '@/ui/card';
 import { ContadorPessoas } from '@/ui/contador-pessoas';
+import { Etiqueta } from '@/ui/etiqueta';
+import { Icon, icons } from '@/ui/icon';
 import { Medidor } from '@/ui/medidor';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -17,58 +19,124 @@ type LocalCardProps = {
   onPress: () => void;
 };
 
+/** Dashed divider. A dashed border on a single side does not render on iOS, so the box is clipped. */
+function Tracejado() {
+  const theme = useTheme();
+  return (
+    <View style={styles.tracejado}>
+      <View style={[styles.tracejadoLinha, { borderColor: theme.border }]} />
+    </View>
+  );
+}
+
 export function LocalCard({ local, pessoas, checkedIn, onPress }: LocalCardProps) {
+  const theme = useTheme();
   const distancia = `${local.minutosAPe} min a pé (${formatarDistancia(local.distanciaMetros)})`;
 
   return (
     <Card
       onPress={onPress}
-      accessibilityLabel={`${local.nome}, ${nomesTipoLocal[local.tipo]}, ${distancia} do estádio, cervejómetro ${local.cervejometro} de 5, petiscómetro ${local.petiscometro} de 5, ${pessoas} pessoas aqui`}>
+      style={styles.card}
+      accessibilityLabel={`${local.nome}, ${nomesTipoLocal[local.tipo]}, ${distancia} do estádio, cervejómetro ${local.cervejometro} de 5, petiscómetro ${local.petiscometro} de 5, ${pessoas} pessoas aqui, especialidade ${local.especialidade}`}>
       <View style={styles.topo}>
-        <View style={styles.flex}>
-          <ThemedText type="smallBold" style={styles.nome}>
-            {local.nome}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {nomesTipoLocal[local.tipo]} · {'€'.repeat(local.precoMedio)} · 🚶 {distancia}
-          </ThemedText>
+        <View style={styles.textos}>
+          <ThemedText style={styles.nome}>{local.nome}</ThemedText>
+          <View style={styles.meta}>
+            <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
+              {`${nomesTipoLocal[local.tipo]} · ${'€'.repeat(local.precoMedio)} ·`}
+            </ThemedText>
+            <Icon name={icons.aPe} size={15} color={theme.textSecondary} />
+            <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
+              {distancia}
+            </ThemedText>
+          </View>
+          {checkedIn ? (
+            <View style={styles.estasAqui}>
+              <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
+            </View>
+          ) : null}
         </View>
-        {checkedIn ? <Badge label="Estás aqui" /> : null}
+        <ContadorPessoas count={pessoas} variant="tile" />
       </View>
 
+      <Tracejado />
+
       <View style={styles.rodape}>
-        <View style={styles.medidores}>
-          <Medidor compact label="Cervejómetro" emoji="🍺" value={local.cervejometro} />
-          <Medidor compact label="Petiscómetro" emoji="🍢" value={local.petiscometro} />
-        </View>
-        <ContadorPessoas count={pessoas} />
+        <Medidor
+          compact
+          label="Cervejómetro"
+          icon={icons.tasco}
+          tone="amarelo"
+          value={local.cervejometro}
+        />
+        <Medidor
+          compact
+          label="Petiscómetro"
+          icon={icons.especialidade}
+          tone="verde"
+          value={local.petiscometro}
+        />
+        <ThemedText
+          numberOfLines={1}
+          style={[styles.especialidade, { color: theme.textSecondary }]}>
+          {local.especialidade}
+        </ThemedText>
       </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    gap: 12,
+  },
   topo: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: Spacing.two,
+    gap: 12,
   },
-  flex: {
+  textos: {
     flex: 1,
+    gap: 6,
   },
   nome: {
-    fontSize: 17,
-    lineHeight: 24,
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: 800,
   },
-  rodape: {
+  meta: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+  },
+  metaTexto: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 600,
+  },
+  estasAqui: {
+    flexDirection: 'row',
+  },
+  tracejado: {
+    height: 1.5,
+    overflow: 'hidden',
+  },
+  tracejadoLinha: {
+    height: 6,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  rodape: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
   },
-  medidores: {
-    flexDirection: 'row',
-    gap: Spacing.three,
+  especialidade: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 700,
+    textAlign: 'right',
   },
 });

@@ -1,27 +1,101 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useCarimbosNovos } from '@/hooks/use-carimbos-novos';
 import { useTheme } from '@/hooks/use-theme';
 import { notaDoEstadio } from '@/lib/avaliacoes';
+import { formatarData } from '@/lib/datas';
 import { formatarNota } from '@/lib/formatos';
 import { DIVISOES, nomesDivisao, obterClube } from '@/mocks/clubes';
 import { estadiosNacionais } from '@/mocks/estadios';
-import type { AvaliacaoVisita } from '@/mocks/tipos';
+import type { AvaliacaoVisita, Clube, Venue } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { Carimbo } from '@/ui/carimbo';
-import { Escudo } from '@/ui/escudo';
 import { Icon, icons } from '@/ui/icon';
 import { ProgressBar } from '@/ui/progress-bar';
 import { ThemedText } from '@/ui/themed-text';
 
+const TAMANHO_CARIMBO = 80;
+
+/** Words that say nothing on a stamp ("Estádio Municipal de Braga" -> "BRAGA"). */
+const PALAVRAS_GENERICAS = new Set([
+  'estádio',
+  'municipal',
+  'parque',
+  'jogos',
+  'desportivo',
+  'complexo',
+  'século',
+  'de',
+  'do',
+  'da',
+  'dos',
+  'das',
+]);
+
+/** Short stencil label for the stamp: the last meaningful word of the stadium name. */
+function nomeDoCarimbo(nome: string) {
+  const palavras = nome
+    .split(/\s+/)
+    .filter(
+      (palavra) =>
+        palavra.length > 2 &&
+        !palavra.endsWith('.') &&
+        !/^[IVXLC]+$/.test(palavra) &&
+        !PALAVRAS_GENERICAS.has(palavra.toLowerCase())
+    );
+  return (palavras[palavras.length - 1] ?? nome).toUpperCase();
+}
+
+function tamanhoDoNome(rotulo: string) {
+  if (rotulo.length <= 4) return 20;
+  if (rotulo.length <= 6) return 17;
+  if (rotulo.length <= 8) return 14;
+  return 12;
+}
+
+/** "13·09·26": the date of the latest rated visit to this stadium, if there is one. */
+function dataDoCarimbo(avaliacoes: readonly AvaliacaoVisita[], estadioId: string) {
+  const ultima = avaliacoes
+    .filter((avaliacao) => avaliacao.estadioId === estadioId)
+    .map((avaliacao) => avaliacao.dataVisita)
+    .sort()
+    .at(-1);
+  if (!ultima) return null;
+  const [dia, mes, ano] = formatarData(new Date(ultima)).split('/');
+  return dia && mes && ano ? `${dia}·${mes}·${ano.slice(-2)}` : null;
+}
+
+/** A few degrees either way, always the same for the same stadium. */
+function rotacaoDoCarimbo(estadioId: string) {
+  let soma = 0;
+  for (const letra of estadioId) soma = (soma * 31 + letra.charCodeAt(0)) % 997;
+  return `${(soma % 19) - 9}deg`;
+}
+
+function eClara(cor: string) {
+  const hex = /^#?([0-9a-f]{6})$/i.exec(cor)?.[1];
+  if (!hex) return false;
+  const [r, g, b] = [0, 2, 4].map((inicio) => parseInt(hex.slice(inicio, inicio + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 186;
+}
+
+/** Ink in the home club's colour; white or yellow clubs fall back to their second colour. */
+function corDaTinta(dono: Clube | undefined) {
+  if (!dono) return Colors.accent;
+  if (!eClara(dono.cores.primaria)) return dono.cores.primaria;
+  if (!eClara(dono.cores.secundaria)) return dono.cores.secundaria;
+  return Colors.text;
+}
+
 type PassaporteCardProps = {
   estadiosVisitados: readonly string[];
   avaliacoes: readonly AvaliacaoVisita[];
+  /** Summary for the profile: only the most recent visited stamps, up to this many. */
+  limite?: number;
 };
 
-export function PassaporteCard({ estadiosVisitados, avaliacoes }: PassaporteCardProps) {
-  const theme = useTheme();
+export function PassaporteCard({ estadiosVisitados, avaliacoes, limite }: PassaporteCardProps) {
   const eNovo = useCarimbosNovos(estadiosVisitados);
 
   const visitado = (estadioId: string) => estadiosVisitados.includes(estadioId);
@@ -34,121 +108,281 @@ export function PassaporteCard({ estadiosVisitados, avaliacoes }: PassaporteCard
     return { divisao, lista, visitados: lista.filter((estadio) => visitado(estadio.id)).length };
   });
 
+  const ultimaVisita = (estadioId: string) =>
+    avaliacoes
+      .filter((avaliacao) => avaliacao.estadioId === estadioId)
+      .map((avaliacao) => avaliacao.dataVisita)
+      .sort()
+      .at(-1) ?? '';
+  const recentes = estadiosNacionais
+    .filter((estadio) => visitado(estadio.id))
+    .sort((a, b) => ultimaVisita(b.id).localeCompare(ultimaVisita(a.id)))
+    .slice(0, limite);
+
+  const celula = (estadio: Venue) => (
+    <CelulaCarimbo
+      key={estadio.id}
+      estadio={estadio}
+      visitado={visitado(estadio.id)}
+      novo={eNovo(estadio.id)}
+      avaliacoes={avaliacoes}
+    />
+  );
+
   return (
     <Card style={styles.card}>
-      <View>
-        <ThemedText style={styles.contagem}>
-          {totalVisitados} de {estadiosNacionais.length}
+      <View style={styles.resumo}>
+        <ThemedText type="score" themeColor="accent" style={styles.contagem}>
+          {totalVisitados}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          estádios visitados
-        </ThemedText>
+        <View style={styles.resumoTexto}>
+          <ThemedText type="section" style={styles.total}>
+            {`de ${estadiosNacionais.length}`}
+          </ThemedText>
+          <ThemedText style={styles.legenda} themeColor="textSecondary">
+            estádios visitados
+          </ThemedText>
+        </View>
       </View>
       <ProgressBar
-        progress={totalVisitados / estadiosNacionais.length}
+        progress={estadiosNacionais.length > 0 ? totalVisitados / estadiosNacionais.length : 0}
         accessibilityLabel={`${totalVisitados} de ${estadiosNacionais.length} estádios visitados`}
       />
 
-      {grupos.map((grupo) => (
-        <View key={grupo.divisao} style={styles.grupo}>
-          <View style={styles.cabecalhoGrupo}>
-            <ThemedText type="smallBold">{nomesDivisao[grupo.divisao]}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {grupo.visitados} de {grupo.lista.length}
-            </ThemedText>
+      {limite !== undefined ? (
+        recentes.length > 0 ? (
+          <View style={[styles.carimbos, styles.grupo]}>{recentes.map(celula)}</View>
+        ) : null
+      ) : (
+        grupos.map((grupo) => (
+          <View key={grupo.divisao} style={styles.grupo}>
+            <View style={styles.cabecalhoGrupo}>
+              <ThemedText type="eyebrow" themeColor="textSecondary" style={styles.flex}>
+                {nomesDivisao[grupo.divisao]}
+              </ThemedText>
+              <ThemedText style={styles.contagemGrupo}>
+                {grupo.visitados} de {grupo.lista.length}
+              </ThemedText>
+            </View>
+            <View style={styles.carimbos}>{grupo.lista.map(celula)}</View>
           </View>
-          <View style={styles.carimbos}>
-            {grupo.lista.map((estadio) => {
-              const dono = obterClube(estadio.clubeId);
-              const foiVisitado = visitado(estadio.id);
-              const nota = notaDoEstadio(avaliacoes, estadio.id);
-              const novo = eNovo(estadio.id);
-              return (
-                <Carimbo
-                  key={estadio.id}
-                  novo={novo}
-                  accessibilityLabel={[
-                    estadio.nome,
-                    foiVisitado ? 'visitado' : 'por visitar',
-                    novo ? 'carimbo novo' : null,
-                    nota ? `a tua nota: ${formatarNota(nota.media)} de 5` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
-                  style={[
-                    styles.carimbo,
-                    { backgroundColor: theme.background },
-                    !foiVisitado && styles.porVisitar,
-                  ]}>
-                  {dono ? <Escudo clube={dono} size={28} /> : null}
-                  <ThemedText type="small" numberOfLines={2} style={styles.carimboNome}>
-                    {estadio.nome}
-                  </ThemedText>
-                  {foiVisitado ? (
-                    <View style={styles.estado}>
-                      <Icon name={icons.visitado} size={14} color={theme.success} />
-                      {nota ? (
-                        <ThemedText type="smallBold" style={[styles.nota, { color: theme.accent }]}>
-                          ★ {formatarNota(nota.media)}
-                        </ThemedText>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </Carimbo>
-              );
-            })}
+        ))
+      )}
+    </Card>
+  );
+}
+
+type CelulaCarimboProps = {
+  estadio: Venue;
+  visitado: boolean;
+  novo: boolean;
+  avaliacoes: readonly AvaliacaoVisita[];
+};
+
+function CelulaCarimbo({ estadio, visitado: foiVisitado, novo, avaliacoes }: CelulaCarimboProps) {
+  const theme = useTheme();
+  const dono = obterClube(estadio.clubeId);
+  const nota = notaDoEstadio(avaliacoes, estadio.id);
+  const tinta = corDaTinta(dono);
+  const rotulo = nomeDoCarimbo(estadio.nome);
+  const data = foiVisitado ? dataDoCarimbo(avaliacoes, estadio.id) : null;
+
+  return (
+    <Carimbo
+      novo={novo}
+      accessibilityLabel={[
+        estadio.nome,
+        foiVisitado ? 'visitado' : 'por visitar',
+        novo ? 'carimbo novo' : null,
+        nota ? `a tua nota: ${formatarNota(nota.media)} de 5` : null,
+      ]
+        .filter(Boolean)
+        .join(', ')}
+      style={styles.celula}>
+      {foiVisitado ? (
+        <View
+          style={[
+            styles.carimbo,
+            { borderColor: tinta, transform: [{ rotate: rotacaoDoCarimbo(estadio.id) }] },
+          ]}>
+          <View style={[styles.carimboInterior, { borderColor: tinta }]}>
+            <ThemedText
+              type="score"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              allowFontScaling={false}
+              style={[
+                styles.carimboNome,
+                {
+                  color: tinta,
+                  fontSize: tamanhoDoNome(rotulo),
+                  lineHeight: tamanhoDoNome(rotulo) * 1.15,
+                },
+              ]}>
+              {rotulo}
+            </ThemedText>
+            {data ? (
+              <ThemedText allowFontScaling={false} style={[styles.carimboData, { color: tinta }]}>
+                {data}
+              </ThemedText>
+            ) : null}
           </View>
         </View>
-      ))}
-    </Card>
+      ) : (
+        <View
+          style={[
+            styles.carimbo,
+            styles.porVisitar,
+            { borderColor: theme.borderStrong, backgroundColor: theme.background },
+          ]}>
+          <Icon name={icons.estadio} size={26} color={theme.textMuted} />
+        </View>
+      )}
+      {novo ? (
+        <View style={[styles.novo, { backgroundColor: theme.highlight }]}>
+          <ThemedText allowFontScaling={false} style={[styles.novoTexto, { color: theme.highlightText }]}>
+            NOVO
+          </ThemedText>
+        </View>
+      ) : null}
+      <ThemedText
+        numberOfLines={2}
+        themeColor={foiVisitado ? 'text' : 'textMuted'}
+        style={[styles.estadioNome, !foiVisitado && styles.estadioNomePorVisitar]}>
+        {estadio.nome}
+      </ThemedText>
+      {nota ? (
+        <View style={styles.nota}>
+          <Icon name={icons.estrela} size={11} color={theme.warning} />
+          <ThemedText style={[styles.notaTexto, { color: theme.warning }]}>
+            {formatarNota(nota.media)}
+          </ThemedText>
+        </View>
+      ) : null}
+    </Carimbo>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
+    gap: 14,
+    paddingVertical: 18,
+  },
+  resumo: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
   },
   contagem: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: 700,
+    fontSize: 64,
+    lineHeight: 68,
+    marginBottom: -6,
+  },
+  resumoTexto: {
+    paddingBottom: Spacing.one,
+  },
+  total: {
+    lineHeight: 28,
+  },
+  legenda: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 600,
+  },
+  flex: {
+    flex: 1,
   },
   grupo: {
-    gap: Spacing.two,
-    marginTop: Spacing.two,
+    gap: 14,
+    paddingTop: Spacing.one,
   },
   cabecalhoGrupo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  contagemGrupo: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 800,
   },
   carimbos: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: Spacing.two,
+    rowGap: Spacing.three,
+  },
+  celula: {
+    width: '33.33%',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.one,
   },
   carimbo: {
-    width: '32%',
+    width: TAMANHO_CARIMBO,
+    height: TAMANHO_CARIMBO,
+    borderRadius: TAMANHO_CARIMBO / 2,
+    borderWidth: 3,
     alignItems: 'center',
-    gap: Spacing.one,
-    padding: Spacing.two,
-    borderRadius: 14,
+    justifyContent: 'center',
   },
-  porVisitar: {
-    opacity: 0.35,
+  carimboInterior: {
+    width: TAMANHO_CARIMBO - 14,
+    height: TAMANHO_CARIMBO - 14,
+    borderRadius: (TAMANHO_CARIMBO - 14) / 2,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: 6,
   },
   carimboNome: {
-    fontSize: 11,
-    lineHeight: 14,
     textAlign: 'center',
   },
-  estado: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
+  carimboData: {
+    fontSize: 8,
+    lineHeight: 10,
+    fontWeight: 800,
+    letterSpacing: 0.8,
+  },
+  porVisitar: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
+  novo: {
+    position: 'absolute',
+    top: -6,
+    right: 2,
+    height: 20,
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+    borderRadius: Radius.pill,
+    transform: [{ rotate: '8deg' }],
+  },
+  novoTexto: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: 800,
+    letterSpacing: 0.6,
+  },
+  estadioNome: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: 700,
+    textAlign: 'center',
+  },
+  estadioNomePorVisitar: {
+    fontWeight: 600,
   },
   nota: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: -4,
+  },
+  notaTexto: {
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 15,
+    fontWeight: 800,
   },
 });

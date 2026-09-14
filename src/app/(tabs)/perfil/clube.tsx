@@ -7,7 +7,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero } from '@/lib/formatos';
 import { clubesPorDivisao, nomesDivisao } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
-import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
 export default function EscolherClubeScreen() {
@@ -19,13 +18,19 @@ export default function EscolherClubeScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.conteudo}>
-      <ThemedText type="smallBold" style={styles.titulo} accessibilityRole="header">
+      <ThemedText type="subtitle" style={styles.titulo} accessibilityRole="header">
         Clube que apoio
       </ThemedText>
 
       {clubesPorDivisao.map((grupo) => (
         <View key={grupo.divisao} style={styles.grupo}>
-          <SectionHeader title={nomesDivisao[grupo.divisao]} />
+          <ThemedText
+            type="eyebrow"
+            themeColor="textSecondary"
+            style={styles.divisao}
+            accessibilityRole="header">
+            {nomesDivisao[grupo.divisao]}
+          </ThemedText>
           {grupo.clubes.map((clube) => (
             <OpcaoClube
               key={clube.id}
@@ -46,16 +51,21 @@ export default function EscolherClubeScreen() {
 
 const styles = StyleSheet.create({
   conteudo: {
-    gap: Spacing.three,
+    gap: Spacing.four,
     padding: Spacing.three,
+    paddingTop: Spacing.four,
     paddingBottom: Spacing.six,
   },
   titulo: {
-    fontSize: 20,
-    lineHeight: 28,
-    marginTop: Spacing.two,
+    fontSize: 34,
+    lineHeight: 38,
+    paddingHorizontal: 6,
   },
   grupo: {
     gap: Spacing.two,
+  },
+  divisao: {
+    paddingHorizontal: 6,
+    paddingBottom: Spacing.one,
   },
 });

@@ -34,19 +34,19 @@ export default function ClubeDaTerraScreen() {
       contentContainerStyle={styles.conteudo}
       stickyHeaderIndices={[INDICE_BARRA_CONFIRMAR]}>
       <View style={styles.cabecalho}>
-        <ThemedText type="smallBold" style={styles.titulo} accessibilityRole="header">
+        <ThemedText type="subtitle" style={styles.titulo} accessibilityRole="header">
           Clube da terra
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText style={styles.texto} themeColor="textSecondary">
           O clube da tua cidade, que pode não ser o do coração. Sugerimos os que têm estádio mais
           perto de ti, mas quem escolhe és tu.
         </ThemedText>
       </View>
 
-      <View
-        style={[styles.barra, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+      <View style={[styles.barra, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
         <Button
           label={selecionado ? `Confirmar ${selecionado.nomeCurto}` : 'Escolhe um clube'}
+          variant="highlight"
           disabled={!selecionado || selecionado.id === clubeDaTerraId}
           onPress={confirmar}
         />
@@ -64,22 +64,27 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.six,
   },
   cabecalho: {
-    gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
+    gap: Spacing.two,
+    paddingHorizontal: 22,
     paddingTop: Spacing.four,
-    paddingBottom: Spacing.two,
+    paddingBottom: Spacing.three,
   },
   titulo: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 34,
+    lineHeight: 38,
+  },
+  texto: {
+    fontSize: 15,
+    lineHeight: 22,
   },
   barra: {
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: Spacing.two,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
   },
   lista: {
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.two,
+    paddingTop: Spacing.four,
   },
 });

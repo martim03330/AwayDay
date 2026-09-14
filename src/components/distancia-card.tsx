@@ -34,12 +34,12 @@ export function DistanciaCard({ venue }: { venue: Venue }) {
   return (
     <Card>
       <ListRow
-        leading={<IconCircle name={deCarro ? icons.carro : icons.aviao} />}
+        leading={<IconCircle name={deCarro ? icons.carro : icons.aviao} tone="sky" />}
         title={titulo}
         subtitle={subtitulo}
       />
       <Button label="Ver rota" icon={icons.rota} variant="secondary" disabled onPress={() => {}} />
-      <ThemedText type="small" themeColor="textSecondary" style={styles.nota}>
+      <ThemedText themeColor="textMuted" style={styles.nota}>
         Em breve · estimativa sem trânsito
       </ThemedText>
     </Card>
@@ -48,6 +48,8 @@ export function DistanciaCard({ venue }: { venue: Venue }) {
 
 const styles = StyleSheet.create({
   nota: {
+    fontSize: 12,
+    lineHeight: 16,
     textAlign: 'center',
   },
 });

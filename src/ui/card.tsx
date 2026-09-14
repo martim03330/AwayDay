@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { ThemedView } from '@/ui/themed-view';
 
 type CardProps = {
@@ -38,10 +38,12 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.two,
     padding: Spacing.three,
-    borderRadius: 20,
+    borderRadius: Radius.card,
     borderCurve: 'continuous',
+    ...CardShadow,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
+    transform: [{ scale: 0.99 }],
   },
 });

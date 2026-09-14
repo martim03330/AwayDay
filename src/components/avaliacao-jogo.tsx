@@ -8,8 +8,7 @@ import { estadoDoJogo, fimDoJogo, notaMedia } from '@/lib/jogos';
 import type { AvaliacaoVisita, Jogo } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
-import { IconCircle, icons } from '@/ui/icon';
-import { ListRow } from '@/ui/list-row';
+import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 type AvaliacaoJogoProps = {
@@ -19,51 +18,90 @@ type AvaliacaoJogoProps = {
   onAvaliar: () => void;
 };
 
+/** Yellow star tile, as in the design's "Avaliação da experiência" card. */
+function TileEstrela() {
+  const theme = useTheme();
+  return (
+    <View style={[styles.tile, { backgroundColor: theme.warningBackground }]}>
+      <Icon name={icons.estrela} size={24} color={theme.warning} />
+    </View>
+  );
+}
+
 export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJogoProps) {
   const theme = useTheme();
 
   if (estadoDoJogo(jogo, agora) !== 'terminado') {
     return (
-      <Card>
-        <ListRow
-          leading={<IconCircle name={icons.estrela} />}
-          title="Avaliação da experiência"
-          subtitle={`Abre ${formatarDiaEHora(fimDoJogo(jogo)).toLowerCase()}, depois do apito final.`}
-        />
+      <Card style={styles.linhaTile}>
+        <TileEstrela />
+        <View style={styles.textos}>
+          <ThemedText style={styles.titulo}>Avaliação da experiência</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Abre ${formatarDiaEHora(fimDoJogo(jogo)).toLowerCase()}, depois do apito final.`}
+          </ThemedText>
+        </View>
       </Card>
     );
   }
 
   if (!avaliacao) {
     return (
-      <Card>
-        <ListRow
-          leading={<IconCircle name={icons.estrela} />}
-          title="Como foi o jogo?"
-          subtitle="Dá nota ao estádio, ao ambiente e aos acessos."
-        />
-        <Button label="Avaliar experiência" icon={icons.estrela} onPress={onAvaliar} />
+      <Card style={styles.card}>
+        <View style={styles.linhaTile}>
+          <TileEstrela />
+          <View style={styles.textos}>
+            <ThemedText type="section" style={styles.pergunta}>
+              Como foi o jogo?
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Dá nota ao estádio, ao ambiente e aos acessos.
+            </ThemedText>
+          </View>
+        </View>
+        <Button label="Avaliar experiência" icon={icons.estrela} variant="highlight" onPress={onAvaliar} />
       </Card>
     );
   }
 
   const media = notaMedia(avaliacao);
+  const notas = [
+    { rotulo: 'Estádio', valor: avaliacao.estadio },
+    { rotulo: 'Ambiente', valor: avaliacao.ambiente },
+    { rotulo: 'Acessos', valor: avaliacao.acessos },
+  ];
 
   return (
-    <Card>
+    <Card style={styles.card}>
       <View style={styles.topo}>
-        <View style={styles.flex}>
-          <ThemedText type="smallBold">A tua avaliação</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {`Estádio ${avaliacao.estadio} · Ambiente ${avaliacao.ambiente} · Acessos ${avaliacao.acessos}`}
+        <ThemedText style={[styles.titulo, styles.flex]}>A tua avaliação</ThemedText>
+        <View
+          accessible
+          accessibilityLabel={`Nota média ${formatarNota(media)} de 5`}
+          style={[styles.media, { backgroundColor: theme.warningBackground }]}>
+          <Icon name={icons.estrela} size={14} color={theme.warning} />
+          <ThemedText style={[styles.mediaTexto, { color: theme.warning }]}>
+            {formatarNota(media)}
           </ThemedText>
         </View>
-        <ThemedText
-          style={[styles.media, { color: theme.accent }]}
-          accessibilityLabel={`Nota média ${formatarNota(media)} de 5`}>
-          ★ {formatarNota(media)}
-        </ThemedText>
       </View>
+
+      <View
+        style={styles.notas}
+        accessible
+        accessibilityLabel={notas.map(({ rotulo, valor }) => `${rotulo} ${valor}`).join(', ')}>
+        {notas.map(({ rotulo, valor }) => (
+          <View key={rotulo} style={[styles.nota, { backgroundColor: theme.backgroundSelected }]}>
+            <ThemedText type="eyebrow" themeColor="textSecondary">
+              {rotulo}
+            </ThemedText>
+            <ThemedText type="score" style={styles.valorNota}>
+              {valor}
+            </ThemedText>
+          </View>
+        ))}
+      </View>
+
       {avaliacao.comentario ? (
         <ThemedText type="small" themeColor="textSecondary" style={styles.comentario}>
           “{avaliacao.comentario}”
@@ -75,6 +113,35 @@ export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJo
 }
 
 const styles = StyleSheet.create({
+  card: {
+    gap: 14,
+  },
+  linhaTile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  tile: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textos: {
+    flex: 1,
+    gap: 2,
+  },
+  titulo: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: 800,
+  },
+  pergunta: {
+    fontSize: 26,
+    lineHeight: 30,
+  },
   topo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -84,9 +151,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   media: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: 700,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    height: 30,
+    paddingHorizontal: 11,
+    borderRadius: 999,
+  },
+  mediaTexto: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: 800,
+  },
+  notas: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  nota: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+  },
+  valorNota: {
+    fontSize: 28,
+    lineHeight: 32,
   },
   comentario: {
     fontStyle: 'italic',

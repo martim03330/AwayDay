@@ -4,15 +4,15 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CondicaoMeteorologica, Meteorologia } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
-import { Icon, icons, type IconName } from '@/ui/icon';
+import { Icon, IconCircle, icons, type IconName, type IconTone } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-const condicoes: Record<CondicaoMeteorologica, { nome: string; icon: IconName }> = {
-  sol: { nome: 'Sol', icon: icons.sol },
-  limpo: { nome: 'Céu limpo', icon: icons.limpo },
-  nublado: { nome: 'Nublado', icon: icons.nublado },
-  aguaceiros: { nome: 'Aguaceiros', icon: icons.aguaceiros },
-  chuva: { nome: 'Chuva', icon: icons.chuva },
+const condicoes: Record<CondicaoMeteorologica, { nome: string; icon: IconName; tone: IconTone }> = {
+  sol: { nome: 'Sol', icon: icons.sol, tone: 'yellow' },
+  limpo: { nome: 'Céu limpo', icon: icons.limpo, tone: 'yellow' },
+  nublado: { nome: 'Nublado', icon: icons.nublado, tone: 'sky' },
+  aguaceiros: { nome: 'Aguaceiros', icon: icons.aguaceiros, tone: 'sky' },
+  chuva: { nome: 'Chuva', icon: icons.chuva, tone: 'sky' },
 };
 
 export function MeteorologiaCard({ meteorologia }: { meteorologia: Meteorologia }) {
@@ -23,21 +23,27 @@ export function MeteorologiaCard({ meteorologia }: { meteorologia: Meteorologia 
     <Card
       style={styles.card}
       accessibilityLabel={`${condicao.nome}, ${meteorologia.temperatura} graus, ${meteorologia.probabilidadeChuva}% de probabilidade de chuva, vento a ${meteorologia.ventoKmh} quilómetros por hora`}>
-      <Icon name={condicao.icon} size={40} color={theme.accent} />
+      <IconCircle name={condicao.icon} size={26} tone={condicao.tone} />
       <View style={styles.corpo}>
-        <ThemedText style={styles.temperatura}>{meteorologia.temperatura} °C</ThemedText>
+        <ThemedText type="score" style={styles.temperatura}>
+          {meteorologia.temperatura} °C
+        </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {condicao.nome} à hora do jogo
         </ThemedText>
       </View>
       <View style={styles.detalhes}>
         <View style={styles.detalhe}>
-          <Icon name={icons.probabilidadeChuva} size={13} color={theme.textSecondary} />
-          <ThemedText type="small">{meteorologia.probabilidadeChuva}%</ThemedText>
+          <Icon name={icons.probabilidadeChuva} size={16} color={theme.info} />
+          <ThemedText style={[styles.detalheTexto, { color: theme.info }]}>
+            {meteorologia.probabilidadeChuva}%
+          </ThemedText>
         </View>
         <View style={styles.detalhe}>
-          <Icon name={icons.vento} size={13} color={theme.textSecondary} />
-          <ThemedText type="small">{meteorologia.ventoKmh} km/h</ThemedText>
+          <Icon name={icons.vento} size={16} color={theme.textSecondary} />
+          <ThemedText themeColor="textSecondary" style={styles.detalheTexto}>
+            {meteorologia.ventoKmh} km/h
+          </ThemedText>
         </View>
       </View>
     </Card>
@@ -48,22 +54,27 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: 14,
   },
   corpo: {
     flex: 1,
+    gap: Spacing.half,
   },
   temperatura: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: 700,
+    fontSize: 34,
+    lineHeight: 38,
   },
   detalhes: {
-    gap: Spacing.one,
+    gap: 6,
   },
   detalhe: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.one,
+    gap: 6,
+  },
+  detalheTexto: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: 800,
   },
 });

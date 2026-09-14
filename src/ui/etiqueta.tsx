@@ -5,10 +5,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-export type TomEtiqueta = 'positivo' | 'aviso' | 'negativo' | 'neutro';
+/** `destaque`: yellow card (e.g. "Falta a foto"). `info`: sky (e.g. "Mais rápido"). */
+export type TomEtiqueta = 'positivo' | 'aviso' | 'negativo' | 'neutro' | 'destaque' | 'info';
 
 type EtiquetaProps = {
-  icon: IconName;
+  icon?: IconName;
   label: string;
   tone: TomEtiqueta;
 };
@@ -16,10 +17,12 @@ type EtiquetaProps = {
 export function Etiqueta({ icon, label, tone }: EtiquetaProps) {
   const theme = useTheme();
   const cores = {
-    positivo: { fundo: theme.successBackground, texto: theme.success },
+    positivo: { fundo: theme.successBackground, texto: theme.successText },
     aviso: { fundo: theme.warningBackground, texto: theme.warning },
-    negativo: { fundo: theme.dangerBackground, texto: theme.danger },
+    negativo: { fundo: theme.dangerBackground, texto: theme.dangerText },
     neutro: { fundo: theme.backgroundSelected, texto: theme.textSecondary },
+    destaque: { fundo: theme.highlight, texto: theme.highlightText },
+    info: { fundo: theme.infoBackground, texto: theme.infoText },
   }[tone];
 
   return (
@@ -27,10 +30,8 @@ export function Etiqueta({ icon, label, tone }: EtiquetaProps) {
       accessible
       accessibilityLabel={label}
       style={[styles.etiqueta, { backgroundColor: cores.fundo }]}>
-      <Icon name={icon} size={14} color={cores.texto} />
-      <ThemedText type="smallBold" style={[styles.label, { color: cores.texto }]}>
-        {label}
-      </ThemedText>
+      {icon ? <Icon name={icon} size={13} color={cores.texto} strokeWidth={2.6} /> : null}
+      <ThemedText style={[styles.label, { color: cores.texto }]}>{label}</ThemedText>
     </View>
   );
 }
@@ -43,13 +44,15 @@ const styles = StyleSheet.create({
     // Nunca passa a largura disponível: textos longos partem linha dentro da etiqueta.
     flexShrink: 1,
     maxWidth: '100%',
+    minHeight: 26,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingVertical: 4,
+    borderRadius: 13,
   },
   label: {
     flexShrink: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: 800,
   },
 });

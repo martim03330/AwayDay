@@ -15,6 +15,7 @@ import { useAppState } from '@/state/app-state';
 import { useSons } from '@/state/sons';
 import { Button } from '@/ui/button';
 import { CampoTexto } from '@/ui/campo-texto';
+import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { SeletorNota } from '@/ui/seletor-nota';
@@ -84,36 +85,38 @@ export function FormularioAvaliacao({ jogoId }: { jogoId: string }) {
 
     return (
       <>
-        <View>
-          <ThemedText type="smallBold" style={styles.titulo} accessibilityRole="header">
+        <View style={styles.cabecalho}>
+          <ThemedText type="eyebrow" themeColor="accentInk">
+            {`Visita de ${formatarDia(new Date(jogo.inicio)).toLowerCase()}`}
+          </ThemedText>
+          <ThemedText type="subtitle" accessibilityRole="header">
             {existente ? 'Editar avaliação' : 'Avaliar visita'}
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="smallBold" themeColor="textSecondary">
             {`${casa.nomeCurto} x ${fora.nomeCurto}${venue ? ` · ${venue.nome}` : ''}`}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {`Visita de ${formatarDia(new Date(jogo.inicio)).toLowerCase()}`}
           </ThemedText>
         </View>
 
-        <SeletorNota
-          label="Estádio"
-          description="Conforto, limpeza e visibilidade"
-          value={estadio}
-          onChange={setEstadio}
-        />
-        <SeletorNota
-          label="Ambiente"
-          description="Adeptos, cânticos e emoção"
-          value={ambiente}
-          onChange={setAmbiente}
-        />
-        <SeletorNota
-          label="Acessos"
-          description="Chegar, entrar e sair do estádio"
-          value={acessos}
-          onChange={setAcessos}
-        />
+        <Card style={styles.notas}>
+          <SeletorNota
+            label="Estádio"
+            description="Conforto, limpeza e visibilidade"
+            value={estadio}
+            onChange={setEstadio}
+          />
+          <SeletorNota
+            label="Ambiente"
+            description="Adeptos, cânticos e emoção"
+            value={ambiente}
+            onChange={setAmbiente}
+          />
+          <SeletorNota
+            label="Acessos"
+            description="Chegar, entrar e sair do estádio"
+            value={acessos}
+            onChange={setAcessos}
+          />
+        </Card>
 
         <CampoTexto
           label="Comentário"
@@ -155,9 +158,12 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     paddingBottom: Spacing.six,
   },
-  titulo: {
-    fontSize: 22,
-    lineHeight: 28,
+  cabecalho: {
+    gap: Spacing.one,
+  },
+  notas: {
+    gap: Spacing.four,
+    paddingVertical: 20,
   },
   centro: {
     textAlign: 'center',

@@ -9,7 +9,7 @@ import { formatarNumero } from '@/lib/formatos';
 import { clubesPorDivisao, nomesDivisao, obterClube } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
-import { SectionHeader } from '@/ui/section-header';
+import { ThemedText } from '@/ui/themed-text';
 
 export default function OnboardingClubeScreen() {
   const router = useRouter();
@@ -27,6 +27,7 @@ export default function OnboardingClubeScreen() {
       rodape={
         <Button
           label={selecionado ? `Continuar com ${selecionado.nomeCurto}` : 'Escolhe o teu clube'}
+          variant="highlight"
           disabled={!selecionado}
           onPress={() => {
             if (!selecionado) return;
@@ -37,7 +38,13 @@ export default function OnboardingClubeScreen() {
       }>
       {clubesPorDivisao.map((grupo) => (
         <View key={grupo.divisao} style={styles.grupo}>
-          <SectionHeader title={nomesDivisao[grupo.divisao]} />
+          <ThemedText
+            type="eyebrow"
+            themeColor="textSecondary"
+            style={styles.divisao}
+            accessibilityRole="header">
+            {nomesDivisao[grupo.divisao]}
+          </ThemedText>
           {grupo.clubes.map((clube) => (
             <OpcaoClube
               key={clube.id}
@@ -56,5 +63,10 @@ export default function OnboardingClubeScreen() {
 const styles = StyleSheet.create({
   grupo: {
     gap: Spacing.two,
+    marginBottom: Spacing.three,
+  },
+  divisao: {
+    paddingHorizontal: 6,
+    paddingBottom: Spacing.one,
   },
 });

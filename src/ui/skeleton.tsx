@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Spacing } from '@/constants/theme';
+import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedView } from '@/ui/themed-view';
 
@@ -56,7 +56,8 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.two,
     padding: Spacing.three,
-    borderRadius: 20,
+    borderRadius: Radius.card,
     borderCurve: 'continuous',
+    ...CardShadow,
   },
 });

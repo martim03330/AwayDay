@@ -28,16 +28,20 @@ export function SeletorNota({ label, description, value, onChange }: SeletorNota
   return (
     <View style={styles.container}>
       <View style={styles.cabecalho}>
-        <ThemedText type="smallBold">{label}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+        <View style={styles.textos}>
+          <ThemedText style={styles.label}>{label}</ThemedText>
+          {description ? (
+            <ThemedText style={styles.descricao} themeColor="textSecondary">
+              {description}
+            </ThemedText>
+          ) : null}
+        </View>
+        <ThemedText
+          style={styles.valor}
+          themeColor={value === null ? 'textSecondary' : 'accentInk'}>
           {value === null ? 'Sem nota' : `${value} · ${ROTULOS[value]}`}
         </ThemedText>
       </View>
-      {description ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {description}
-        </ThemedText>
-      ) : null}
       <View style={styles.opcoes} accessibilityRole="radiogroup" accessibilityLabel={label}>
         {NOTAS.map((nota) => {
           const preenchida = value !== null && nota <= value;
@@ -50,12 +54,15 @@ export function SeletorNota({ label, description, value, onChange }: SeletorNota
               accessibilityLabel={`${label}: ${nota} de 5, ${ROTULOS[nota]}`}
               style={({ pressed }) => [
                 styles.opcao,
-                { backgroundColor: preenchida ? theme.accent : theme.backgroundSelected },
+                preenchida
+                  ? { backgroundColor: theme.accent, borderColor: theme.accent }
+                  : { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                value === nota && styles.escolhida,
                 pressed && styles.pressed,
               ]}>
               <ThemedText
-                type="smallBold"
-                style={[styles.numero, { color: preenchida ? theme.accentText : theme.text }]}>
+                type="score"
+                style={[styles.numero, { color: preenchida ? theme.accentText : theme.textMuted }]}>
                 {nota}
               </ThemedText>
             </Pressable>
@@ -68,27 +75,50 @@ export function SeletorNota({ label, description, value, onChange }: SeletorNota
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.one,
+    gap: 12,
   },
   cabecalho: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  textos: {
+    flex: 1,
+    gap: 1,
+  },
+  label: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: 800,
+  },
+  descricao: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  valor: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: 800,
   },
   opcoes: {
     flexDirection: 'row',
     gap: Spacing.two,
-    marginTop: Spacing.one,
   },
   opcao: {
     flex: 1,
-    height: 48,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 14,
     borderCurve: 'continuous',
+    borderWidth: 1.5,
+  },
+  escolhida: {
+    boxShadow: '0 0 0 3px #FFCE3A',
   },
   numero: {
-    fontSize: 17,
+    fontSize: 24,
+    lineHeight: 28,
   },
   pressed: {
     opacity: 0.7,

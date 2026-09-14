@@ -8,6 +8,7 @@ import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
+import { icons } from '@/ui/icon';
 
 export default function ApagarContaScreen() {
   const apagar = useDeleteAccount();
@@ -54,7 +55,13 @@ export default function ApagarContaScreen() {
         returnKeyType="go"
         onSubmitEditing={submeter}
       />
-      <Button label={aApagar ? 'A apagar a conta…' : 'Apagar conta'} onPress={submeter} disabled={aApagar} />
+      <Button
+        label={aApagar ? 'A apagar a conta…' : 'Apagar conta'}
+        variant="danger"
+        icon={icons.apagar}
+        onPress={submeter}
+        disabled={aApagar}
+      />
     </AuthForm>
   );
 }

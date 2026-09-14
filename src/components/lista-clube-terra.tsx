@@ -7,13 +7,29 @@ import { formatarKm, formatarNumero } from '@/lib/formatos';
 import { clubes } from '@/mocks/clubes';
 import { estadios } from '@/mocks/estadios';
 import { localizacaoUtilizador } from '@/mocks/utilizador';
-import { SectionHeader } from '@/ui/section-header';
+import { ThemedText } from '@/ui/themed-text';
 
 const sugestoes = clubesMaisPerto(localizacaoUtilizador.coordenadas, clubes, estadios);
 const idsSugeridos = new Set(sugestoes.map(({ clube }) => clube.id));
 const outrosClubes = clubes
   .filter((clube) => clube.divisao !== null && !idsSugeridos.has(clube.id))
   .sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto, 'pt'));
+
+/** Eyebrow above a group of clubs, with an optional note on the right. */
+function CabecalhoGrupo({ title, trailing }: { title: string; trailing?: string }) {
+  return (
+    <View style={styles.cabecalho} accessibilityRole="header">
+      <ThemedText type="eyebrow" themeColor="textSecondary">
+        {title}
+      </ThemedText>
+      {trailing ? (
+        <ThemedText themeColor="textMuted" style={styles.nota}>
+          {trailing}
+        </ThemedText>
+      ) : null}
+    </View>
+  );
+}
 
 type ListaClubeDaTerraProps = {
   selecionadoId: string | null;
@@ -24,7 +40,7 @@ type ListaClubeDaTerraProps = {
 export function ListaClubeDaTerra({ selecionadoId, onSelecionar }: ListaClubeDaTerraProps) {
   return (
     <View style={styles.lista}>
-      <SectionHeader title="Perto de ti" trailing="Localização simulada" />
+      <CabecalhoGrupo title="Perto de ti" trailing="Localização simulada" />
       {sugestoes.map(({ clube, km }) => (
         <OpcaoClube
           key={clube.id}
@@ -35,7 +51,8 @@ export function ListaClubeDaTerra({ selecionadoId, onSelecionar }: ListaClubeDaT
         />
       ))}
 
-      <SectionHeader title="Outros clubes" />
+      <View style={styles.separacao} />
+      <CabecalhoGrupo title="Outros clubes" />
       {outrosClubes.map((clube) => (
         <OpcaoClube
           key={clube.id}
@@ -52,5 +69,23 @@ export function ListaClubeDaTerra({ selecionadoId, onSelecionar }: ListaClubeDaT
 const styles = StyleSheet.create({
   lista: {
     gap: Spacing.two,
+  },
+  cabecalho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+    paddingHorizontal: 6,
+    paddingBottom: Spacing.one,
+  },
+  nota: {
+    flexShrink: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: 700,
+    textAlign: 'right',
+  },
+  separacao: {
+    height: Spacing.three,
   },
 });

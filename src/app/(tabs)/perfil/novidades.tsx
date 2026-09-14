@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 
 import { NudgeList } from '@/features/nudges/components/NudgeList';
 import { useMarkNudgesRead, useMyNudges } from '@/features/nudges/hooks/useMyNudges';
 import { useUserId } from '@/lib/session';
-import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
@@ -24,13 +24,11 @@ export default function NovidadesScreen() {
   if (!userId) {
     return (
       <Screen>
-        <Card>
-          <EmptyState
-            icon={icons.perfil}
-            title="Precisas de conta"
-            message="As novidades ficam guardadas na tua conta. Cria uma ou entra no Perfil."
-          />
-        </Card>
+        <EmptyState
+          icon={icons.perfil}
+          title="Precisas de conta"
+          message="As novidades ficam guardadas na tua conta. Cria uma ou entra no Perfil."
+        />
       </Screen>
     );
   }
@@ -46,14 +44,12 @@ export default function NovidadesScreen() {
   if (novidades.isError) {
     return (
       <Screen>
-        <Card>
-          <EmptyState
-            icon={icons.aviso}
-            title="Não deu para carregar"
-            message="Verifica a ligação e tenta outra vez."
-            action={{ label: 'Tentar outra vez', onPress: () => void novidades.refetch() }}
-          />
-        </Card>
+        <EmptyState
+          icon={icons.aviso}
+          title="Não deu para carregar"
+          message="Verifica a ligação e tenta outra vez."
+          action={{ label: 'Tentar outra vez', onPress: () => void novidades.refetch() }}
+        />
       </Screen>
     );
   }
@@ -61,9 +57,18 @@ export default function NovidadesScreen() {
   return (
     <Screen refreshing={novidades.isRefetching} onRefresh={() => void novidades.refetch()}>
       <NudgeList nudges={novidades.data} />
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText themeColor="textMuted" style={styles.nota}>
         Dicas a partir do calendário de jogos e do que já fizeste na app. Desligas em Perfil → Notificações.
       </ThemedText>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  nota: {
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+});

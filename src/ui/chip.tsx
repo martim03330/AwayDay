@@ -1,6 +1,7 @@
+import { type ReactNode } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -12,11 +13,19 @@ type ChipProps = {
   emCartao?: boolean;
   /** Quando o texto sozinho não chega (ex.: "Recomendo" sem dizer o prato). */
   accessibilityLabel?: string;
+  /** Small element before the label, e.g. a club crest. */
+  leading?: ReactNode;
 };
 
-export function Chip({ label, selected, onPress, emCartao = false, accessibilityLabel }: ChipProps) {
+export function Chip({
+  label,
+  selected,
+  onPress,
+  emCartao = false,
+  accessibilityLabel,
+  leading,
+}: ChipProps) {
   const theme = useTheme();
-  const fundoNormal = emCartao ? theme.backgroundSelected : theme.backgroundElement;
 
   return (
     <Pressable
@@ -26,9 +35,15 @@ export function Chip({ label, selected, onPress, emCartao = false, accessibility
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? theme.accent : fundoNormal },
+        leading ? styles.withLeading : null,
+        selected
+          ? { backgroundColor: theme.accent, borderColor: theme.accent }
+          : emCartao
+            ? { backgroundColor: theme.backgroundSelected, borderColor: theme.backgroundSelected }
+            : { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         pressed && styles.pressed,
       ]}>
+      {leading}
       <ThemedText type="smallBold" style={{ color: selected ? theme.accentText : theme.text }}>
         {label}
       </ThemedText>
@@ -38,9 +53,18 @@ export function Chip({ label, selected, onPress, emCartao = false, accessibility
 
 const styles = StyleSheet.create({
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: Spacing.two,
-    borderRadius: 999,
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    borderWidth: 1.5,
+  },
+  withLeading: {
+    paddingLeft: 10,
+    paddingRight: 14,
   },
   pressed: {
     opacity: 0.7,

@@ -9,12 +9,30 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { IconCircle, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
-import { ListRow } from '@/ui/list-row';
+import { ThemedText } from '@/ui/themed-text';
 
 type AccountCardProps = {
   /** From the profile; `null` while it loads. */
   displayName: string | null;
 };
+
+function Cabecalho({ title, subtitle, muted = false }: { title: string; subtitle?: string; muted?: boolean }) {
+  return (
+    <View style={styles.cabecalho}>
+      <IconCircle name={icons.perfil} tone={muted ? 'neutral' : 'green'} />
+      <View style={styles.flex}>
+        <ThemedText type="section" style={styles.titulo}>
+          {title}
+        </ThemedText>
+        {subtitle ? (
+          <ThemedText style={styles.subtitulo} themeColor="textSecondary">
+            {subtitle}
+          </ThemedText>
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 /** Account block on the profile tab: invite to sign in, or who is signed in with sign-out and delete. */
 export function AccountCard({ displayName }: AccountCardProps) {
@@ -25,7 +43,7 @@ export function AccountCard({ displayName }: AccountCardProps) {
   if (session.status === 'loading') {
     return (
       <Card>
-        <ListRow leading={<IconCircle name={icons.perfil} />} title="A ver se tens sessão…" />
+        <Cabecalho title="A ver se tens sessão…" muted />
       </Card>
     );
   }
@@ -33,8 +51,7 @@ export function AccountCard({ displayName }: AccountCardProps) {
   if (session.status === 'signed-out') {
     return (
       <Card style={styles.card}>
-        <ListRow
-          leading={<IconCircle name={icons.perfil} />}
+        <Cabecalho
           title="Guarda o teu progresso"
           subtitle="Com conta, os teus clubes ficam guardados e vêm contigo para outro telemóvel."
         />
@@ -52,11 +69,7 @@ export function AccountCard({ displayName }: AccountCardProps) {
 
   return (
     <Card style={styles.card}>
-      <ListRow
-        leading={<IconCircle name={icons.perfil} />}
-        title={displayName ?? 'A tua conta'}
-        subtitle={session.session.user.email}
-      />
+      <Cabecalho title={displayName ?? 'A tua conta'} subtitle={session.session.user.email} />
       <Button
         label={signOut.isPending ? 'A terminar sessão…' : 'Terminar sessão'}
         variant="secondary"
@@ -81,6 +94,19 @@ export function AccountCard({ displayName }: AccountCardProps) {
 const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
+  },
+  cabecalho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  titulo: {
+    fontSize: 24,
+    lineHeight: 27,
+  },
+  subtitulo: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   botoes: {
     flexDirection: 'row',

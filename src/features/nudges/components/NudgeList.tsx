@@ -1,12 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import type { NudgeItem } from '@/features/nudges/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
-import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
-import { icons } from '@/ui/icon';
+import { IconCircle, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 /** The user's suggestions, newest first; unread ones get a dot. */
@@ -15,63 +14,74 @@ export function NudgeList({ nudges }: { nudges: readonly NudgeItem[] }) {
 
   if (nudges.length === 0) {
     return (
-      <Card>
-        <EmptyState
-          icon={icons.notificacoes}
-          title="Ainda sem novidades"
-          message="Quando houver um jogo que te interesse, deixamos aqui a dica."
-        />
-      </Card>
+      <EmptyState
+        icon={icons.notificacoes}
+        title="Ainda sem novidades"
+        message="Quando houver um jogo que te interesse, deixamos aqui a dica."
+      />
     );
   }
 
   return (
-    <Card style={styles.card}>
-      {nudges.map((nudge, index) => {
+    <View style={styles.lista}>
+      {nudges.map((nudge) => {
         const unread = nudge.readAt === null;
         return (
           <View
             key={nudge.id}
             accessible
             accessibilityLabel={`${unread ? 'Por ler. ' : ''}${nudge.body}`}
-            style={[
-              styles.row,
-              index > 0 && {
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: theme.border,
-                paddingTop: Spacing.three,
-              },
-            ]}>
-            <View style={[styles.dot, { backgroundColor: unread ? theme.accent : 'transparent' }]} />
+            style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+            <IconCircle name={icons.treinador} tone={unread ? 'green' : 'neutral'} />
             <View style={styles.text}>
-              <ThemedText type={unread ? 'smallBold' : 'small'}>{nudge.body}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {formatarDiaEHora(new Date(nudge.createdAt))}
-              </ThemedText>
+              <View style={styles.meta}>
+                {unread ? <View style={[styles.dot, { backgroundColor: theme.accent }]} /> : null}
+                <ThemedText type="eyebrow" themeColor={unread ? 'accentInk' : 'textMuted'}>
+                  {formatarDiaEHora(new Date(nudge.createdAt))}
+                </ThemedText>
+              </View>
+              <ThemedText style={[styles.body, unread && styles.bodyUnread]}>{nudge.body}</ThemedText>
             </View>
           </View>
         );
       })}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  lista: {
+    gap: 12,
+  },
   card: {
-    gap: Spacing.three,
-  },
-  row: {
     flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 7,
+    alignItems: 'flex-start',
+    gap: 14,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderCurve: 'continuous',
+    ...CardShadow,
   },
   text: {
     flex: 1,
-    gap: Spacing.half,
+    gap: Spacing.one,
+  },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  body: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: 500,
+  },
+  bodyUnread: {
+    fontWeight: 700,
   },
 });

@@ -5,7 +5,7 @@ import MapView, { MapMarker, type MapPressEvent, type Region } from 'react-nativ
 import Animated, { FadeInDown, FadeOutDown, useReducedMotion, ZoomIn } from 'react-native-reanimated';
 
 import { WcDetalhes } from '@/components/wc-detalhes';
-import { Spacing } from '@/constants/theme';
+import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
 import { formatarDistancia, plural } from '@/lib/formatos';
@@ -20,7 +20,6 @@ import { Escudo } from '@/ui/escudo';
 import { Icon, icons } from '@/ui/icon';
 import { Medidor } from '@/ui/medidor';
 import { ThemedText } from '@/ui/themed-text';
-import { ThemedView } from '@/ui/themed-view';
 
 /** Duração máxima de qualquer animação da app. */
 const DURACAO_MS = 400;
@@ -30,7 +29,7 @@ const ATRASO_PRIMEIRO_PONTO_MS = 150;
 const DELTA_CIDADE = 0.12;
 const DELTA_ESTADIO = 0.02;
 const COR_ADEPTOS_DA_CASA = '#E8590C';
-const COR_WC = '#1971C2';
+
 
 type WcPerto = { wc: Restroom; metros: number; minutos: number };
 
@@ -111,17 +110,21 @@ function CartaoMapa({
       entering={animar ? FadeInDown.duration(DURACAO_MS) : undefined}
       exiting={animar ? FadeOutDown.duration(200) : undefined}
       style={styles.cartaoPosicao}>
-      <ThemedView style={[styles.cartao, { borderColor: theme.border }]}>
+      <View style={[styles.cartao, { backgroundColor: theme.backgroundElement }]}>
         <Pressable
           onPress={onFechar}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel="Fechar"
-          style={({ pressed }) => [styles.fechar, pressed && styles.pressed]}>
-          <Icon name={icons.fechar} size={16} color={theme.textSecondary} />
+          style={({ pressed }) => [
+            styles.fechar,
+            { backgroundColor: theme.backgroundSelected },
+            pressed && styles.pressed,
+          ]}>
+          <Icon name={icons.fechar} size={14} color={theme.textSecondary} strokeWidth={2.6} />
         </Pressable>
         {children}
-      </ThemedView>
+      </View>
     </Animated.View>
   );
 }
@@ -132,23 +135,41 @@ function ConteudoLocal({ local, onVerLocal }: { local: Local; onVerLocal: () => 
   return (
     <>
       <View style={styles.cartaoTexto}>
-        <ThemedText type="smallBold" style={styles.cartaoNome} numberOfLines={1}>
+        <ThemedText style={styles.cartaoNome} numberOfLines={1}>
           {local.nome}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {`${nomesTipoLocal[local.tipo]} · 🚶 ${local.minutosAPe} min a pé (${formatarDistancia(local.distanciaMetros)})`}
-        </ThemedText>
+        <View style={styles.meta}>
+          <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
+            {`${nomesTipoLocal[local.tipo]} ·`}
+          </ThemedText>
+          <Icon name={icons.aPe} size={15} color={theme.textSecondary} />
+          <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]} numberOfLines={1}>
+            {`${local.minutosAPe} min a pé (${formatarDistancia(local.distanciaMetros)})`}
+          </ThemedText>
+        </View>
       </View>
 
       <View style={styles.medidores}>
-        <Medidor compact label="Cervejómetro" emoji="🍺" value={local.cervejometro} />
-        <Medidor compact label="Petiscómetro" emoji="🍢" value={local.petiscometro} />
+        <Medidor
+          compact
+          label="Cervejómetro"
+          icon={icons.tasco}
+          tone="amarelo"
+          value={local.cervejometro}
+        />
+        <Medidor
+          compact
+          label="Petiscómetro"
+          icon={icons.especialidade}
+          tone="verde"
+          value={local.petiscometro}
+        />
       </View>
 
       {local.homeFanHeavy ? (
         <View style={styles.adeptosDaCasa}>
-          <Icon name={icons.casa} size={13} color={theme.textSecondary} />
-          <ThemedText type="small" themeColor="textSecondary">
+          <Icon name={icons.casa} size={14} color={COR_ADEPTOS_DA_CASA} />
+          <ThemedText themeColor="textSecondary" style={styles.metaTexto}>
             Ponto habitual de adeptos da casa
           </ThemedText>
         </View>
@@ -291,7 +312,7 @@ export function MapaJogo({ venue }: { venue: Venue }) {
                         style={[
                           styles.ponto,
                           styles.pontoWc,
-                          { width: tamanho + 4, height: tamanho + 4, backgroundColor: COR_WC },
+                          { width: tamanho + 4, height: tamanho + 4, backgroundColor: theme.info },
                         ]}>
                         <Icon name={icons.wc} size={tamanho / 2} color="#FFFFFF" />
                       </View>
@@ -328,27 +349,21 @@ export function MapaJogo({ venue }: { venue: Venue }) {
       </View>
 
       <View style={styles.legenda}>
-        <View style={styles.itemLegenda}>
+        <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
           <View style={[styles.pontoLegenda, { backgroundColor: theme.accent }]} />
-          <ThemedText type="small" themeColor="textSecondary">
-            Tasco
-          </ThemedText>
+          <ThemedText style={styles.legendaTexto}>Tasco</ThemedText>
         </View>
-        <View style={styles.itemLegenda}>
+        <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
           <View style={[styles.pontoLegenda, { backgroundColor: COR_ADEPTOS_DA_CASA }]} />
-          <ThemedText type="small" themeColor="textSecondary">
-            Adeptos da casa
-          </ThemedText>
+          <ThemedText style={styles.legendaTexto}>Adeptos da casa</ThemedText>
         </View>
-        <View style={styles.itemLegenda}>
-          <View style={[styles.pontoLegenda, styles.pontoLegendaWc, { backgroundColor: COR_WC }]} />
-          <ThemedText type="small" themeColor="textSecondary">
-            WC
-          </ThemedText>
+        <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
+          <View style={[styles.pontoLegenda, styles.pontoLegendaWc, { backgroundColor: theme.info }]} />
+          <ThemedText style={styles.legendaTexto}>WC</ThemedText>
         </View>
       </View>
 
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText themeColor="textSecondary" style={styles.dica}>
         {dica}
       </ThemedText>
 
@@ -356,7 +371,7 @@ export function MapaJogo({ venue }: { venue: Venue }) {
         <Button label="Ver a cidade" variant="secondary" icon={icons.cidade} onPress={voltarACidade} />
       ) : null}
 
-      <ThemedText type="small" themeColor="textSecondary" style={styles.nota}>
+      <ThemedText themeColor="textMuted" style={styles.nota}>
         O fundo do mapa precisa de internet; os pontos são da demo.
       </ThemedText>
     </Card>
@@ -369,7 +384,7 @@ const styles = StyleSheet.create({
   },
   mapaArea: {
     height: 360,
-    borderRadius: 16,
+    borderRadius: Radius.button,
     borderCurve: 'continuous',
     overflow: 'hidden',
   },
@@ -402,31 +417,49 @@ const styles = StyleSheet.create({
     bottom: Spacing.two,
   },
   cartao: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: 16,
+    gap: 10,
+    padding: 14,
+    borderRadius: 18,
     borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
+    ...CardShadow,
   },
   fechar: {
     position: 'absolute',
-    top: Spacing.three,
-    right: Spacing.three,
+    top: 12,
+    right: 12,
     zIndex: 1,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
   },
   pressed: {
     opacity: 0.6,
   },
   cartaoTexto: {
-    paddingRight: Spacing.four,
+    gap: Spacing.one,
+    paddingRight: Spacing.five,
   },
   cartaoNome: {
-    fontSize: 17,
-    lineHeight: 24,
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: 800,
+  },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaTexto: {
+    flexShrink: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 600,
   },
   medidores: {
     flexDirection: 'row',
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   adeptosDaCasa: {
     flexDirection: 'row',
@@ -436,20 +469,32 @@ const styles = StyleSheet.create({
   legenda: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   itemLegenda: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.one,
+    gap: 6,
+    height: 28,
+    paddingHorizontal: 10,
+    borderRadius: Radius.pill,
+  },
+  legendaTexto: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: 800,
   },
   pontoLegenda: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   pontoLegendaWc: {
     borderRadius: 3,
+  },
+  dica: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   nota: {
     fontSize: 12,

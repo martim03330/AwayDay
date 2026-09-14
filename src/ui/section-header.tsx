@@ -11,11 +11,11 @@ type SectionHeaderProps = {
 export function SectionHeader({ title, trailing }: SectionHeaderProps) {
   return (
     <View style={styles.row} accessibilityRole="header">
-      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
+      <ThemedText type="section" style={styles.title}>
         {title}
       </ThemedText>
       {trailing ? (
-        <ThemedText type="small" themeColor="textSecondary" style={styles.trailing}>
+        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.trailing}>
           {trailing}
         </ThemedText>
       ) : null}
@@ -27,20 +27,19 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: Spacing.two,
-    paddingHorizontal: Spacing.one,
-    marginTop: Spacing.two,
+    marginTop: Spacing.three,
   },
   title: {
     // O título fica numa linha; é o texto da direita que encolhe e parte linha.
     flexShrink: 0,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   trailing: {
     flexShrink: 1,
+    paddingBottom: 3,
+    fontSize: 13,
+    lineHeight: 18,
     textAlign: 'right',
   },
 });

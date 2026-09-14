@@ -31,7 +31,7 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
   return (
     <Card style={styles.card}>
       <ListRow
-        leading={<IconCircle name={icons.pontoEncontro} />}
+        leading={<IconCircle name={icons.pontoEncontro} tone="yellow" />}
         title={ponto.nome}
         subtitle={ponto.morada}
       />
@@ -39,7 +39,7 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
 
       <ListRow leading={<IconCircle name={icons.horario} />} title="Horário" subtitle={ponto.horario} />
       <ListRow
-        leading={<IconCircle name={icons.autocarro} />}
+        leading={<IconCircle name={icons.autocarro} tone="sky" />}
         title="Transporte"
         subtitle={ponto.transporte}
       />

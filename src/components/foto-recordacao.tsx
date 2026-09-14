@@ -1,12 +1,15 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { Colors } from '@/constants/theme';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterMissao } from '@/mocks/missoes';
 import type { FotoMissao } from '@/mocks/tipos';
+import { Icon, icons } from '@/ui/icon';
+import { ThemedText } from '@/ui/themed-text';
 
-const COR_POR_DEFEITO = '#0B7A43';
+const COR_POR_DEFEITO = Colors.accent;
 
 type FotoRecordacaoProps = {
   foto: FotoMissao;
@@ -35,15 +38,19 @@ export function FotoRecordacao({ foto, style, compacta = false }: FotoRecordacao
           style={[
             StyleSheet.absoluteFill,
             styles.ilustracao,
-            { experimental_backgroundImage: `linear-gradient(160deg, ${cor} 0%, #0B0B0B 100%)` },
+            {
+              experimental_backgroundImage: `linear-gradient(160deg, ${cor} 0%, ${Colors.accentPressed} 100%)`,
+            },
           ]}>
-          <Text style={compacta ? styles.emojiPequeno : styles.emoji}>
-            {missao?.distintivo.emoji ?? '📷'}
-          </Text>
+          <Icon
+            name={missao?.distintivo.icon ?? icons.camara}
+            size={compacta ? 20 : 40}
+            color="rgba(255, 255, 255, 0.75)"
+          />
           {compacta ? null : (
-            <Text style={styles.legenda} numberOfLines={2}>
+            <ThemedText style={styles.legenda} numberOfLines={2}>
               {foto.exemplo ? 'Foto de exemplo' : 'Ilustração · foto fora da demo'}
-            </Text>
+            </ThemedText>
           )}
         </View>
       )}
@@ -56,25 +63,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: 14,
     borderCurve: 'continuous',
+    backgroundColor: Colors.accentPressed,
   },
   ilustracao: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
     padding: 8,
   },
-  emoji: {
-    fontSize: 44,
-    lineHeight: 54,
-  },
-  emojiPequeno: {
-    fontSize: 22,
-    lineHeight: 28,
-  },
   legenda: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 11,
     lineHeight: 14,
+    fontWeight: 700,
     textAlign: 'center',
   },
 });

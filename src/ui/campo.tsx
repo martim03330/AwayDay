@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { fontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -31,24 +31,27 @@ type CampoProps = {
 export function Campo({ label, erro, ajuda, secureTextEntry, ...input }: CampoProps) {
   const theme = useTheme();
   const [visivel, setVisivel] = useState(false);
+  const [focado, setFocado] = useState(false);
   const mensagem = erro ?? ajuda;
 
   return (
     <View style={styles.container}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText style={styles.label}>{label}</ThemedText>
       <View
         style={[
           styles.caixa,
-          {
-            backgroundColor: theme.backgroundElement,
-            borderColor: erro ? theme.danger : theme.border,
-          },
+          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+          focado && { borderColor: theme.accent, borderWidth: 2, ...styles.anel },
+          erro ? { borderColor: theme.danger, borderWidth: 2 } : null,
         ]}>
         <TextInput
           {...input}
           secureTextEntry={secureTextEntry && !visivel}
           autoCorrect={false}
-          placeholderTextColor={theme.textSecondary}
+          onFocus={() => setFocado(true)}
+          onBlur={() => setFocado(false)}
+          placeholderTextColor={theme.textMuted}
+          selectionColor={theme.accent}
           accessibilityLabel={label}
           accessibilityHint={mensagem ?? undefined}
           style={[styles.input, { color: theme.text }]}
@@ -60,18 +63,20 @@ export function Campo({ label, erro, ajuda, secureTextEntry, ...input }: CampoPr
             accessibilityRole="button"
             accessibilityLabel={visivel ? 'Esconder password' : 'Mostrar password'}
             style={({ pressed }) => [styles.alternar, pressed && styles.pressed]}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
+            <ThemedText style={styles.alternarTexto} themeColor="textSecondary">
               {visivel ? 'Esconder' : 'Mostrar'}
             </ThemedText>
           </Pressable>
         ) : null}
       </View>
       {erro ? (
-        <ThemedText type="small" style={{ color: theme.danger }} accessibilityLiveRegion="polite">
+        <ThemedText
+          style={[styles.mensagem, styles.erro, { color: theme.danger }]}
+          accessibilityLiveRegion="polite">
           {erro}
         </ThemedText>
       ) : ajuda ? (
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText style={styles.mensagem} themeColor="textSecondary">
           {ajuda}
         </ThemedText>
       ) : null}
@@ -81,24 +86,44 @@ export function Campo({ label, erro, ajuda, secureTextEntry, ...input }: CampoPr
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.one,
+    gap: 7,
+  },
+  label: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: 800,
   },
   caixa: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: Radius.field,
     borderCurve: 'continuous',
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1.5,
+  },
+  anel: {
+    boxShadow: '0 0 0 4px #DDF2E3',
   },
   input: {
     flex: 1,
     minHeight: 50,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: 14,
     fontSize: 16,
+    fontFamily: fontFamily('body', 500),
   },
   alternar: {
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: 14,
     paddingVertical: Spacing.two,
+  },
+  alternarTexto: {
+    fontSize: 14,
+    fontWeight: 800,
+  },
+  mensagem: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  erro: {
+    fontWeight: 700,
   },
   pressed: {
     opacity: 0.6,

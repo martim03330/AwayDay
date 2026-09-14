@@ -1,6 +1,7 @@
 import { temCheckInPerto } from '@/lib/presenca';
 import { faseDoDiaDeJogo, mostrarRelogio } from '@/lib/relogio';
 import type { Jogo, Local, MedicaoAdepto, MedicaoBarulho, VisitaLocal } from '@/mocks/tipos';
+import type { IconName } from '@/ui/icon';
 
 /*
  * Barulhómetro: ouve a bancada durante 10 segundos e dá um nível de 0 a 100.
@@ -121,13 +122,13 @@ export function analisarMedicao(blocos: readonly BlocoSom[]): ResultadoMedicao {
   return { valida: true, nivel: nivelNaEscala(percentil(ordenados, 0.5)) };
 }
 
-export type DegrauBarulho = { minimo: number; nome: string; emoji: string; frase: string };
+export type DegrauBarulho = { minimo: number; nome: string; icone: IconName; frase: string };
 
 /** Nomes genéricos: servem para qualquer estádio e qualquer clube. */
 const BIBLIOTECA: DegrauBarulho = {
   minimo: 0,
   nome: 'Biblioteca',
-  emoji: '🤫',
+  icone: 'silencio',
   frase: 'Ouve-se o treinador a dar indicações.',
 };
 
@@ -136,17 +137,17 @@ export const ESCALA_BARULHO: readonly DegrauBarulho[] = [
   {
     minimo: 20,
     nome: 'Conversa de café',
-    emoji: '☕',
+    icone: 'cafe',
     frase: 'Dá para comentar o jogo sem levantar a voz.',
   },
   {
     minimo: 40,
     nome: 'Bancada acordada',
-    emoji: '📣',
+    icone: 'megafone',
     frase: 'Já há cânticos, mas ainda há quem esteja a ver o telemóvel.',
   },
-  { minimo: 60, nome: 'Caldeirão', emoji: '🔥', frase: 'Para falar com o do lado, só por gestos.' },
-  { minimo: 80, nome: 'Estádio a ferver', emoji: '🌋', frase: 'Amanhã ninguém tem voz.' },
+  { minimo: 60, nome: 'Caldeirão', icone: 'quente', frase: 'Para falar com o do lado, só por gestos.' },
+  { minimo: 80, nome: 'Estádio a ferver', icone: 'explosao', frase: 'Amanhã ninguém tem voz.' },
 ];
 
 export function degrauDoNivel(nivel: number) {

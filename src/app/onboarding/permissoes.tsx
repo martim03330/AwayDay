@@ -8,7 +8,7 @@ import { useAppState, type EstadoPermissao } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { IconCircle, icons, type IconName } from '@/ui/icon';
-import { ListRow } from '@/ui/list-row';
+import { ThemedText } from '@/ui/themed-text';
 
 type CartaoPermissaoProps = {
   icon: IconName;
@@ -21,9 +21,19 @@ type CartaoPermissaoProps = {
 function CartaoPermissao({ icon, titulo, paraQueServe, estado, onEscolher }: CartaoPermissaoProps) {
   return (
     <Card style={styles.cartao}>
-      <ListRow leading={<IconCircle name={icon} />} title={titulo} subtitle={paraQueServe} />
+      <View style={styles.cabecalho}>
+        <IconCircle name={icon} size={20} tone={estado === 'aceite' ? 'green' : 'neutral'} />
+        <View style={styles.flex}>
+          <ThemedText type="section" style={styles.titulo}>
+            {titulo}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {paraQueServe}
+          </ThemedText>
+        </View>
+      </View>
       <View style={styles.botoes}>
-        <View style={styles.botao}>
+        <View style={styles.flex}>
           <Button
             label={estado === 'aceite' ? 'Aceite' : 'Aceitar'}
             icon={estado === 'aceite' ? icons.selecionado : undefined}
@@ -31,7 +41,7 @@ function CartaoPermissao({ icon, titulo, paraQueServe, estado, onEscolher }: Car
             onPress={() => onEscolher('aceite')}
           />
         </View>
-        <View style={styles.botao}>
+        <View style={styles.flex}>
           <Button
             label="Continuar sem"
             icon={estado === 'recusada' ? icons.selecionado : undefined}
@@ -58,6 +68,7 @@ export default function OnboardingPermissoesScreen() {
         <Button
           label="Bora lá"
           icon={icons.jogos}
+          variant="highlight"
           onPress={() => {
             // Quem não decide, continua sem: nada fica ligado por omissão.
             guardarPermissoes({
@@ -68,33 +79,47 @@ export default function OnboardingPermissoesScreen() {
           }}
         />
       }>
-      <CartaoPermissao
-        icon={icons.localizacao}
-        titulo="Localização"
-        paraQueServe="Tascos e WC perto de ti."
-        estado={localizacao}
-        onEscolher={setLocalizacao}
-      />
-      <CartaoPermissao
-        icon={icons.notificacoes}
-        titulo="Notificações"
-        paraQueServe="Horários, chuva e carimbos novos."
-        estado={notificacoes}
-        onEscolher={setNotificacoes}
-      />
+      <View style={styles.lista}>
+        <CartaoPermissao
+          icon={icons.localizacao}
+          titulo="Localização"
+          paraQueServe="Tascos e WC perto de ti."
+          estado={localizacao}
+          onEscolher={setLocalizacao}
+        />
+        <CartaoPermissao
+          icon={icons.notificacoes}
+          titulo="Notificações"
+          paraQueServe="Horários, chuva e carimbos novos."
+          estado={notificacoes}
+          onEscolher={setNotificacoes}
+        />
+      </View>
     </OnboardingPasso>
   );
 }
 
 const styles = StyleSheet.create({
+  lista: {
+    gap: Spacing.three,
+  },
   cartao: {
     gap: Spacing.three,
+  },
+  cabecalho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  titulo: {
+    fontSize: 24,
+    lineHeight: 27,
   },
   botoes: {
     flexDirection: 'row',
     gap: Spacing.two,
   },
-  botao: {
+  flex: {
     flex: 1,
   },
 });

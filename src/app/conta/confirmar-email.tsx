@@ -1,14 +1,16 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { AuthForm } from '@/features/auth/components/AuthForm';
+import { Spacing } from '@/constants/theme';
+import { AuthForm, CampoCodigo } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useResendSignUpCode, useVerifySignUpCode } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { codeError } from '@/features/auth/validation';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
-import { Campo } from '@/ui/campo';
+import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -32,18 +34,26 @@ export default function ConfirmarEmailScreen() {
 
   return (
     <AuthForm
-      intro={`Enviámos um código de 8 algarismos para ${email}. Pode demorar um minuto a chegar: espreita também o spam.`}
+      hero={{ icon: icons.email, tag: '8 algarismos' }}
+      title="Escreve o código"
+      intro={
+        <>
+          {'Enviámos um código de 8 algarismos para '}
+          <ThemedText themeColor="text" style={styles.email}>
+            {email}
+          </ThemedText>
+          {'. Pode demorar um minuto a chegar: espreita também o spam.'}
+        </>
+      }
       error={erroPedido ? authErrorMessage(erroPedido) : null}
       notice={reenviar.isSuccess ? 'Enviámos outro código.' : null}>
-      <Campo
+      <CampoCodigo
         label="Código"
         value={codigo}
         onChangeText={setCodigo}
         erro={tentou ? codeError(codigo) : null}
-        keyboardType="number-pad"
+        digitos={8}
         maxLength={9}
-        autoComplete="one-time-code"
-        textContentType="oneTimeCode"
         autoFocus
         returnKeyType="go"
         onSubmitEditing={submeter}
@@ -53,14 +63,33 @@ export default function ConfirmarEmailScreen() {
         onPress={submeter}
         disabled={aConfirmar}
       />
-      <LinkTexto
-        label={reenviar.isPending ? 'A enviar…' : 'Não chegou? Reenviar código'}
-        onPress={() => reenviar.mutate(email)}
-        disabled={reenviar.isPending}
-      />
-      <ThemedText type="small" themeColor="textSecondary">
-        Se já tinhas conta com este email, não chega código nenhum: entra com a tua password.
-      </ThemedText>
+      <View style={styles.rodape}>
+        <LinkTexto
+          label={reenviar.isPending ? 'A enviar…' : 'Não chegou? Reenviar código'}
+          onPress={() => reenviar.mutate(email)}
+          disabled={reenviar.isPending}
+        />
+        <ThemedText themeColor="textMuted" style={styles.nota}>
+          Se já tinhas conta com este email, não chega código nenhum: entra com a tua password.
+        </ThemedText>
+      </View>
     </AuthForm>
   );
 }
+
+const styles = StyleSheet.create({
+  email: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: 800,
+  },
+  rodape: {
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  nota: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+});

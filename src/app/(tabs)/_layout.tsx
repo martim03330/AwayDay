@@ -1,17 +1,13 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
-
-import { Colors } from '@/constants/theme';
+import { Colors as colors } from '@/constants/theme';
 
 export default function TabsLayout() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
   return (
     <NativeTabs
       backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      indicatorColor={colors.successBackground}
+      labelStyle={{ selected: { color: colors.accentInk } }}>
       <NativeTabs.Trigger name="index" hidden />
 
       <NativeTabs.Trigger name="jogos">

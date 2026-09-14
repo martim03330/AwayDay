@@ -48,7 +48,7 @@ export function ModoDemoCard() {
         {`Hora na app: ${formatarDiaEHora(new Date(agora), agora)}${simulacao ? ' (simulada)' : ''}`}
       </ThemedText>
 
-      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rotulo}>
+      <ThemedText type="eyebrow" themeColor="textSecondary">
         Jogo
       </ThemedText>
       <View style={styles.chips}>
@@ -63,7 +63,7 @@ export function ModoDemoCard() {
         ))}
       </View>
 
-      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.rotulo}>
+      <ThemedText type="eyebrow" themeColor="textSecondary">
         Fase
       </ThemedText>
       <View style={styles.chips}>
@@ -96,12 +96,6 @@ export function ModoDemoCard() {
 const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
-  },
-  rotulo: {
-    fontSize: 12,
-    lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   chips: {
     flexDirection: 'row',

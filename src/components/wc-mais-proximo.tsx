@@ -36,13 +36,12 @@ export function WcMaisProximo({ origem }: { origem: Coordenadas }) {
     <Card style={styles.card}>
       <WcDetalhes wc={maisProximo.wc} metros={maisProximo.metros} minutos={maisProximo.minutos} />
       {livre ? (
-        <>
-          <View style={[styles.divisor, { backgroundColor: theme.border }]} />
-          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.subtitulo}>
+        <View style={[styles.alternativa, { borderTopColor: theme.backgroundSelected }]}>
+          <ThemedText type="eyebrow" themeColor="accentInk">
             Sem bilhete nem consumo
           </ThemedText>
           <WcDetalhes wc={livre.wc} metros={livre.metros} minutos={livre.minutos} />
-        </>
+        </View>
       ) : null}
     </Card>
   );
@@ -52,13 +51,9 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
   },
-  divisor: {
-    height: StyleSheet.hairlineWidth,
-  },
-  subtitulo: {
-    fontSize: 12,
-    lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  alternativa: {
+    gap: 12,
+    paddingTop: Spacing.three,
+    borderTopWidth: 1,
   },
 });

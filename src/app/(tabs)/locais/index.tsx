@@ -1,8 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LocalCard } from '@/components/local-card';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
+import { useTheme } from '@/hooks/use-theme';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
@@ -10,10 +13,10 @@ import { obterClube } from '@/mocks/clubes';
 import { estadiosNacionais, obterEstadio } from '@/mocks/estadios';
 import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
-import { Chip } from '@/ui/chip';
+import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { EmptyState } from '@/ui/empty-state';
-import { IconCircle, icons } from '@/ui/icon';
-import { Screen } from '@/ui/screen';
+import { Escudo } from '@/ui/escudo';
+import { Icon, IconCircle, icons } from '@/ui/icon';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -28,8 +31,42 @@ const estadiosOrdenados = [...estadiosNacionais].sort(
   (a, b) => Number(temLocaisPerto(b.id)) - Number(temLocaisPerto(a.id))
 );
 
+type ChipRelvadoProps = {
+  clubeId: string;
+  nome: string;
+  selected: boolean;
+  onPress: () => void;
+};
+
+/** Club chip on the green header: yellow when selected, translucent white otherwise. */
+function ChipRelvado({ clubeId, nome, selected, onPress }: ChipRelvadoProps) {
+  const theme = useTheme();
+  const clube = obterClube(clubeId);
+  const cor = selected ? theme.highlightText : theme.accentText;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      style={({ pressed }) => [
+        styles.chip,
+        { backgroundColor: selected ? theme.highlight : 'rgba(255, 255, 255, 0.16)' },
+        pressed && styles.pressed,
+      ]}>
+      {clube ? <Escudo clube={clube} size={17} /> : null}
+      <ThemedText style={[styles.chipTexto, { color: cor, fontWeight: selected ? 800 : 700 }]}>
+        {clube?.nomeCurto ?? nome}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 export default function LocaisScreen() {
+  useBarraDeEstadoClara();
   const router = useRouter();
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ estadio?: string }>();
   const { clubeFavoritoId, fezCheckIn, pessoasAqui } = useAppState();
 
@@ -82,68 +119,130 @@ export default function LocaisScreen() {
           />
         ))}
         {maisLonge > 0 ? (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
-            {maisLonge === 1
-              ? `1 tasco fica a mais de ${MAX_MINUTOS_A_PE} min a pé e ficou no banco.`
-              : `${maisLonge} tascos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e ficaram no banco.`}
-          </ThemedText>
+          <View style={[styles.banco, { borderColor: theme.borderStrong }]}>
+            <Icon name={icons.aPe} size={18} color={theme.textSecondary} />
+            <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
+              {maisLonge === 1
+                ? `1 tasco fica a mais de ${MAX_MINUTOS_A_PE} min a pé e ficou no banco.`
+                : `${maisLonge} tascos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e ficaram no banco.`}
+            </ThemedText>
+          </View>
         ) : null}
       </>
     );
   }
 
   return (
-    <Screen refreshing={refreshing} onRefresh={refresh}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="never"
-        style={styles.chipsScroll}
-        contentContainerStyle={styles.chips}>
-        {estadiosOrdenados.map((opcao) => (
-          <Chip
-            key={opcao.id}
-            label={obterClube(opcao.clubeId)?.nomeCurto ?? opcao.nome}
-            selected={opcao.id === estadio.id}
-            onPress={() => router.setParams({ estadio: opcao.id })}
-          />
-        ))}
-      </ScrollView>
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentInsetAdjustmentBehavior="never"
+      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={refresh}
+          progressViewOffset={insets.top}
+        />
+      }>
+      <CabecalhoRelvado title="Locais" eyebrow={`Tascos a menos de ${MAX_MINUTOS_A_PE} min a pé`}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="never"
+          style={styles.chipsScroll}
+          contentContainerStyle={styles.chips}>
+          {estadiosOrdenados.map((opcao) => (
+            <ChipRelvado
+              key={opcao.id}
+              clubeId={opcao.clubeId}
+              nome={opcao.nome}
+              selected={opcao.id === estadio.id}
+              onPress={() => router.setParams({ estadio: opcao.id })}
+            />
+          ))}
+        </ScrollView>
+      </CabecalhoRelvado>
 
-      <View style={styles.cabecalho}>
-        <IconCircle name={icons.estadio} />
-        <View style={styles.flex}>
-          <ThemedText type="smallBold">{estadio.nome}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {loading
-              ? 'A procurar locais…'
-              : `${plural(perto.length, 'local', 'locais')} a menos de ${MAX_MINUTOS_A_PE} min a pé · ${estadio.cidade}`}
-          </ThemedText>
+      <View style={styles.conteudo}>
+        <View style={styles.cabecalho}>
+          <IconCircle name={icons.estadio} size={21} />
+          <View style={styles.flex}>
+            <ThemedText type="section" style={styles.estadioNome}>
+              {estadio.nome}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {loading
+                ? 'A procurar locais…'
+                : `${plural(perto.length, 'local', 'locais')} a menos de ${MAX_MINUTOS_A_PE} min a pé · ${estadio.cidade}`}
+            </ThemedText>
+          </View>
         </View>
-      </View>
 
-      {renderConteudo()}
-    </Screen>
+        {renderConteudo()}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   chipsScroll: {
-    marginHorizontal: -Spacing.three,
+    marginHorizontal: -20,
   },
   chips: {
     gap: Spacing.two,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: 20,
+  },
+  chip: {
+    height: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingLeft: 10,
+    paddingRight: 14,
+    borderRadius: Radius.pill,
+  },
+  chipTexto: {
+    fontSize: 14,
+    lineHeight: 19,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  conteudo: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    gap: 14,
+    paddingHorizontal: 20,
+    paddingTop: 22,
   },
   cabecalho: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: 12,
   },
   flex: {
     flex: 1,
   },
-  centro: {
-    textAlign: 'center',
+  estadioNome: {
+    fontSize: 26,
+    lineHeight: 29,
+  },
+  banco: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+  },
+  bancoTexto: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 600,
   },
 });

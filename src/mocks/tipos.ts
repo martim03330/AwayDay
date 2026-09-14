@@ -1,3 +1,5 @@
+import type { IconName } from '@/ui/icon';
+
 /** Classificação de 1 a 5, usada no cervejómetro, no petiscómetro e nas avaliações. */
 export type Nota = 1 | 2 | 3 | 4 | 5;
 
@@ -174,7 +176,8 @@ export type Missao = {
   id: string;
   titulo: string;
   descricao: string;
-  distintivo: { emoji: string; nome: string };
+  /** Badge earned when the mission is done, drawn with an icon (no emoji in the interface). */
+  distintivo: { icon: IconName; nome: string };
   meta: number;
   progresso: ProgressoMissao;
   /** O que a foto de prova deve mostrar. */

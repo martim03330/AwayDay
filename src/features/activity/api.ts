@@ -24,6 +24,22 @@ export async function fetchAttendance(userId: string, fixtureId: string) {
   return toStatus(data?.status);
 }
 
+/** Every fixture the user marked as going or attended, by fixture id. */
+export async function fetchMyAttendance(userId: string): Promise<Record<string, AttendanceStatus>> {
+  const { data, error } = await client()
+    .from('fixture_attendance')
+    .select('fixture_id, status')
+    .eq('profile_id', userId);
+  if (error) throw error;
+
+  const byFixture: Record<string, AttendanceStatus> = {};
+  for (const row of data) {
+    const status = toStatus(row.status);
+    if (status) byFixture[row.fixture_id] = status;
+  }
+  return byFixture;
+}
+
 /** Marks or unmarks "going". Never turns a fixture already marked as attended back into "going". */
 export async function setGoing(userId: string, fixtureId: string, going: boolean) {
   if (going) {

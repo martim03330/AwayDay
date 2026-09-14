@@ -1,8 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
-import { AuthForm } from '@/features/auth/components/AuthForm';
+import { AuthForm, CampoCodigo } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useResetPassword } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
@@ -10,6 +10,7 @@ import { codeError, PASSWORD_MAX_LENGTH, passwordError } from '@/features/auth/v
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
+import { icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 export default function NovaPasswordScreen() {
@@ -38,17 +39,24 @@ export default function NovaPasswordScreen() {
 
   return (
     <AuthForm
-      intro={`Escreve o código que enviámos para ${email} e escolhe a password nova.`}
+      hero={{ icon: icons.password, tag: '8 algarismos' }}
+      intro={
+        <>
+          {'Escreve o código que enviámos para '}
+          <ThemedText themeColor="text" style={styles.email}>
+            {email}
+          </ThemedText>
+          {' e escolhe a password nova.'}
+        </>
+      }
       error={mudar.error ? authErrorMessage(mudar.error) : null}>
-      <Campo
+      <CampoCodigo
         label="Código"
         value={codigo}
         onChangeText={setCodigo}
         erro={tentou ? codeError(codigo) : null}
-        keyboardType="number-pad"
+        digitos={8}
         maxLength={9}
-        autoComplete="one-time-code"
-        textContentType="oneTimeCode"
         autoFocus
         returnKeyType="next"
       />
@@ -71,9 +79,22 @@ export default function NovaPasswordScreen() {
         onPress={submeter}
         disabled={aGuardar}
       />
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText themeColor="textMuted" style={styles.nota}>
         Se não houver conta com este email, não chega código nenhum.
       </ThemedText>
     </AuthForm>
   );
 }
+
+const styles = StyleSheet.create({
+  email: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: 800,
+  },
+  nota: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+});

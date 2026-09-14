@@ -26,6 +26,7 @@ export default function OnboardingClubeDaTerraScreen() {
         <>
           <Button
             label={selecionado ? `Confirmar ${selecionado.nomeCurto}` : 'Escolhe um clube ou salta'}
+            variant="highlight"
             disabled={!selecionado}
             onPress={() => {
               if (!selecionado) return;

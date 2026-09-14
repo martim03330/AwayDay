@@ -1,6 +1,6 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { fetchAttendance, setGoing } from '@/features/activity/api';
+import { fetchAttendance, fetchMyAttendance, setGoing } from '@/features/activity/api';
 
 const ATTENDANCE_KEY = 'attendance';
 
@@ -13,6 +13,15 @@ export function useAttendance(userId: string | null, fixtureId: string) {
   });
 }
 
+/** All of the signed-in user's attendance, by fixture id; idle while signed out. */
+export function useMyAttendance(userId: string | null) {
+  return useQuery({
+    queryKey: [ATTENDANCE_KEY, userId],
+    queryFn: userId ? () => fetchMyAttendance(userId) : skipToken,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useSetGoing(userId: string | null, fixtureId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -20,7 +29,7 @@ export function useSetGoing(userId: string | null, fixtureId: string) {
       if (!userId) throw new Error('Not signed in.');
       return setGoing(userId, fixtureId, going);
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: [ATTENDANCE_KEY, userId, fixtureId] }),
+    // The prefix covers this fixture and the full list.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [ATTENDANCE_KEY, userId] }),
   });
 }

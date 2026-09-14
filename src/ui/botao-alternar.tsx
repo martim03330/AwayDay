@@ -73,8 +73,8 @@ export function BotaoAlternar({ ativo, onPress, label, icon }: BotaoAlternarProp
           key={String(ativo)}
           entering={mudancas > 0 && !reduzirMovimento ? FadeIn.duration(DURACAO_MS) : undefined}
           style={styles.conteudo}>
-          <Icon name={ativo ? icon.ativo : icon.inativo} size={18} color={cor} />
-          <ThemedText type="smallBold" style={[styles.label, { color: cor }]}>
+          <Icon name={ativo ? icon.ativo : icon.inativo} size={20} color={cor} />
+          <ThemedText style={[styles.label, { color: cor }]}>
             {texto}
           </ThemedText>
         </Animated.View>
@@ -85,7 +85,7 @@ export function BotaoAlternar({ ativo, onPress, label, icon }: BotaoAlternarProp
 
 const styles = StyleSheet.create({
   botao: {
-    minHeight: 52,
+    minHeight: 54,
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
     borderRadius: 16,
@@ -99,5 +99,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
+    lineHeight: 22,
+    fontWeight: 800,
   },
 });

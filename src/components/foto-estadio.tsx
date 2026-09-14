@@ -1,11 +1,11 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Colors, Spacing } from '@/constants/theme';
 import { obterClube } from '@/mocks/clubes';
 import type { Venue } from '@/mocks/tipos';
 import { Icon, icons } from '@/ui/icon';
-
-const COR_POR_DEFEITO = '#0B7A43';
+import { ThemedText } from '@/ui/themed-text';
 
 /** Fotografia do estádio ou, sem `photoUrl`, uma capa gerada com as cores do clube da casa. */
 export function FotoEstadio({ venue }: { venue: Venue }) {
@@ -20,7 +20,7 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
     );
   }
 
-  const cor = obterClube(venue.clubeId)?.cores.primaria ?? COR_POR_DEFEITO;
+  const cor = obterClube(venue.clubeId)?.cores.primaria ?? Colors.accent;
 
   return (
     <View
@@ -28,47 +28,42 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
       accessibilityLabel={`Ilustração do ${venue.nome}. Fotografia indisponível na demo.`}
       style={[
         styles.foto,
-        { experimental_backgroundImage: `linear-gradient(160deg, ${cor} 0%, #0B0B0B 100%)` },
+        {
+          backgroundColor: cor,
+          // Darkens the club colour towards the bottom so the caption stays legible.
+          experimental_backgroundImage:
+            'linear-gradient(160deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 100%)',
+        },
       ]}>
-      <View style={styles.icone}>
-        <Icon name={icons.estadio} size={72} color="rgba(255,255,255,0.22)" />
+      <View style={styles.icone} pointerEvents="none">
+        <Icon name={icons.estadio} size={110} color="rgba(255,255,255,0.28)" strokeWidth={1.2} />
       </View>
-      <View style={styles.legenda}>
-        <Text style={styles.nome} numberOfLines={2}>
-          {venue.nome}
-        </Text>
-        <Text style={styles.detalhe}>{venue.cidade} · fotografia indisponível na demo</Text>
-      </View>
+      <ThemedText style={styles.legenda} numberOfLines={1}>
+        {`${venue.cidade} · fotografia indisponível na demo`}
+      </ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   foto: {
-    height: 170,
-    borderRadius: 16,
-    borderCurve: 'continuous',
+    height: 150,
     overflow: 'hidden',
     justifyContent: 'flex-end',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 14,
   },
   icone: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 8,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
   legenda: {
-    padding: 16,
-    gap: 2,
-  },
-  nome: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: 700,
-  },
-  detalhe: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: 600,
   },
 });

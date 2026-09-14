@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -8,15 +8,20 @@ import { ThemedText } from '@/ui/themed-text';
 type ButtonProps = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  /** `highlight`: yellow card, for the one action that matters now (e.g. check-in). */
+  variant?: 'primary' | 'secondary' | 'highlight' | 'danger';
   icon?: IconName;
   disabled?: boolean;
 };
 
 export function Button({ label, onPress, variant = 'primary', icon, disabled = false }: ButtonProps) {
   const theme = useTheme();
-  const primary = variant === 'primary';
-  const color = primary ? theme.accentText : theme.text;
+  const look = {
+    primary: { background: theme.accent, pressed: theme.accentPressed, ink: theme.accentText },
+    secondary: { background: theme.backgroundElement, pressed: theme.backgroundSelected, ink: theme.text },
+    highlight: { background: theme.highlight, pressed: theme.highlight, ink: theme.highlightText },
+    danger: { background: theme.danger, pressed: theme.dangerText, ink: theme.accentText },
+  }[variant];
 
   return (
     <Pressable
@@ -26,36 +31,38 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled = f
       accessibilityState={{ disabled }}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: primary ? theme.accent : theme.backgroundSelected },
+        { backgroundColor: pressed ? look.pressed : look.background },
+        variant === 'secondary' && { borderWidth: 1.5, borderColor: theme.border },
+        variant === 'highlight' && pressed && styles.pressed,
         disabled && styles.disabled,
-        pressed && styles.pressed,
       ]}>
-      {icon ? <Icon name={icon} size={18} color={color} /> : null}
-      <ThemedText type="smallBold" style={[styles.label, { color }]}>
-        {label}
-      </ThemedText>
+      {icon ? <Icon name={icon} size={20} color={look.ink} /> : null}
+      <ThemedText style={[styles.label, { color: look.ink }]}>{label}</ThemedText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 52,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.four,
-    borderRadius: 16,
+    borderRadius: Radius.button,
     borderCurve: 'continuous',
   },
   label: {
     fontSize: 16,
+    lineHeight: 22,
+    fontWeight: 800,
+    textAlign: 'center',
   },
   disabled: {
     opacity: 0.4,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
 });

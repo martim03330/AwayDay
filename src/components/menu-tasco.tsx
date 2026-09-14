@@ -5,9 +5,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarPreco, plural } from '@/lib/formatos';
 import { contagemDoPrato } from '@/lib/pratos';
 import type { Prato } from '@/mocks/tipos';
-import { Badge } from '@/ui/badge';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
+import { Etiqueta } from '@/ui/etiqueta';
+import { Icon, icons } from '@/ui/icon';
 import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -22,49 +23,46 @@ export function MenuTasco({ pratos, recomendados, onAlternarRecomendacao }: Menu
 
   return (
     <Card style={styles.card}>
-      {pratos.map((prato, indice) => {
+      {pratos.map((prato) => {
         const recomendado = recomendados.has(prato.id);
         const total = contagemDoPrato(prato, recomendados);
         return (
           <View
             key={prato.id}
-            style={[
-              styles.prato,
-              indice > 0 && {
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: theme.border,
-                paddingTop: Spacing.three,
-              },
-            ]}>
-            {/* O nome usa a largura toda: o botão fica numa linha própria e não o empurra. */}
-            <ThemedText type="smallBold" style={styles.nome}>
-              {prato.nome}
-            </ThemedText>
-            {prato.especialidade ? <Badge label="Especialidade" /> : null}
-            <LinhaDetalhes
-              partes={[
-                formatarPreco(prato.precoEuros),
-                `pronto em ${prato.minutosPreparacao} min`,
-                plural(total, 'recomendação', 'recomendações'),
-              ]}
-            />
-            <View style={styles.acao}>
-              <Chip
-                label={recomendado ? 'Recomendado' : 'Recomendo'}
-                selected={recomendado}
-                onPress={() => onAlternarRecomendacao(prato.id)}
-                emCartao
-                accessibilityLabel={
-                  recomendado
-                    ? `Retirar a tua recomendação de ${prato.nome}`
-                    : `Recomendar ${prato.nome}`
-                }
+            style={[styles.prato, { borderBottomColor: theme.backgroundSelected }]}>
+            {/* The text column shrinks and wraps; the button keeps its size on the right. */}
+            <View style={styles.textos}>
+              <View style={styles.titulo}>
+                <ThemedText style={styles.nome}>{prato.nome}</ThemedText>
+                {prato.especialidade ? <Etiqueta label="Especialidade" tone="aviso" /> : null}
+              </View>
+              <LinhaDetalhes
+                partes={[
+                  formatarPreco(prato.precoEuros),
+                  `pronto em ${prato.minutosPreparacao} min`,
+                  plural(total, 'recomendação', 'recomendações'),
+                ]}
               />
             </View>
+            <Chip
+              label={recomendado ? 'Recomendado' : 'Recomendo'}
+              selected={recomendado}
+              onPress={() => onAlternarRecomendacao(prato.id)}
+              leading={
+                recomendado ? (
+                  <Icon name={icons.selecionado} size={13} color={theme.accentText} strokeWidth={3} />
+                ) : undefined
+              }
+              accessibilityLabel={
+                recomendado
+                  ? `Retirar a tua recomendação de ${prato.nome}`
+                  : `Recomendar ${prato.nome}`
+              }
+            />
           </View>
         );
       })}
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText themeColor="textMuted" style={styles.rodape}>
         As recomendações são dos adeptos, não do dono. Recomenda só o que provaste.
       </ThemedText>
     </Card>
@@ -73,17 +71,36 @@ export function MenuTasco({ pratos, recomendados, onAlternarRecomendacao }: Menu
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
+    gap: 0,
+    paddingTop: Spacing.one,
+    paddingBottom: 14,
   },
   prato: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  textos: {
+    flex: 1,
     gap: Spacing.one,
   },
-  nome: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  acao: {
+  titulo: {
     flexDirection: 'row',
-    marginTop: Spacing.one,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+  },
+  nome: {
+    flexShrink: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: 800,
+  },
+  rodape: {
+    marginTop: 12,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });
