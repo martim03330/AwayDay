@@ -50,10 +50,12 @@ export function localCoachContext(input: CoachInput): LocalCoachContext {
   const plays = (fixture: Fixture, clubId: string | null) =>
     clubId !== null && (fixture.casaId === clubId || fixture.foraId === clubId);
 
+  // `filter` already returns a new array, so `sort` never touches `input.fixtures`. Not `toSorted`: Hermes in
+  // Expo Go does not have it and the app crashed on open for anyone signed in.
   const mine = input.fixtures
     .filter((fixture) => plays(fixture, input.supporterClubId) || plays(fixture, input.hometownClubId))
     .filter((fixture) => fimDoJogo(fixture).getTime() + AFTER_MATCH_MS > now)
-    .toSorted((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio));
+    .sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio));
 
   const matchDay = mine.find((fixture) => plays(fixture, input.supporterClubId) && mostrarRelogio(fixture, now));
   const phase = matchDay ? PHASES[faseDoDiaDeJogo(matchDay, now)] : null;
