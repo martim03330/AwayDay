@@ -34,6 +34,11 @@ falhas críticas; estas são as correções.
   Google Drive.
 - **`.env` e `.env.*` no `.gitignore`**, exceto o `.env.example`.
 - **Edge Functions com `supabase-js` fixo em 2.116.0**, a mesma versão da app, e sem imports que não se usavam.
+- **Quem chama uma Edge Function verifica-se num só sítio** (`_shared/auth.ts`): `authenticatedCaller` para a app,
+  `hasCronSecret` para o `pg_cron`. Com `verify_jwt` desligado em todas, uma função nova que se esquecesse da
+  verificação ficava pública; assim há uma forma óbvia de o fazer.
+- **Regra de lint para métodos que o Hermes do Expo Go não tem** (`toSorted`, `Object.groupBy`, etc.). O
+  TypeScript não avisa, e o `toSorted` pôs a app a rebentar ao abrir para quem tinha sessão.
 
 **Fica por fazer.** Captcha no registo e na recuperação. Sessão encriptada (`expo-secure-store`). Remover
 dependências sem uso (`expo-web-browser`, `expo-status-bar`). `deno.lock` das funções (o Deno não está instalado).

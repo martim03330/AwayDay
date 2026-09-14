@@ -1,10 +1,11 @@
 // The coach message for whoever opens the app. The context (facts and key) comes from SQL, in
 // coach_context; the sentence from coach-writer. One message per context: asking again with the same context
 // returns the saved message and writes nothing new. Nothing worth saying: `message: null`.
-// verify_jwt is off (it also works with the new API keys); the user's access token is checked below.
+// verify_jwt is off (it also works with the new API keys); the caller is checked with authenticatedCaller.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
+import { authenticatedCaller } from '../_shared/auth.ts';
 import { contextInstant, parseCoachResult } from '../_shared/coach-context.ts';
 import { writeCoachMessage } from '../_shared/coach-writer.ts';
 import { lisbonDay } from '../_shared/portuguese.ts';
@@ -36,9 +37,6 @@ function savedMessage(row: unknown): SavedMessage | null {
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
 
-  const token = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
-  if (!token) return json(401, { error: 'not_authenticated' });
-
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !serviceRoleKey) return json(500, { error: 'misconfigured' });
@@ -46,10 +44,9 @@ Deno.serve(async (request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Only a valid user access token passes: the publishable key or an expired session do not.
-  const { data: auth, error: authError } = await admin.auth.getUser(token);
-  if (authError || !auth.user) return json(401, { error: 'not_authenticated' });
-  const profileId = auth.user.id;
+  const caller = await authenticatedCaller(request, admin);
+  if (!caller) return json(401, { error: 'not_authenticated' });
+  const profileId = caller.user.id;
 
   const options = asRecord(await request.json().catch(() => null));
   const realNow = new Date();

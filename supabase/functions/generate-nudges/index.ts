@@ -5,6 +5,7 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
+import { hasCronSecret } from '../_shared/auth.ts';
 import { parseCoachResult, type CoachContext } from '../_shared/coach-context.ts';
 import { writeCoachMessage } from '../_shared/coach-writer.ts';
 import { sendExpoPush } from '../_shared/expo-push.ts';
@@ -28,15 +29,6 @@ function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   return Object.fromEntries(Object.entries(value));
 }
 
-function sameSecret(expected: string, provided: string) {
-  if (expected.length !== provided.length) return false;
-  let difference = 0;
-  for (let index = 0; index < expected.length; index++) {
-    difference |= expected.charCodeAt(index) ^ provided.charCodeAt(index);
-  }
-  return difference === 0;
-}
-
 function parseCandidates(data: unknown): Candidate[] {
   if (!Array.isArray(data)) return [];
   return data.flatMap((row) => {
@@ -54,10 +46,7 @@ function strings(rows: unknown, key: string) {
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
-
-  const cronSecret = Deno.env.get('CRON_SECRET');
-  const providedSecret = request.headers.get('x-cron-secret') ?? '';
-  if (!cronSecret || !sameSecret(cronSecret, providedSecret)) return json(401, { error: 'unauthorized' });
+  if (!hasCronSecret(request)) return json(401, { error: 'unauthorized' });
 
   const options = asRecord(await request.json().catch(() => null));
   // `force` skips the 10:00 check; `profile_ids` limits a run to some users. Both only for tests.

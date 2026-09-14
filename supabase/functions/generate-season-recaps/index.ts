@@ -6,6 +6,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { monthlyAiUsage } from '../_shared/ai-budget.ts';
+import { hasCronSecret } from '../_shared/auth.ts';
 import { sendExpoPush } from '../_shared/expo-push.ts';
 import { lisbonDay } from '../_shared/portuguese.ts';
 import { RECAP_MODEL, RECAP_MODEL_PRICE, writeRecapWithClaude } from '../_shared/recap-model.ts';
@@ -30,15 +31,6 @@ function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   return Object.fromEntries(Object.entries(value));
 }
 
-function sameSecret(expected: string, provided: string) {
-  if (expected.length !== provided.length) return false;
-  let difference = 0;
-  for (let index = 0; index < expected.length; index++) {
-    difference |= expected.charCodeAt(index) ^ provided.charCodeAt(index);
-  }
-  return difference === 0;
-}
-
 function strings(rows: unknown, keys: readonly string[]) {
   if (!Array.isArray(rows)) return [];
   return rows.flatMap((row) => {
@@ -49,10 +41,7 @@ function strings(rows: unknown, keys: readonly string[]) {
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
-
-  const cronSecret = Deno.env.get('CRON_SECRET');
-  const providedSecret = request.headers.get('x-cron-secret') ?? '';
-  if (!cronSecret || !sameSecret(cronSecret, providedSecret)) return json(401, { error: 'unauthorized' });
+  if (!hasCronSecret(request)) return json(401, { error: 'unauthorized' });
 
   const options = asRecord(await request.json().catch(() => null));
   // For tests only (still behind the secret): run outside June, for one season, for some users.
