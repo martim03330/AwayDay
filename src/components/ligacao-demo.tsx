@@ -21,7 +21,7 @@ export function LigacaoDemo() {
   const url = Linking.useURL();
   const processado = useRef<string | null>(null);
   const { simularFase, usarHoraReal } = useRelogio();
-  const { saltarOnboarding } = useAppState();
+  const { saltarOnboarding, modoDemo, alternarModoDemo } = useAppState();
 
   useEffect(() => {
     if (!LIGACAO_DEMO_ATIVA || !url || processado.current === url) return;
@@ -37,11 +37,13 @@ export function LigacaoDemo() {
       return;
     }
     if (!eFaseDiaDeJogo(fase)) return;
+    // Simulated time only makes sense with demo data: never mix it with the user's real activity.
+    if (!modoDemo) alternarModoDemo();
 
     const jogoId = typeof queryParams?.jogo === 'string' ? queryParams.jogo : JOGO_DEMO_POR_OMISSAO;
     const jogo = obterJogo(jogoId);
     if (jogo) simularFase(jogo, fase);
-  }, [url, saltarOnboarding, simularFase, usarHoraReal]);
+  }, [url, saltarOnboarding, simularFase, usarHoraReal, modoDemo, alternarModoDemo]);
 
   return null;
 }

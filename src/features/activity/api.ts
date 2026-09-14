@@ -1,4 +1,12 @@
-import type { AttendanceStatus, PlaceVisitSource, ReviewInput } from '@/features/activity/types';
+import {
+  NoiseMeasurementRefused,
+  type AttendanceStatus,
+  type NoiseMeasurementRecord,
+  type PlaceVisitRecord,
+  type PlaceVisitSource,
+  type ReviewInput,
+  type ReviewRecord,
+} from '@/features/activity/types';
 import { supabase } from '@/lib/supabase';
 
 // The signed-in user's own activity. RLS only ever lets people read and write their own rows, and the
@@ -86,11 +94,19 @@ export async function recordReview(userId: string, review: ReviewInput) {
   if (error) throw error;
 }
 
-/** Adds a visit to the user's private place history and returns its id. */
-export async function recordPlaceVisit(userId: string, placeId: string, source: PlaceVisitSource) {
+/**
+ * Adds a visit to the user's private place history and returns its id. `visitedAt` is only for bringing
+ * visits made without an account into it; the database refuses visits in the future.
+ */
+export async function recordPlaceVisit(
+  userId: string,
+  placeId: string,
+  source: PlaceVisitSource,
+  visitedAt?: string
+) {
   const { data, error } = await client()
     .from('place_visit')
-    .insert({ profile_id: userId, place_id: placeId, source })
+    .insert({ profile_id: userId, place_id: placeId, source, visited_at: visitedAt })
     .select('id')
     .single();
   if (error) throw error;
@@ -100,4 +116,84 @@ export async function recordPlaceVisit(userId: string, placeId: string, source: 
 export async function deletePlaceVisit(visitId: string) {
   const { error } = await client().from('place_visit').delete().eq('id', visitId);
   if (error) throw error;
+}
+
+export async function fetchMyReviews(userId: string): Promise<ReviewRecord[]> {
+  const { data, error } = await client()
+    .from('venue_review')
+    .select('fixture_id, stadium_score, atmosphere_score, access_score, comment, created_at, updated_at')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  return data.map((row) => ({
+    fixtureId: row.fixture_id,
+    stadium: row.stadium_score,
+    atmosphere: row.atmosphere_score,
+    access: row.access_score,
+    comment: row.comment,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+}
+
+export async function fetchMyPlaceVisits(userId: string): Promise<PlaceVisitRecord[]> {
+  const { data, error } = await client()
+    .from('place_visit')
+    .select('id, place_id, visited_at, source')
+    .eq('profile_id', userId)
+    .order('visited_at', { ascending: false });
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.source === 'check-in' || row.source === 'manual'
+      ? [{ id: row.id, placeId: row.place_id, visitedAt: row.visited_at, source: row.source }]
+      : []
+  );
+}
+
+/** The user's own score for each tasco they rated, by place id. */
+export async function fetchMyPlaceRatings(userId: string): Promise<Record<string, number>> {
+  const { data, error } = await client()
+    .from('place_rating')
+    .select('place_id, score')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.place_id, row.score]));
+}
+
+export async function savePlaceRating(userId: string, placeId: string, score: number) {
+  const { error } = await client()
+    .from('place_rating')
+    .upsert({ profile_id: userId, place_id: placeId, score }, { onConflict: 'profile_id,place_id' });
+  if (error) throw error;
+}
+
+export async function fetchMyNoiseMeasurements(userId: string): Promise<NoiseMeasurementRecord[]> {
+  const { data, error } = await client()
+    .from('noise_measurement')
+    .select('id, fixture_id, level, measured_at')
+    .eq('profile_id', userId)
+    .order('measured_at', { ascending: false });
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    fixtureId: row.fixture_id,
+    level: row.level,
+    measuredAt: row.measured_at,
+  }));
+}
+
+/**
+ * Records a valid reading. The server only accepts it while the fixture is being played and at least 8 minutes
+ * after the previous one; otherwise this throws NoiseMeasurementRefused.
+ */
+export async function recordNoiseMeasurement(fixtureId: string, level: number): Promise<NoiseMeasurementRecord> {
+  const { data, error } = await client().rpc('record_noise_measurement', {
+    p_fixture_id: fixtureId,
+    p_level: Math.round(level),
+  });
+  if (error) {
+    if (error.message === 'noise_measurement_too_soon') throw new NoiseMeasurementRefused('too-soon');
+    if (error.message === 'fixture_not_live') throw new NoiseMeasurementRefused('not-live');
+    throw error;
+  }
+  return { id: data.id, fixtureId: data.fixture_id, level: data.level, measuredAt: data.measured_at };
 }

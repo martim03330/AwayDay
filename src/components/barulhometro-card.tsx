@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { corDoNivel, MedidorBarulho, MostradorBarulho, tintaDoNivel } from '@/components/medidor-barulho';
 import { Spacing } from '@/constants/theme';
@@ -116,11 +116,19 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
   const ranking = rankingBarulho(jogo, medicoesAdeptosMock, { clubeId: clubeFavoritoId, nivel: melhor });
 
   function registar(nivel: number) {
-    registarMedicao({
+    void registarMedicao({
       jogoId: jogo.id,
       estadioId: jogo.estadioId,
       medidaEm: new Date(Date.now() + desvioMs).toISOString(),
       nivel,
+    }).then((resultado) => {
+      if (resultado === 'cedo-demais') {
+        Alert.alert('Ainda é cedo', 'Só dá para medir outra vez uns minutos depois da última medição.');
+      } else if (resultado === 'fora-do-jogo') {
+        Alert.alert('O jogo não está a decorrer', 'Só contam medições feitas durante o jogo.');
+      } else if (resultado === 'erro') {
+        Alert.alert('Não deu para guardar', 'Verifica a ligação e tenta outra vez.');
+      }
     });
   }
 

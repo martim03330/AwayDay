@@ -1,0 +1,60 @@
+import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import {
+  fetchMyNoiseMeasurements,
+  fetchMyPlaceRatings,
+  fetchMyPlaceVisits,
+  fetchMyReviews,
+} from '@/features/activity/api';
+
+const ACTIVITY_KEY = 'activity';
+const STALE_MS = 60 * 1000;
+
+/** Everything under this key belongs to one user's activity; invalidate it after any write. */
+export function myActivityKey(userId: string | null) {
+  return [ACTIVITY_KEY, userId] as const;
+}
+
+export const myReviewsKey = (userId: string | null) => [...myActivityKey(userId), 'reviews'] as const;
+export const myPlaceVisitsKey = (userId: string | null) => [...myActivityKey(userId), 'place-visits'] as const;
+export const myPlaceRatingsKey = (userId: string | null) => [...myActivityKey(userId), 'place-ratings'] as const;
+export const myNoiseMeasurementsKey = (userId: string | null) =>
+  [...myActivityKey(userId), 'noise-measurements'] as const;
+
+export function useMyReviews(userId: string | null) {
+  return useQuery({
+    queryKey: myReviewsKey(userId),
+    queryFn: userId ? () => fetchMyReviews(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyPlaceVisits(userId: string | null) {
+  return useQuery({
+    queryKey: myPlaceVisitsKey(userId),
+    queryFn: userId ? () => fetchMyPlaceVisits(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyPlaceRatings(userId: string | null) {
+  return useQuery({
+    queryKey: myPlaceRatingsKey(userId),
+    queryFn: userId ? () => fetchMyPlaceRatings(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyNoiseMeasurements(userId: string | null) {
+  return useQuery({
+    queryKey: myNoiseMeasurementsKey(userId),
+    queryFn: userId ? () => fetchMyNoiseMeasurements(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+/** Refetches all of the user's activity (after a write, or after bringing local activity into the account). */
+export function useRefreshMyActivity(userId: string | null) {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: myActivityKey(userId) });
+}

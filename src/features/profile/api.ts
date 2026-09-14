@@ -1,4 +1,10 @@
-import type { ClubRelation, MessagePreferences, MyProfile } from '@/features/profile/types';
+import type {
+  ClubRelation,
+  MessagePreferences,
+  MyProfile,
+  NotificationKind,
+  NotificationPreferences,
+} from '@/features/profile/types';
 import { supabase } from '@/lib/supabase';
 
 function client() {
@@ -60,5 +66,31 @@ export async function saveProfileClub(userId: string, relation: ClubRelation, cl
   const { error } = await client()
     .from('profile_club')
     .upsert({ profile_id: userId, relation, club_id: clubId }, { onConflict: 'profile_id,relation' });
+  if (error) throw error;
+}
+
+const NOTIFICATION_KINDS: readonly NotificationKind[] = ['kickoff_change', 'weather', 'group_movement', 'new_stamp'];
+
+function isNotificationKind(value: string): value is NotificationKind {
+  return NOTIFICATION_KINDS.some((kind) => kind === value);
+}
+
+export async function fetchNotificationPreferences(userId: string): Promise<NotificationPreferences> {
+  const { data, error } = await client()
+    .from('notification_preference')
+    .select('kind, enabled')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  const preferences: NotificationPreferences = {};
+  for (const row of data) {
+    if (isNotificationKind(row.kind)) preferences[row.kind] = row.enabled;
+  }
+  return preferences;
+}
+
+export async function saveNotificationPreference(userId: string, kind: NotificationKind, enabled: boolean) {
+  const { error } = await client()
+    .from('notification_preference')
+    .upsert({ profile_id: userId, kind, enabled }, { onConflict: 'profile_id,kind' });
   if (error) throw error;
 }

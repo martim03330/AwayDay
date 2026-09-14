@@ -5,7 +5,6 @@ import { ModoDemoCard } from '@/components/modo-demo-card';
 import { useTheme } from '@/hooks/use-theme';
 import { TIPOS_NOTIFICACAO } from '@/mocks/notificacoes';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
-import { useRelogio } from '@/state/relogio';
 import { Card } from '@/ui/card';
 import { Icon, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
@@ -23,8 +22,15 @@ export default function DefinicoesScreen() {
   const theme = useTheme();
   // The profile header opens this screen with `demo=1` after five quick taps.
   const { demo } = useLocalSearchParams<{ demo?: string }>();
-  const { simulacao } = useRelogio();
-  const { sonsLigados, alternarSons, notificacoes, permissoes, reverIntroducao } = useAppState();
+  const {
+    sonsLigados,
+    alternarSons,
+    notificacoes,
+    permissoes,
+    reverIntroducao,
+    modoDemo,
+    alternarModoDemo,
+  } = useAppState();
   const notificacoesLigadas = TIPOS_NOTIFICACAO.filter((tipo) => notificacoes[tipo]).length;
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
 
@@ -72,10 +78,31 @@ export default function DefinicoesScreen() {
         />
       </Card>
 
-      {demo === '1' || simulacao ? (
+      {demo === '1' || modoDemo ? (
         <>
           <SectionHeader title="Modo demo" />
-          <ModoDemoCard />
+          <Card style={styles.grupo}>
+            <LinhaGrupo
+              leading={<Icon name={icons.demo} size={20} color={theme.accentInk} />}
+              title="Modo demo"
+              subtitle={
+                modoDemo
+                  ? 'Dados de exemplo e hora simulada. Nada vai para a tua conta.'
+                  : 'Mostra a app com dados de exemplo, sem mexer nos teus.'
+              }
+              trailing={
+                <Switch
+                  value={modoDemo}
+                  onValueChange={alternarModoDemo}
+                  trackColor={{ true: theme.accent, false: theme.border }}
+                  thumbColor={theme.accentText}
+                  ios_backgroundColor={theme.border}
+                  accessibilityLabel="Modo demo"
+                />
+              }
+            />
+          </Card>
+          {modoDemo ? <ModoDemoCard /> : null}
         </>
       ) : null}
     </Screen>

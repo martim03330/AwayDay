@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { focusManager, QueryClient } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery, focusManager, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -49,7 +49,16 @@ export function QueryProvider({ children, onRestored }: QueryProviderProps) {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: CACHE_MAX_AGE_MS, buster: CACHE_BUSTER }}
+      persistOptions={{
+        persister,
+        maxAge: CACHE_MAX_AGE_MS,
+        buster: CACHE_BUSTER,
+        // Queries can opt out with `meta: { persist: false }` (e.g. short-lived signed URLs).
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
+        },
+      }}
       onSuccess={() => {
         onRestored?.(queryClient);
         setRestored(true);

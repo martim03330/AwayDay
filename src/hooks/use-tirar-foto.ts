@@ -19,7 +19,7 @@ export function useTirarFoto() {
   const { visitasLocais, adicionarFoto } = useAppState();
   const { tocarCarimbo } = useSons();
 
-  function guardar(missao: Missao, uri: string | null) {
+  function guardar(missao: Missao, uri: string | null, mimeType: string | null = null) {
     const agora = Date.now() + desvioMs;
     const contexto = contextoDaFoto({ agora, jogos, visitas: visitasLocais, obterLocal });
     const exemplo = uri === null;
@@ -30,6 +30,7 @@ export function useTirarFoto() {
       ...contexto,
       verificada: contexto.verificada && !exemplo,
       exemplo,
+      mimeType,
     });
     // Resposta direta ao disparo da câmara; só toca com os sons ligados.
     tocarCarimbo();
@@ -72,7 +73,7 @@ export function useTirarFoto() {
         cameraType: missao.fotoComOutraPessoa ? CameraType.front : CameraType.back,
       });
       const foto = resultado.canceled ? undefined : resultado.assets[0];
-      if (foto) guardar(missao, foto.uri);
+      if (foto) guardar(missao, foto.uri, foto.mimeType ?? null);
     } catch {
       Alert.alert('A câmara não abriu', 'Tenta outra vez daqui a nada.');
     }

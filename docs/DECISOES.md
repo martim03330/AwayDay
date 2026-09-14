@@ -2,6 +2,52 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Sair do modo demo, fatia 1: a tua atividade fica guardada
+
+**Três origens de dados, escolhidas no `AppStateProvider`.**
+- **Modo demo** (opção explícita nas Definições, guardada no telemóvel): dados de exemplo e hora simulada, só em
+  memória. Nada vai para a conta nem fica no telemóvel. O link `?demoFase=` liga o modo demo, para a hora simulada
+  nunca se misturar com atividade real.
+- **Sem conta:** a atividade fica neste telemóvel (AsyncStorage, `src/state/armazenamento-local.ts`), com leitura
+  validada campo a campo (um valor estragado é ignorado, não rebenta a app).
+- **Com conta:** a atividade vem da conta (TanStack Query) e cada mudança é gravada lá, com atualização imediata
+  no ecrã e nova leitura a seguir (que também desfaz uma mudança que falhou).
+- **Sempre no telemóvel:** introdução vista, permissões, clubes escolhidos, sons e modo demo. A introdução deixa de
+  aparecer em cada arranque.
+
+**Juntar à conta só com pergunta.** Na primeira vez que alguém entra numa conta com atividade guardada no telemóvel,
+a app pergunta se a junta. Assim, a atividade de outra pessoa que usou o mesmo telemóvel nunca vai parar à conta.
+Se alguma parte falhar (por exemplo, a avaliação de um jogo que ainda não começou), o telemóvel fica com a cópia.
+As medições do barulhómetro não sobem: a conta só aceita medições feitas durante o jogo.
+
+**Migração `20260914190000_personal_activity`**, com RLS e políticas na mesma migração:
+- `place_rating`: a tua nota a cada tasco (1 a 5).
+- `noise_measurement`: só se escreve pela função `record_noise_measurement`, que aceita medições apenas com o jogo
+  a decorrer (115 minutos desde o apito) e com 8 minutos entre medições da mesma pessoa no mesmo jogo, com bloqueio
+  para pedidos em paralelo.
+- `notification_preference`: os quatro tipos de aviso, com nomes em inglês na base de dados.
+- `mission_photo` e o bucket privado `mission-photos` (uma pasta por pessoa, 5 MB, JPEG/PNG/HEIC). O telemóvel não
+  escreve `verified` nem `taken_at`: um trigger marca a foto como verificada quando há, nesse dia em Lisboa, um
+  check-in num tasco perto do estádio de um jogo desse dia, e usa esse jogo e estádio.
+- Testada com um bloco SQL revertido no fim: notas fora de 1 a 5, escrever em nome de outra pessoa, medições
+  seguidas, fora do jogo ou fora da função, fotos verificadas pelo telemóvel, ficheiros na pasta de outra pessoa,
+  leitura entre utilizadores, anónimos sem acesso, e tudo a desaparecer com a conta.
+- A função `delete-account` apaga também os ficheiros da pessoa no Storage, que não seguem a cascata.
+
+**Cache.** Os links assinados das fotos (válidos 1 hora) não entram na cache guardada no telemóvel: as queries com
+`meta: { persist: false }` ficam de fora.
+
+### Limitações conhecidas (resolvidas nas fatias seguintes)
+
+- **Pratos recomendados** continuam só em memória: precisam da tabela `dish` (fatia 2).
+- **Progresso das missões** continua a ser calculado no telemóvel, agora com os teus dados reais. Passa para o
+  servidor quando meteorologia, pratos e clubes presentes estiverem na base de dados.
+- **Fora do modo demo continuam fictícios:** pessoas no tasco, clubes presentes, ranking de adeptos do barulhómetro
+  e ranking de tascos verificados (fatia 3, com agregados de pelo menos 5 pessoas).
+- **Check-in sem localização:** a verificação das fotos confia no check-in em `place_visit`, que ainda não confirma
+  que estás perto do tasco (fatia 3).
+- **Fotos sem conta** ficam no ficheiro que a câmara criou; se o sistema limpar essa cache, a foto deixa de abrir.
+
 ## 2026-09-14 — Design «Relvado» nos ecrãs, jogos dos teus clubes, histórico e faixa de novidades
 
 **Design, fases 2 e 3.** Os componentes de futebol e os ecrãs seguem o canvas «AwayDay Relvado»: bilhete de jogo

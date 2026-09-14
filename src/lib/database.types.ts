@@ -339,6 +339,126 @@ export type Database = {
           },
         ]
       }
+      mission_photo: {
+        Row: {
+          fixture_id: string | null
+          mission_id: string
+          profile_id: string
+          storage_path: string
+          taken_at: string
+          venue_id: string | null
+          verified: boolean
+        }
+        Insert: {
+          fixture_id?: string | null
+          mission_id: string
+          profile_id: string
+          storage_path: string
+          taken_at?: string
+          venue_id?: string | null
+          verified?: boolean
+        }
+        Update: {
+          fixture_id?: string | null
+          mission_id?: string
+          profile_id?: string
+          storage_path?: string
+          taken_at?: string
+          venue_id?: string | null
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_photo_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_photo_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_photo_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      noise_measurement: {
+        Row: {
+          fixture_id: string
+          id: string
+          level: number
+          measured_at: string
+          profile_id: string
+        }
+        Insert: {
+          fixture_id: string
+          id?: string
+          level: number
+          measured_at?: string
+          profile_id: string
+        }
+        Update: {
+          fixture_id?: string
+          id?: string
+          level?: number
+          measured_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "noise_measurement_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "noise_measurement_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preference: {
+        Row: {
+          enabled: boolean
+          kind: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          enabled: boolean
+          kind: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          kind?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preference_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nudge: {
         Row: {
           body: string
@@ -448,6 +568,45 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_rating: {
+        Row: {
+          created_at: string
+          place_id: string
+          profile_id: string
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          place_id: string
+          profile_id: string
+          score: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          place_id?: string
+          profile_id?: string
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_rating_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_rating_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
             referencedColumns: ["id"]
           },
         ]
@@ -814,6 +973,22 @@ export type Database = {
         }[]
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
+      record_noise_measurement: {
+        Args: { p_fixture_id: string; p_level: number }
+        Returns: {
+          fixture_id: string
+          id: string
+          level: number
+          measured_at: string
+          profile_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "noise_measurement"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       register_device_token: {
         Args: { p_platform: string; p_token: string }
         Returns: undefined

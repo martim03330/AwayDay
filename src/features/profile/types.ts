@@ -12,3 +12,8 @@ export type MyProfile = {
 };
 
 export type MessagePreferences = Partial<Pick<MyProfile, 'nudgesEnabled' | 'recapEnabled'>>;
+
+export type NotificationKind = 'kickoff_change' | 'weather' | 'group_movement' | 'new_stamp';
+
+/** Only the kinds the user changed; the others follow the app default. */
+export type NotificationPreferences = Partial<Record<NotificationKind, boolean>>;

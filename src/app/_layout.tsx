@@ -23,6 +23,7 @@ import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatal
 import { QueryProvider } from '@/lib/query-client';
 import { AICoachProvider } from '@/state/ai-coach';
 import { AppStateProvider, useAppState } from '@/state/app-state';
+import { JuntarAtividade } from '@/state/juntar-atividade';
 import { RelogioProvider } from '@/state/relogio';
 import { NotificacoesPush } from '@/state/notificacoes-push';
 import { SincronizarConta } from '@/state/sincronizar-conta';
@@ -99,6 +100,7 @@ export default function RootLayout() {
               <AICoachProvider>
                 <LigacaoDemo />
                 <SincronizarConta />
+                <JuntarAtividade />
                 <NotificacoesPush />
                 <NavegacaoRaiz />
               </AICoachProvider>
