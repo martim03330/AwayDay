@@ -3,8 +3,9 @@
 // from templates, or from Claude when ANTHROPIC_API_KEY and AI_MONTHLY_BUDGET_USD are set. One recap per
 // user per season (enforced by the database), then a push to the user's devices.
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
+import { monthlyAiUsage } from '../_shared/ai-budget.ts';
 import { sendExpoPush } from '../_shared/expo-push.ts';
 import { lisbonDay } from '../_shared/portuguese.ts';
 import { RECAP_MODEL, RECAP_MODEL_PRICE, writeRecapWithClaude } from '../_shared/recap-model.ts';
@@ -109,7 +110,10 @@ Deno.serve(async (request) => {
 
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
   const monthlyBudget = Number(Deno.env.get('AI_MONTHLY_BUDGET_USD') ?? '0');
-  let spent = 0;
+  // Starts from what the month already spent, coach messages included: every run shares one monthly budget.
+  // If the usage cannot be read, the model stays off.
+  const usage = apiKey ? await monthlyAiUsage(admin, now, null) : null;
+  let spent = usage?.spentUsd ?? Number.POSITIVE_INFINITY;
 
   const summary = {
     candidates: profileIds.length,

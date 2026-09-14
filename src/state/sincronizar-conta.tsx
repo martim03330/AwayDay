@@ -1,6 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
-import { useForgetProfiles, useMyProfile, useSaveProfileClub } from '@/features/profile/hooks/useMyProfile';
+import { fixtureCatalogQuery } from '@/features/fixtures/hooks/useFixtureCatalog';
+import { useMyProfile, useSaveProfileClub } from '@/features/profile/hooks/useMyProfile';
 import { useSession, useUserId } from '@/lib/session';
 import { useAppState } from '@/state/app-state';
 
@@ -15,14 +17,15 @@ type Reconciliacao = {
  * - Ao entrar: se a conta já tem clube, é a conta que manda (e salta a introdução); se não tem,
  *   guarda na conta o que foi escolhido neste telemóvel.
  * - Depois disso, cada mudança feita no telemóvel é guardada na conta.
- * - Ao sair: esquece o perfil guardado em cache, para a próxima pessoa não o ver.
+ * - Ao sair (ou depois de apagar a conta): esquece tudo o que a conta deixou na cache guardada no telemóvel
+ *   (perfil, dicas, retrospetiva, presenças), para a próxima pessoa não o ver. Só o catálogo de jogos fica.
  */
 export function SincronizarConta() {
+  const queryClient = useQueryClient();
   const sessao = useSession();
   const userId = useUserId();
   const perfil = useMyProfile(userId);
   const guardarClube = useSaveProfileClub(userId);
-  const esquecerPerfis = useForgetProfiles();
   const {
     introducaoVista,
     onboardingConcluido,
@@ -37,8 +40,10 @@ export function SincronizarConta() {
   useEffect(() => {
     if (sessao.status !== 'signed-out') return;
     reconciliacao.current = null;
-    esquecerPerfis();
-  }, [sessao.status, esquecerPerfis]);
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== fixtureCatalogQuery.queryKey[0],
+    });
+  }, [sessao.status, queryClient]);
 
   useEffect(() => {
     const dados = perfil.data;

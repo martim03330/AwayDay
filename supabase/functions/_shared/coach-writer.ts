@@ -2,9 +2,10 @@
 // and AI_MONTHLY_BUDGET_USD are set, the month's budget is not spent and the user is under the monthly cap;
 // if the model fails or breaks a rule, the template is used. Shared by coach-message and generate-nudges.
 
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
-import { NUDGE_MODEL, NUDGE_MODEL_PRICE, writeNudgeWithClaude } from './anthropic.ts';
+import { monthlyAiUsage } from './ai-budget.ts';
+import { NUDGE_MODEL, writeNudgeWithClaude } from './anthropic.ts';
 import type { CoachContext } from './coach-context.ts';
 import { buildSlots } from './nudge-slots.ts';
 import { acceptModelNudge, seedFrom, templateIdFor, templateNudge } from './nudge-text.ts';
@@ -39,25 +40,9 @@ async function modelKeyFor(admin: SupabaseClient, profileId: string, now: Date) 
   const budget = Number(Deno.env.get('AI_MONTHLY_BUDGET_USD') ?? '0');
   if (!apiKey || !(budget > 0)) return null;
 
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-  const usage = await admin
-    .from('nudge')
-    .select('profile_id, input_tokens, output_tokens')
-    .gt('input_tokens', 0)
-    .gte('created_at', monthStart);
-  if (usage.error) return null;
-
-  let spent = 0;
-  let callsForUser = 0;
-  for (const row of Array.isArray(usage.data) ? usage.data : []) {
-    const fields = asRecord(row);
-    spent +=
-      (Number(fields?.input_tokens ?? 0) * NUDGE_MODEL_PRICE.input +
-        Number(fields?.output_tokens ?? 0) * NUDGE_MODEL_PRICE.output) /
-      1_000_000;
-    if (fields?.profile_id === profileId) callsForUser += 1;
-  }
-  return spent < budget && callsForUser < MAX_MODEL_CALLS_PER_USER_PER_MONTH ? apiKey : null;
+  const usage = await monthlyAiUsage(admin, now, profileId);
+  if (!usage) return null;
+  return usage.spentUsd < budget && usage.profileModelMessages < MAX_MODEL_CALLS_PER_USER_PER_MONTH ? apiKey : null;
 }
 
 /** Catalogue names: the model may never type them, only use slots. */

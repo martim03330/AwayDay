@@ -92,10 +92,10 @@ supabase gen types typescript --linked > src/lib/database.types.ts
   correr ficheiros alterados: aplica-os com `supabase db query --linked -f supabase/seed/<ficheiro>.sql`.
 - Para mudar o esquema, cria uma migração nova (`supabase migration new <nome>`), nunca edites uma já aplicada, e
   volta a gerar os tipos.
-- **Autenticação:** as regras (password, código de 6 algarismos) estão no `config.toml` e vão com `supabase config push`. Corre antes `supabase config diff` e confirma que só muda o que queres.
+- **Autenticação:** as regras (password, código de 8 algarismos válido 15 minutos, reautenticação para mudar a password) estão no `config.toml` e vão com `supabase config push`. Corre antes `supabase config diff` e confirma que só muda o que queres.
 - **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Os emails saem pelo Brevo; põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER` (login SMTP do Brevo), `SMTP_PASS` (chave SMTP, começa por `xsmtpsib-`) e `SMTP_ADMIN_EMAIL` (remetente verificado). No Brevo, desliga o bloqueio de IPs desconhecidos, porque o Supabase envia de IPs que mudam.
-- **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`.
-- **Dica ao abrir a app:** Edge Function `coach-message`, chamada pela app com a sessão da pessoa. Não precisa de segredos.
+- **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`. A app pede a password outra vez e a função só aceita sessões que entraram há menos de 10 minutos.
+- **Dica ao abrir a app:** Edge Function `coach-message`, chamada pela app com a sessão da pessoa. Não precisa de segredos. No máximo 12 mensagens novas por pessoa por hora (`take_rate_limit`).
 - **Perfis fictícios para testar mensagens e retrospetiva:** `supabase/seed-dev/perfis-ficticios.sql` (só para desenvolvimento; os comandos para os apagar estão no topo do ficheiro).
 - **Push diário das dicas:** Edge Function `generate-nudges`, chamada de hora a hora pelo `pg_cron` (só envia às 10:00). Precisa do segredo `CRON_SECRET` na função (`supabase secrets set`) e dos segredos `project_url` e `cron_secret` no Vault, com o mesmo valor. As frases saem de modelos de frase; para usar o Claude, define `ANTHROPIC_API_KEY` e `AI_MONTHLY_BUDGET_USD` na função (tem custos).
 - **Retrospetiva da época:** Edge Function `generate-season-recaps`, chamada pelo `pg_cron` de 15 a 20 de junho, com o mesmo segredo das dicas. Para usar o Claude, as mesmas variáveis (tem custos).
@@ -106,7 +106,7 @@ supabase gen types typescript --linked > src/lib/database.types.ts
 A hora da app é injetável, para testar todas as fases do relógio do dia de jogo sem esperar por um jogo.
 
 - **No Perfil:** toca 5 vezes seguidas no cartão do perfil para abrir a secção "Modo demo". Escolhe o jogo e a fase; "Hora real" volta ao normal. Enquanto a hora estiver simulada, aparece a etiqueta "Hora simulada".
-- **Por deep link:** acrescenta `?demoFase=<fase>&jogo=<id>` a qualquer rota. Fases: `almoco`, `check-in`, `a-caminho`, `a-decorrer`, `depois` ou `real`. Este link também salta o onboarding. Exemplo no Expo Go:
+- **Por deep link:** acrescenta `?demoFase=<fase>&jogo=<id>` a qualquer rota. Fases: `almoco`, `check-in`, `a-caminho`, `a-decorrer`, `depois` ou `real`. Este link também salta o onboarding. Só funciona em desenvolvimento ou em builds com `EXPO_PUBLIC_DEMO_MODE=true`, porque qualquer página pode abrir um deep link. Exemplo no Expo Go:
 
   ```
   exp://<ip-do-computador>:8081/--/jogos/benfica-moreirense?demoFase=depois

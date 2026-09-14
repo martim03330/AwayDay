@@ -3,7 +3,7 @@
 // registered, got no message in the last 6 hours and have a context worth a message. No context, no push:
 // it never sends "nothing new". A context that already has a message (seen in the app or pushed) is skipped.
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { parseCoachResult, type CoachContext } from '../_shared/coach-context.ts';
 import { writeCoachMessage } from '../_shared/coach-writer.ts';

@@ -8,6 +8,12 @@ import { useAppState } from '@/state/app-state';
 import { useRelogio } from '@/state/relogio';
 
 /**
+ * Qualquer página ou app pode abrir um deep link: fora do desenvolvimento, só builds com
+ * `EXPO_PUBLIC_DEMO_MODE=true` o aceitam. O Modo demo do Perfil funciona sempre.
+ */
+const LIGACAO_DEMO_ATIVA = __DEV__ || process.env.EXPO_PUBLIC_DEMO_MODE === 'true';
+
+/**
  * Deep link de demo: `?demoFase=almoco|check-in|a-caminho|a-decorrer|depois|real&jogo=<id>`.
  * Muda a hora da app para essa fase e salta o onboarding, para se poder testar sem tocar no ecrã.
  */
@@ -18,7 +24,7 @@ export function LigacaoDemo() {
   const { saltarOnboarding } = useAppState();
 
   useEffect(() => {
-    if (!url || processado.current === url) return;
+    if (!LIGACAO_DEMO_ATIVA || !url || processado.current === url) return;
     processado.current = url;
 
     const { queryParams } = Linking.parse(url);

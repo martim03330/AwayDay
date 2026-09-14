@@ -7,7 +7,7 @@ export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 72;
 export const DISPLAY_NAME_MIN_LENGTH = 2;
 export const DISPLAY_NAME_MAX_LENGTH = 40;
-export const CODE_LENGTH = 6;
+export const CODE_LENGTH = 8;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -51,5 +51,5 @@ export function displayNameError(name: string): string | null {
 }
 
 export function codeError(code: string): string | null {
-  return normalizeCode(code).length === CODE_LENGTH ? null : 'O código tem 6 algarismos.';
+  return normalizeCode(code).length === CODE_LENGTH ? null : 'O código tem 8 algarismos.';
 }

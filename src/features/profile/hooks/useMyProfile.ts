@@ -36,9 +36,3 @@ export function useUpdateMessagePreferences(userId: string | null) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [PROFILE_KEY, userId] }),
   });
 }
-
-/** Drops every cached profile (they are persisted), e.g. after signing out. */
-export function useForgetProfiles() {
-  const queryClient = useQueryClient();
-  return () => queryClient.removeQueries({ queryKey: [PROFILE_KEY] });
-}

@@ -32,7 +32,7 @@ export default function ConfirmarEmailScreen() {
 
   return (
     <AuthForm
-      intro={`Enviámos um código de 6 algarismos para ${email}. Pode demorar um minuto a chegar: espreita também o spam.`}
+      intro={`Enviámos um código de 8 algarismos para ${email}. Pode demorar um minuto a chegar: espreita também o spam.`}
       error={erroPedido ? authErrorMessage(erroPedido) : null}
       notice={reenviar.isSuccess ? 'Enviámos outro código.' : null}>
       <Campo
@@ -41,7 +41,7 @@ export default function ConfirmarEmailScreen() {
         onChangeText={setCodigo}
         erro={tentou ? codeError(codigo) : null}
         keyboardType="number-pad"
-        maxLength={7}
+        maxLength={9}
         autoComplete="one-time-code"
         textContentType="oneTimeCode"
         autoFocus

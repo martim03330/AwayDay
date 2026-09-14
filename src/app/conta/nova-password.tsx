@@ -46,7 +46,7 @@ export default function NovaPasswordScreen() {
         onChangeText={setCodigo}
         erro={tentou ? codeError(codigo) : null}
         keyboardType="number-pad"
-        maxLength={7}
+        maxLength={9}
         autoComplete="one-time-code"
         textContentType="oneTimeCode"
         autoFocus

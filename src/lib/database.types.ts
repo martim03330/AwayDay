@@ -560,6 +560,35 @@ export type Database = {
           },
         ]
       }
+      rate_limit_hit: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          profile_id: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: never
+          profile_id: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: never
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limit_hit_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season: {
         Row: {
           created_at: string
@@ -754,6 +783,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_usage_since: {
+        Args: { p_profile_id: string; p_since: string }
+        Returns: {
+          nudge_input_tokens: number
+          nudge_output_tokens: number
+          profile_model_messages: number
+          recap_input_tokens: number
+          recap_output_tokens: number
+        }[]
+      }
       club_supporter_counts: {
         Args: never
         Returns: {
@@ -788,6 +827,15 @@ export type Database = {
       season_recap_stats: {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
+      }
+      take_rate_limit: {
+        Args: {
+          p_bucket: string
+          p_limit: number
+          p_profile_id: string
+          p_window: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

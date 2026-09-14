@@ -2,6 +2,42 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Correções da auditoria de segurança
+
+**Contexto.** Auditoria completa ao código: RLS, Edge Functions, autenticação, segredos, dependências. Não houve
+falhas críticas; estas são as correções.
+
+- **Perfis e clubes só pelo dono** (migração `20260914180000_restrict_profile_reads`). Qualquer pessoa com conta
+  lia todos os perfis e o clube que cada um apoia. Isso também dava o número exato de adeptos por clube e
+  contornava o mínimo de 5 pessoas do `club_supporter_counts`. A app só lê o perfil de quem tem sessão, por isso
+  nada muda para quem a usa.
+- **Limites no servidor** (`20260914180100_rate_limits_and_ai_usage`).
+  - `coach-message` escreve no máximo 12 mensagens novas por pessoa por hora (`take_rate_limit`). Contar e
+    registar acontecem com um bloqueio por pessoa, para pedidos em paralelo não passarem todos.
+  - O gasto com o modelo passa a ser somado em SQL (`ai_usage_since`). Lido pela API, parava nas 1000 linhas e o
+    orçamento deixava de crescer. Dicas e retrospetivas contam para o mesmo orçamento mensal.
+  - O Claude continua desligado (não há `ANTHROPIC_API_KEY` nas funções), mas o limite já trava linhas sem fim.
+- **A hora da demo continua a chegar ao servidor.** O Modo demo do Perfil precisa dela e o limite por hora trava
+  o abuso. O deep link `?demoFase=` só funciona em desenvolvimento ou com `EXPO_PUBLIC_DEMO_MODE=true`, porque
+  qualquer página o podia abrir.
+- **Códigos de 8 algarismos, válidos 15 minutos.** Com 6 algarismos e só o limite por IP (30 tentativas a cada 5
+  minutos), cerca de 100 IPs tinham perto de 58% de hipóteses de acertar um código de recuperação num dia. Com 8,
+  fica abaixo de 1%. O captcha fica por decidir, porque precisa de uma dependência nova.
+- **Apagar conta pede a password.** A função só aceita sessões que entraram há menos de 10 minutos (claim `amr`
+  do token): uma sessão roubada ou esquecida num telemóvel já não apaga a conta. Com `secure_password_change`
+  ligado, mudar a password numa sessão antiga pede reautenticação. A recuperação por código continua a funcionar,
+  porque cria uma sessão nova.
+- **A cache da conta sai ao terminar sessão.** Dicas, retrospetiva, presenças e mensagens ficavam guardadas no
+  telemóvel até 7 dias, mesmo depois de apagar a conta. Agora sai tudo menos o catálogo de jogos.
+- **Tokens de push:** no máximo 10 telemóveis por conta (`20260914180200_device_token_cap`).
+- **Android sem cópia de segurança automática** (`allowBackup: false`): a sessão está no AsyncStorage e ia para o
+  Google Drive.
+- **`.env` e `.env.*` no `.gitignore`**, exceto o `.env.example`.
+- **Edge Functions com `supabase-js` fixo em 2.116.0**, a mesma versão da app, e sem imports que não se usavam.
+
+**Fica por fazer.** Captcha no registo e na recuperação. Sessão encriptada (`expo-secure-store`). Remover
+dependências sem uso (`expo-web-browser`, `expo-status-bar`). `deno.lock` das funções (o Deno não está instalado).
+
 ## 2026-09-14 — Ajustes às mensagens depois da simulação com perfis fictícios
 
 **Como se testou.** `supabase/seed-dev/perfis-ficticios.sql` cria três perfis fictícios (Vai a Tudo, Ocasional,

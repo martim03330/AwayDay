@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { authErrorMessage } from '@/features/auth/errors';
-import { useDeleteAccount, useSignOut } from '@/features/auth/hooks/useAuthActions';
+import { useSignOut } from '@/features/auth/hooks/useAuthActions';
 import { Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/session';
 import { Button } from '@/ui/button';
@@ -21,7 +21,6 @@ export function AccountCard({ displayName }: AccountCardProps) {
   const router = useRouter();
   const session = useSession();
   const signOut = useSignOut();
-  const deleteAccount = useDeleteAccount();
 
   if (session.status === 'loading') {
     return (
@@ -51,26 +50,6 @@ export function AccountCard({ displayName }: AccountCardProps) {
     );
   }
 
-  function confirmDelete() {
-    Alert.alert(
-      'Apagar a conta?',
-      'Apagamos a conta, o nome e os clubes guardados. Não dá para desfazer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Apagar conta',
-          style: 'destructive',
-          onPress: () =>
-            deleteAccount.mutate(undefined, {
-              onSuccess: () =>
-                Alert.alert('Conta apagada', 'Até à próxima. A app continua a funcionar sem conta.'),
-              onError: (error) => Alert.alert('Não deu para apagar', authErrorMessage(error)),
-            }),
-        },
-      ]
-    );
-  }
-
   return (
     <Card style={styles.card}>
       <ListRow
@@ -81,17 +60,18 @@ export function AccountCard({ displayName }: AccountCardProps) {
       <Button
         label={signOut.isPending ? 'A terminar sessão…' : 'Terminar sessão'}
         variant="secondary"
-        disabled={signOut.isPending || deleteAccount.isPending}
+        disabled={signOut.isPending}
         onPress={() =>
           signOut.mutate(undefined, {
             onError: (error) => Alert.alert('Não deu para sair', authErrorMessage(error)),
           })
         }
       />
+      {/* Deleting asks for the password again, on its own screen. */}
       <LinkTexto
-        label={deleteAccount.isPending ? 'A apagar a conta…' : 'Apagar conta'}
-        onPress={confirmDelete}
-        disabled={deleteAccount.isPending}
+        label="Apagar conta"
+        onPress={() => router.push('/conta/apagar-conta')}
+        disabled={signOut.isPending}
         perigo
       />
     </Card>

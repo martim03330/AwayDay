@@ -3,11 +3,14 @@
 // returns the saved message and writes nothing new. Nothing worth saying: `message: null`.
 // verify_jwt is off (it also works with the new API keys); the user's access token is checked below.
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { contextInstant, parseCoachResult } from '../_shared/coach-context.ts';
 import { writeCoachMessage } from '../_shared/coach-writer.ts';
 import { lisbonDay } from '../_shared/portuguese.ts';
+
+/** New messages per user per hour. Saved messages do not count: they are returned without writing anything. */
+const NEW_MESSAGES_PER_HOUR = 12;
 
 type SavedMessage = { id: string; body: string };
 
@@ -50,7 +53,8 @@ Deno.serve(async (request) => {
 
   const options = asRecord(await request.json().catch(() => null));
   const realNow = new Date();
-  // Demo mode moves the app's clock; it only changes this user's own message.
+  // Demo mode moves the app's clock (up to 60 days either way); it only changes this user's own messages, and new
+  // messages stay under the hourly limit below whatever clock the app sends.
   const now = contextInstant(options?.now, realNow);
 
   const profile = await admin.from('profile').select('nudges_enabled').eq('id', profileId).maybeSingle();
@@ -77,6 +81,16 @@ Deno.serve(async (request) => {
 
     message = await findSaved();
     if (!message) {
+      // A new message is a write and may be a model call. The limit holds for parallel requests too.
+      const allowed = await admin.rpc('take_rate_limit', {
+        p_profile_id: profileId,
+        p_bucket: 'coach-message',
+        p_limit: NEW_MESSAGES_PER_HOUR,
+        p_window: '1 hour',
+      });
+      if (allowed.error) return json(500, { error: 'rate_limit_failed' });
+      if (allowed.data !== true) return json(429, { error: 'rate_limited' });
+
       const written = await writeCoachMessage(admin, profileId, current, realNow);
       if (written) {
         const inserted = await admin
