@@ -1,5 +1,6 @@
 import { signUpOutcome } from '@/features/auth/outcomes';
 import { normalizeCode, normalizeEmail } from '@/features/auth/validation';
+import { unregisterThisDevice } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
 function client() {
@@ -52,6 +53,8 @@ export async function signIn({ email, password }: SignInInput) {
 
 /** Signs out on this phone only; other devices stay signed in. */
 export async function signOut() {
+  // While still signed in: stop sending this account's notifications to this phone.
+  await unregisterThisDevice().catch(() => undefined);
   const { error } = await client().auth.signOut({ scope: 'local' });
   if (error) throw error;
 }

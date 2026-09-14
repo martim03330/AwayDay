@@ -11,6 +11,7 @@ import { PassaporteCard } from '@/components/passaporte-card';
 import { RankingCard } from '@/components/ranking-card';
 import { Spacing } from '@/constants/theme';
 import { AccountCard } from '@/features/auth/components/AccountCard';
+import { useMyNudges } from '@/features/nudges/hooks/useMyNudges';
 import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero, plural } from '@/lib/formatos';
@@ -64,6 +65,8 @@ export default function PerfilScreen() {
   const [toques, setToques] = useState<readonly number[]>([]);
   const userId = useUserId();
   const perfilDaConta = useMyProfile(userId);
+  const novidades = useMyNudges(userId);
+  const porLer = novidades.data?.filter((nudge) => nudge.readAt === null).length ?? 0;
 
   const clube = obterClube(clubeFavoritoId);
   const estadioDoClube = clube ? obterEstadio(clube.estadioId) : undefined;
@@ -114,6 +117,22 @@ export default function PerfilScreen() {
         <>
           <SectionHeader title="Conta" />
           <AccountCard displayName={perfilDaConta.data?.displayName ?? null} />
+          {userId ? (
+            <Card
+              onPress={() => router.push('/perfil/novidades')}
+              accessibilityLabel={`Novidades${porLer > 0 ? `: ${plural(porLer, 'dica por ler', 'dicas por ler')}` : ''}. Toca para abrir.`}>
+              <ListRow
+                leading={<IconCircle name={icons.notificacoes} />}
+                title="Novidades"
+                subtitle={
+                  porLer > 0
+                    ? plural(porLer, 'dica por ler', 'dicas por ler')
+                    : 'Dicas para os teus dias de jogo'
+                }
+                trailing={chevron}
+              />
+            </Card>
+          ) : null}
         </>
       ) : null}
 

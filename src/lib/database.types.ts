@@ -39,6 +39,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_run: {
+        Row: {
+          candidates: number
+          created: number
+          errors: number
+          finished_at: string | null
+          from_model: number
+          from_template: number
+          id: number
+          input_tokens: number
+          job: string
+          output_tokens: number
+          pushed: number
+          started_at: string
+        }
+        Insert: {
+          candidates?: number
+          created?: number
+          errors?: number
+          finished_at?: string | null
+          from_model?: number
+          from_template?: number
+          id?: never
+          input_tokens?: number
+          job: string
+          output_tokens?: number
+          pushed?: number
+          started_at?: string
+        }
+        Update: {
+          candidates?: number
+          created?: number
+          errors?: number
+          finished_at?: string | null
+          from_model?: number
+          from_template?: number
+          id?: never
+          input_tokens?: number
+          job?: string
+          output_tokens?: number
+          pushed?: number
+          started_at?: string
+        }
+        Relationships: []
+      }
       club: {
         Row: {
           abbreviation: string
@@ -252,6 +297,72 @@ export type Database = {
           },
           {
             foreignKeyName: "fixture_attendance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nudge: {
+        Row: {
+          body: string
+          created_at: string
+          facts: Json
+          fixture_id: string | null
+          id: string
+          input_tokens: number
+          kind: string
+          local_date: string
+          model: string | null
+          output_tokens: number
+          profile_id: string
+          push_status: string
+          read_at: string | null
+          source: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          facts: Json
+          fixture_id?: string | null
+          id?: string
+          input_tokens?: number
+          kind: string
+          local_date: string
+          model?: string | null
+          output_tokens?: number
+          profile_id: string
+          push_status?: string
+          read_at?: string | null
+          source: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          facts?: Json
+          fixture_id?: string | null
+          id?: string
+          input_tokens?: number
+          kind?: string
+          local_date?: string
+          model?: string | null
+          output_tokens?: number
+          profile_id?: string
+          push_status?: string
+          read_at?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nudge_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nudge_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profile"
@@ -547,6 +658,15 @@ export type Database = {
         Returns: {
           club_id: string
           supporters: number
+        }[]
+      }
+      nudge_candidates: {
+        Args: { p_now?: string }
+        Returns: {
+          facts: Json
+          fixture_id: string
+          kind: string
+          profile_id: string
         }[]
       }
       register_device_token: {

@@ -7,6 +7,7 @@ import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatal
 import { QueryProvider } from '@/lib/query-client';
 import { AppStateProvider, useAppState } from '@/state/app-state';
 import { RelogioProvider } from '@/state/relogio';
+import { NotificacoesPush } from '@/state/notificacoes-push';
 import { SincronizarConta } from '@/state/sincronizar-conta';
 import { SonsProvider } from '@/state/sons';
 
@@ -40,6 +41,7 @@ export default function RootLayout() {
             <SonsProvider>
               <LigacaoDemo />
               <SincronizarConta />
+              <NotificacoesPush />
               <NavegacaoRaiz />
             </SonsProvider>
           </AppStateProvider>

@@ -1,4 +1,4 @@
-import type { ClubRelation, MyProfile } from '@/features/profile/types';
+import type { ClubRelation, MessagePreferences, MyProfile } from '@/features/profile/types';
 import { supabase } from '@/lib/supabase';
 
 function client() {
@@ -9,7 +9,11 @@ function client() {
 /** The signed-in user's profile and clubs. `null` if the profile does not exist (yet). */
 export async function fetchMyProfile(userId: string): Promise<MyProfile | null> {
   const [profile, clubs] = await Promise.all([
-    client().from('profile').select('id, display_name').eq('id', userId).maybeSingle(),
+    client()
+      .from('profile')
+      .select('id, display_name, nudges_enabled, recap_enabled')
+      .eq('id', userId)
+      .maybeSingle(),
     client().from('profile_club').select('relation, club_id').eq('profile_id', userId),
   ]);
   if (profile.error) throw profile.error;
@@ -24,7 +28,21 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
     displayName: profile.data.display_name,
     supporterClubId: clubFor('supporter'),
     hometownClubId: clubFor('hometown'),
+    nudgesEnabled: profile.data.nudges_enabled,
+    recapEnabled: profile.data.recap_enabled,
   };
+}
+
+/** Turns match-day suggestions or the season recap on or off. */
+export async function updateMessagePreferences(userId: string, preferences: MessagePreferences) {
+  const { error } = await client()
+    .from('profile')
+    .update({
+      ...(preferences.nudgesEnabled === undefined ? {} : { nudges_enabled: preferences.nudgesEnabled }),
+      ...(preferences.recapEnabled === undefined ? {} : { recap_enabled: preferences.recapEnabled }),
+    })
+    .eq('id', userId);
+  if (error) throw error;
 }
 
 /** Sets (or removes, with `null`) one of the user's clubs. RLS only lets people change their own. */

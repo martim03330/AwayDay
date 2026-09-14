@@ -19,6 +19,7 @@ check-ins e um passaporte de estádios.
 - Estados "a decorrer" e "terminado", com carregamento e vazios simulados.
 
 **Ficha do jogo**
+- "Vou a este jogo" (com conta), para as dicas do dia de jogo.
 - Relógio do dia de jogo, fixo no topo e só no próprio dia (até 3 h depois do apito final): contagem decrescente e uma sugestão por fase — tasco para almoçar, check-in onde há mais gente, hora de sair a pé com aviso de meteorologia, bloco discreto durante o jogo e, no fim, avaliação e último transporte de regresso.
 - Estádio com cobertura, sombra e abrigo, e aviso quando há chuva prevista e a cobertura não é total.
 - WC mais próximo do estádio, com distância a pé, horário, preço, acessibilidade e tipo de acesso.
@@ -35,6 +36,7 @@ check-ins e um passaporte de estádios.
 - WC mais próximo do tasco.
 
 **Perfil**
+- Novidades: dicas para dias de jogo a partir do calendário e do que fizeste na app (no máximo uma por dia), com notificação push no iOS. Ligam-se e desligam-se em Perfil → Notificações.
 - Conta opcional: criar conta com código de confirmação por email, entrar, recuperar password, terminar sessão e apagar conta. Com conta, o clube que apoias e o clube da terra ficam guardados e vêm contigo para outro telemóvel.
 - Clube que apoias e clube da terra (a sugestão pela localização exige sempre confirmação).
 - Passaporte de estádios com missões e distintivos. Cada missão fecha com uma foto tirada na hora, só com a câmara; cumprida mas sem foto, fica "por comprovar".
@@ -92,6 +94,7 @@ supabase gen types typescript --linked > src/lib/database.types.ts
 - **Autenticação:** as regras (password, código de 6 algarismos) estão no `config.toml` e vão com `supabase config push`. Corre antes `supabase config diff` e confirma que só muda o que queres.
 - **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Os emails saem pelo Brevo; põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER` (login SMTP do Brevo), `SMTP_PASS` (chave SMTP, começa por `xsmtpsib-`) e `SMTP_ADMIN_EMAIL` (remetente verificado). No Brevo, desliga o bloqueio de IPs desconhecidos, porque o Supabase envia de IPs que mudam.
 - **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`.
+- **Dicas para dias de jogo:** Edge Function `generate-nudges`, chamada de hora a hora pelo `pg_cron`. Precisa do segredo `CRON_SECRET` na função (`supabase secrets set`) e dos segredos `project_url` e `cron_secret` no Vault, com o mesmo valor. As frases saem de modelos de frase; para usar o Claude, define `ANTHROPIC_API_KEY` e `AI_MONTHLY_BUDGET_USD` na função (tem custos).
 - As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).
 
 ## Modo demo

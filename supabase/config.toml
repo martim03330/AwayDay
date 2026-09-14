@@ -446,3 +446,10 @@ entrypoint = "./functions/delete-account/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/delete-account/*.html" ]
+
+[functions.generate-nudges]
+enabled = true
+# Called only by pg_cron with the x-cron-secret header, checked inside the function.
+verify_jwt = false
+import_map = "./functions/generate-nudges/deno.json"
+entrypoint = "./functions/generate-nudges/index.ts"

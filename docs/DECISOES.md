@@ -2,6 +2,53 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Dicas para dias de jogo (fase B)
+
+**Fluxo.** `pg_cron` (de hora a hora) → Edge Function `generate-nudges`, que só trabalha às 10:00 de Lisboa
+(assim acerta com a mudança de hora, porque o cron corre em UTC) → `nudge_candidates` em SQL → frase →
+tabela `nudge` → push pelo Expo. O endereço do projeto e o segredo do cron estão no Vault e nunca entram no git.
+
+**Quatro tipos, por esta ordem de prioridade.** Todos os factos saem do SQL:
+1. `tasco_primeira_visita`: marcou "vou" num jogo nos próximos 3 dias, num estádio onde nunca esteve; o tasco
+   mais perto a pé (até 10 minutos).
+2. `marco_passaporte`: registou nas últimas 24 horas o 3.º, 5.º, 10.º… estádio diferente.
+3. `estadio_novo_em_casa`: o clube da terra (primeiro) ou o que apoia joga em casa em 1 a 6 dias, num estádio
+   onde nunca esteve.
+4. `clube_perto_de_ti`: o clube que apoia joga fora a 5–60 km da base (o estádio do clube da terra).
+
+Nenhum tipo fala de quem não foi a jogos: sem candidato, não há dica.
+
+**Garantias na base de dados.** No máximo uma dica por utilizador por dia (`unique (profile_id, local_date)`),
+nunca repetida para o mesmo jogo (índice único) e com no máximo 140 caracteres (`check`). O utilizador só lê
+as suas e só pode marcá-las como lidas. `nudge_candidates` só corre com a `service_role`. `ai_run` guarda só
+contagens e tokens, sem dados pessoais.
+
+**Custo zero.** As frases vêm de modelos de frase com três variantes e um recurso curto, escolhidos pela conta e
+pelo dia. A chamada ao `claude-sonnet-5` existe mas só é usada com `ANTHROPIC_API_KEY` e
+`AI_MONTHLY_BUDGET_USD` maior que zero, que não estão definidos. Mesmo com o modelo ligado, ele escreve só com
+marcadores; o texto é recusado se tiver algarismos, nomes do catálogo escritos à mão, marcadores inventados,
+mais de 140 caracteres ou tom de repreensão, e aí usa-se o modelo de frase. Uma chamada por mensagem, sem novas
+tentativas, com limite de 10 segundos. Não se envia nome, email nem id do utilizador.
+
+**Segurança da função.** Só aceita pedidos com o cabeçalho `x-cron-secret`. As opções `force` e `profile_ids`
+servem para testes e também exigem o segredo.
+
+**Push.** Projeto EAS grátis (`@martim03330/AwayDay`) e `expo-notifications`. Funciona no Expo Go em iOS; em
+Android precisa de uma development build com FCM, e até lá as dicas ficam nas Novidades. A permissão só é pedida
+quando a pessoa liga as dicas em Perfil → Notificações. Ao terminar sessão, o token deste telemóvel é retirado;
+tokens que o Expo diz estarem mortos (`DeviceNotRegistered`) são apagados.
+
+**`app.json`.** O `eas init` acrescentou uma lista fixa de permissões Android (microfone e serviços em primeiro
+plano); foi retirada, porque os plugins tratam disso na build e não queremos pedir mais do que o necessário.
+
+**Verificado.** Testes dos módulos (artigos e dias em Lisboa, marcadores, modelos de frase com nomes longos,
+validação do texto do modelo, respostas do push); teste SQL dos candidatos com dados sintéticos numa transação
+revertida; teste real da função publicada (401 sem segredo, nada fora das 10:00, uma dica por modelo de frase
+com os factos certos, nada na segunda execução).
+
+**Limitações.** Push em Android; o calendário da demo tem datas fixas, por isso só há dicas enquanto houver jogos
+futuros no seed; tocar numa notificação com a app completamente fechada pode não abrir as Novidades.
+
 ## 2026-09-14 — Atividade na base de dados (fase A das mensagens com IA)
 
 **Sem custos.** As mensagens (nudges e retrospetiva) vão ser escritas a partir de modelos de frase com

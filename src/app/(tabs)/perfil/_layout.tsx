@@ -9,6 +9,9 @@ export default function PerfilLayout() {
       <Stack.Screen name="album">
         <Stack.Screen.Title>Álbum de recordações</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="novidades">
+        <Stack.Screen.Title>Novidades</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen
         name="foto"
         options={{

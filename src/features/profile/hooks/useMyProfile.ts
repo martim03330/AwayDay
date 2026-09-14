@@ -1,7 +1,7 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { fetchMyProfile, saveProfileClub } from '@/features/profile/api';
-import type { ClubRelation } from '@/features/profile/types';
+import { fetchMyProfile, saveProfileClub, updateMessagePreferences } from '@/features/profile/api';
+import type { ClubRelation, MessagePreferences } from '@/features/profile/types';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 const PROFILE_KEY = 'profile';
@@ -21,6 +21,17 @@ export function useSaveProfileClub(userId: string | null) {
     mutationFn: ({ relation, clubId }: { relation: ClubRelation; clubId: string | null }) => {
       if (!userId) throw new Error('Not signed in.');
       return saveProfileClub(userId, relation, clubId);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [PROFILE_KEY, userId] }),
+  });
+}
+
+export function useUpdateMessagePreferences(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (preferences: MessagePreferences) => {
+      if (!userId) throw new Error('Not signed in.');
+      return updateMessagePreferences(userId, preferences);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [PROFILE_KEY, userId] }),
   });
