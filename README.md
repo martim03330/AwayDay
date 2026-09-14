@@ -136,7 +136,7 @@ docs/           DECISOES.md: registo de decisões estruturais
 
 ## Sobre os dados
 
-- **Clubes e estádios** são reais; capacidades e coordenadas são aproximadas (a confirmar, ver `docs/DECISOES.md`). A Liga 2 e a Liga 3 têm uma seleção ilustrativa de clubes. Vêm do Supabase, e as horas dos jogos são fixas (geradas a 13/09/2026).
+- **Clubes e estádios** são reais e vêm do Supabase. Capacidades, coordenadas e moradas foram conferidas a 14/09/2026 contra a Liga Portugal, os clubes e o OpenStreetMap; o que ficou por confirmar está em `docs/DECISOES.md`. A Liga 2 e a Liga 3 têm uma seleção ilustrativa de clubes. As horas dos jogos são fixas (geradas a 13/09/2026).
 - **Tascos e bares são fictícios**, para não atribuir notas nem contadores inventados a negócios reais. Os pratos, as recomendações e os adeptos presentes em cada tasco também são mock.
 - **Casas de banho** são mock: posições, preços e horários servem só a demo.
 - **Missões** nunca pedem para trocar objetos pessoais nem contacto físico. Na foto com um adepto rival, a app lembra que é preciso pedir autorização antes de abrir a câmara. As duas recordações que a demo já traz são ilustrações, sem ficheiro de imagem.

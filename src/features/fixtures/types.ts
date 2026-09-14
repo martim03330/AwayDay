@@ -15,6 +15,7 @@ export type VenueRow = Pick<
   | 'latitude'
   | 'longitude'
   | 'roof_coverage'
+  | 'address'
 >;
 
 export type ClubRow = Pick<

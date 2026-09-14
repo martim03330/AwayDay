@@ -41,12 +41,13 @@ const files = {
   ),
   '02_venues.sql': upsert(
     'venue',
-    ['id', 'name', 'city', 'country', 'region', 'capacity', 'location', 'roof_coverage'],
+    ['id', 'name', 'city', 'country', 'region', 'capacity', 'location', 'roof_coverage', 'address'],
     venues,
     (row) => [
       ...[row.id, row.name, row.city, row.country, row.region, row.capacity].map(literal),
       point(row.latitude, row.longitude),
       literal(row.roof_coverage),
+      literal(row.address),
     ]
   ),
   '03_clubs.sql': upsert(
