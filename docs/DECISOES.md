@@ -2,6 +2,57 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Mensagens do treinador ao abrir a app
+
+**O que faz.** O `AICoachProvider` (padrão wrapper, em `src/state/ai-coach.tsx`) calcula no telemóvel a chave
+do contexto atual e se há alguma coisa que justifique uma mensagem. Se já houver mensagem guardada para essa
+chave, mostra-a logo, sem pedidos. Se não houver, pede-a em segundo plano à Edge Function `coach-message` e
+mostra uma linha discreta a carregar. Sem contexto, sem conta ou com as sugestões desligadas, fica calada.
+A mensagem aparece no topo do ecrã Jogos e fica também nas Novidades, já marcada como lida.
+
+**A cache muda com o contexto, não com o tempo.** A chave junta o jogo mais próximo, a fase do dia de jogo, o
+estádio, o último check-in e o número de estádios visitados. No telemóvel, a cache persistida do TanStack
+Query guarda uma resposta por chave, sem expirar. No servidor, `unique (profile_id, context_key)` garante uma
+mensagem por contexto: a mesma chave devolve a mensagem guardada e não escreve outra.
+
+**Contextos, calculados em SQL (`coach_context`), por esta prioridade:**
+1. Check-in ativo: um check-in nas últimas 3 horas, só do histórico da própria pessoa.
+2. Dia de jogo do clube que apoias, uma mensagem por fase:
+   - manhã: mais de 4 h antes do apito;
+   - chegada: entre 4 h e 90 min antes;
+   - antes do apito: menos de 90 min antes;
+   - fim: até 3 h depois do apito final.
+
+   Durante o jogo não há mensagem.
+3. Marco do passaporte (3, 5, 10, 15…) atingido desde a última abertura (`coach_state.last_passport_count`).
+   Na primeira abertura não há com que comparar, por isso não há marco.
+4. Estádio novo: jogo do clube que apoias ou do clube da terra nos próximos 7 dias, num estádio onde nunca
+   foste. Tem de faltar pelo menos 2 dias, para dar tempo de planear a ida; mais perto do jogo, só se já
+   marcaste "Vou".
+
+**Push diário.** A função `generate-nudges` corre às 10:00 de Lisboa. A lista vem de `coach_push_candidates`,
+que só inclui quem tem as sugestões ligadas, um telemóvel registado, nenhuma mensagem nas últimas 6 horas e um
+contexto válido. O check-in ativo nunca gera push. Sem contexto não se envia nada, e um contexto que já tem
+mensagem não volta a ser enviado. Isto substitui `nudge_candidates` e os tipos antigos (tasco na primeira
+visita, clube perto de ti), que ficam apenas nas linhas que já existiam.
+
+**Frases e custo.** As regras são as mesmas de antes:
+- os factos vêm do SQL e o texto sai de modelos de frase (três variantes e um recurso curto por tipo), a custo zero;
+- o Claude continua desligado e o Claude Pro não cobre a API; se um dia for ligado, com `ANTHROPIC_API_KEY` e
+  `AI_MONTHLY_BUDGET_USD`, há também um limite de 40 chamadas por pessoa por mês;
+- uma mensagem guardada nunca diz "hoje" nem "amanhã", porque pode ser lida noutro dia: a data sai como
+  "no sábado, dia 19".
+
+**Modo demo.** A app envia a hora simulada. A função aceita-a até 60 dias de diferença da hora real, e isso só
+afeta as mensagens da própria pessoa. Os check-ins usam sempre a hora real.
+
+**Limitações.**
+- A chave do telemóvel usa os dados da demo (por exemplo, os estádios visitados dos mocks) e a do servidor usa
+  a base de dados, por isso as duas podem divergir. Mesmo assim, o servidor nunca escreve duas mensagens para o
+  mesmo contexto.
+- A mensagem guardada num telemóvel mantém-se enquanto a chave local não mudar, mesmo que o estado mude a
+  partir de outro telemóvel.
+
 ## 2026-09-14 — Retrospetiva da época (fase C)
 
 **Uma retrospetiva por utilizador por época** (`season_recap`, `unique (profile_id, season_id)`). Cada pessoa

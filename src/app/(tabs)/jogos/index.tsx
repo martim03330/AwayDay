@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { JogoCard } from '@/components/jogo-card';
 import { Spacing } from '@/constants/theme';
+import { CoachBanner } from '@/features/coach/components/CoachBanner';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
@@ -12,6 +13,7 @@ import { correspondeCompeticao, estadoDoJogo, type FiltroCompeticao } from '@/li
 import { obterClube } from '@/mocks/clubes';
 import { jogos } from '@/mocks/jogos';
 import type { Jogo } from '@/mocks/tipos';
+import { useAICoach } from '@/state/ai-coach';
 import { useAppState } from '@/state/app-state';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
@@ -54,6 +56,7 @@ export default function JogosScreen() {
   const router = useRouter();
   const agora = useNow();
   const { clubeFavoritoId, avaliacaoDoJogo } = useAppState();
+  const treinador = useAICoach();
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   const [soMeuClube, setSoMeuClube] = useState(false);
   const { loading, refreshing, refresh } = useSimulatedLoading('jogos');
@@ -141,6 +144,7 @@ export default function JogosScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={refresh}>
+      <CoachBanner message={treinador.message} loading={treinador.loading} />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

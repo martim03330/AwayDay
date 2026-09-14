@@ -86,6 +86,14 @@ export function timePhrase(kickoff: Date) {
   return LISBON_TIME.format(kickoff);
 }
 
+const LISBON_DAY_OF_MONTH = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Lisbon', day: 'numeric' });
+
+/** "no sábado, dia 19". Never "amanhã": a saved message may be read on another day. */
+export function dayPhrase(kickoff: Date) {
+  const weekday = WEEKDAYS[LISBON_WEEKDAY.format(kickoff)] ?? `a ${lisbonDay(kickoff)}`;
+  return `${weekday}, dia ${LISBON_DAY_OF_MONTH.format(kickoff)}`;
+}
+
 export function minutesPhrase(minutes: number) {
   return `${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
 }

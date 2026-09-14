@@ -1,0 +1,63 @@
+/**
+ * Mensagem do treinador ao abrir a app (padrão wrapper). Não desenha nada: os ecrãs leem `useAICoach()`.
+ * - Com mensagem guardada para o contexto atual, mostra-a logo, sem pedir nada ao servidor.
+ * - Sem mensagem e com contexto que o justifique, pede-a em segundo plano (`loading`).
+ * - Sem contexto, sem conta ou com as sugestões desligadas, fica calada.
+ */
+
+import { createContext, use, type ReactNode } from 'react';
+
+import { localCoachContext } from '@/features/coach/context';
+import { useCoachMessage } from '@/features/coach/hooks/useCoachMessage';
+import type { CoachMessage } from '@/features/coach/types';
+import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
+import { useNow } from '@/hooks/use-now';
+import { useUserId } from '@/lib/session';
+import { jogos } from '@/mocks/jogos';
+import { useAppState } from '@/state/app-state';
+
+type AICoach = {
+  message: CoachMessage | null;
+  loading: boolean;
+};
+
+const CALADA: AICoach = { message: null, loading: false };
+const MINUTO_MS = 60 * 1000;
+
+const AICoachContext = createContext<AICoach>(CALADA);
+
+export function AICoachProvider({ children }: { children: ReactNode }) {
+  const userId = useUserId();
+  const perfil = useMyProfile(userId);
+  // A fase do dia de jogo muda aos minutos: basta acordar uma vez por minuto.
+  const agora = useNow(MINUTO_MS);
+  const { clubeFavoritoId, clubeDaTerraId, estadiosVisitados, visitasLocais, fezCheckIn } = useAppState();
+
+  // As visitas estão da mais recente para a mais antiga.
+  const ultimoCheckIn = visitasLocais.find(
+    (visita) => visita.origem === 'check-in' && fezCheckIn(visita.localId)
+  );
+  const contexto = userId
+    ? localCoachContext({
+        userId,
+        now: agora,
+        supporterClubId: clubeFavoritoId,
+        hometownClubId: clubeDaTerraId,
+        fixtures: jogos,
+        visitedVenueIds: estadiosVisitados,
+        lastCheckIn: ultimoCheckIn ? { id: ultimoCheckIn.id, at: Date.parse(ultimoCheckIn.data) } : null,
+      })
+    : null;
+  const pedir = perfil.data?.nudgesEnabled === true && contexto !== null && contexto.worthAsking;
+  const mensagem = useCoachMessage(contexto?.key ?? null, pedir, agora);
+
+  const value: AICoach = pedir
+    ? { message: mensagem.data ?? null, loading: mensagem.data === undefined && mensagem.isFetching }
+    : CALADA;
+
+  return <AICoachContext value={value}>{children}</AICoachContext>;
+}
+
+export function useAICoach() {
+  return use(AICoachContext);
+}

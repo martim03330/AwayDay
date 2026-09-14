@@ -1,0 +1,99 @@
+// Writes the sentence for a coach context. Templates by default (free). Claude only when ANTHROPIC_API_KEY
+// and AI_MONTHLY_BUDGET_USD are set, the month's budget is not spent and the user is under the monthly cap;
+// if the model fails or breaks a rule, the template is used. Shared by coach-message and generate-nudges.
+
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+
+import { NUDGE_MODEL, NUDGE_MODEL_PRICE, writeNudgeWithClaude } from './anthropic.ts';
+import type { CoachContext } from './coach-context.ts';
+import { buildSlots } from './nudge-slots.ts';
+import { acceptModelNudge, seedFrom, templateNudge } from './nudge-text.ts';
+
+/** Model calls per user per month; after that, templates. */
+export const MAX_MODEL_CALLS_PER_USER_PER_MONTH = 40;
+
+export type WrittenMessage = {
+  body: string;
+  source: 'model' | 'template';
+  model: string | null;
+  inputTokens: number;
+  outputTokens: number;
+};
+
+function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  return Object.fromEntries(Object.entries(value));
+}
+
+function strings(rows: unknown, keys: readonly string[]) {
+  if (!Array.isArray(rows)) return [];
+  return rows.flatMap((row) => {
+    const fields = asRecord(row);
+    return keys.map((key) => fields?.[key]).filter((value): value is string => typeof value === 'string');
+  });
+}
+
+/** The API key when the model may be used for this user now; otherwise `null`. */
+async function modelKeyFor(admin: SupabaseClient, profileId: string, now: Date) {
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+  const budget = Number(Deno.env.get('AI_MONTHLY_BUDGET_USD') ?? '0');
+  if (!apiKey || !(budget > 0)) return null;
+
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const usage = await admin
+    .from('nudge')
+    .select('profile_id, input_tokens, output_tokens')
+    .gt('input_tokens', 0)
+    .gte('created_at', monthStart);
+  if (usage.error) return null;
+
+  let spent = 0;
+  let callsForUser = 0;
+  for (const row of Array.isArray(usage.data) ? usage.data : []) {
+    const fields = asRecord(row);
+    spent +=
+      (Number(fields?.input_tokens ?? 0) * NUDGE_MODEL_PRICE.input +
+        Number(fields?.output_tokens ?? 0) * NUDGE_MODEL_PRICE.output) /
+      1_000_000;
+    if (fields?.profile_id === profileId) callsForUser += 1;
+  }
+  return spent < budget && callsForUser < MAX_MODEL_CALLS_PER_USER_PER_MONTH ? apiKey : null;
+}
+
+/** Catalogue names: the model may never type them, only use slots. */
+async function catalogueNames(admin: SupabaseClient) {
+  const [venues, clubs, places] = await Promise.all([
+    admin.from('venue').select('name, short_name'),
+    admin.from('club').select('short_name'),
+    admin.from('place').select('name'),
+  ]);
+  return [
+    ...strings(venues.data, ['name', 'short_name']),
+    ...strings(clubs.data, ['short_name']),
+    ...strings(places.data, ['name']),
+  ];
+}
+
+/** The message for a context, or `null` when its facts are incomplete. */
+export async function writeCoachMessage(
+  admin: SupabaseClient,
+  profileId: string,
+  context: CoachContext,
+  now: Date
+): Promise<WrittenMessage | null> {
+  const slots = buildSlots(context.kind, context.facts);
+  if (!slots) return null;
+  const template = templateNudge(context.kind, slots, seedFrom(`${profileId}:${context.contextKey}`));
+
+  const apiKey = await modelKeyFor(admin, profileId, now);
+  if (apiKey) {
+    const written = await writeNudgeWithClaude(apiKey, context.kind, slots);
+    const body = acceptModelNudge(context.kind, written.template, slots, await catalogueNames(admin));
+    // Tokens are recorded even when the sentence is refused, so the budget counts them.
+    const usage = { inputTokens: written.inputTokens, outputTokens: written.outputTokens };
+    if (body) return { body, source: 'model', model: NUDGE_MODEL, ...usage };
+    return template ? { body: template, source: 'template', model: null, ...usage } : null;
+  }
+
+  return template ? { body: template, source: 'template', model: null, inputTokens: 0, outputTokens: 0 } : null;
+}

@@ -1,30 +1,36 @@
-// Turns the facts computed in SQL into ready-made phrases ("slots"). Every value comes from the facts:
-// if something is missing or malformed, there is no nudge instead of a guess. Pure and testable.
+// Turns the facts computed in SQL (coach_context) into ready-made phrases ("slots"). Every value comes from
+// the facts: if something required is missing or malformed, there is no message instead of a guess.
+// Pure and testable.
 
 import {
   capitalize,
+  dayPhrase,
   isArticle,
-  kmPhrase,
   minutesPhrase,
   ordinalPhrase,
   timePhrase,
-  whenPhrase,
   withArticle,
   withPreposition,
   type Article,
 } from './portuguese.ts';
 
 export type NudgeKind =
-  | 'tasco_primeira_visita'
+  | 'dia_de_jogo_manha'
+  | 'dia_de_jogo_chegada'
+  | 'dia_de_jogo_antes_do_apito'
+  | 'dia_de_jogo_fim'
+  | 'checkin_ativo'
   | 'marco_passaporte'
-  | 'estadio_novo_em_casa'
-  | 'clube_perto_de_ti';
+  | 'estadio_novo';
 
 export const NUDGE_KINDS: readonly NudgeKind[] = [
-  'tasco_primeira_visita',
+  'dia_de_jogo_manha',
+  'dia_de_jogo_chegada',
+  'dia_de_jogo_antes_do_apito',
+  'dia_de_jogo_fim',
+  'checkin_ativo',
   'marco_passaporte',
-  'estadio_novo_em_casa',
-  'clube_perto_de_ti',
+  'estadio_novo',
 ];
 
 export function isNudgeKind(value: unknown): value is NudgeKind {
@@ -78,53 +84,64 @@ function venueSlots(stadium: Named) {
 
 function clubSlots(club: Named) {
   const phrase = withArticle(club.article, club.name);
-  return { clube: phrase, Clube: capitalize(phrase) };
+  return { clube: phrase, Clube: capitalize(phrase), clube_de: withPreposition('de', club.article, club.name) };
 }
 
-function whenSlots(kickoff: Date, now: Date) {
-  const when = whenPhrase(kickoff, now);
-  return { quando: when, Quando: capitalize(when), hora: timePhrase(kickoff) };
+/** The place slots, or `null` when there is no place (it is optional for most kinds). */
+function placeSlots(value: unknown) {
+  const place = named(value);
+  const minutes = wholeNumber(asRecord(value)?.walking_minutes, 0);
+  if (!place || minutes === null) return null;
+  const phrase = withArticle(place.article, place.name);
+  return {
+    tasco: phrase,
+    Tasco: capitalize(phrase),
+    tasco_em: withPreposition('em', place.article, place.name),
+    minutos: minutesPhrase(minutes),
+  };
 }
 
-/** Slots for one candidate, or `null` when its facts are incomplete. */
-export function buildSlots(kind: NudgeKind, facts: unknown, now: Date): Slots | null {
+/** Slots for one context, or `null` when its facts are incomplete. */
+export function buildSlots(kind: NudgeKind, facts: unknown): Slots | null {
   const fields = asRecord(facts);
   if (!fields) return null;
   const stadium = venue(fields.venue);
 
   switch (kind) {
-    case 'tasco_primeira_visita': {
-      const placeFields = asRecord(fields.place);
-      const place = named(placeFields);
-      const minutes = wholeNumber(placeFields?.walking_minutes, 0);
-      const kickoff = instant(fields.kickoff_at);
-      if (!stadium || !place || minutes === null || !kickoff) return null;
-      const placePhrase = withArticle(place.article, place.name);
-      return {
-        ...venueSlots(stadium),
-        ...whenSlots(kickoff, now),
-        tasco: placePhrase,
-        Tasco: capitalize(placePhrase),
-        minutos: minutesPhrase(minutes),
-      };
-    }
-    case 'estadio_novo_em_casa': {
+    case 'dia_de_jogo_manha':
+    case 'dia_de_jogo_chegada':
+    case 'dia_de_jogo_antes_do_apito':
+    case 'dia_de_jogo_fim': {
       const club = named(fields.club);
       const kickoff = instant(fields.kickoff_at);
       if (!stadium || !club || !kickoff) return null;
-      return { ...venueSlots(stadium), ...clubSlots(club), ...whenSlots(kickoff, now) };
+      return { ...venueSlots(stadium), ...clubSlots(club), hora: timePhrase(kickoff), ...placeSlots(fields.place) };
     }
-    case 'clube_perto_de_ti': {
-      const club = named(fields.club);
+    case 'checkin_ativo': {
+      const place = placeSlots(fields.place);
+      if (!stadium || !place) return null;
+      // Only when there is a match today at that stadium.
       const kickoff = instant(fields.kickoff_at);
-      const km = wholeNumber(fields.km, 1);
-      if (!stadium || !club || !kickoff || km === null) return null;
-      return { ...venueSlots(stadium), ...clubSlots(club), ...whenSlots(kickoff, now), km: kmPhrase(km) };
+      return { ...venueSlots(stadium), ...place, ...(kickoff ? { hora: timePhrase(kickoff) } : {}) };
     }
     case 'marco_passaporte': {
       const count = wholeNumber(fields.count, 1);
       if (!stadium || count === null) return null;
       return { ...venueSlots(stadium), n: String(count), ordinal: ordinalPhrase(count) };
+    }
+    case 'estadio_novo': {
+      const club = named(fields.club);
+      const kickoff = instant(fields.kickoff_at);
+      if (!stadium || !club || !kickoff) return null;
+      const day = dayPhrase(kickoff);
+      return {
+        ...venueSlots(stadium),
+        ...clubSlots(club),
+        dia: day,
+        Dia: capitalize(day),
+        hora: timePhrase(kickoff),
+        ...placeSlots(fields.place),
+      };
     }
   }
 }

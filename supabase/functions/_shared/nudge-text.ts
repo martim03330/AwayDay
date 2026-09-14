@@ -1,29 +1,68 @@
-// Nudge sentences. Templates always work and cost nothing. Names never act as the subject of a verb,
-// so a plural name ("as Bifanas de Campanhã", "os Barreiros") cannot break the agreement. When the model
-// is enabled, it also writes with slots only, and its sentence is accepted only if it follows every rule
-// below. Pure and testable.
+// Coach sentences. Templates always work and cost nothing. Names never act as the subject of a verb, so a
+// plural name ("as Bifanas de Campanhã", "os Barreiros") cannot break the agreement, and a saved message
+// never says "hoje" or "amanhã" about another day. When the model is enabled, it also writes with slots only,
+// and its sentence is accepted only if it follows every rule below. Pure and testable.
 
 import type { NudgeKind, Slots } from './nudge-slots.ts';
 
 export const MAX_NUDGE_LENGTH = 140;
 
 type Template = {
+  /** Tried from the seed onwards; a variant whose slots are missing (e.g. no place nearby) is skipped. */
   variants: readonly string[];
-  /** Short version, used when every variant is too long for the names involved. */
+  /** Short version, used when no variant fits in 140 characters with the names involved. */
   fallback: string;
   /** Each group lists interchangeable slots; at least one of each group must appear. */
   required: readonly (readonly string[])[];
 };
 
+const CLUB = ['clube_de', 'clube', 'Clube'];
+
 export const NUDGE_TEMPLATES: Readonly<Record<NudgeKind, Template>> = {
-  tasco_primeira_visita: {
+  dia_de_jogo_manha: {
     variants: [
-      'Vais {estadio_a} pela primeira vez: a {minutos} a pé tens {tasco}. Fica a dica.',
-      'Primeira vez {estadio_em}? A {minutos} do estádio tens {tasco}. Chega cedo e petisca.',
-      'Estreia {estadio_em} {quando}. Antes do apito: {tasco}, a {minutos} a pé.',
+      'Dia de jogo {clube_de}, com apito às {hora}. Almoço perto do estádio: {tasco}, a {minutos} a pé.',
+      'Hoje há jogo {clube_de} {estadio_em}, às {hora}. Dá tempo para um almoço sem pressas.',
+      'Dia de jogo {clube_de}! Apito às {hora}. Cachecol na mala e bom almoço.',
     ],
-    fallback: 'A {minutos} a pé do estádio tens {tasco}.',
-    required: [['tasco', 'Tasco'], ['minutos']],
+    fallback: 'Dia de jogo {clube_de}: apito às {hora}.',
+    required: [CLUB, ['hora']],
+  },
+  dia_de_jogo_chegada: {
+    variants: [
+      'Jogo {clube_de} às {hora}. A {minutos} {estadio_de} tens {tasco}: boa paragem antes de entrar.',
+      'Está quase: jogo {clube_de} às {hora}. Se parares num tasco pelo caminho, faz check-in.',
+      'Apito às {hora} {estadio_em}. Chega com tempo, que as filas à porta não perdoam.',
+    ],
+    fallback: 'Jogo {clube_de} às {hora}. Chega com tempo.',
+    required: [CLUB, ['hora']],
+  },
+  dia_de_jogo_antes_do_apito: {
+    variants: [
+      'Apito às {hora} {estadio_em}. Está na hora de seguir para o estádio.',
+      'Jogo {clube_de} às {hora}: altura de pagar a conta e ir andando.',
+      'Quase a começar o jogo {clube_de}. Bilhete à mão e bom jogo!',
+    ],
+    fallback: 'Apito às {hora}. Bom jogo!',
+    required: [['hora', ...CLUB]],
+  },
+  dia_de_jogo_fim: {
+    variants: [
+      'Apito final no jogo {clube_de}. Se estiveste {estadio_em}, marca a presença e fica com o carimbo.',
+      'Fim de jogo {estadio_em}. Se foste, deixa a tua nota ao estádio: ajuda quem vai a seguir.',
+      'Acabou o jogo {clube_de}. Se estiveste na bancada, o carimbo {estadio_de} espera por ti.',
+    ],
+    fallback: 'Fim de jogo {clube_de}. Até ao próximo.',
+    required: [[...CLUB, 'estadio_em', 'estadio_de']],
+  },
+  checkin_ativo: {
+    variants: [
+      'Check-in feito {tasco_em}. Se houver prato que valha a pena, recomenda-o aos outros adeptos.',
+      'Check-in {tasco_em}, a {minutos} do estádio. Jogo às {hora}: dá para mais um petisco.',
+      'Check-in {tasco_em}. Quando saíres, deixa a tua nota: ajuda quem vem a seguir.',
+    ],
+    fallback: 'Check-in {tasco_em}. Bom petisco!',
+    required: [['tasco', 'Tasco', 'tasco_em']],
   },
   marco_passaporte: {
     variants: [
@@ -34,23 +73,14 @@ export const NUDGE_TEMPLATES: Readonly<Record<NudgeKind, Template>> = {
     fallback: '{ordinal} estádio no passaporte. Venha o próximo.',
     required: [['n', 'ordinal']],
   },
-  estadio_novo_em_casa: {
+  estadio_novo: {
     variants: [
-      '{Clube} joga em casa {quando} e ainda não foste {estadio_a}. Está ali um carimbo à tua espera.',
-      '{Quando}, {clube} joga em casa, {estadio_em}. Ainda não tens esse carimbo no passaporte.',
-      'Jogo {estadio_em} {quando}: {clube} em casa e um estádio que ainda te falta. Bora estrear?',
+      'Jogo {clube_de} {dia}, {estadio_em}. É um estádio que ainda te falta e dá tempo para planear a ida.',
+      '{Dia}, há jogo {clube_de} {estadio_em}. Ainda não tens esse carimbo no passaporte.',
+      'Carimbo novo à vista: jogo {clube_de} {estadio_em}, {dia}, às {hora}.',
     ],
-    fallback: '{Clube} joga em casa {quando}. Carimbo novo à vista.',
-    required: [['clube', 'Clube'], ['quando', 'Quando']],
-  },
-  clube_perto_de_ti: {
-    variants: [
-      '{Clube} joga {quando} {estadio_em}, a {km} de ti. Dá para ir apoiar sem grande viagem.',
-      '{Quando}, {clube} joga fora mas perto: {estadio_em}, a {km} de ti.',
-      'Jogo fora com sabor a casa: {clube} {estadio_em} {quando}, a {km} de ti.',
-    ],
-    fallback: '{Clube} joga {quando}, a {km} de ti.',
-    required: [['clube', 'Clube'], ['km']],
+    fallback: 'Jogo {clube_de} {dia}. Carimbo novo à vista.',
+    required: [CLUB, ['dia', 'Dia']],
   },
 };
 
@@ -74,7 +104,7 @@ function hasRequiredSlots(kind: NudgeKind, template: string) {
   return NUDGE_TEMPLATES[kind].required.every((group) => group.some((name) => names.has(name)));
 }
 
-/** Stable number from a text, to vary the template per user and day without randomness. */
+/** Stable number from a text, to vary the template per user and context without randomness. */
 export function seedFrom(text: string) {
   let hash = 0;
   for (const character of text) hash = (hash * 31 + (character.codePointAt(0) ?? 0)) >>> 0;
@@ -119,6 +149,7 @@ export function acceptModelNudge(
   if (typeof template !== 'string') return null;
   const trimmed = template.trim();
   if (trimmed.length === 0 || /\d/.test(trimmed) || !hasRequiredSlots(kind, trimmed)) return null;
+  if (/(?<!\p{L})(hoje|amanhã)(?!\p{L})/iu.test(trimmed)) return null;
 
   const text = fill(trimmed, slots);
   if (!text || text.length > MAX_NUDGE_LENGTH) return null;

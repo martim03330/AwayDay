@@ -134,6 +134,41 @@ export type Database = {
           },
         ]
       }
+      coach_state: {
+        Row: {
+          created_at: string
+          last_message_at: string | null
+          last_opened_at: string | null
+          last_passport_count: number | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          last_message_at?: string | null
+          last_opened_at?: string | null
+          last_passport_count?: number | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          last_message_at?: string | null
+          last_opened_at?: string | null
+          last_passport_count?: number | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_state_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition: {
         Row: {
           created_at: string
@@ -307,6 +342,7 @@ export type Database = {
       nudge: {
         Row: {
           body: string
+          context_key: string | null
           created_at: string
           facts: Json
           fixture_id: string | null
@@ -323,6 +359,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          context_key?: string | null
           created_at?: string
           facts: Json
           fixture_id?: string | null
@@ -339,6 +376,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          context_key?: string | null
           created_at?: string
           facts?: Json
           fixture_id?: string | null
@@ -723,15 +761,20 @@ export type Database = {
           supporters: number
         }[]
       }
-      nudge_candidates: {
+      coach_club_facts: { Args: { p_club_id: string }; Returns: Json }
+      coach_context: {
+        Args: { p_now?: string; p_profile_id: string }
+        Returns: Json
+      }
+      coach_nearby_place: { Args: { p_venue_id: string }; Returns: Json }
+      coach_push_candidates: {
         Args: { p_now?: string }
         Returns: {
-          facts: Json
-          fixture_id: string
-          kind: string
+          context: Json
           profile_id: string
         }[]
       }
+      coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       register_device_token: {
         Args: { p_platform: string; p_token: string }
         Returns: undefined

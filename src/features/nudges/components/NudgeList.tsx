@@ -19,7 +19,7 @@ export function NudgeList({ nudges }: { nudges: readonly NudgeItem[] }) {
         <EmptyState
           icon={icons.notificacoes}
           title="Ainda sem novidades"
-          message="Quando houver um jogo que te interesse, deixamos aqui a dica. No máximo uma por dia."
+          message="Quando houver um jogo que te interesse, deixamos aqui a dica."
         />
       </Card>
     );

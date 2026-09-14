@@ -5,6 +5,7 @@ import { LigacaoDemo } from '@/components/ligacao-demo';
 import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalogSync';
 import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatalog';
 import { QueryProvider } from '@/lib/query-client';
+import { AICoachProvider } from '@/state/ai-coach';
 import { AppStateProvider, useAppState } from '@/state/app-state';
 import { RelogioProvider } from '@/state/relogio';
 import { NotificacoesPush } from '@/state/notificacoes-push';
@@ -39,10 +40,12 @@ export default function RootLayout() {
         <RelogioProvider>
           <AppStateProvider>
             <SonsProvider>
-              <LigacaoDemo />
-              <SincronizarConta />
-              <NotificacoesPush />
-              <NavegacaoRaiz />
+              <AICoachProvider>
+                <LigacaoDemo />
+                <SincronizarConta />
+                <NotificacoesPush />
+                <NavegacaoRaiz />
+              </AICoachProvider>
             </SonsProvider>
           </AppStateProvider>
         </RelogioProvider>

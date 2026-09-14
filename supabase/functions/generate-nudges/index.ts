@@ -1,21 +1,20 @@
-// Daily match-day suggestions. pg_cron calls this every hour with a secret header; it only works at
-// 10:00 in Lisbon. Facts come from SQL (nudge_candidates); the sentence comes from a template, or from
-// Claude when ANTHROPIC_API_KEY and AI_MONTHLY_BUDGET_USD are set. Then it saves the nudge (at most one
-// per user per day, enforced by the database) and sends a push to the user's devices.
+// Daily push from the coach. pg_cron calls this every hour with a secret header; it only works at 10:00 in
+// Lisbon. Candidates come from SQL (coach_push_candidates): users who want suggestions, have a phone
+// registered, got no message in the last 6 hours and have a context worth a message. No context, no push:
+// it never sends "nothing new". A context that already has a message (seen in the app or pushed) is skipped.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-import { NUDGE_MODEL, NUDGE_MODEL_PRICE, writeNudgeWithClaude } from '../_shared/anthropic.ts';
+import { parseCoachResult, type CoachContext } from '../_shared/coach-context.ts';
+import { writeCoachMessage } from '../_shared/coach-writer.ts';
 import { sendExpoPush } from '../_shared/expo-push.ts';
-import { buildSlots, isNudgeKind, type NudgeKind } from '../_shared/nudge-slots.ts';
-import { acceptModelNudge, seedFrom, templateNudge } from '../_shared/nudge-text.ts';
 import { lisbonDay, lisbonHour } from '../_shared/portuguese.ts';
 
-const NUDGE_HOUR_IN_LISBON = 10;
-const MAX_NUDGES_PER_RUN = 1000;
+const PUSH_HOUR_IN_LISBON = 10;
+const MAX_PUSHES_PER_RUN = 1000;
 const PARALLEL_USERS = 5;
 
-type Candidate = { profileId: string; kind: NudgeKind; fixtureId: string | null; facts: unknown };
+type Candidate = { profileId: string; context: CoachContext };
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -43,24 +42,14 @@ function parseCandidates(data: unknown): Candidate[] {
   return data.flatMap((row) => {
     const fields = asRecord(row);
     const profileId = fields?.profile_id;
-    const kind = fields?.kind;
-    const fixtureId = fields?.fixture_id;
-    if (typeof profileId !== 'string' || !isNudgeKind(kind)) return [];
-    return [{
-      profileId,
-      kind,
-      fixtureId: typeof fixtureId === 'string' ? fixtureId : null,
-      facts: fields?.facts,
-    }];
+    const context = parseCoachResult(fields?.context)?.context;
+    return typeof profileId === 'string' && context ? [{ profileId, context }] : [];
   });
 }
 
-function strings(rows: unknown, keys: readonly string[]) {
+function strings(rows: unknown, key: string) {
   if (!Array.isArray(rows)) return [];
-  return rows.flatMap((row) => {
-    const fields = asRecord(row);
-    return keys.map((key) => fields?.[key]).filter((value): value is string => typeof value === 'string');
-  });
+  return rows.map((row) => asRecord(row)?.[key]).filter((value): value is string => typeof value === 'string');
 }
 
 Deno.serve(async (request) => {
@@ -78,8 +67,8 @@ Deno.serve(async (request) => {
     : null;
 
   const now = new Date();
-  if (!force && lisbonHour(now) !== NUDGE_HOUR_IN_LISBON) {
-    return json(200, { skipped: 'not the nudge hour in Lisbon' });
+  if (!force && lisbonHour(now) !== PUSH_HOUR_IN_LISBON) {
+    return json(200, { skipped: 'not the push hour in Lisbon' });
   }
 
   const url = Deno.env.get('SUPABASE_URL');
@@ -92,49 +81,18 @@ Deno.serve(async (request) => {
   const run = await admin.from('ai_run').insert({ job: 'nudges' }).select('id').single();
   const runId = asRecord(run.data)?.id;
 
-  const { data: candidateRows, error: candidatesError } = await admin.rpc('nudge_candidates', {
+  const { data: candidateRows, error: candidatesError } = await admin.rpc('coach_push_candidates', {
     p_now: now.toISOString(),
   });
   if (candidatesError) return json(500, { error: 'candidates_failed' });
 
   const candidates = parseCandidates(candidateRows)
     .filter((candidate) => !onlyProfiles || onlyProfiles.includes(candidate.profileId))
-    .slice(0, MAX_NUDGES_PER_RUN);
-
-  // Catalogue names: the model may never type them, only use slots.
-  const [venues, clubs, places] = await Promise.all([
-    admin.from('venue').select('name, short_name'),
-    admin.from('club').select('short_name'),
-    admin.from('place').select('name'),
-  ]);
-  const catalogueNames = [
-    ...strings(venues.data, ['name', 'short_name']),
-    ...strings(clubs.data, ['short_name']),
-    ...strings(places.data, ['name']),
-  ];
-
-  // The model is off unless a key and a budget are set. Spending is tracked from saved nudges.
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-  const monthlyBudget = Number(Deno.env.get('AI_MONTHLY_BUDGET_USD') ?? '0');
-  const today = lisbonDay(now);
-  let spentThisMonth = 0;
-  if (apiKey && monthlyBudget > 0) {
-    const usage = await admin
-      .from('nudge')
-      .select('input_tokens, output_tokens')
-      .eq('source', 'model')
-      .gte('local_date', `${today.slice(0, 7)}-01`);
-    for (const row of Array.isArray(usage.data) ? usage.data : []) {
-      const fields = asRecord(row);
-      spentThisMonth +=
-        (Number(fields?.input_tokens ?? 0) * NUDGE_MODEL_PRICE.input +
-          Number(fields?.output_tokens ?? 0) * NUDGE_MODEL_PRICE.output) /
-        1_000_000;
-    }
-  }
+    .slice(0, MAX_PUSHES_PER_RUN);
 
   const summary = {
     candidates: candidates.length,
+    already_delivered: 0,
     created: 0,
     from_model: 0,
     from_template: 0,
@@ -144,73 +102,69 @@ Deno.serve(async (request) => {
     output_tokens: 0,
   };
 
-  async function handle(candidate: Candidate) {
-    const slots = buildSlots(candidate.kind, candidate.facts, now);
-    if (!slots) {
+  async function handle({ profileId, context }: Candidate) {
+    const existing = await admin
+      .from('nudge')
+      .select('id')
+      .eq('profile_id', profileId)
+      .eq('context_key', context.contextKey)
+      .maybeSingle();
+    if (existing.error) {
       summary.errors += 1;
       return;
     }
-
-    let body: string | null = null;
-    let source: 'model' | 'template' = 'template';
-    let inputTokens = 0;
-    let outputTokens = 0;
-
-    if (apiKey && spentThisMonth < monthlyBudget) {
-      const written = await writeNudgeWithClaude(apiKey, candidate.kind, slots);
-      inputTokens = written.inputTokens;
-      outputTokens = written.outputTokens;
-      spentThisMonth +=
-        (inputTokens * NUDGE_MODEL_PRICE.input + outputTokens * NUDGE_MODEL_PRICE.output) / 1_000_000;
-      body = acceptModelNudge(candidate.kind, written.template, slots, catalogueNames);
-      if (body) source = 'model';
+    if (existing.data) {
+      summary.already_delivered += 1;
+      return;
     }
 
-    body ??= templateNudge(candidate.kind, slots, seedFrom(`${candidate.profileId}:${today}`));
-    if (!body) {
+    const written = await writeCoachMessage(admin, profileId, context, now);
+    if (!written) {
       summary.errors += 1;
       return;
     }
+    summary.input_tokens += written.inputTokens;
+    summary.output_tokens += written.outputTokens;
 
     const inserted = await admin
       .from('nudge')
       .insert({
-        profile_id: candidate.profileId,
-        kind: candidate.kind,
-        fixture_id: candidate.fixtureId,
-        local_date: today,
-        facts: candidate.facts,
-        body,
-        source,
-        model: source === 'model' ? NUDGE_MODEL : null,
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
+        profile_id: profileId,
+        kind: context.kind,
+        fixture_id: context.fixtureId,
+        context_key: context.contextKey,
+        local_date: lisbonDay(now),
+        facts: context.facts,
+        body: written.body,
+        source: written.source,
+        model: written.model,
+        input_tokens: written.inputTokens,
+        output_tokens: written.outputTokens,
       })
       .select('id')
       .single();
-    summary.input_tokens += inputTokens;
-    summary.output_tokens += outputTokens;
-    // 23505: this user already has today's nudge (e.g. the job ran twice). Nothing else to do.
+    // 23505: the app saved this context in the meantime. Nothing to push.
     if (inserted.error) {
-      if (inserted.error.code !== '23505') summary.errors += 1;
+      if (inserted.error.code === '23505') summary.already_delivered += 1;
+      else summary.errors += 1;
       return;
     }
     const nudgeId = asRecord(inserted.data)?.id;
     if (typeof nudgeId !== 'string') return;
 
     summary.created += 1;
-    if (source === 'model') summary.from_model += 1;
+    if (written.source === 'model') summary.from_model += 1;
     else summary.from_template += 1;
 
-    const tokens = await admin.from('device_token').select('token').eq('profile_id', candidate.profileId);
-    const deviceTokens = strings(tokens.data, ['token']);
+    const tokens = await admin.from('device_token').select('token').eq('profile_id', profileId);
+    const deviceTokens = strings(tokens.data, 'token');
     if (deviceTokens.length === 0) {
       await admin.from('nudge').update({ push_status: 'no_device' }).eq('id', nudgeId);
       return;
     }
 
     const outcome = await sendExpoPush(
-      deviceTokens.map((to) => ({ to, title: 'AwayDay', body, data: { type: 'nudge', nudgeId } }))
+      deviceTokens.map((to) => ({ to, title: 'AwayDay', body: written.body, data: { type: 'nudge', nudgeId } }))
     );
     if (outcome.invalidTokens.length > 0) {
       await admin.from('device_token').delete().in('token', outcome.invalidTokens);
@@ -219,7 +173,10 @@ Deno.serve(async (request) => {
       .from('nudge')
       .update({ push_status: outcome.sent > 0 ? 'sent' : 'failed' })
       .eq('id', nudgeId);
-    if (outcome.sent > 0) summary.pushed += 1;
+    if (outcome.sent > 0) {
+      summary.pushed += 1;
+      await admin.from('coach_state').upsert({ profile_id: profileId, last_message_at: now.toISOString() });
+    }
   }
 
   for (let start = 0; start < candidates.length; start += PARALLEL_USERS) {
@@ -227,9 +184,10 @@ Deno.serve(async (request) => {
   }
 
   if (typeof runId === 'number') {
+    const { already_delivered: _alreadyDelivered, ...counts } = summary;
     await admin
       .from('ai_run')
-      .update({ ...summary, finished_at: new Date().toISOString() })
+      .update({ ...counts, finished_at: new Date().toISOString() })
       .eq('id', runId);
   }
 

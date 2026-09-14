@@ -460,3 +460,10 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/generate-season-recaps/deno.json"
 entrypoint = "./functions/generate-season-recaps/index.ts"
+
+[functions.coach-message]
+enabled = true
+# Called by the app with the user's session; the access token is checked inside the function.
+verify_jwt = false
+import_map = "./functions/coach-message/deno.json"
+entrypoint = "./functions/coach-message/index.ts"
