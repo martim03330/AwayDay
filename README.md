@@ -84,7 +84,8 @@ supabase gen types typescript --linked > src/lib/database.types.ts
 
 - As tabelas `competition`, `venue`, `club` e `fixture` têm RLS: leitura pública e nenhuma escrita a partir da app.
 - O seed (`supabase/seed/`) é gerado a partir de `src/features/fixtures/snapshot.ts` com `npm run db:seed` e faz
-  upsert, por isso pode correr outra vez.
+  upsert, por isso pode correr outra vez. Num projeto que já tem o seed, o `db push --include-seed` não volta a
+  correr ficheiros alterados: aplica-os com `supabase db query --linked -f supabase/seed/<ficheiro>.sql`.
 - Para mudar o esquema, cria uma migração nova (`supabase migration new <nome>`), nunca edites uma já aplicada, e
   volta a gerar os tipos.
 - As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).

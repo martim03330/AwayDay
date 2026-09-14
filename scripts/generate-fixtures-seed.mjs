@@ -1,5 +1,6 @@
 // Generates supabase/seed/*.sql from the catalogue bundled in src/features/fixtures/snapshot.ts.
-// Usage: npm run db:seed, then `supabase db push --include-seed`.
+// Usage: npm run db:seed. First time: `supabase db push --include-seed`. After that, push only records
+// the new file hash, so apply changed files with `supabase db query --linked -f supabase/seed/<file>.sql`.
 // Every statement is an upsert by id, so running the seed again is safe.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

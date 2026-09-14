@@ -5,7 +5,7 @@ Registo das decisões estruturais, com data e razão. A mais recente fica em cim
 ## 2026-09-14 — Dados dos estádios verificados
 
 Capacidade, coordenadas e morada dos 34 estádios foram conferidas contra fontes, uma a uma, e corrigidas
-no snapshot e na base de dados (seed com upsert, sem migração nova).
+no snapshot e na base de dados (seed com upsert aplicado com `supabase db query --linked -f`, sem migração nova).
 
 **Critérios.** Capacidade: lugares sentados da época 2025/26, pela página da equipa na Liga Portugal ou
 pelo Guia do Adepto do clube; nos estrangeiros, a liga ou o clube. Coordenadas: centro do relvado no
@@ -105,7 +105,10 @@ os dados são os mesmos.
 **Datas fixas.** Os mocks calculavam as datas a partir de hoje; numa base de dados alojada isso não
 é possível. O snapshot e o seed foram gerados a 2026-09-13 e as horas ficam fixas. O modo demo
 continua a funcionar porque simula a hora a partir da hora do jogo. Para renovar as datas, edita o
-snapshot, corre `npm run db:seed` e faz `supabase db push --include-seed` (o seed faz upsert).
+snapshot, corre `npm run db:seed` e aplica os ficheiros alterados com
+`supabase db query --linked -f supabase/seed/<ficheiro>.sql` (o seed faz upsert). O
+`supabase db push --include-seed` só corre cada ficheiro de seed da primeira vez: depois de alterado,
+limita-se a atualizar o registo do ficheiro sem mexer nos dados.
 
 ### Por confirmar
 
