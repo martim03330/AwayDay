@@ -26,6 +26,12 @@ function point(latitude, longitude) {
   return `extensions.st_setsrid(extensions.st_makepoint(${literal(longitude)}, ${literal(latitude)}), 4326)::extensions.geography`;
 }
 
+function seasonOf(isoDate) {
+  const date = new Date(isoDate);
+  const startYear = date.getUTCMonth() >= 6 ? date.getUTCFullYear() : date.getUTCFullYear() - 1;
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`;
+}
+
 function upsert(table, columns, rows, toValues) {
   const values = rows.map((row) => `  (${toValues(row).join(', ')})`).join(',\n');
   const updates = columns
@@ -36,7 +42,15 @@ function upsert(table, columns, rows, toValues) {
 }
 
 const { competitions, venues, clubs, fixtures } = bundledCatalogRows;
+const seasons = [...new Set(fixtures.map((row) => seasonOf(row.kickoff_at)))].sort().map((id) => {
+  const startYear = Number(id.slice(0, 4));
+  return { id, starts_on: `${startYear}-07-01`, ends_on: `${startYear + 1}-06-30` };
+});
+
 const files = {
+  '00_seasons.sql': upsert('season', ['id', 'starts_on', 'ends_on'], seasons, (row) =>
+    [row.id, row.starts_on, row.ends_on].map(literal)
+  ),
   '01_competitions.sql': upsert('competition', ['id', 'name', 'kind', 'tier'], competitions, (row) =>
     [row.id, row.name, row.kind, row.tier].map(literal)
   ),
@@ -60,13 +74,13 @@ const files = {
   ),
   '04_fixtures.sql': upsert(
     'fixture',
-    ['id', 'competition_id', 'stage', 'home_club_id', 'away_club_id', 'venue_id', 'kickoff_at'],
+    ['id', 'competition_id', 'stage', 'home_club_id', 'away_club_id', 'venue_id', 'kickoff_at', 'season_id'],
     fixtures,
     (row) =>
-      [row.id, row.competition_id, row.stage, row.home_club_id, row.away_club_id, row.venue_id, row.kickoff_at].map(literal)
+      [row.id, row.competition_id, row.stage, row.home_club_id, row.away_club_id, row.venue_id, row.kickoff_at, seasonOf(row.kickoff_at)].map(literal)
   ),
 };
 
 mkdirSync(seedDir, { recursive: true });
 for (const [name, sql] of Object.entries(files)) writeFileSync(join(seedDir, name), sql);
-console.log(`Seed written: ${competitions.length} competitions, ${venues.length} venues, ${clubs.length} clubs, ${fixtures.length} fixtures.`);
+console.log(`Seed written: ${seasons.length} seasons, ${competitions.length} competitions, ${venues.length} venues, ${clubs.length} clubs, ${fixtures.length} fixtures.`);

@@ -3,14 +3,14 @@
 App móvel para adeptos em dia de jogo: próximos jogos, como chegar ao estádio, tascos à volta,
 check-ins e um passaporte de estádios.
 
-> **Estado: demo navegável.** Jogos, estádios, clubes e competições vêm do Supabase (só leitura, sem autenticação),
+> **Estado: demo navegável.** Jogos, estádios, clubes e competições vêm do Supabase, com conta opcional (email e password),
 > com cache local para a app abrir já com dados e funcionar sem rede. Tudo o resto continua em `src/mocks/` e o
 > estado vive em memória: ao recarregar a app, volta ao início.
 
 ## Funcionalidades
 
 **Onboarding**
-- Três ecrãs antes das tabs: clube que apoias, clube da terra (sugestão pela localização simulada, sempre com confirmação e opção de saltar) e permissões de localização e notificações (simuladas, nada é pedido ao sistema).
+- Quatro ecrãs antes das tabs: clube que apoias, clube da terra (sugestão pela localização simulada, sempre com confirmação e opção de saltar), permissões de localização e notificações (simuladas, nada é pedido ao sistema) e, no fim, criar conta, entrar ou continuar sem conta.
 - Como o estado vive em memória, aparece em cada arranque da app. Pode ser revisto em Perfil → Definições → Rever a introdução.
 
 **Jogos**
@@ -35,6 +35,7 @@ check-ins e um passaporte de estádios.
 - WC mais próximo do tasco.
 
 **Perfil**
+- Conta opcional: criar conta com código de confirmação por email, entrar, recuperar password, terminar sessão e apagar conta. Com conta, o clube que apoias e o clube da terra ficam guardados e vêm contigo para outro telemóvel.
 - Clube que apoias e clube da terra (a sugestão pela localização exige sempre confirmação).
 - Passaporte de estádios com missões e distintivos. Cada missão fecha com uma foto tirada na hora, só com a câmara; cumprida mas sem foto, fica "por comprovar".
 - Álbum de recordações com as fotos das missões: distintivo, estádio, data e se a foto está verificada (tirada em dia de jogo, com check-in perto do estádio).
@@ -88,6 +89,9 @@ supabase gen types typescript --linked > src/lib/database.types.ts
   correr ficheiros alterados: aplica-os com `supabase db query --linked -f supabase/seed/<ficheiro>.sql`.
 - Para mudar o esquema, cria uma migração nova (`supabase migration new <nome>`), nunca edites uma já aplicada, e
   volta a gerar os tipos.
+- **Autenticação:** as regras (password, código de 6 algarismos) estão no `config.toml` e vão com `supabase config push`. Corre antes `supabase config diff` e confirma que só muda o que queres.
+- **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER`, `SMTP_PASS` e `SMTP_ADMIN_EMAIL`.
+- **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`.
 - As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).
 
 ## Modo demo
@@ -131,6 +135,8 @@ assets/
 supabase/
   migrations/   SQL versionado (esquema e RLS)
   seed/         Dados iniciais gerados (npm run db:seed)
+  functions/    Edge Functions (delete-account)
+  templates/    Emails de confirmação e recuperação, em português
 scripts/        Gerador do seed
 docs/           DECISOES.md: registo de decisões estruturais
 ```

@@ -2,6 +2,61 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Autenticação e identidade
+
+**Conta opcional.** A app funciona sem conta. A introdução ganhou um 4.º passo ("Guarda o teu passaporte":
+criar conta, entrar ou agora não) e o Perfil tem um cartão de conta. Com conta, os clubes ficam guardados.
+
+**Email e password.** Criar conta, entrar, sair (só neste telemóvel), recuperar password e apagar conta.
+Apple e Google ficam para depois (precisam de conta de programador e configuração no painel).
+
+**Confirmação por código de 6 algarismos, não por link.** O Expo Go não abre links para a app. Os modelos
+de email em português estão em `supabase/templates/`. **Pendente:** no plano grátis o Supabase só aceita
+modelos próprios com SMTP próprio (Brevo). Até o `supabase/.env` ter as credenciais, a confirmação de
+email está desligada e as contas entram logo; a app trata os dois casos (`needsEmailConfirmation`).
+
+**Sessão em AsyncStorage**, que já estava instalado (o guia do Expo usa `expo-sqlite`, que seria uma
+dependência nova). O token só é renovado com a app em primeiro plano.
+
+**Regras de password iguais no cliente e no servidor:** 8 a 72 caracteres, com letras a-z e algarismos
+(`minimum_password_length` e `password_requirements = "letters_digits"`).
+
+**Mensagens neutras contra enumeração de contas.** Criar conta e recuperar password respondem da mesma
+maneira quer o email exista quer não, como o Supabase faz.
+
+**`profile`** é criado por trigger quando nasce a conta; o nome vem dos metadados do registo ou fica
+"Adepto" (nunca parte do email). Só o nome é editável (privilégio por coluna). Os perfis são legíveis
+**só por utilizadores com sessão**, um desvio assumido ao "legível por todos" do §2.3.
+
+**`profile_club`** guarda o clube que apoias (visível a quem tem sessão) e o clube da terra (**só o
+próprio o vê**, porque aponta para onde a pessoa vive).
+
+**`club_supporter_counts()`** devolve adeptos por clube só a partir de 5 pessoas (regra dos agregados).
+É `security definer` porque os clientes não leem as linhas dos outros; só devolve contagens. A UI
+continua a usar os números dos mocks por agora.
+
+**`season` e `fixture.season_id`.** As épocas começam a 1 de julho e são deduzidas da data do jogo pelo
+gerador do seed. Os jogos da demo (agosto e setembro de 2026) ficam em `2026-27`; a lista de clubes é a
+de 2025/26.
+
+**Apagar conta pela Edge Function `delete-account`.** Usa a `service_role`, que só existe no servidor.
+`verify_jwt` está desligado e a função autentica quem chama com `auth.getUser`; recusa pedidos sem
+sessão, só com a chave publicável ou com tokens inventados. O perfil e os clubes vão com a conta
+(`on delete cascade`).
+
+**Clubes entre o telemóvel e a conta** (`src/state/sincronizar-conta.tsx`): ao entrar, se a conta já tem
+clube é a conta que manda (e salta a introdução); numa conta nova, guarda o que foi escolhido no
+telemóvel; depois, cada mudança feita no telemóvel vai para a conta. Ao sair, o perfil em cache é esquecido.
+
+**Configuração do Auth por `supabase config push`**, depois de alinhar o `config.toml` com o projeto (o
+modelo do `supabase init` estragava definições do pooler, MFA e storage). O Twilio aparece ligado no
+projeto sem credenciais e a CLI não o consegue desligar: fica como está (desligar no painel se for preciso).
+
+**Verificado:** testes SQL das políticas numa transação sempre revertida; teste de ponta a ponta pela API
+com a chave publicável (registo, password fraca recusada, entrar, nome, clubes, privacidade do clube da
+terra, apagar conta); testes da validação e da tradução dos erros (apanharam um bug: um código
+`toString` devolvia uma função em vez de mensagem).
+
 ## 2026-09-14 — Dados dos estádios verificados
 
 Capacidade, coordenadas e morada dos 34 estádios foram conferidas contra fontes, uma a uma, e corrigidas

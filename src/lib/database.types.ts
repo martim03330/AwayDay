@@ -119,6 +119,7 @@ export type Database = {
           home_club_id: string
           id: string
           kickoff_at: string
+          season_id: string | null
           stage: string
           venue_id: string
         }
@@ -130,6 +131,7 @@ export type Database = {
           home_club_id: string
           id: string
           kickoff_at: string
+          season_id?: string | null
           stage: string
           venue_id: string
         }
@@ -141,6 +143,7 @@ export type Database = {
           home_club_id?: string
           id?: string
           kickoff_at?: string
+          season_id?: string | null
           stage?: string
           venue_id?: string
         }
@@ -167,6 +170,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fixture_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fixture_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -174,6 +184,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profile_club: {
+        Row: {
+          club_id: string
+          created_at: string
+          profile_id: string
+          relation: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          profile_id: string
+          relation: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          profile_id?: string
+          relation?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_club_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season: {
+        Row: {
+          created_at: string
+          ends_on: string
+          id: string
+          starts_on: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on: string
+          id: string
+          starts_on: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string
+          id?: string
+          starts_on?: string
+        }
+        Relationships: []
       }
       venue: {
         Row: {
@@ -225,7 +316,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      club_supporter_counts: {
+        Args: never
+        Returns: {
+          club_id: string
+          supporters: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

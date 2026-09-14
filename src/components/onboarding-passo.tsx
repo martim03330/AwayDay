@@ -8,12 +8,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-const TOTAL_PASSOS = 3;
+const TOTAL_PASSOS = 4;
 /** Acima deste número de caracteres, a frase usa letra mais pequena para não ocupar o ecrã todo. */
 const LIMITE_FRASE_CURTA = 70;
 
 type OnboardingPassoProps = {
-  passo: 1 | 2 | 3;
+  passo: 1 | 2 | 3 | 4;
   /** Uma frase por ecrã: é o que dá o tom à app. */
   frase: string;
   children: ReactNode;

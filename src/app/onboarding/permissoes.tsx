@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -44,7 +45,8 @@ function CartaoPermissao({ icon, titulo, paraQueServe, estado, onEscolher }: Car
 }
 
 export default function OnboardingPermissoesScreen() {
-  const { permissoes, concluirOnboarding } = useAppState();
+  const router = useRouter();
+  const { permissoes, guardarPermissoes } = useAppState();
   const [localizacao, setLocalizacao] = useState<EstadoPermissao>(permissoes.localizacao);
   const [notificacoes, setNotificacoes] = useState<EstadoPermissao>(permissoes.notificacoes);
 
@@ -56,13 +58,14 @@ export default function OnboardingPermissoesScreen() {
         <Button
           label="Bora lá"
           icon={icons.jogos}
-          onPress={() =>
+          onPress={() => {
             // Quem não decide, continua sem: nada fica ligado por omissão.
-            concluirOnboarding({
+            guardarPermissoes({
               localizacao: localizacao ?? 'recusada',
               notificacoes: notificacoes ?? 'recusada',
-            })
-          }
+            });
+            router.push('/onboarding/conta');
+          }}
         />
       }>
       <CartaoPermissao

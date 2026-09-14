@@ -7,6 +7,7 @@ import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatal
 import { QueryProvider } from '@/lib/query-client';
 import { AppStateProvider, useAppState } from '@/state/app-state';
 import { RelogioProvider } from '@/state/relogio';
+import { SincronizarConta } from '@/state/sincronizar-conta';
 import { SonsProvider } from '@/state/sons';
 
 /** Onboarding enquanto não estiver concluído; depois, as tabs. */
@@ -21,6 +22,8 @@ function NavegacaoRaiz() {
       <Stack.Protected guard={onboardingConcluido}>
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
+      {/* Entrar e criar conta: abre por cima da introdução ou das tabs. */}
+      <Stack.Screen name="conta" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
@@ -36,6 +39,7 @@ export default function RootLayout() {
           <AppStateProvider>
             <SonsProvider>
               <LigacaoDemo />
+              <SincronizarConta />
               <NavegacaoRaiz />
             </SonsProvider>
           </AppStateProvider>

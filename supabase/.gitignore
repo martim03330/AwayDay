@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Secrets for `supabase config push` (SMTP, providers)
+.env

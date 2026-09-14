@@ -47,6 +47,8 @@ type AppState = {
   introducaoVista: boolean;
   permissoes: Permissoes;
   concluirOnboarding: (permissoes: Permissoes) => void;
+  /** Guarda as permissões sem acabar a introdução: ainda falta o passo da conta. */
+  guardarPermissoes: (permissoes: Permissoes) => void;
   /** Só para o deep link de demo: entra nas tabs sem mexer nas escolhas. */
   saltarOnboarding: () => void;
   reverIntroducao: () => void;
@@ -200,6 +202,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     introducaoVista,
     permissoes,
     concluirOnboarding,
+    guardarPermissoes: setPermissoes,
     saltarOnboarding: () => setOnboardingConcluido(true),
     reverIntroducao: () => setOnboardingConcluido(false),
     clubeFavoritoId,

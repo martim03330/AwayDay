@@ -10,8 +10,12 @@ import { ModoDemoCard } from '@/components/modo-demo-card';
 import { PassaporteCard } from '@/components/passaporte-card';
 import { RankingCard } from '@/components/ranking-card';
 import { Spacing } from '@/constants/theme';
+import { AccountCard } from '@/features/auth/components/AccountCard';
+import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero, plural } from '@/lib/formatos';
+import { useUserId } from '@/lib/session';
+import { supabase } from '@/lib/supabase';
 import { contarTascosVerificados, ID_UTILIZADOR, montarRanking } from '@/lib/tascos';
 import { nomesDivisao, obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
@@ -58,6 +62,8 @@ export default function PerfilScreen() {
   } = useAppState();
   const [modoDemoVisivel, setModoDemoVisivel] = useState(false);
   const [toques, setToques] = useState<readonly number[]>([]);
+  const userId = useUserId();
+  const perfilDaConta = useMyProfile(userId);
 
   const clube = obterClube(clubeFavoritoId);
   const estadioDoClube = clube ? obterEstadio(clube.estadioId) : undefined;
@@ -91,7 +97,7 @@ export default function PerfilScreen() {
         </View>
         <View style={styles.flex}>
           <ThemedText type="smallBold" style={styles.nome}>
-            Adepto AwayDay
+            {perfilDaConta.data?.displayName ?? 'Adepto AwayDay'}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {`Modo demo · ${plural(tascosVerificados, 'tasco verificado', 'tascos verificados')}`}
@@ -102,6 +108,13 @@ export default function PerfilScreen() {
         <View style={styles.etiqueta}>
           <Etiqueta icon={icons.demo} label="Hora simulada ativa" tone="aviso" />
         </View>
+      ) : null}
+
+      {supabase ? (
+        <>
+          <SectionHeader title="Conta" />
+          <AccountCard displayName={perfilDaConta.data?.displayName ?? null} />
+        </>
       ) : null}
 
       <SectionHeader title="Clube que apoio" />
