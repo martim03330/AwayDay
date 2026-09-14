@@ -7,7 +7,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { NUDGE_MODEL, NUDGE_MODEL_PRICE, writeNudgeWithClaude } from './anthropic.ts';
 import type { CoachContext } from './coach-context.ts';
 import { buildSlots } from './nudge-slots.ts';
-import { acceptModelNudge, seedFrom, templateNudge } from './nudge-text.ts';
+import { acceptModelNudge, seedFrom, templateIdFor, templateNudge } from './nudge-text.ts';
 
 /** Model calls per user per month; after that, templates. */
 export const MAX_MODEL_CALLS_PER_USER_PER_MONTH = 40;
@@ -83,12 +83,13 @@ export async function writeCoachMessage(
 ): Promise<WrittenMessage | null> {
   const slots = buildSlots(context.kind, context.facts);
   if (!slots) return null;
-  const template = templateNudge(context.kind, slots, seedFrom(`${profileId}:${context.contextKey}`));
+  const templateId = templateIdFor(context.kind, context.facts);
+  const template = templateNudge(templateId, slots, seedFrom(`${profileId}:${context.contextKey}`));
 
   const apiKey = await modelKeyFor(admin, profileId, now);
   if (apiKey) {
-    const written = await writeNudgeWithClaude(apiKey, context.kind, slots);
-    const body = acceptModelNudge(context.kind, written.template, slots, await catalogueNames(admin));
+    const written = await writeNudgeWithClaude(apiKey, templateId, slots);
+    const body = acceptModelNudge(templateId, written.template, slots, await catalogueNames(admin));
     // Tokens are recorded even when the sentence is refused, so the budget counts them.
     const usage = { inputTokens: written.inputTokens, outputTokens: written.outputTokens };
     if (body) return { body, source: 'model', model: NUDGE_MODEL, ...usage };

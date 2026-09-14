@@ -13,6 +13,8 @@ export type RecapStats = {
   games: number;
   stadiums: number;
   newVenues: number;
+  /** First visits this season, oldest first (may be fewer than `newVenues` if some are malformed). */
+  newVenueNames: { name: string; article: Article }[];
   km: number | null;
   places: number;
   topPlace: { name: string; article: Article; visits: number } | null;
@@ -41,6 +43,15 @@ export function parseRecapStats(value: unknown): RecapStats | null {
   const places = count(fields.places);
   if (games === null || stadiums === null || newVenues === null || places === null) return null;
 
+  const newVenueNames = Array.isArray(fields.new_venue_names)
+    ? fields.new_venue_names.flatMap((entry) => {
+        const venue = asRecord(entry);
+        return venue && typeof venue.name === 'string' && isArticle(venue.article)
+          ? [{ name: venue.name, article: venue.article }]
+          : [];
+      })
+    : [];
+
   const km = fields.km === null ? null : count(fields.km);
   if (fields.km !== null && km === null) return null;
 
@@ -61,7 +72,18 @@ export function parseRecapStats(value: unknown): RecapStats | null {
       ? { name: districtFields.name, games: districtGames }
       : null;
 
-  return { seasonId: fields.season_id, games, stadiums, newVenues, km, places, topPlace, averageScore, topDistrict };
+  return {
+    seasonId: fields.season_id,
+    games,
+    stadiums,
+    newVenues,
+    newVenueNames,
+    km,
+    places,
+    topPlace,
+    averageScore,
+    topDistrict,
+  };
 }
 
 /** "2026-27" → "2026/27". */
@@ -85,6 +107,16 @@ function inDistrict(name: string) {
   return article === '' ? `em ${name}` : `${contraction[article]} ${name}`;
 }
 
+const LISTED_NEW_VENUES = 3;
+
+/** "os Arcos, o Restelo e mais 6": up to three names, then how many more. */
+function newVenuesPhrase(stats: RecapStats) {
+  const shown = stats.newVenueNames.slice(0, LISTED_NEW_VENUES).map((venue) => withArticle(venue.article, venue.name));
+  const rest = stats.newVenues - shown.length;
+  const items = rest > 0 ? [...shown, `mais ${NUMBER.format(rest)}`] : shown;
+  return items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} e ${items[items.length - 1]}`;
+}
+
 /** Slots for the recap. Only the facts that exist get a slot. */
 export function recapSlots(stats: RecapStats): Slots {
   const slots: Record<string, string> = {
@@ -93,6 +125,7 @@ export function recapSlots(stats: RecapStats): Slots {
     estadios_novos: plural(stats.newVenues, 'estádio novo', 'estádios novos'),
     tascos: plural(stats.places, 'tasco', 'tascos'),
   };
+  if (stats.newVenues > 0 && stats.newVenueNames.length > 0) slots.estreias = newVenuesPhrase(stats);
   if (stats.km !== null) slots.km = `${NUMBER.format(stats.km)} km`;
   if (stats.topDistrict) slots.distrito_em = inDistrict(stats.topDistrict.name);
   if (stats.topPlace) {
@@ -110,24 +143,23 @@ const CLOSINGS = ['Venha a próxima.', 'Agosto está já ali.', 'Guarda o cachec
 
 /** The recap from templates. Always within the length limits. */
 export function templateRecap(stats: RecapStats, seed: number): RecapText {
+  const slots = recapSlots(stats);
   const sentences: string[] = [];
   if (stats.games > 0) {
-    sentences.push(
-      stats.newVenues > 0
-        ? 'Foste a {jogos} e estreaste {estadios_novos}.'
-        : 'Foste a {jogos}, sempre em estádios que já conhecias.'
-    );
+    if (stats.newVenues === 0) sentences.push('Foste a {jogos}, sempre em estádios que já conhecias.');
+    else if (slots.estreias) sentences.push('Foste a {jogos} e estreaste {estadios_novos}: {estreias}.');
+    else sentences.push('Foste a {jogos} e estreaste {estadios_novos}.');
   } else if (stats.places > 0) {
     sentences.push('Foi uma época mais de tasco do que de bancada: {tascos} diferentes.');
   }
   if (stats.km !== null && stats.km > 0) sentences.push('Somaste pelo menos {km} de estrada, contados em linha reta.');
-  if (stats.topDistrict) sentences.push('Onde mais andaste: {distrito_em}.');
+  // With a single stadium there is nowhere else to compare with.
+  if (stats.topDistrict && stats.stadiums >= 2) sentences.push('Onde mais andaste: {distrito_em}.');
   // Written so the verb never agrees with the place name ("as Bifanas" is plural).
   if (stats.topPlace) sentences.push('O tasco onde mais voltaste: {tasco}, com {visitas_tasco}.');
   if (stats.averageScore !== null) sentences.push('A nota média que deste aos estádios foi {nota}.');
   sentences.push(CLOSINGS[seed % CLOSINGS.length] ?? 'Venha a próxima.');
 
-  const slots = recapSlots(stats);
   const headline = fill(HEADLINES[seed % HEADLINES.length] ?? HEADLINES[0] ?? '', slots) ?? `A tua época ${slots.epoca}`;
   const body = fill(sentences.join(' '), slots) ?? '';
   return { headline: headline.slice(0, MAX_RECAP_HEADLINE), body: body.slice(0, MAX_RECAP_BODY) };

@@ -2,6 +2,32 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Ajustes às mensagens depois da simulação com perfis fictícios
+
+**Como se testou.** `supabase/seed-dev/perfis-ficticios.sql` cria três perfis fictícios (Vai a Tudo, Ocasional,
+Novato) com uma época de histórico (2025-26). Só serve para desenvolvimento e fica fora de `supabase/seed`, por
+isso o `db push --include-seed` nunca o carrega. Numa base de dados partilhada, é melhor corrê-lo dentro de uma
+transação revertida: os perfis contam para agregados públicos, como os adeptos por clube. Com ele geraram-se
+mensagens em várias horas simuladas, com o payload do SQL ao lado do texto e contagens feitas à parte, e as três
+retrospetivas.
+
+**O que mudou** (migração `20260914170000_coach_context_fixes`, textos em `_shared`):
+- **Marco do passaporte.** A mensagem diz o número real de estádios e o carimbo mais recente, isto é, o estádio
+  visitado pela primeira vez há menos tempo. Antes, quem passava de 9 para 12 estádios entre duas aberturas lia
+  "10 estádios", com o carimbo do último jogo. O marco (3, 5, 10…) só decide que há alguma coisa a celebrar e
+  fica em `facts.milestone`.
+- **Estádio novo com "Vou".** Tem frases próprias (`estadio_novo_com_vou`): a ida já está decidida, por isso a
+  mensagem não convida a planear e fala da estreia.
+- **Check-in ativo.** A chave deixa de incluir a fase do dia de jogo: o mesmo check-in mantém a mensagem quando a
+  fase muda.
+- **Retrospetiva.**
+  - Nomeia até três estádios estreados e diz quantos faltam ("…, os Arcos, o Estádio do Mar e mais 5").
+  - Só diz "Onde mais andaste" quando houve pelo menos dois estádios.
+
+**Por decidir.** Oito estádios não têm nome curto e os nomes completos tornam as frases pesadas. O pior caso é o
+"Parque de Jogos Comendador Joaquim de Almeida Freitas", com 127 caracteres. Não se inventaram nomes curtos: os
+dados dos estádios são verificados, por isso fica por confirmar como cada um é conhecido.
+
 ## 2026-09-14 — Mensagens do treinador ao abrir a app
 
 **O que faz.** O `AICoachProvider` (padrão wrapper, em `src/state/ai-coach.tsx`) calcula no telemóvel a chave

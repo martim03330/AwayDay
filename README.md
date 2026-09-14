@@ -96,6 +96,7 @@ supabase gen types typescript --linked > src/lib/database.types.ts
 - **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Os emails saem pelo Brevo; põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER` (login SMTP do Brevo), `SMTP_PASS` (chave SMTP, começa por `xsmtpsib-`) e `SMTP_ADMIN_EMAIL` (remetente verificado). No Brevo, desliga o bloqueio de IPs desconhecidos, porque o Supabase envia de IPs que mudam.
 - **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`.
 - **Dica ao abrir a app:** Edge Function `coach-message`, chamada pela app com a sessão da pessoa. Não precisa de segredos.
+- **Perfis fictícios para testar mensagens e retrospetiva:** `supabase/seed-dev/perfis-ficticios.sql` (só para desenvolvimento; os comandos para os apagar estão no topo do ficheiro).
 - **Push diário das dicas:** Edge Function `generate-nudges`, chamada de hora a hora pelo `pg_cron` (só envia às 10:00). Precisa do segredo `CRON_SECRET` na função (`supabase secrets set`) e dos segredos `project_url` e `cron_secret` no Vault, com o mesmo valor. As frases saem de modelos de frase; para usar o Claude, define `ANTHROPIC_API_KEY` e `AI_MONTHLY_BUDGET_USD` na função (tem custos).
 - **Retrospetiva da época:** Edge Function `generate-season-recaps`, chamada pelo `pg_cron` de 15 a 20 de junho, com o mesmo segredo das dicas. Para usar o Claude, as mesmas variáveis (tem custos).
 - As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).

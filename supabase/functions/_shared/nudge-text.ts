@@ -7,6 +7,9 @@ import type { NudgeKind, Slots } from './nudge-slots.ts';
 
 export const MAX_NUDGE_LENGTH = 140;
 
+/** A kind can have more than one set of sentences, chosen from its facts (see templateIdFor). */
+export type TemplateId = NudgeKind | 'estadio_novo_com_vou';
+
 type Template = {
   /** Tried from the seed onwards; a variant whose slots are missing (e.g. no place nearby) is skipped. */
   variants: readonly string[];
@@ -18,7 +21,7 @@ type Template = {
 
 const CLUB = ['clube_de', 'clube', 'Clube'];
 
-export const NUDGE_TEMPLATES: Readonly<Record<NudgeKind, Template>> = {
+export const NUDGE_TEMPLATES: Readonly<Record<TemplateId, Template>> = {
   dia_de_jogo_manha: {
     variants: [
       'Dia de jogo {clube_de}, com apito às {hora}. Almoço perto do estádio: {tasco}, a {minutos} a pé.',
@@ -82,7 +85,24 @@ export const NUDGE_TEMPLATES: Readonly<Record<NudgeKind, Template>> = {
     fallback: 'Jogo {clube_de} {dia}. Carimbo novo à vista.',
     required: [CLUB, ['dia', 'Dia']],
   },
+  // Already marked "Vou": the trip is planned, so no invitation, just the new stamp.
+  estadio_novo_com_vou: {
+    variants: [
+      'Vais {estadio_a} {dia}: é estreia no passaporte. Chega cedo para conhecer os cantos à casa.',
+      'Estreia {estadio_em} {dia}, às {hora}. Perto do estádio: {tasco}, a {minutos} a pé.',
+      'Jogo {clube_de} {dia}, com estreia tua {estadio_em}. Carimbo novo a caminho.',
+    ],
+    fallback: 'Vais {estadio_a} {dia}. Carimbo novo à vista.',
+    required: [['estadio_a', 'estadio_em', 'estadio_de'], ['dia', 'Dia']],
+  },
 };
+
+/** Which set of sentences suits the facts: a new stadium reads differently once the user said "Vou". */
+export function templateIdFor(kind: NudgeKind, facts: unknown): TemplateId {
+  if (kind !== 'estadio_novo') return kind;
+  const going = typeof facts === 'object' && facts !== null ? Reflect.get(facts, 'going') : false;
+  return going === true ? 'estadio_novo_com_vou' : kind;
+}
 
 const SLOT = /\{([A-Za-z_]+)\}/g;
 
@@ -99,9 +119,9 @@ export function fill(template: string, slots: Slots): string | null {
   return /[{}]/.test(text) ? null : text;
 }
 
-function hasRequiredSlots(kind: NudgeKind, template: string) {
+function hasRequiredSlots(id: TemplateId, template: string) {
   const names = slotNames(template);
-  return NUDGE_TEMPLATES[kind].required.every((group) => group.some((name) => names.has(name)));
+  return NUDGE_TEMPLATES[id].required.every((group) => group.some((name) => names.has(name)));
 }
 
 /** Stable number from a text, to vary the template per user and context without randomness. */
@@ -112,8 +132,8 @@ export function seedFrom(text: string) {
 }
 
 /** Template sentence: variants from `seed` onwards, then the short fallback. Never over 140. */
-export function templateNudge(kind: NudgeKind, slots: Slots, seed: number): string | null {
-  const { variants, fallback } = NUDGE_TEMPLATES[kind];
+export function templateNudge(id: TemplateId, slots: Slots, seed: number): string | null {
+  const { variants, fallback } = NUDGE_TEMPLATES[id];
   for (let offset = 0; offset < variants.length; offset++) {
     const text = fill(variants[(seed + offset) % variants.length] ?? '', slots);
     if (text && text.length <= MAX_NUDGE_LENGTH) return text;
@@ -137,18 +157,18 @@ const SCOLDING = [
 
 /**
  * Accepts a sentence the model wrote with slots and fills it in. `null` when it breaks a rule: missing
- * or unknown slots, any digit, a catalogue name typed instead of a slot, over 140 characters once
- * filled, or scolding people who did not go to matches.
+ * or unknown slots, any digit, "hoje" or "amanhã", a catalogue name typed instead of a slot, over 140
+ * characters once filled, or scolding people who did not go to matches.
  */
 export function acceptModelNudge(
-  kind: NudgeKind,
+  id: TemplateId,
   template: unknown,
   slots: Slots,
   catalogueNames: readonly string[]
 ): string | null {
   if (typeof template !== 'string') return null;
   const trimmed = template.trim();
-  if (trimmed.length === 0 || /\d/.test(trimmed) || !hasRequiredSlots(kind, trimmed)) return null;
+  if (trimmed.length === 0 || /\d/.test(trimmed) || !hasRequiredSlots(id, trimmed)) return null;
   if (/(?<!\p{L})(hoje|amanhã)(?!\p{L})/iu.test(trimmed)) return null;
 
   const text = fill(trimmed, slots);

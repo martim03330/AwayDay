@@ -1,8 +1,8 @@
 // Optional: asks Claude for a nudge sentence written with slots. Only used when ANTHROPIC_API_KEY and a
 // monthly budget are set. One request per message, no retries: on any failure the caller uses a template.
 
-import type { NudgeKind, Slots } from './nudge-slots.ts';
-import { MAX_NUDGE_LENGTH, NUDGE_TEMPLATES } from './nudge-text.ts';
+import type { Slots } from './nudge-slots.ts';
+import { MAX_NUDGE_LENGTH, NUDGE_TEMPLATES, type TemplateId } from './nudge-text.ts';
 
 export const NUDGE_MODEL = 'claude-sonnet-5';
 /** USD per million tokens, to keep track of the monthly budget. */
@@ -46,7 +46,7 @@ export function parseModelResponse(payload: unknown): ModelNudge {
 
 export async function writeNudgeWithClaude(
   apiKey: string,
-  kind: NudgeKind,
+  kind: TemplateId,
   slots: Slots,
   timeoutMs = 10_000
 ): Promise<ModelNudge> {
