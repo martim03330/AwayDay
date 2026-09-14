@@ -14,7 +14,18 @@ from (values
   ('restelo', 'Restelo', 'o'),
   ('madeira', 'Choupana', 'a'),
   ('fontelo', 'Fontelo', 'o'),
-  ('arcos', 'Arcos', 'os')
+  ('arcos', 'Arcos', 'os'),
+  -- Long official names: drop the generic words (Estádio, Municipal, Parque de Jogos, Desportivo) and keep
+  -- the proper name. "Estádio de" stays where the name alone would read as the town, "Complexo" where it would
+  -- read as the club.
+  ('comendador-almeida-freitas', 'Comendador Joaquim de Almeida Freitas', 'o'),
+  ('municipal-chaves', 'Eng. Manuel Branco Teixeira', 'o'),
+  ('magalhaes-pessoa', 'Dr. Magalhães Pessoa', 'o'),
+  ('coimbra-da-mota', 'António Coimbra da Mota', 'o'),
+  ('complexo-alverca', 'Complexo do FC Alverca', 'o'),
+  ('rio-maior', 'Estádio de Rio Maior', 'o'),
+  ('22-de-junho', '22 de Junho', 'o'),
+  ('santos-pinto', 'José dos Santos Pinto', 'o')
 ) as n(id, short_name, article)
 where v.id = n.id;
 
