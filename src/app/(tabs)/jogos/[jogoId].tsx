@@ -13,6 +13,7 @@ import { PontoEncontroCard } from '@/components/ponto-encontro-card';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { Spacing } from '@/constants/theme';
+import { GoingButton } from '@/features/activity/components/GoingButton';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { notaDoEstadio } from '@/lib/avaliacoes';
@@ -117,6 +118,8 @@ export default function JogoScreen() {
           </View>
         ) : null}
       </Card>
+
+      {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
 
       {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
 

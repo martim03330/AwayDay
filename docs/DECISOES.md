@@ -2,6 +2,35 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Atividade na base de dados (fase A das mensagens com IA)
+
+**Sem custos.** As mensagens (nudges e retrospetiva) vão ser escritas a partir de modelos de frase com
+várias variantes, preenchidos com factos apurados em SQL. A API da Anthropic não tem plano grátis, por isso a
+chamada ao Claude fica preparada mas só é usada se houver chave e orçamento definidos na Edge Function.
+
+**Tabelas novas, todas com RLS na mesma migração:**
+- `place`: os 25 tascos da demo (fictícios), com os mesmos ids dos mocks. Leitura pública.
+- `fixture_attendance`: "vou" antes do apito e "fui" depois. É a base de dados que decide pela hora do
+  jogo, não o relógio do telemóvel (nem a hora simulada do modo demo).
+- `venue_review`: as notas dadas depois do jogo (1 a 5).
+- `place_visit`: o histórico pessoal de tascos, só visível ao próprio e nunca agregado. Não é a futura
+  tabela `checkin` de presença, que expira às 48h: a retrospetiva precisa de um histórico que dure a época.
+- `device_token`: tokens de push. Registo pela função `register_device_token`, para o token passar para
+  a conta que entrou por último no mesmo telemóvel.
+- `profile.nudges_enabled` e `profile.recap_enabled`: cada pessoa escolhe se recebe.
+
+**Nomes para frases em português.** Artigos (`name_article`), alcunhas conhecidas com o seu artigo (Luz,
+Dragão, Alvalade, Pedreira, Barreiros, Restelo, Choupana, Fontelo, Arcos) e distrito. Distrito em vez de
+NUTS II, que mudou em 2024 e é menos claro para um adepto.
+
+**A app grava na conta** (só com sessão): check-ins e anulações, "Já estive aqui", avaliações de jogos e
+o novo botão "Vou a este jogo". Usa a hora real e não trava a app se falhar. Os dados de demonstração dos
+mocks não sobem para a conta, e a UI continua a mostrar a atividade local.
+
+**Verificado** com testes SQL numa transação revertida: regras do "vou" e do "fui", notas fora de 1 a 5,
+visitas no futuro, privacidade entre utilizadores, token a mudar de conta, anónimos só leem tascos, e a
+atividade a desaparecer com a conta.
+
 ## 2026-09-14 — Autenticação e identidade
 
 **Conta opcional.** A app funciona sem conta. A introdução ganhou um 4.º passo ("Guarda o teu passaporte":

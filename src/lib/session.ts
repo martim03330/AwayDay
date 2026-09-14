@@ -40,6 +40,11 @@ export function useSession() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+/** The signed-in user's id outside React components (e.g. inside a provider's actions), or `null`. */
+export function currentUserId() {
+  return state.status === 'signed-in' ? state.session.user.id : null;
+}
+
 /** The signed-in user's id, or `null`. */
 export function useUserId() {
   const current = useSession();

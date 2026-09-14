@@ -2,8 +2,10 @@
  * Estado da demo, só em memória: volta ao início sempre que a app recarrega.
  */
 
-import { createContext, use, useState, type ReactNode } from 'react';
+import { createContext, use, useRef, useState, type ReactNode } from 'react';
 
+import { deletePlaceVisit, recordPlaceVisit, recordReview } from '@/features/activity/api';
+import { currentUserId } from '@/lib/session';
 import { fotosIniciais } from '@/mocks/album';
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
 import {
@@ -123,6 +125,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [medicoesBarulho, setMedicoesBarulho] = useState<readonly MedicaoBarulho[]>([]);
   const [sonsLigados, setSonsLigados] = useState(false);
   const [notificacoes, setNotificacoes] = useState<PreferenciasNotificacoes>(preferenciasIniciais);
+  /** Check-ins já enviados para a conta, para os apagar lá se forem anulados. */
+  const checkInsNaConta = useRef(new Map<string, Promise<string | null>>());
+
+  /**
+   * Guarda na conta, se houver sessão, sem travar a app: a demo continua a funcionar sem rede.
+   * Usa a hora real do servidor, nunca a hora simulada do modo demo.
+   */
+  function guardarNaConta<T>(acao: (userId: string) => Promise<T>) {
+    const userId = currentUserId();
+    if (!userId) return null;
+    return acao(userId).catch((erro: unknown) => {
+      if (__DEV__) console.warn('Não foi possível guardar na conta:', erro);
+      return null;
+    });
+  }
 
   /** Hora da app (a simulada, no modo demo), para os registos baterem certo com o relógio do dia de jogo. */
   function agoraDaApp() {
@@ -135,8 +152,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (checkIns.has(localId)) {
       setCheckIns((atuais) => alternarEmConjunto(atuais, localId));
       setVisitasLocais((atuais) => atuais.filter((visita) => visita.id !== idVisita));
+      const naConta = checkInsNaConta.current.get(localId);
+      checkInsNaConta.current.delete(localId);
+      void naConta?.then((visitaId) =>
+        visitaId ? guardarNaConta(() => deletePlaceVisit(visitaId)) : null
+      );
       return;
     }
+
+    const pedido = guardarNaConta((userId) => recordPlaceVisit(userId, localId, 'check-in'));
+    if (pedido) checkInsNaConta.current.set(localId, pedido);
 
     setCheckIns((atuais) => alternarEmConjunto(atuais, localId));
     setVisitasLocais((atuais) => [
@@ -146,6 +171,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }
 
   function registarVisitaManual(localId: string) {
+    if (!visitasLocais.some((visita) => visita.localId === localId)) {
+      void guardarNaConta((userId) => recordPlaceVisit(userId, localId, 'manual'));
+    }
     setVisitasLocais((atuais) => {
       if (atuais.some((visita) => visita.localId === localId)) return atuais;
       return [
@@ -164,6 +192,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   function guardarAvaliacao(nova: NovaAvaliacao) {
     const id = `avaliacao-${nova.jogoId}`;
     const registo: AvaliacaoVisita = { ...nova, id, atualizadaEm: new Date().toISOString() };
+    void guardarNaConta((userId) =>
+      recordReview(userId, {
+        fixtureId: nova.jogoId,
+        stadium: nova.estadio,
+        atmosphere: nova.ambiente,
+        access: nova.acessos,
+        comment: nova.comentario,
+      })
+    );
     setAvaliacoes((atuais) =>
       atuais.some((avaliacao) => avaliacao.id === id)
         ? atuais.map((avaliacao) => (avaliacao.id === id ? registo : avaliacao))

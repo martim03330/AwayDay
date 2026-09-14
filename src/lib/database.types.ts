@@ -47,6 +47,7 @@ export type Database = {
           home_venue_id: string | null
           id: string
           name: string
+          name_article: string
           primary_color: string
           secondary_color: string
           short_name: string
@@ -59,6 +60,7 @@ export type Database = {
           home_venue_id?: string | null
           id: string
           name: string
+          name_article?: string
           primary_color: string
           secondary_color: string
           short_name: string
@@ -71,6 +73,7 @@ export type Database = {
           home_venue_id?: string | null
           id?: string
           name?: string
+          name_article?: string
           primary_color?: string
           secondary_color?: string
           short_name?: string
@@ -109,6 +112,38 @@ export type Database = {
           tier?: number | null
         }
         Relationships: []
+      }
+      device_token: {
+        Row: {
+          created_at: string
+          last_seen_at: string
+          platform: string
+          profile_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          last_seen_at?: string
+          platform: string
+          profile_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          last_seen_at?: string
+          platform?: string
+          profile_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_token_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fixture: {
         Row: {
@@ -185,23 +220,154 @@ export type Database = {
           },
         ]
       }
+      fixture_attendance: {
+        Row: {
+          created_at: string
+          fixture_id: string
+          profile_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fixture_id: string
+          profile_id: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fixture_id?: string
+          profile_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_attendance_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_attendance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place: {
+        Row: {
+          created_at: string
+          distance_m: number
+          id: string
+          kind: string
+          location: unknown
+          name: string
+          name_article: string
+          venue_id: string
+          walking_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          distance_m: number
+          id: string
+          kind: string
+          location: unknown
+          name: string
+          name_article: string
+          venue_id: string
+          walking_minutes: number
+        }
+        Update: {
+          created_at?: string
+          distance_m?: number
+          id?: string
+          kind?: string
+          location?: unknown
+          name?: string
+          name_article?: string
+          venue_id?: string
+          walking_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_visit: {
+        Row: {
+          created_at: string
+          id: string
+          place_id: string
+          profile_id: string
+          source: string
+          visited_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          place_id: string
+          profile_id: string
+          source: string
+          visited_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          place_id?: string
+          profile_id?: string
+          source?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_visit_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_visit_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile: {
         Row: {
           created_at: string
           display_name: string
           id: string
+          nudges_enabled: boolean
+          recap_enabled: boolean
           updated_at: string
         }
         Insert: {
           created_at?: string
           display_name: string
           id: string
+          nudges_enabled?: boolean
+          recap_enabled?: boolean
           updated_at?: string
         }
         Update: {
           created_at?: string
           display_name?: string
           id?: string
+          nudges_enabled?: boolean
+          recap_enabled?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -273,13 +439,17 @@ export type Database = {
           city: string
           country: string
           created_at: string
+          district: string | null
           id: string
           latitude: number | null
           location: unknown
           longitude: number | null
           name: string
+          name_article: string
           region: string
           roof_coverage: string | null
+          short_name: string | null
+          short_name_article: string | null
         }
         Insert: {
           address?: string | null
@@ -287,13 +457,17 @@ export type Database = {
           city: string
           country: string
           created_at?: string
+          district?: string | null
           id: string
           latitude?: number | null
           location?: unknown
           longitude?: number | null
           name: string
+          name_article?: string
           region: string
           roof_coverage?: string | null
+          short_name?: string | null
+          short_name_article?: string | null
         }
         Update: {
           address?: string | null
@@ -301,15 +475,67 @@ export type Database = {
           city?: string
           country?: string
           created_at?: string
+          district?: string | null
           id?: string
           latitude?: number | null
           location?: unknown
           longitude?: number | null
           name?: string
+          name_article?: string
           region?: string
           roof_coverage?: string | null
+          short_name?: string | null
+          short_name_article?: string | null
         }
         Relationships: []
+      }
+      venue_review: {
+        Row: {
+          access_score: number
+          atmosphere_score: number
+          comment: string
+          created_at: string
+          fixture_id: string
+          profile_id: string
+          stadium_score: number
+          updated_at: string
+        }
+        Insert: {
+          access_score: number
+          atmosphere_score: number
+          comment?: string
+          created_at?: string
+          fixture_id: string
+          profile_id: string
+          stadium_score: number
+          updated_at?: string
+        }
+        Update: {
+          access_score?: number
+          atmosphere_score?: number
+          comment?: string
+          created_at?: string
+          fixture_id?: string
+          profile_id?: string
+          stadium_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_review_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_review_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -322,6 +548,10 @@ export type Database = {
           club_id: string
           supporters: number
         }[]
+      }
+      register_device_token: {
+        Args: { p_platform: string; p_token: string }
+        Returns: undefined
       }
     }
     Enums: {
