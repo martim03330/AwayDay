@@ -13,6 +13,8 @@ import { Spacing } from '@/constants/theme';
 import { AccountCard } from '@/features/auth/components/AccountCard';
 import { useMyNudges } from '@/features/nudges/hooks/useMyNudges';
 import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
+import { useLatestRecap } from '@/features/recap/hooks/useLatestRecap';
+import { seasonLabel } from '@/features/recap/stats';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero, plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
@@ -67,6 +69,7 @@ export default function PerfilScreen() {
   const perfilDaConta = useMyProfile(userId);
   const novidades = useMyNudges(userId);
   const porLer = novidades.data?.filter((nudge) => nudge.readAt === null).length ?? 0;
+  const retrospetiva = useLatestRecap(userId);
 
   const clube = obterClube(clubeFavoritoId);
   const estadioDoClube = clube ? obterEstadio(clube.estadioId) : undefined;
@@ -129,6 +132,18 @@ export default function PerfilScreen() {
                     ? plural(porLer, 'dica por ler', 'dicas por ler')
                     : 'Dicas para os teus dias de jogo'
                 }
+                trailing={chevron}
+              />
+            </Card>
+          ) : null}
+          {retrospetiva.data ? (
+            <Card
+              onPress={() => router.push('/perfil/retrospetiva')}
+              accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}>
+              <ListRow
+                leading={<IconCircle name={icons.estrela} />}
+                title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
+                subtitle={retrospetiva.data.headline}
                 trailing={chevron}
               />
             </Card>

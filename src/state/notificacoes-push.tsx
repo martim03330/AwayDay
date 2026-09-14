@@ -10,7 +10,7 @@ import { useUserId } from '@/lib/session';
  * Liga as notificações push à conta. Não desenha nada.
  * - Com sessão e sugestões ligadas, regista este telemóvel (sem pedir permissão: isso só acontece
  *   quando a pessoa liga as sugestões em Notificações).
- * - Tocar numa sugestão abre as Novidades.
+ * - Tocar numa dica abre as Novidades; tocar no aviso da retrospetiva abre a retrospetiva.
  */
 export function NotificacoesPush() {
   const router = useRouter();
@@ -34,9 +34,9 @@ export function NotificacoesPush() {
   useEffect(() => {
     const subscricao = Notifications.addNotificationResponseReceivedListener((resposta) => {
       const dados: unknown = resposta.notification.request.content.data;
-      if (typeof dados === 'object' && dados !== null && Reflect.get(dados, 'type') === 'nudge') {
-        router.push('/perfil/novidades');
-      }
+      const tipo = typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'type') : null;
+      if (tipo === 'nudge') router.push('/perfil/novidades');
+      if (tipo === 'recap') router.push('/perfil/retrospetiva');
     });
     return () => subscricao.remove();
   }, [router]);

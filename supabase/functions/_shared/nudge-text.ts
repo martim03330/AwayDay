@@ -1,5 +1,7 @@
-// Nudge sentences. Templates always work and cost nothing. When the model is enabled, it also writes
-// with slots only, and its sentence is accepted only if it follows every rule below. Pure and testable.
+// Nudge sentences. Templates always work and cost nothing. Names never act as the subject of a verb,
+// so a plural name ("as Bifanas de Campanhã", "os Barreiros") cannot break the agreement. When the model
+// is enabled, it also writes with slots only, and its sentence is accepted only if it follows every rule
+// below. Pure and testable.
 
 import type { NudgeKind, Slots } from './nudge-slots.ts';
 
@@ -16,18 +18,18 @@ type Template = {
 export const NUDGE_TEMPLATES: Readonly<Record<NudgeKind, Template>> = {
   tasco_primeira_visita: {
     variants: [
-      'Vais {estadio_a} pela primeira vez: {tasco} fica a {minutos} a pé. Fica a dica.',
-      'Primeira vez {estadio_em}? {Tasco} fica a {minutos} do estádio. Chega cedo e petisca.',
-      'Estreia {estadio_em} {quando}. Antes do apito, {tasco} fica a {minutos} a pé.',
+      'Vais {estadio_a} pela primeira vez: a {minutos} a pé tens {tasco}. Fica a dica.',
+      'Primeira vez {estadio_em}? A {minutos} do estádio tens {tasco}. Chega cedo e petisca.',
+      'Estreia {estadio_em} {quando}. Antes do apito: {tasco}, a {minutos} a pé.',
     ],
-    fallback: '{Tasco} fica a {minutos} a pé do estádio.',
+    fallback: 'A {minutos} a pé do estádio tens {tasco}.',
     required: [['tasco', 'Tasco'], ['minutos']],
   },
   marco_passaporte: {
     variants: [
       '{ordinal} estádio no passaporte, com o carimbo {estadio_de}. Isto já é coleção, não é visita.',
       'Já vão {n} estádios diferentes no passaporte. Venha o próximo carimbo.',
-      '{Estadio} foi o teu {ordinal} estádio. O passaporte agradece.',
+      'Carimbo {estadio_de}: o teu {ordinal} estádio. O passaporte agradece.',
     ],
     fallback: '{ordinal} estádio no passaporte. Venha o próximo.',
     required: [['n', 'ordinal']],

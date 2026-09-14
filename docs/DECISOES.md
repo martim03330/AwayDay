@@ -2,6 +2,39 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-14 — Retrospetiva da época (fase C)
+
+**Uma retrospetiva por utilizador por época** (`season_recap`, `unique (profile_id, season_id)`). Cada pessoa
+só lê a sua e só pode marcar que a partilhou.
+
+**Números em SQL** (`season_recap_stats`), dentro das datas da época em hora de Lisboa:
+- jogos e estádios diferentes;
+- estádios novos: a primeira ida de sempre a esse estádio foi nesta época;
+- quilómetros de ida e volta em linha reta desde o estádio do clube da terra (sem clube da terra, não há km);
+- tascos diferentes e o tasco onde mais voltou (só com pelo menos duas visitas);
+- nota média (média das três notas de cada jogo, com uma casa decimal);
+- distrito mais visitado.
+
+**Quem recebe** (`season_recap_candidates`): tem a retrospetiva ligada, ainda não a tem nessa época e fez
+pelo menos um jogo ou um tasco. Sem atividade não há retrospetiva, em vez de uma a lembrar o que não fez.
+
+**Texto.** Modelos de frase com uma frase por facto que existe; nada sobre o que não foi feito. A chamada ao
+`claude-opus-5` está preparada mas desligada, com as mesmas regras das dicas (só marcadores, sem algarismos
+nem nomes escritos, título até 80 e texto até 600 caracteres, sem repreensão).
+
+**Quando.** De 15 a 20 de junho, às 09:00 UTC (10:00 em Lisboa). Correr em vários dias apanha falhas; a
+restrição única garante que ninguém recebe duas.
+
+**App.** Ecrã Retrospetiva com os números (vindos de `stats`, nunca do texto), o texto e Partilhar, que usa a
+partilha do sistema só com texto. Cartão no Perfil quando existe retrospetiva; a notificação abre o ecrã.
+
+**Concordância nas frases.** Nomes no plural davam erros como "As Bifanas de Campanhã fica". As frases das
+dicas e da retrospetiva foram reescritas para o verbo nunca depender do nome, e há um teste para isso.
+
+**Verificado.** Testes do módulo das frases; teste SQL com dados sintéticos numa transação revertida;
+teste real da função publicada (401 sem segredo, nada fora de junho, uma retrospetiva por modelo de frase,
+nada na segunda execução).
+
 ## 2026-09-14 — Dicas para dias de jogo (fase B)
 
 **Fluxo.** `pg_cron` (de hora a hora) → Edge Function `generate-nudges`, que só trabalha às 10:00 de Lisboa

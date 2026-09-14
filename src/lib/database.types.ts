@@ -543,6 +543,69 @@ export type Database = {
         }
         Relationships: []
       }
+      season_recap: {
+        Row: {
+          body: string
+          created_at: string
+          headline: string
+          id: string
+          input_tokens: number
+          model: string | null
+          output_tokens: number
+          profile_id: string
+          push_status: string
+          season_id: string
+          shared_at: string | null
+          source: string
+          stats: Json
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          headline: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          output_tokens?: number
+          profile_id: string
+          push_status?: string
+          season_id: string
+          shared_at?: string | null
+          source: string
+          stats: Json
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          headline?: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          output_tokens?: number
+          profile_id?: string
+          push_status?: string
+          season_id?: string
+          shared_at?: string | null
+          source?: string
+          stats?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_recap_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_recap_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue: {
         Row: {
           address: string | null
@@ -672,6 +735,16 @@ export type Database = {
       register_device_token: {
         Args: { p_platform: string; p_token: string }
         Returns: undefined
+      }
+      season_recap_candidates: {
+        Args: { p_season_id: string }
+        Returns: {
+          profile_id: string
+        }[]
+      }
+      season_recap_stats: {
+        Args: { p_profile_id: string; p_season_id: string }
+        Returns: Json
       }
     }
     Enums: {

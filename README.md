@@ -36,6 +36,7 @@ check-ins e um passaporte de estádios.
 - WC mais próximo do tasco.
 
 **Perfil**
+- Retrospetiva da época em junho: jogos, estádios novos, quilómetros, tasco onde mais voltaste, nota média e distrito mais visitado, com botão para partilhar.
 - Novidades: dicas para dias de jogo a partir do calendário e do que fizeste na app (no máximo uma por dia), com notificação push no iOS. Ligam-se e desligam-se em Perfil → Notificações.
 - Conta opcional: criar conta com código de confirmação por email, entrar, recuperar password, terminar sessão e apagar conta. Com conta, o clube que apoias e o clube da terra ficam guardados e vêm contigo para outro telemóvel.
 - Clube que apoias e clube da terra (a sugestão pela localização exige sempre confirmação).
@@ -95,6 +96,7 @@ supabase gen types typescript --linked > src/lib/database.types.ts
 - **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Os emails saem pelo Brevo; põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER` (login SMTP do Brevo), `SMTP_PASS` (chave SMTP, começa por `xsmtpsib-`) e `SMTP_ADMIN_EMAIL` (remetente verificado). No Brevo, desliga o bloqueio de IPs desconhecidos, porque o Supabase envia de IPs que mudam.
 - **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`.
 - **Dicas para dias de jogo:** Edge Function `generate-nudges`, chamada de hora a hora pelo `pg_cron`. Precisa do segredo `CRON_SECRET` na função (`supabase secrets set`) e dos segredos `project_url` e `cron_secret` no Vault, com o mesmo valor. As frases saem de modelos de frase; para usar o Claude, define `ANTHROPIC_API_KEY` e `AI_MONTHLY_BUDGET_USD` na função (tem custos).
+- **Retrospetiva da época:** Edge Function `generate-season-recaps`, chamada pelo `pg_cron` de 15 a 20 de junho, com o mesmo segredo das dicas. Para usar o Claude, as mesmas variáveis (tem custos).
 - As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).
 
 ## Modo demo

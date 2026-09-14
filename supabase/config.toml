@@ -453,3 +453,10 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/generate-nudges/deno.json"
 entrypoint = "./functions/generate-nudges/index.ts"
+
+[functions.generate-season-recaps]
+enabled = true
+# Called only by pg_cron with the x-cron-secret header, checked inside the function.
+verify_jwt = false
+import_map = "./functions/generate-season-recaps/deno.json"
+entrypoint = "./functions/generate-season-recaps/index.ts"
