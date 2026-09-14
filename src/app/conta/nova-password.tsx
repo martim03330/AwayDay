@@ -1,32 +1,35 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useResetPassword } from '@/features/auth/hooks/useAuthActions';
-import { closeAccountFlow } from '@/features/auth/navigation';
+import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { codeError, PASSWORD_MAX_LENGTH, passwordError } from '@/features/auth/validation';
+import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { ThemedText } from '@/ui/themed-text';
 
 export default function NovaPasswordScreen() {
-  const router = useRouter();
   const { email = '' } = useLocalSearchParams<{ email?: string }>();
   const mudar = useResetPassword();
+  const { onboardingConcluido } = useAppState();
+  const fecharConta = useCloseAccountFlow(onboardingConcluido);
   const [codigo, setCodigo] = useState('');
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
+  const aGuardar = mudar.isPending || mudar.isSuccess;
 
   function submeter() {
     setTentou(true);
-    if (codeError(codigo) || passwordError(password) || mudar.isPending) return;
+    if (codeError(codigo) || passwordError(password) || aGuardar) return;
     mudar.mutate(
       { email, code: codigo, password },
       {
         onSuccess: () => {
-          closeAccountFlow(router);
+          fecharConta();
           Alert.alert('Password mudada', 'Já estás dentro, com a password nova.');
         },
       }
@@ -64,9 +67,9 @@ export default function NovaPasswordScreen() {
         onSubmitEditing={submeter}
       />
       <Button
-        label={mudar.isPending ? 'A guardar…' : 'Guardar password'}
+        label={aGuardar ? 'A guardar…' : 'Guardar password'}
         onPress={submeter}
-        disabled={mudar.isPending}
+        disabled={aGuardar}
       />
       <ThemedText type="small" themeColor="textSecondary">
         Se não houver conta com este email, não chega código nenhum.

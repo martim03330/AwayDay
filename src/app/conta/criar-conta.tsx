@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useSignUp } from '@/features/auth/hooks/useAuthActions';
-import { closeAccountFlow } from '@/features/auth/navigation';
+import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import {
   DISPLAY_NAME_MAX_LENGTH,
   displayNameError,
@@ -13,6 +13,7 @@ import {
   PASSWORD_MAX_LENGTH,
   passwordError,
 } from '@/features/auth/validation';
+import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { LinkTexto } from '@/ui/link-texto';
@@ -21,6 +22,8 @@ import { ThemedText } from '@/ui/themed-text';
 export default function CriarContaScreen() {
   const router = useRouter();
   const criar = useSignUp();
+  const { onboardingConcluido } = useAppState();
+  const fecharConta = useCloseAccountFlow(onboardingConcluido);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,7 +62,7 @@ export default function CriarContaScreen() {
           } else if (resultado === 'needs-confirmation') {
             router.push({ pathname: '/conta/confirmar-email', params: { email: emailNormalizado } });
           } else {
-            closeAccountFlow(router);
+            fecharConta();
           }
         },
       }

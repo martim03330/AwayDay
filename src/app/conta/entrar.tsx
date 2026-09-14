@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorCode, authErrorMessage } from '@/features/auth/errors';
 import { useResendSignUpCode, useSignIn } from '@/features/auth/hooks/useAuthActions';
-import { closeAccountFlow } from '@/features/auth/navigation';
+import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { emailError, normalizeEmail } from '@/features/auth/validation';
+import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { LinkTexto } from '@/ui/link-texto';
@@ -16,6 +17,8 @@ export default function EntrarScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
   const entrar = useSignIn();
   const reenviarCodigo = useResendSignUpCode();
+  const { onboardingConcluido } = useAppState();
+  const fecharConta = useCloseAccountFlow(onboardingConcluido);
   const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
@@ -30,11 +33,11 @@ export default function EntrarScreen() {
 
   function submeter() {
     setTentou(true);
-    if (emailError(email) || !password || entrar.isPending) return;
+    if (emailError(email) || !password || entrar.isPending || entrar.isSuccess) return;
     entrar.mutate(
       { email, password },
       {
-        onSuccess: () => closeAccountFlow(router),
+        onSuccess: fecharConta,
         onError: (erro) => {
           if (authErrorCode(erro) !== 'email_not_confirmed') return;
           reenviarCodigo.mutate(email);
@@ -70,9 +73,9 @@ export default function EntrarScreen() {
         onSubmitEditing={submeter}
       />
       <Button
-        label={entrar.isPending ? 'A entrar…' : 'Entrar'}
+        label={entrar.isPending || entrar.isSuccess ? 'A entrar…' : 'Entrar'}
         onPress={submeter}
-        disabled={entrar.isPending}
+        disabled={entrar.isPending || entrar.isSuccess}
       />
       <LinkTexto
         label="Esqueceste a password?"

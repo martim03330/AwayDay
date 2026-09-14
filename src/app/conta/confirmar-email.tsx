@@ -1,30 +1,33 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useResendSignUpCode, useVerifySignUpCode } from '@/features/auth/hooks/useAuthActions';
-import { closeAccountFlow } from '@/features/auth/navigation';
+import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { codeError } from '@/features/auth/validation';
+import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 
 export default function ConfirmarEmailScreen() {
-  const router = useRouter();
   const { email = '' } = useLocalSearchParams<{ email?: string }>();
   const verificar = useVerifySignUpCode();
   const reenviar = useResendSignUpCode();
+  const { onboardingConcluido } = useAppState();
+  const fecharConta = useCloseAccountFlow(onboardingConcluido);
   const [codigo, setCodigo] = useState('');
   const [tentou, setTentou] = useState(false);
 
   const erroPedido = verificar.error ?? reenviar.error;
+  const aConfirmar = verificar.isPending || verificar.isSuccess;
 
   function submeter() {
     setTentou(true);
-    if (codeError(codigo) || verificar.isPending) return;
-    verificar.mutate({ email, code: codigo }, { onSuccess: () => closeAccountFlow(router) });
+    if (codeError(codigo) || aConfirmar) return;
+    verificar.mutate({ email, code: codigo }, { onSuccess: fecharConta });
   }
 
   return (
@@ -46,9 +49,9 @@ export default function ConfirmarEmailScreen() {
         onSubmitEditing={submeter}
       />
       <Button
-        label={verificar.isPending ? 'A confirmar…' : 'Confirmar'}
+        label={aConfirmar ? 'A confirmar…' : 'Confirmar'}
         onPress={submeter}
-        disabled={verificar.isPending}
+        disabled={aConfirmar}
       />
       <LinkTexto
         label={reenviar.isPending ? 'A enviar…' : 'Não chegou? Reenviar código'}
