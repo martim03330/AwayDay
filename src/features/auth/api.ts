@@ -1,3 +1,4 @@
+import { signUpOutcome } from '@/features/auth/outcomes';
 import { normalizeCode, normalizeEmail } from '@/features/auth/validation';
 import { supabase } from '@/lib/supabase';
 
@@ -13,8 +14,8 @@ export type ResetPasswordInput = { email: string; code: string; password: string
 
 /**
  * Creates the account. With email confirmation on, Supabase sends a 6-digit code and returns no
- * session; with it off, the user is signed in straight away. For an email that already has an
- * account, Supabase answers as if it were new on purpose, so nobody can find out who is registered.
+ * session; with it off, the user is signed in straight away. An email that already has a confirmed
+ * account comes back as 'already-registered' (see signUpOutcome).
  */
 export async function signUp({ email, password, displayName }: SignUpInput) {
   const { data, error } = await client().auth.signUp({
@@ -23,7 +24,7 @@ export async function signUp({ email, password, displayName }: SignUpInput) {
     options: { data: { display_name: displayName.trim() } },
   });
   if (error) throw error;
-  return { needsEmailConfirmation: data.session === null };
+  return signUpOutcome(data);
 }
 
 /** Confirms the email with the code; on success the user is signed in. */

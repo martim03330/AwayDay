@@ -25,24 +25,39 @@ export default function CriarContaScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
+  /** Email que já tem conta: em vez de pedir um código que nunca chega, propõe entrar. */
+  const [emailComConta, setEmailComConta] = useState<string | null>(null);
 
   const erros = {
     nome: tentou ? displayNameError(nome) : null,
     email: tentou ? emailError(email) : null,
     password: tentou ? passwordError(password) : null,
   };
+  const erroPedido = criar.error
+    ? authErrorMessage(criar.error)
+    : emailComConta
+      ? 'Já existe uma conta com este email. Entra ou recupera a password.'
+      : null;
+
+  function mudarEmail(texto: string) {
+    setEmail(texto);
+    setEmailComConta(null);
+  }
 
   function submeter() {
     setTentou(true);
     if (displayNameError(nome) || emailError(email) || passwordError(password) || criar.isPending) {
       return;
     }
+    const emailNormalizado = normalizeEmail(email);
     criar.mutate(
       { email, password, displayName: nome },
       {
-        onSuccess: ({ needsEmailConfirmation }) => {
-          if (needsEmailConfirmation) {
-            router.push({ pathname: '/conta/confirmar-email', params: { email: normalizeEmail(email) } });
+        onSuccess: (resultado) => {
+          if (resultado === 'already-registered') {
+            setEmailComConta(emailNormalizado);
+          } else if (resultado === 'needs-confirmation') {
+            router.push({ pathname: '/conta/confirmar-email', params: { email: emailNormalizado } });
           } else {
             closeAccountFlow(router);
           }
@@ -54,7 +69,24 @@ export default function CriarContaScreen() {
   return (
     <AuthForm
       intro="Com conta, os teus clubes e o teu passaporte ficam guardados."
-      error={criar.error ? authErrorMessage(criar.error) : null}>
+      error={erroPedido}>
+      {emailComConta ? (
+        <>
+          <Button
+            label="Entrar com este email"
+            variant="secondary"
+            onPress={() =>
+              router.replace({ pathname: '/conta/entrar', params: { email: emailComConta } })
+            }
+          />
+          <LinkTexto
+            label="Esqueceste a password? Recupera-a"
+            onPress={() =>
+              router.push({ pathname: '/conta/recuperar-password', params: { email: emailComConta } })
+            }
+          />
+        </>
+      ) : null}
       <Campo
         label="Como te chamamos"
         value={nome}
@@ -70,7 +102,7 @@ export default function CriarContaScreen() {
       <Campo
         label="Email"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={mudarEmail}
         erro={erros.email}
         ajuda="Serve só para entrares. Ninguém mais o vê."
         keyboardType="email-address"

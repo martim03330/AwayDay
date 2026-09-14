@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
@@ -12,9 +12,11 @@ import { LinkTexto } from '@/ui/link-texto';
 
 export default function EntrarScreen() {
   const router = useRouter();
+  // Vem preenchido quando se chega aqui a partir de "Já existe uma conta com este email".
+  const params = useLocalSearchParams<{ email?: string }>();
   const entrar = useSignIn();
   const reenviarCodigo = useResendSignUpCode();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
 

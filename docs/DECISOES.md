@@ -28,8 +28,13 @@ dependência nova). O token só é renovado com a app em primeiro plano.
 **Regras de password iguais no cliente e no servidor:** 8 a 72 caracteres, com letras a-z e algarismos
 (`minimum_password_length` e `password_requirements = "letters_digits"`).
 
-**Mensagens neutras contra enumeração de contas.** Criar conta e recuperar password respondem da mesma
-maneira quer o email exista quer não, como o Supabase faz.
+**Criar conta avisa quando o email já tem conta** (mudado no mesmo dia, depois de testar na app). Com a
+confirmação ligada, o Supabase responde a um email com conta confirmada como se fosse novo e não envia
+código, e a pessoa ficava à espera de um código que nunca chegava. Nesse caso o Supabase devolve um
+utilizador sem identidades; a app deteta isso (`signUpOutcome`) e mostra "Já existe uma conta com este
+email", com "Entrar com este email" e "Recupera a password". O custo é que passa a dar para saber se um
+email tem conta; os limites do Supabase (30 registos ou entradas por 5 minutos por IP) travam tentativas
+em massa. Recuperar password continua com resposta neutra.
 
 **`profile`** é criado por trigger quando nasce a conta; o nome vem dos metadados do registo ou fica
 "Adepto" (nunca parte do email). Só o nome é editável (privilégio por coluna). Os perfis são legíveis
