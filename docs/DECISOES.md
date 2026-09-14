@@ -11,9 +11,16 @@ criar conta, entrar ou agora não) e o Perfil tem um cartão de conta. Com conta
 Apple e Google ficam para depois (precisam de conta de programador e configuração no painel).
 
 **Confirmação por código de 6 algarismos, não por link.** O Expo Go não abre links para a app. Os modelos
-de email em português estão em `supabase/templates/`. **Pendente:** no plano grátis o Supabase só aceita
-modelos próprios com SMTP próprio (Brevo). Até o `supabase/.env` ter as credenciais, a confirmação de
-email está desligada e as contas entram logo; a app trata os dois casos (`needsEmailConfirmation`).
+de email em português estão em `supabase/templates/`. No plano grátis o Supabase só aceita modelos próprios
+com SMTP próprio, por isso os emails saem pelo **Brevo** (`smtp-relay.brevo.com`, grátis até 300 por dia,
+sem domínio próprio). As credenciais ficam em `supabase/.env`, fora do git, e o `config.toml` só as refere
+com `env()`. O remetente é uma caixa criada só para a app, não um email pessoal. No Brevo, o bloqueio de IPs
+desconhecidos tem de estar desligado: o Supabase envia de IPs que mudam, e com o bloqueio ligado o login SMTP
+é recusado (`525 5.7.1 Unauthorized IP address`). O limite do Supabase passou de 2 para 30 emails por hora.
+A app trata os dois casos, com e sem confirmação (`needsEmailConfirmation`).
+
+**Para quando houver domínio próprio:** autenticar o domínio no Brevo (SPF, DKIM e DMARC) e trocar o
+`SMTP_ADMIN_EMAIL`, para os emails não caírem no spam.
 
 **Sessão em AsyncStorage**, que já estava instalado (o guia do Expo usa `expo-sqlite`, que seria uma
 dependência nova). O token só é renovado com a app em primeiro plano.
@@ -50,7 +57,8 @@ telemóvel; depois, cada mudança feita no telemóvel vai para a conta. Ao sair,
 
 **Configuração do Auth por `supabase config push`**, depois de alinhar o `config.toml` com o projeto (o
 modelo do `supabase init` estragava definições do pooler, MFA e storage). O Twilio aparece ligado no
-projeto sem credenciais e a CLI não o consegue desligar: fica como está (desligar no painel se for preciso).
+projeto sem credenciais e a CLI não o consegue desligar. No `config.toml` fica desligado (ligado exige
+`account_sid`, e sem ele o ficheiro nem se lê); para o desligar no projeto, só pelo painel.
 
 **Verificado:** testes SQL das políticas numa transação sempre revertida; teste de ponta a ponta pela API
 com a chave publicável (registo, password fraca recusada, entrar, nome, clubes, privacidade do clube da

@@ -90,7 +90,7 @@ supabase gen types typescript --linked > src/lib/database.types.ts
 - Para mudar o esquema, cria uma migração nova (`supabase migration new <nome>`), nunca edites uma já aplicada, e
   volta a gerar os tipos.
 - **Autenticação:** as regras (password, código de 6 algarismos) estão no `config.toml` e vão com `supabase config push`. Corre antes `supabase config diff` e confirma que só muda o que queres.
-- **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER`, `SMTP_PASS` e `SMTP_ADMIN_EMAIL`.
+- **Emails (SMTP):** o Supabase só envia emails próprios com SMTP próprio. Os emails saem pelo Brevo; põe as credenciais em `supabase/.env` (fora do git): `SMTP_USER` (login SMTP do Brevo), `SMTP_PASS` (chave SMTP, começa por `xsmtpsib-`) e `SMTP_ADMIN_EMAIL` (remetente verificado). No Brevo, desliga o bloqueio de IPs desconhecidos, porque o Supabase envia de IPs que mudam.
 - **Apagar conta:** Edge Function `delete-account`, publicada com `supabase functions deploy delete-account --use-api`.
 - As decisões desta ligação estão em [`docs/DECISOES.md`](docs/DECISOES.md).
 
