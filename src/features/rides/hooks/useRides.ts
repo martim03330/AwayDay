@@ -29,8 +29,15 @@ export function useRidePeople(rideId: string | null, enabled: boolean) {
   });
 }
 
-/** Refetches every ride list and passenger list after a change. */
+/**
+ * Refetches every ride list and passenger list after a change. Queries switched off with `skipToken` (for example
+ * the people of a ride the screen has not loaded yet) are left alone: refetching them throws.
+ */
 export function useRefreshRides() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: [RIDES_KEY] });
+  return () =>
+    queryClient.invalidateQueries({
+      queryKey: [RIDES_KEY],
+      predicate: (query) => query.options.queryFn !== skipToken,
+    });
 }
