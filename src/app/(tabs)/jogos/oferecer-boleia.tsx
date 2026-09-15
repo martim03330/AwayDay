@@ -1,12 +1,16 @@
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 import MapView, { MapMarker } from 'react-native-maps';
 
+import { CompromissoBoleia } from '@/components/compromisso-boleia';
 import { Radius, Spacing } from '@/constants/theme';
+import { fetchStadiumParking } from '@/features/parking/api';
 import { getCurrentPosition } from '@/features/presence/location';
 import {
   createRide,
+  fetchReputation,
   quoteRide,
   RideRefused,
   searchPlace,
@@ -15,10 +19,12 @@ import {
   type RouteOption,
 } from '@/features/rides/api';
 import { useRefreshRides, useRideBoard } from '@/features/rides/hooks/useRides';
+import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora } from '@/lib/datas';
+import { formatarData, formatarDiaEHora } from '@/lib/datas';
 import { formatarDistancia } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
+import { CRIAR_HORAS_ANTES, podeCriarBoleia } from '@/lib/regras-boleia';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -87,6 +93,12 @@ function mensagemRecusa(erro: unknown) {
       return 'Este jogo já começou.';
     case 'already_offering':
       return 'Já ofereces boleia para este jogo.';
+    case 'suspended':
+      return 'Estás suspenso das boleias por faltas.';
+    case 'rules_not_accepted':
+      return 'Tens de aceitar as regras das boleias para publicar.';
+    case 'bad_parking':
+      return 'Esse parque não é deste estádio. Escolhe outro.';
     default:
       return 'Não deu para concluir. Tenta outra vez.';
   }
@@ -121,7 +133,20 @@ export default function OferecerBoleiaScreen() {
   const [pesquisa, setPesquisa] = useState('');
   const [resultados, setResultados] = useState<PlaceResult[] | null>(null);
   const [aProcurar, setAProcurar] = useState(false);
+  const [compromisso, setCompromisso] = useState(false);
+  const [parqueId, setParqueId] = useState<string | null>(null);
+  const agora = useNow(60 * 1000);
   const quadro = useRideBoard(jogo?.id ?? null, userId !== null);
+  const reputacao = useQuery({
+    queryKey: ['rides', 'reputation', userId],
+    queryFn: userId ? () => fetchReputation(userId) : skipToken,
+    meta: { persist: false },
+  });
+  const parques = useQuery({
+    queryKey: ['parking', estadio?.id ?? null],
+    queryFn: estadio ? () => fetchStadiumParking(estadio.id) : skipToken,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
   const minhaBoleia = quadro.data?.find((boleia) => boleia.isMine && boleia.status === 'open');
 
   // The ride starts near the driver, not near the stadium: find where they are, when they allow it.
@@ -194,6 +219,20 @@ export default function OferecerBoleiaScreen() {
     );
   }
 
+  const suspensoAte = reputacao.data?.bannedUntil ?? null;
+  if (suspensoAte) {
+    return (
+      <Screen>
+        <EmptyState
+          icon={icons.aviso}
+          title="Estás suspenso das boleias"
+          message={`Por faltas em boleias anteriores, só podes voltar a oferecer boleia a partir de ${formatarData(new Date(suspensoAte))}.`}
+          action={{ label: 'Voltar', onPress: () => router.back() }}
+        />
+      </Screen>
+    );
+  }
+
   if (!jogo || !estadio) {
     return (
       <Screen>
@@ -210,7 +249,18 @@ export default function OferecerBoleiaScreen() {
   const consumoCl = lerConsumo(consumo);
   const precoMilesimas = lerPrecoLitro(precoLitro);
   const inicio = new Date(jogo.inicio);
-  const saida = new Date(inicio.getTime() - horasAntes * HORA_MS);
+  // A ride is published at least 3 h before it leaves: only departure times still far enough ahead.
+  const horasPossiveis = HORAS_ANTES.filter((horas) =>
+    podeCriarBoleia(new Date(inicio.getTime() - horas * HORA_MS), agora)
+  );
+  const horasEfetivas = horasPossiveis.includes(horasAntes)
+    ? horasAntes
+    : (horasPossiveis[0] ?? horasAntes);
+  const saida = new Date(inicio.getTime() - horasEfetivas * HORA_MS);
+  const semTempo = horasPossiveis.length === 0;
+  const parquesDoEstadio = (parques.data?.spots ?? []).filter(
+    (parque) => parque.openOnMatchdays !== false
+  );
   const nomeLimpo = nomePartida.trim();
   const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null;
   const cotacao = cotacoes?.find((candidata) => candidata.option === escolhida) ?? null;
@@ -266,7 +316,7 @@ export default function OferecerBoleiaScreen() {
     }
   }
 
-  async function publicar() {
+  function publicar() {
     if (!partida || consumoCl === null || precoMilesimas === null || !escolhida || !jogo) return;
     if (nomeLimpo.length < 2) {
       Alert.alert(
@@ -275,6 +325,19 @@ export default function OferecerBoleiaScreen() {
       );
       return;
     }
+    if (semTempo) {
+      Alert.alert(
+        'Já não dá',
+        `As boleias têm de ser publicadas pelo menos ${CRIAR_HORAS_ANTES} h antes da saída.`
+      );
+      return;
+    }
+    // Nothing is published before the driver goes through the commitment screen.
+    setCompromisso(true);
+  }
+
+  async function criar() {
+    if (!partida || consumoCl === null || precoMilesimas === null || !escolhida || !jogo) return;
     setACarregar(true);
     try {
       const id = await createRide({
@@ -288,6 +351,8 @@ export default function OferecerBoleiaScreen() {
         seatsOffered: lugares,
         routeOption: escolhida,
         note: nota.trim(),
+        parkingSpotId: parqueId,
+        acceptedRules: true,
       });
       await atualizar();
       router.replace({ pathname: '/jogos/boleia', params: { rideId: id, jogoId: jogo.id } });
@@ -424,19 +489,25 @@ export default function OferecerBoleiaScreen() {
       <Card style={styles.grupo}>
         <ThemedText style={styles.rotulo}>Saída antes do apito</ThemedText>
         <View style={styles.chips}>
-          {HORAS_ANTES.map((horas) => (
+          {horasPossiveis.map((horas) => (
             <Chip
               key={horas}
               label={`${horas} h`}
-              selected={horas === horasAntes}
+              selected={horas === horasEfetivas}
               emCartao
               onPress={() => setHorasAntes(horas)}
             />
           ))}
         </View>
-        <ThemedText type="small" themeColor="textSecondary">
-          {`Sais ${formatarDiaEHora(saida).toLowerCase()}${jogo.horaConfirmada ? '' : ' (a hora do jogo ainda está por definir)'}.`}
-        </ThemedText>
+        {semTempo ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Já não dá para oferecer boleia para este jogo: tem de ser publicada pelo menos ${CRIAR_HORAS_ANTES} h antes da saída.`}
+          </ThemedText>
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Sais ${formatarDiaEHora(saida).toLowerCase()}${jogo.horaConfirmada ? '' : ' (a hora do jogo ainda está por definir)'}. Os pedidos fecham 2 h antes.`}
+          </ThemedText>
+        )}
         <ThemedText style={styles.rotulo}>Lugares livres</ThemedText>
         <View style={styles.chips}>
           {LUGARES.map((numero) => (
@@ -449,6 +520,43 @@ export default function OferecerBoleiaScreen() {
             />
           ))}
         </View>
+      </Card>
+
+      <SectionHeader title="Onde deixamos o carro" />
+      <Card style={styles.grupo}>
+        {parquesDoEstadio.length === 0 ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Ainda não temos parques verificados perto deste estádio. Combina com a malta no ponto de
+            encontro.
+          </ThemedText>
+        ) : (
+          <>
+            <ThemedText type="small" themeColor="textSecondary">
+              Parques verificados perto do estádio. Quem vai contigo vê onde deixam o carro.
+            </ThemedText>
+            <View style={styles.chips}>
+              <Chip
+                label="Ainda não sei"
+                selected={parqueId === null}
+                emCartao
+                onPress={() => setParqueId(null)}
+              />
+              {parquesDoEstadio.map((parque) => (
+                <Chip
+                  key={parque.id}
+                  label={
+                    parque.distanceM !== null
+                      ? `${parque.name} · ${formatarDistancia(parque.distanceM)}`
+                      : parque.name
+                  }
+                  selected={parqueId === parque.id}
+                  emCartao
+                  onPress={() => setParqueId(parque.id)}
+                />
+              ))}
+            </View>
+          </>
+        )}
       </Card>
 
       <SectionHeader title="O teu carro" />
@@ -580,13 +688,22 @@ export default function OferecerBoleiaScreen() {
             label={aCarregar ? 'A publicar…' : 'Publicar boleia'}
             icon={icons.carro}
             disabled={!escolhida || aCarregar}
-            onPress={() => void publicar()}
+            onPress={publicar}
           />
           <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
             Percursos: © contribuidores do OpenStreetMap, Valhalla (FOSSGIS)
           </ThemedText>
         </>
       ) : null}
+      <CompromissoBoleia
+        visivel={compromisso}
+        papel="condutor"
+        onFechar={() => setCompromisso(false)}
+        onAceitar={() => {
+          setCompromisso(false);
+          void criar();
+        }}
+      />
     </Screen>
   );
 }

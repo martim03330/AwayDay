@@ -39,6 +39,10 @@ export type NewRide = TripSettings & {
   seatsOffered: number;
   routeOption: RouteOption;
   note: string;
+  /** Where the car is left near the stadium (a researched car park), when chosen. */
+  parkingSpotId: string | null;
+  /** The driver went through the commitment screen. */
+  acceptedRules: true;
 };
 
 export type RideRefusal =
@@ -52,6 +56,11 @@ export type RideRefusal =
   | 'ride_closed'
   | 'own_ride'
   | 'already_offering'
+  | 'rules_not_accepted'
+  | 'suspended'
+  | 'outside_window'
+  | 'not_participant'
+  | 'bad_parking'
   | 'unknown';
 
 export class RideRefused extends Error {
@@ -75,6 +84,11 @@ const REASONS: readonly RideRefusal[] = [
   'ride_closed',
   'own_ride',
   'already_offering',
+  'rules_not_accepted',
+  'suspended',
+  'outside_window',
+  'not_participant',
+  'bad_parking',
 ];
 
 function toReason(value: unknown): RideRefusal {
@@ -182,10 +196,16 @@ export async function createRide(ride: NewRide): Promise<string> {
 export type RideSummary = {
   id: string;
   isMine: boolean;
+  driverId: string;
   driverName: string;
+  /** The driver's finished rides and faults in the last 6 months. */
+  driverCompleted: number;
+  driverFaults: number;
   originName: string;
   origin: { latitude: number; longitude: number };
   departureAt: string;
+  /** Requests close (and cancelling becomes a fault) at this time. */
+  requestsCloseAt: string;
   seatsOffered: number;
   seatsTaken: number;
   routeOption: RouteOption;
@@ -203,11 +223,22 @@ export type RideSummary = {
   note: string | null;
   status: 'open' | 'cancelled';
   /** The caller's place in this ride; `null` when they have not asked. */
-  myStatus: 'requested' | 'accepted' | 'declined' | 'left' | null;
+  myStatus: 'requested' | 'accepted' | 'declined' | 'left' | 'left_late' | 'expired' | null;
+  /** Where the car is left, when the driver chose a car park. */
+  parking: {
+    name: string;
+    location: { latitude: number; longitude: number } | null;
+    distanceM: number | null;
+  } | null;
 };
 
 function toMyStatus(value: string | null): RideSummary['myStatus'] {
-  return value === 'requested' || value === 'accepted' || value === 'declined' || value === 'left'
+  return value === 'requested' ||
+    value === 'accepted' ||
+    value === 'declined' ||
+    value === 'left' ||
+    value === 'left_late' ||
+    value === 'expired'
     ? value
     : null;
 }
@@ -219,10 +250,14 @@ export async function fetchRideBoard(fixtureId: string): Promise<RideSummary[]> 
   return data.map((row) => ({
     id: row.id,
     isMine: row.is_mine,
+    driverId: row.driver_id,
     driverName: row.driver_name,
+    driverCompleted: row.driver_completed,
+    driverFaults: row.driver_faults,
     originName: row.origin_name,
     origin: { latitude: row.origin_latitude, longitude: row.origin_longitude },
     departureAt: row.departure_at,
+    requestsCloseAt: row.requests_close_at,
     seatsOffered: row.seats_offered,
     seatsTaken: row.seats_taken,
     routeOption: isRouteOption(row.route_option) ? row.route_option : 'rapida',
@@ -238,13 +273,26 @@ export async function fetchRideBoard(fixtureId: string): Promise<RideSummary[]> 
     note: row.note,
     status: row.status === 'cancelled' ? 'cancelled' : 'open',
     myStatus: toMyStatus(row.my_status),
+    parking: row.parking_name
+      ? {
+          name: row.parking_name,
+          location:
+            row.parking_latitude !== null && row.parking_longitude !== null
+              ? { latitude: row.parking_latitude, longitude: row.parking_longitude }
+              : null,
+          distanceM: row.parking_distance_m,
+        }
+      : null,
   }));
 }
 
 export type RidePerson = {
   profileId: string;
   name: string;
-  status: 'driver' | 'requested' | 'accepted';
+  status: 'driver' | 'requested' | 'accepted' | 'left_late';
+  /** Finished rides and faults in the last 6 months. */
+  completed: number;
+  faults: number;
 };
 
 /** Who is in a ride: everyone who asked, for the driver; the car's people, for an accepted passenger. */
@@ -252,8 +300,19 @@ export async function fetchRidePeople(rideId: string): Promise<RidePerson[]> {
   const { data, error } = await client().rpc('ride_people', { p_ride_id: rideId });
   if (error) throw error;
   return data.flatMap((row) =>
-    row.status === 'driver' || row.status === 'requested' || row.status === 'accepted'
-      ? [{ profileId: row.profile_id, name: row.display_name, status: row.status }]
+    row.status === 'driver' ||
+    row.status === 'requested' ||
+    row.status === 'accepted' ||
+    row.status === 'left_late'
+      ? [
+          {
+            profileId: row.profile_id,
+            name: row.display_name,
+            status: row.status,
+            completed: row.completed,
+            faults: row.faults,
+          },
+        ]
       : []
   );
 }
@@ -263,8 +322,12 @@ function rpcError(error: { message: string }) {
   return new RideRefused(toReason(error.message));
 }
 
+/** Asks for a seat. Only after the commitment screen: the server refuses without it. */
 export async function requestSeat(rideId: string) {
-  const { error } = await client().rpc('request_ride_seat', { p_ride_id: rideId });
+  const { error } = await client().rpc('request_ride_seat', {
+    p_ride_id: rideId,
+    p_accept_rules: true,
+  });
   if (error) throw rpcError(error);
 }
 
@@ -285,4 +348,127 @@ export async function leaveRide(rideId: string) {
 export async function cancelRide(rideId: string) {
   const { error } = await client().rpc('cancel_ride', { p_ride_id: rideId });
   if (error) throw rpcError(error);
+}
+
+export type IncidentReason =
+  'doenca' | 'avaria' | 'acidente_transito' | 'trabalho_familia' | 'outro';
+
+function isReason(value: string): value is IncidentReason {
+  return (
+    value === 'doenca' ||
+    value === 'avaria' ||
+    value === 'acidente_transito' ||
+    value === 'trabalho_familia' ||
+    value === 'outro'
+  );
+}
+
+export type RideIncident = {
+  id: string;
+  profileId: string;
+  name: string;
+  reason: IncidentReason;
+  note: string | null;
+  accepts: number;
+  rejects: number;
+  /** The caller's vote; `null` when they have not voted (or it is their own). */
+  myVote: boolean | null;
+};
+
+/** Unforeseen events reported in a ride, with the votes. Only participants see them. */
+export async function fetchRideIncidents(rideId: string): Promise<RideIncident[]> {
+  const { data, error } = await client().rpc('ride_incidents', { p_ride_id: rideId });
+  if (error) throw error;
+  return data.flatMap((row) =>
+    isReason(row.reason)
+      ? [
+          {
+            id: row.id,
+            profileId: row.profile_id,
+            name: row.display_name,
+            reason: row.reason,
+            note: row.note,
+            accepts: row.accepts,
+            rejects: row.rejects,
+            myVote: row.my_vote,
+          },
+        ]
+      : []
+  );
+}
+
+export async function reportIncident(rideId: string, reason: IncidentReason, note: string) {
+  const { error } = await client().rpc('report_ride_incident', {
+    p_ride_id: rideId,
+    p_reason: reason,
+    p_note: note,
+  });
+  if (error) throw rpcError(error);
+}
+
+export async function voteIncident(incidentId: string, accept: boolean) {
+  const { error } = await client().rpc('vote_ride_incident', {
+    p_incident_id: incidentId,
+    p_accept: accept,
+  });
+  if (error) throw rpcError(error);
+}
+
+/** Who the caller said turned up, by person. */
+export async function fetchMyAttendance(rideId: string): Promise<Record<string, boolean>> {
+  const { data, error } = await client().rpc('my_ride_attendance', { p_ride_id: rideId });
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.subject_id, row.showed_up]));
+}
+
+export async function reportAttendance(rideId: string, subjectId: string, showedUp: boolean) {
+  const { error } = await client().rpc('report_ride_attendance', {
+    p_ride_id: rideId,
+    p_subject_id: subjectId,
+    p_showed_up: showedUp,
+  });
+  if (error) throw rpcError(error);
+}
+
+export type MyRide = {
+  id: string;
+  fixtureId: string;
+  originName: string;
+  departureAt: string;
+  role: 'driver' | 'passenger';
+  status: 'open' | 'cancelled';
+};
+
+/** Rides the caller drives or has a seat in, from three days ago on. */
+export async function fetchMyRides(): Promise<MyRide[]> {
+  const { data, error } = await client().rpc('my_rides');
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    fixtureId: row.fixture_id,
+    originName: row.origin_name,
+    departureAt: row.departure_at,
+    role: row.role === 'driver' ? 'driver' : 'passenger',
+    status: row.status === 'cancelled' ? 'cancelled' : 'open',
+  }));
+}
+
+export type RideReputation = {
+  completed: number;
+  faults: number;
+  excused: number;
+  /** When the suspension ends; `null` when not suspended. */
+  bannedUntil: string | null;
+};
+
+export async function fetchReputation(profileId: string): Promise<RideReputation> {
+  const { data, error } = await client().rpc('ride_reputation', { p_profile_ids: [profileId] });
+  if (error) throw error;
+  const row = data[0];
+  return {
+    completed: row?.completed ?? 0,
+    faults: row?.faults ?? 0,
+    excused: row?.excused ?? 0,
+    bannedUntil: row?.banned_until ?? null,
+  };
 }

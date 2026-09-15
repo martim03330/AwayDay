@@ -2,6 +2,56 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Boleias em que se pode confiar: prazos, compromisso, faltas e imprevistos
+
+**Porquê.** Sem pagamentos na app, não há caução. A confiança vem de regras claras, de uma reputação
+visível e de suspensões, mas sem castigar quem tem um azar real.
+
+**Prazos** (iguais no servidor e em `src/lib/regras-boleia.ts`, com testes):
+- a boleia é publicada pelo menos 3 h antes da saída (Edge Function);
+- os pedidos de lugar fecham 2 h antes da saída, e os que o condutor não respondeu caducam (tarefa
+  de 10 em 10 minutos);
+- até esse prazo, qualquer pessoa cancela sem falta.
+
+**Compromisso.** Publicar e pedir lugar passam por um ecrã de aviso grande. Nada avança sem marcar
+«Percebi: se cancelar tarde ou não aparecer, fico com uma falta e posso ser suspenso». O servidor
+recusa sem essa confirmação (`rules_not_accepted`). Há lembretes no telemóvel na véspera, 3 h antes
+(com o aviso das faltas) e 4 h depois da saída, para confirmar quem apareceu.
+
+**Depois da saída.**
+- Durante 48 h, quem foi na boleia diz quem apareceu; ninguém vê o que cada um respondeu.
+- Desde 2 h antes até 24 h depois, qualquer pessoa pode registar «Tive um imprevisto» com um motivo:
+  doença, avaria, acidente ou trânsito, trabalho ou família, ou outro.
+- Os outros votam «Aceito» ou «Não aceito» até 72 h depois.
+- O imprevisto só é recusado se houver mais votos contra do que a favor; com empate ou sem votos, é
+  aceite.
+
+**Fecho das contas** (`settle_rides`, de hora a hora, 72 h depois da saída). Cada pessoa fica com um
+resultado:
+- **Não apareceu:** a maioria das respostas diz que não apareceu.
+- **Cancelou tarde:** o passageiro saiu depois do prazo, ou o condutor cancelou depois do prazo.
+- **Falta perdoada:** as duas situações acima, com um imprevisto aceite, não contam como falta.
+- **Disputa, sem falta:** duas pessoas só se acusam uma à outra.
+- **Boleia feita:** nenhum dos casos acima.
+
+As boleias canceladas dentro do prazo, ou em que ninguém entrou, não dão resultado a ninguém.
+
+**Suspensões.** 2 faltas em 180 dias suspendem as boleias durante 30 dias; 3 faltas, durante 180
+dias. A suspensão impede publicar (Edge Function) e pedir lugar (`request_ride_seat`). A reputação
+só aparece como contagem, «14 boleias · 1 falta», na lista de boleias, no detalhe e ao aceitar
+pedidos.
+
+**Testado** numa transação desfeita:
+- falta por maioria (e o condutor sem falta com uma só acusação);
+- imprevisto aceite com empate;
+- cancelamento tarde;
+- disputa;
+- suspensão com 2 faltas;
+- recusa de pedidos depois do prazo e sem aceitar as regras.
+
+**Ainda não.** Um administrador rever quem tem mais de 3 imprevistos em 3 meses. Por agora os dados
+ficam guardados (`ride_incident`) para uma consulta à mão.
+
 ## 2026-09-16 — Estacionamento em dia de jogo
 
 **O quê.** A ficha do jogo tem a secção «Estacionamento» com:

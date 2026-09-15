@@ -23,6 +23,7 @@ import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalo
 import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatalog';
 import { PlaceCatalogSync } from '@/features/places/components/PlaceCatalogSync';
 import { restorePlaceCatalog } from '@/features/places/hooks/usePlaceCatalog';
+import { AvisosBoleias } from '@/features/rides/components/AvisosBoleias';
 import { QueryProvider } from '@/lib/query-client';
 import { AICoachProvider } from '@/state/ai-coach';
 import { AppStateProvider, useAppState } from '@/state/app-state';
@@ -115,6 +116,7 @@ export default function RootLayout() {
             <AppStateProvider>
               <PlanosJogosProvider>
                 <SonsProvider>
+                  <AvisosBoleias />
                   <AICoachProvider>
                     <LigacaoDemo />
                     <SincronizarConta />

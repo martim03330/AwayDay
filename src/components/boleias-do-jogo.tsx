@@ -24,6 +24,8 @@ const ESTADOS: Record<NonNullable<RideSummary['myStatus']>, string> = {
   accepted: 'Vais nesta boleia',
   declined: 'Pedido recusado',
   left: 'Saíste',
+  left_late: 'Saíste tarde',
+  expired: 'Pedido sem resposta',
 };
 
 function LinhaBoleia({ boleia, onPress }: { boleia: RideSummary; onPress: () => void }) {
@@ -68,6 +70,15 @@ function LinhaBoleia({ boleia, onPress }: { boleia: RideSummary; onPress: () => 
             tone="destaque"
           />
         ) : null}
+        <Etiqueta
+          icon={icons.selecionado}
+          label={
+            boleia.driverCompleted === 0 && boleia.driverFaults === 0
+              ? 'Primeira boleia'
+              : `${plural(boleia.driverCompleted, 'boleia', 'boleias')} · ${plural(boleia.driverFaults, 'falta', 'faltas')}`
+          }
+          tone={boleia.driverFaults > 0 ? 'aviso' : 'neutro'}
+        />
         {boleia.myStatus ? (
           <Etiqueta icon={icons.selecionado} label={ESTADOS[boleia.myStatus]} tone="neutro" />
         ) : null}

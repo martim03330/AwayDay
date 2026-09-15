@@ -27,6 +27,8 @@ const SEARCH_LIMIT = { bucket: 'ride-place-search', limit: 30, window: '1 hour' 
 const MAX_STRAIGHT_LINE_M = 2_500_000;
 const MAX_PEOPLE = 8;
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** A ride is published at least this long before it leaves (src/lib/regras-boleia.ts shows the same). */
+const MIN_NOTICE_MS = 3 * 60 * 60 * 1000;
 
 /** How much the router avoids tolls for each option: 1 does not care, 0 avoids them whenever it can. */
 const OPTIONS = [
@@ -338,6 +340,12 @@ Deno.serve(async (request) => {
   const originName = typeof body?.originName === 'string' ? body.originName.trim() : '';
   const departure = typeof body?.departureAt === 'string' ? Date.parse(body.departureAt) : NaN;
   const note = typeof body?.note === 'string' ? body.note.trim() : '';
+  const acceptedRules = body?.acceptedRules === true;
+  const parkingSpotId =
+    typeof body?.parkingSpotId === 'string' && /^[0-9a-f-]{36}$/.test(body.parkingSpotId)
+      ? body.parkingSpotId
+      : null;
+  if (!acceptedRules) return json(422, { error: 'rules_not_accepted' });
   if (
     !isOption(option) ||
     seats === null ||
@@ -349,8 +357,39 @@ Deno.serve(async (request) => {
     return json(400, { error: 'bad_request' });
   }
   // Leaving between now and kick-off, and not days before it.
-  if (departure <= Date.now() || departure >= kickoff || kickoff - departure > 3 * DAY_MS) {
+  if (
+    departure - Date.now() < MIN_NOTICE_MS ||
+    departure >= kickoff ||
+    kickoff - departure > 3 * DAY_MS
+  ) {
     return json(422, { error: 'bad_departure' });
+  }
+
+  // Suspended for no-shows or late cancellations.
+  const ban = await admin.rpc('ride_ban_until', { p_profile_id: caller.user.id });
+  if (ban.error) return json(500, { error: 'ban_check_failed' });
+  if (ban.data) return json(403, { error: 'suspended', until: ban.data });
+
+  // The car park, when chosen, must be one we know near this game's stadium.
+  if (parkingSpotId) {
+    const spot = await admin
+      .from('parking_spot')
+      .select('id, venue_id')
+      .eq('id', parkingSpotId)
+      .maybeSingle();
+    const venueId = await admin
+      .from('fixture')
+      .select('venue_id')
+      .eq('id', fixtureId)
+      .maybeSingle();
+    if (
+      spot.error ||
+      venueId.error ||
+      !spot.data ||
+      spot.data.venue_id !== venueId.data?.venue_id
+    ) {
+      return json(400, { error: 'bad_parking' });
+    }
   }
 
   const limited = await takeLimit(admin, caller.user.id, CREATE_LIMIT);
@@ -382,6 +421,8 @@ Deno.serve(async (request) => {
       toll_cents: cost.tollCents,
       total_cents: cost.totalCents,
       note: note || null,
+      parking_spot_id: parkingSpotId,
+      rules_accepted_at: new Date().toISOString(),
     })
     .select('id')
     .single();

@@ -1489,6 +1489,7 @@ export type Database = {
       }
       ride: {
         Row: {
+          cancelled_at: string | null
           consumption_cl_per_100km: number
           created_at: string
           departure_at: string
@@ -1502,9 +1503,12 @@ export type Database = {
           note: string | null
           origin: unknown
           origin_name: string
+          parking_spot_id: string | null
           round_trip: boolean
           route_option: string
+          rules_accepted_at: string
           seats_offered: number
+          settled_at: string | null
           status: string
           toll_cents: number
           toll_m: number
@@ -1512,6 +1516,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancelled_at?: string | null
           consumption_cl_per_100km: number
           created_at?: string
           departure_at: string
@@ -1525,9 +1530,12 @@ export type Database = {
           note?: string | null
           origin: unknown
           origin_name: string
+          parking_spot_id?: string | null
           round_trip: boolean
           route_option: string
+          rules_accepted_at?: string
           seats_offered: number
+          settled_at?: string | null
           status?: string
           toll_cents: number
           toll_m: number
@@ -1535,6 +1543,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancelled_at?: string | null
           consumption_cl_per_100km?: number
           created_at?: string
           departure_at?: string
@@ -1548,9 +1557,12 @@ export type Database = {
           note?: string | null
           origin?: unknown
           origin_name?: string
+          parking_spot_id?: string | null
           round_trip?: boolean
           route_option?: string
+          rules_accepted_at?: string
           seats_offered?: number
+          settled_at?: string | null
           status?: string
           toll_cents?: number
           toll_m?: number
@@ -1572,27 +1584,203 @@ export type Database = {
             referencedRelation: "fixture"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ride_parking_spot_id_fkey"
+            columns: ["parking_spot_id"]
+            isOneToOne: false
+            referencedRelation: "parking_spot"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_attendance: {
+        Row: {
+          created_at: string
+          reporter_id: string
+          ride_id: string
+          showed_up: boolean
+          subject_id: string
+        }
+        Insert: {
+          created_at?: string
+          reporter_id: string
+          ride_id: string
+          showed_up: boolean
+          subject_id: string
+        }
+        Update: {
+          created_at?: string
+          reporter_id?: string
+          ride_id?: string
+          showed_up?: boolean
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_attendance_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_attendance_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_attendance_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_incident: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          profile_id: string
+          reason: string
+          ride_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          profile_id: string
+          reason: string
+          ride_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          profile_id?: string
+          reason?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_incident_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_incident_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_incident_vote: {
+        Row: {
+          accept: boolean
+          created_at: string
+          incident_id: string
+          voter_id: string
+        }
+        Insert: {
+          accept: boolean
+          created_at?: string
+          incident_id: string
+          voter_id: string
+        }
+        Update: {
+          accept?: boolean
+          created_at?: string
+          incident_id?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_incident_vote_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "ride_incident"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_incident_vote_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_outcome: {
+        Row: {
+          created_at: string
+          outcome: string
+          profile_id: string
+          ride_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          outcome: string
+          profile_id: string
+          ride_id: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          outcome?: string
+          profile_id?: string
+          ride_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_outcome_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_outcome_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ride_passenger: {
         Row: {
           created_at: string
+          left_at: string | null
           profile_id: string
           ride_id: string
+          rules_accepted_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          left_at?: string | null
           profile_id: string
           ride_id: string
+          rules_accepted_at?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          left_at?: string | null
           profile_id?: string
           ride_id?: string
+          rules_accepted_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -1982,8 +2170,27 @@ export type Database = {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
       }
+      expire_ride_requests: { Args: never; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
+      my_ride_attendance: {
+        Args: { p_ride_id: string }
+        Returns: {
+          showed_up: boolean
+          subject_id: string
+        }[]
+      }
+      my_rides: {
+        Args: never
+        Returns: {
+          departure_at: string
+          fixture_id: string
+          id: string
+          origin_name: string
+          role: string
+          status: string
+        }[]
+      }
       noise_ranking: {
         Args: { p_fixture_id: string; p_limit?: number }
         Returns: {
@@ -2047,12 +2254,27 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
-      request_ride_seat: { Args: { p_ride_id: string }; Returns: undefined }
+      report_ride_attendance: {
+        Args: { p_ride_id: string; p_showed_up: boolean; p_subject_id: string }
+        Returns: undefined
+      }
+      report_ride_incident: {
+        Args: { p_note: string; p_reason: string; p_ride_id: string }
+        Returns: undefined
+      }
+      request_ride_seat: {
+        Args: { p_accept_rules: boolean; p_ride_id: string }
+        Returns: undefined
+      }
+      ride_ban_until: { Args: { p_profile_id: string }; Returns: string }
       ride_board: {
         Args: { p_fixture_id: string }
         Returns: {
           departure_at: string
           distance_m: number
+          driver_completed: number
+          driver_faults: number
+          driver_id: string
           driver_name: string
           duration_s: number
           fuel_cents: number
@@ -2063,6 +2285,11 @@ export type Database = {
           origin_latitude: number
           origin_longitude: number
           origin_name: string
+          parking_distance_m: number
+          parking_latitude: number
+          parking_longitude: number
+          parking_name: string
+          requests_close_at: string
           round_trip: boolean
           route_option: string
           seats_offered: number
@@ -2075,14 +2302,48 @@ export type Database = {
           total_cents: number
         }[]
       }
+      ride_incidents: {
+        Args: { p_ride_id: string }
+        Returns: {
+          accepts: number
+          created_at: string
+          display_name: string
+          id: string
+          my_vote: boolean
+          note: string
+          profile_id: string
+          reason: string
+          rejects: number
+        }[]
+      }
       ride_people: {
         Args: { p_ride_id: string }
         Returns: {
+          completed: number
           display_name: string
+          faults: number
           is_driver: boolean
           profile_id: string
           status: string
         }[]
+      }
+      ride_reputation: {
+        Args: { p_profile_ids: string[] }
+        Returns: {
+          banned_until: string
+          completed: number
+          excused: number
+          faults: number
+          profile_id: string
+        }[]
+      }
+      ride_requests_close_at: {
+        Args: { p_departure_at: string }
+        Returns: string
+      }
+      ride_role: {
+        Args: { p_profile_id: string; p_ride_id: string }
+        Returns: string
       }
       ride_share_cents: {
         Args: { p_people: number; p_total_cents: number }
@@ -2098,6 +2359,7 @@ export type Database = {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
       }
+      settle_rides: { Args: never; Returns: number }
       start_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: Json
@@ -2121,6 +2383,10 @@ export type Database = {
           rank_position: number
           verified_places: number
         }[]
+      }
+      vote_ride_incident: {
+        Args: { p_accept: boolean; p_incident_id: string }
+        Returns: undefined
       }
     }
     Enums: {
