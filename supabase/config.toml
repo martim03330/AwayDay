@@ -468,6 +468,13 @@ verify_jwt = false
 import_map = "./functions/walking-route/deno.json"
 entrypoint = "./functions/walking-route/index.ts"
 
+[functions.rides]
+enabled = true
+# Called by the app with a session: route quotes and new rides; checks the caller and rate limits inside.
+verify_jwt = false
+import_map = "./functions/rides/deno.json"
+entrypoint = "./functions/rides/index.ts"
+
 [functions.check-meeting-points]
 enabled = true
 # Called only by pg_cron with the x-cron-secret header, checked inside the function.

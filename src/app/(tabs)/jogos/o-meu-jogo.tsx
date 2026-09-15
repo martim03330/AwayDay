@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
+import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
 import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -228,13 +229,8 @@ export default function OMeuJogoScreen() {
         </>
       ) : null}
 
-      <SectionHeader title="Boleia e contas" />
-      <Card style={styles.grupo}>
-        <ThemedText themeColor="textSecondary">
-          Em breve: abre uma boleia para este jogo, vê o preço por pessoa baixar à medida que a
-          malta entra e divide as contas da viagem.
-        </ThemedText>
-      </Card>
+      <SectionHeader title="Boleias" />
+      <BoleiasDoJogo jogo={jogo} />
 
       <SectionHeader title="Avisos deste jogo" />
       <Card style={styles.grupo}>

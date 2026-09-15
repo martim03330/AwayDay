@@ -1419,6 +1419,132 @@ export type Database = {
           },
         ]
       }
+      ride: {
+        Row: {
+          consumption_cl_per_100km: number
+          created_at: string
+          departure_at: string
+          distance_m: number
+          driver_id: string
+          duration_s: number
+          fixture_id: string
+          fuel_cents: number
+          fuel_price_milli_per_litre: number
+          id: string
+          note: string | null
+          origin: unknown
+          origin_name: string
+          round_trip: boolean
+          route_option: string
+          seats_offered: number
+          status: string
+          toll_cents: number
+          toll_m: number
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          consumption_cl_per_100km: number
+          created_at?: string
+          departure_at: string
+          distance_m: number
+          driver_id: string
+          duration_s: number
+          fixture_id: string
+          fuel_cents: number
+          fuel_price_milli_per_litre: number
+          id?: string
+          note?: string | null
+          origin: unknown
+          origin_name: string
+          round_trip: boolean
+          route_option: string
+          seats_offered: number
+          status?: string
+          toll_cents: number
+          toll_m: number
+          total_cents: number
+          updated_at?: string
+        }
+        Update: {
+          consumption_cl_per_100km?: number
+          created_at?: string
+          departure_at?: string
+          distance_m?: number
+          driver_id?: string
+          duration_s?: number
+          fixture_id?: string
+          fuel_cents?: number
+          fuel_price_milli_per_litre?: number
+          id?: string
+          note?: string | null
+          origin?: unknown
+          origin_name?: string
+          round_trip?: boolean
+          route_option?: string
+          seats_offered?: number
+          status?: string
+          toll_cents?: number
+          toll_m?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_passenger: {
+        Row: {
+          created_at: string
+          profile_id: string
+          ride_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          ride_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          ride_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_passenger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_passenger_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season: {
         Row: {
           created_at: string
@@ -1502,6 +1628,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      toll_rate: {
+        Row: {
+          checked_on: string
+          motorway: string
+          reference_cents: number
+          reference_m: number
+          reference_trip: string
+          source_url: string
+        }
+        Insert: {
+          checked_on: string
+          motorway: string
+          reference_cents: number
+          reference_m: number
+          reference_trip: string
+          source_url: string
+        }
+        Update: {
+          checked_on?: string
+          motorway?: string
+          reference_cents?: number
+          reference_m?: number
+          reference_trip?: string
+          source_url?: string
+        }
+        Relationships: []
       }
       venue: {
         Row: {
@@ -1698,6 +1851,11 @@ export type Database = {
           recap_output_tokens: number
         }[]
       }
+      answer_ride_request: {
+        Args: { p_accept: boolean; p_profile_id: string; p_ride_id: string }
+        Returns: undefined
+      }
+      cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       club_supporter_counts: {
         Args: never
         Returns: {
@@ -1725,6 +1883,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       noise_ranking: {
         Args: { p_fixture_id: string; p_limit?: number }
         Returns: {
@@ -1788,6 +1947,47 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
+      request_ride_seat: { Args: { p_ride_id: string }; Returns: undefined }
+      ride_board: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          departure_at: string
+          distance_m: number
+          driver_name: string
+          duration_s: number
+          fuel_cents: number
+          id: string
+          is_mine: boolean
+          my_status: string
+          note: string
+          origin_latitude: number
+          origin_longitude: number
+          origin_name: string
+          round_trip: boolean
+          route_option: string
+          seats_offered: number
+          seats_taken: number
+          share_full_cents: number
+          share_now_cents: number
+          status: string
+          toll_cents: number
+          toll_m: number
+          total_cents: number
+        }[]
+      }
+      ride_people: {
+        Args: { p_ride_id: string }
+        Returns: {
+          display_name: string
+          is_driver: boolean
+          profile_id: string
+          status: string
+        }[]
+      }
+      ride_share_cents: {
+        Args: { p_people: number; p_total_cents: number }
+        Returns: number
+      }
       season_recap_candidates: {
         Args: { p_season_id: string }
         Returns: {

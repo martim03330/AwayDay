@@ -2,6 +2,71 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Fatia 3: boleias com lugares e preço por pessoa
+
+**O quê.** Em «O meu jogo», um condutor abre uma boleia para o jogo com:
+- o ponto de encontro;
+- a hora de saída;
+- os lugares livres;
+- o consumo do carro, o combustível e se é ida e volta.
+
+Antes de publicar vê até três percursos (mais rápido, equilíbrio e sem portagens), cada um com o
+tempo, os km, o combustível, as portagens e o preço por pessoa com cada lugar ocupado. Os outros
+adeptos pedem lugar e o condutor aceita ou recusa. Cada pessoa paga o total a dividir por todos no
+carro, incluindo o condutor, por isso o preço desce à medida que a boleia enche. Precisa de conta.
+
+**Percursos sem API paga.** Usamos o Valhalla do FOSSGIS (OpenStreetMap), que é gratuito e não
+precisa de chave, sempre a partir da Edge Function `rides` e com limites (30 cotações por hora e 10
+boleias por dia por conta). O parâmetro `use_tolls` dá as três opções: 1 é o mais rápido, 0,2 o
+equilíbrio e 0 sem portagens. Em Coimbra–Lisboa (2026-09-16) deu:
+- A1 inteira: 202 km, 2 h 12;
+- equilíbrio: 197 km, 2 h 53, só 49 km pagos;
+- A13 sem portagens: 219 km, 3 h 47.
+
+Quando o equilíbrio coincide com outra opção, só aparece uma vez.
+
+**Portagens: tabela nossa, como estimativa** (`toll_rate`). Tem os preços oficiais de 2026 (classe 1)
+de três viagens de referência, a dividir pelos km pagos que o Valhalla mede nessas viagens:
+- A1 Lisboa–Porto: 25,05 €, 287,8 km;
+- A2 Lisboa–Algarve: 23,80 €, 241,1 km;
+- A2/A6 Marateca–Caia: 15,40 €, 158,6 km.
+
+Dá cerca de 9,3 cêntimos por km pago, numa taxa nacional única. O router nem sempre diz em que
+autoestrada está cada troço pago (a A1 vem sem nome), por isso uma taxa por autoestrada ainda não
+seria fiável. A tabela já aceita linhas por autoestrada para quando houver dados melhores. As ex-SCUT
+sem portagens desde 2025 (A4 Transmontana, A13 Pinhal Interior, A22, A23, A24, A25 e troços da A28)
+também não estão marcadas como pagas no OpenStreetMap. A app diz sempre «estimativa».
+
+**Dinheiro.** O cálculo usa só números inteiros e está em
+`supabase/functions/_shared/ride-cost.ts`, partilhado pela Edge Function e pelos testes
+(`src/lib/boleia-custos.test.ts`, 20 casos: arredondamentos, várias peças da mesma autoestrada, taxa
+por omissão, ida e volta, divisão e escada de preços). As unidades são:
+- distância em metros;
+- consumo em centilitros por 100 km;
+- preço do combustível em milésimas de euro por litro;
+- dinheiro em cêntimos.
+
+A parte de cada pessoa é arredondada para cima ao cêntimo, para o condutor nunca pagar mais do que a
+sua parte; o que sobra, poucos cêntimos, fica com ele. A mesma regra está em SQL
+(`ride_share_cents`). O custo é sempre calculado no servidor: a app manda o ponto de partida e as
+definições do carro, nunca valores.
+
+**Preço do combustível sugerido.** É a média da DGEG na semana de 14 a 20 de setembro de 2026:
+gasolina 95 a 2,072 €/L e gasóleo a 2,152 €/L. O condutor pode mudar.
+
+**Privacidade e segurança.**
+- O ponto de partida é um sítio público escolhido pelo condutor, e a app pede para nunca ser a casa.
+- `ride` e `ride_passenger` estão fechadas à app e tudo passa por funções que verificam quem chama:
+  `ride_board`, `ride_people`, `request_ride_seat`, `answer_ride_request`, `leave_ride` e
+  `cancel_ride`.
+- Só o condutor e os passageiros aceites veem quem vai.
+- Aceitar nunca passa dos lugares oferecidos (a boleia fica bloqueada durante a verificação).
+- Cada pessoa faz no máximo 20 pedidos de lugar por dia.
+- Testado numa transação desfeita.
+
+**Ainda não.** Pagamentos e acertos entre as pessoas (fatia 4), mensagens dentro da app e boleias
+para jogos nas ilhas (não há estrada).
+
 ## 2026-09-16 — Fotos dos tascos, mapa no separador Locais e estrelas do Google
 
 **Fotos dos tascos** (`place.photo_*`, bucket público `tasco-photos`, `npm run db:fotos-tascos`). Uma
