@@ -17,7 +17,7 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
   const [profile, clubs] = await Promise.all([
     client()
       .from('profile')
-      .select('id, display_name, nudges_enabled, recap_enabled')
+      .select('id, display_name, nudges_enabled, recap_enabled, show_in_rankings')
       .eq('id', userId)
       .maybeSingle(),
     client().from('profile_club').select('relation, club_id').eq('profile_id', userId),
@@ -36,7 +36,17 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
     hometownClubId: clubFor('hometown'),
     nudgesEnabled: profile.data.nudges_enabled,
     recapEnabled: profile.data.recap_enabled,
+    showInRankings: profile.data.show_in_rankings,
   };
+}
+
+/** Shows or hides the user's name and club in the rankings. */
+export async function updateRankingVisibility(userId: string, showInRankings: boolean) {
+  const { error } = await client()
+    .from('profile')
+    .update({ show_in_rankings: showInRankings })
+    .eq('id', userId);
+  if (error) throw error;
 }
 
 /** Turns match-day suggestions or the season recap on or off. */

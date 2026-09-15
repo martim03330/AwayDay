@@ -182,8 +182,9 @@ export async function fetchMyNoiseMeasurements(userId: string): Promise<NoiseMea
 }
 
 /**
- * Records a valid reading. The server only accepts it while the fixture is being played and at least 8 minutes
- * after the previous one; otherwise this throws NoiseMeasurementRefused.
+ * Records a valid reading. The server only accepts it while the fixture is being played, with a verified check-in
+ * that day near the stadium, and at least 8 minutes after the previous one; otherwise this throws
+ * NoiseMeasurementRefused.
  */
 export async function recordNoiseMeasurement(fixtureId: string, level: number): Promise<NoiseMeasurementRecord> {
   const { data, error } = await client().rpc('record_noise_measurement', {
@@ -193,6 +194,7 @@ export async function recordNoiseMeasurement(fixtureId: string, level: number): 
   if (error) {
     if (error.message === 'noise_measurement_too_soon') throw new NoiseMeasurementRefused('too-soon');
     if (error.message === 'fixture_not_live') throw new NoiseMeasurementRefused('not-live');
+    if (error.message === 'noise_needs_checkin') throw new NoiseMeasurementRefused('needs-check-in');
     throw error;
   }
   return { id: data.id, fixtureId: data.fixture_id, level: data.level, measuredAt: data.measured_at };

@@ -12,6 +12,7 @@ import { RankingCard } from '@/components/ranking-card';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AccountCard } from '@/features/auth/components/AccountCard';
 import { useMyNudges } from '@/features/nudges/hooks/useMyNudges';
+import { useVerifiedPlacesRanking } from '@/features/presence/hooks/usePresence';
 import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
 import { useLatestRecap } from '@/features/recap/hooks/useLatestRecap';
 import { seasonLabel } from '@/features/recap/stats';
@@ -73,6 +74,7 @@ export default function PerfilScreen() {
     avaliacoes,
     visitasLocais,
     fotosMissoes,
+    fonte,
   } = useAppState();
   const { historico } = useJogosAQueFoste();
   const ultimoJogo = historico[0];
@@ -82,17 +84,26 @@ export default function PerfilScreen() {
   const novidades = useMyNudges(userId);
   const porLer = novidades.data?.filter((nudge) => nudge.readAt === null).length ?? 0;
   const retrospetiva = useLatestRecap(userId);
+  const rankingDaConta = useVerifiedPlacesRanking(fonte === 'conta' ? userId : null);
 
   const clube = obterClube(clubeFavoritoId);
   const estadioDoClube = clube ? obterEstadio(clube.estadioId) : undefined;
   const clubeDaTerra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
   const tascosVerificados = contarTascosVerificados(visitasLocais);
-  const ranking = montarRanking(rankingMock, {
-    id: ID_UTILIZADOR,
-    nome: 'Tu',
-    clubeId: clubeFavoritoId,
-    tascosVerificados,
-  });
+  const eu = { id: ID_UTILIZADOR, nome: 'Tu', clubeId: clubeFavoritoId, tascosVerificados };
+  // Demo: sample fans. With an account: the server's ranking (others only if they opted in). Without: just you.
+  const ranking =
+    fonte === 'demo'
+      ? montarRanking(rankingMock, eu)
+      : fonte === 'conta' && rankingDaConta.data
+        ? rankingDaConta.data.map((linha) => ({
+            id: linha.isMe ? ID_UTILIZADOR : `adepto-${linha.position}`,
+            nome: linha.isMe ? 'Tu' : linha.displayName,
+            clubeId: (linha.isMe ? clubeFavoritoId : linha.clubId) ?? '',
+            tascosVerificados: linha.value,
+            posicao: linha.position,
+          }))
+        : montarRanking([], eu);
   const nome = perfilDaConta.data?.displayName ?? 'Adepto AwayDay';
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
   const mostrarNovidades = Boolean(userId);
@@ -298,6 +309,13 @@ export default function PerfilScreen() {
 
         <SectionHeader title="Ranking de tascos verificados" />
         <RankingCard ranking={ranking} />
+        {fonte === 'demo' ? null : (
+          <ThemedText type="small" themeColor="textMuted">
+            {fonte === 'conta'
+              ? 'Só aparecem adeptos que aceitaram mostrar o nome. Escolhe nas Definições.'
+              : 'Cria conta para entrares no ranking com os outros adeptos.'}
+          </ThemedText>
+        )}
 
         <SectionHeader title="Definições" />
         <Card style={styles.grupo}>

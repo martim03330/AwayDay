@@ -143,6 +143,9 @@ export default function LocalScreen() {
     notasTascos,
     darNotaTasco,
     modoDemo,
+    fonte,
+    clubesAqui: clubesDoLocal,
+    checkInEmCurso,
   } = useAppState();
   const { tocarCheckIn } = useSons();
 
@@ -178,17 +181,38 @@ export default function LocalScreen() {
   const distancia = `${formatarDistancia(local.distanciaMetros)} · ${local.minutosAPe} min a pé`;
   const proximoJogo = proximoJogoNoEstadio(jogos, local.estadioId, agora);
   const lembrete = lembretePelaMeteorologia(proximoJogo?.meteorologia, local.pratos);
-  const clubesPresentes = local.clubesAqui
+  const clubesPresentes = clubesDoLocal(local)
     .map((clubeId) => obterClube(clubeId))
     .filter((clube): clube is Clube => Boolean(clube));
   const clubesAqui = clubesPresentes.map((clube) => clube.nomeCurto);
   const pessoas = pessoasAqui(local);
+  const aConfirmar = checkInEmCurso === local.id;
 
   function alternar() {
-    if (!local) return;
-    // O som só toca ao fazer check-in, nunca ao anular.
-    if (!checkedIn) tocarCheckIn();
-    alternarCheckIn(local.id);
+    if (!local || checkInEmCurso) return;
+    const fazer = !checkedIn;
+    void alternarCheckIn(local.id).then((feito) => {
+      // O som só toca ao fazer check-in, nunca ao anular.
+      if (feito && fazer) tocarCheckIn();
+    });
+  }
+
+  function textoCheckIn() {
+    if (checkedIn) {
+      if (fonte === 'telemovel')
+        return 'Check-in feito, guardado no teu telemóvel. Toca outra vez para anular.';
+      return pessoas === null
+        ? 'Check-in feito. Toca outra vez para anular.'
+        : `Já contas para a claque: tu e mais ${plural(Math.max(pessoas - 1, 0), 'adepto', 'adeptos')}. Toca outra vez para anular.`;
+    }
+    if (aConfirmar) return 'A confirmar que estás no tasco…';
+    if (fonte === 'conta') {
+      return 'Diz à malta que já cá estás. A localização só serve para confirmar que estás aqui e não fica guardada.';
+    }
+    if (fonte === 'telemovel') {
+      return 'Sem conta, o check-in fica só no teu telemóvel e não conta para a claque. A localização não sai daqui.';
+    }
+    return 'Diz à malta que já cá estás.';
   }
 
   const cabecalho = (
@@ -255,15 +279,14 @@ export default function LocalScreen() {
         <BotaoAlternar
           ativo={checkedIn}
           onPress={alternar}
-          label={{ ativo: 'Check-in feito', inativo: 'Fazer check-in' }}
+          label={{
+            ativo: aConfirmar ? 'A anular…' : 'Check-in feito',
+            inativo: aConfirmar ? 'A confirmar…' : 'Fazer check-in',
+          }}
           icon={{ ativo: icons.checkInFeito, inativo: icons.checkIn }}
         />
         <ThemedText themeColor="textSecondary" style={styles.centro}>
-          {checkedIn
-            ? local.pessoasAqui === null
-              ? 'Check-in feito. Toca outra vez para anular.'
-              : `Já contas para a claque: tu e mais ${plural(local.pessoasAqui, 'adepto', 'adeptos')}. Toca outra vez para anular.`
-            : 'Diz à malta que já cá estás.'}
+          {textoCheckIn()}
         </ThemedText>
 
         {visita ? (

@@ -84,6 +84,68 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          place_id: string
+          place_visit_id: string | null
+          profile_id: string
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          place_id: string
+          place_visit_id?: string | null
+          profile_id: string
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          place_id?: string
+          place_visit_id?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_place_visit_id_fkey"
+            columns: ["place_visit_id"]
+            isOneToOne: false
+            referencedRelation: "place_visit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club: {
         Row: {
           abbreviation: string
@@ -805,6 +867,48 @@ export type Database = {
           },
         ]
       }
+      place_pulse: {
+        Row: {
+          clubs: Json
+          others: number
+          people: number
+          place_id: string
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          clubs?: Json
+          others?: number
+          people: number
+          place_id: string
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          clubs?: Json
+          others?: number
+          people?: number
+          place_id?: string
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_pulse_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: true
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_pulse_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_rating: {
         Row: {
           beer_score: number | null
@@ -938,6 +1042,7 @@ export type Database = {
           id: string
           nudges_enabled: boolean
           recap_enabled: boolean
+          show_in_rankings: boolean
           updated_at: string
         }
         Insert: {
@@ -946,6 +1051,7 @@ export type Database = {
           id: string
           nudges_enabled?: boolean
           recap_enabled?: boolean
+          show_in_rankings?: boolean
           updated_at?: string
         }
         Update: {
@@ -954,6 +1060,7 @@ export type Database = {
           id?: string
           nudges_enabled?: boolean
           recap_enabled?: boolean
+          show_in_rankings?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1252,6 +1359,20 @@ export type Database = {
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
+      end_checkin: {
+        Args: { p_place_id: string; p_profile_id: string }
+        Returns: boolean
+      }
+      noise_ranking: {
+        Args: { p_fixture_id: string; p_limit?: number }
+        Returns: {
+          club_id: string
+          display_name: string
+          is_me: boolean
+          level: number
+          rank_position: number
+        }[]
+      }
       place_scores: {
         Args: { p_venue_id: string }
         Returns: {
@@ -1299,6 +1420,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      refresh_place_pulse: { Args: never; Returns: number }
       register_device_token: {
         Args: { p_platform: string; p_token: string }
         Returns: undefined
@@ -1314,6 +1436,10 @@ export type Database = {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
       }
+      start_checkin: {
+        Args: { p_place_id: string; p_profile_id: string }
+        Returns: Json
+      }
       suggest_place_candidates: { Args: never; Returns: number }
       take_rate_limit: {
         Args: {
@@ -1323,6 +1449,16 @@ export type Database = {
           p_window: string
         }
         Returns: boolean
+      }
+      verified_places_ranking: {
+        Args: { p_limit?: number }
+        Returns: {
+          club_id: string
+          display_name: string
+          is_me: boolean
+          rank_position: number
+          verified_places: number
+        }[]
       }
     }
     Enums: {

@@ -32,7 +32,7 @@ export type NoiseMeasurementRecord = {
 };
 
 /** Why the server refused a noise reading. */
-export type NoiseMeasurementRefusal = 'too-soon' | 'not-live';
+export type NoiseMeasurementRefusal = 'too-soon' | 'not-live' | 'needs-check-in';
 
 export class NoiseMeasurementRefused extends Error {
   readonly reason: NoiseMeasurementRefusal;

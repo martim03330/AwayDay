@@ -232,7 +232,8 @@ export function melhorMedicao(jogoId: string, medicoes: readonly MedicaoBarulho[
 export type EntradaRankingBarulho = {
   id: string;
   nome: string;
-  clubeId: string;
+  /** `null` when the fan has not picked a club. */
+  clubeId: string | null;
   nivel: number;
   eTu: boolean;
   posicao: number;

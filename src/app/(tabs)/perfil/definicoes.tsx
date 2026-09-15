@@ -1,8 +1,13 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, Switch } from 'react-native';
+import { Alert, Linking, StyleSheet, Switch } from 'react-native';
 
 import { ModoDemoCard } from '@/components/modo-demo-card';
+import { rankingsKey } from '@/features/presence/hooks/usePresence';
+import { useLocationPermission } from '@/features/presence/location';
+import { useMyProfile, useUpdateRankingVisibility } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
+import { useUserId } from '@/lib/session';
 import { TIPOS_NOTIFICACAO } from '@/mocks/notificacoes';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
 import { Card } from '@/ui/card';
@@ -11,7 +16,7 @@ import { LinhaGrupo } from '@/ui/linha-grupo';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 
-function textoPermissao(estado: EstadoPermissao) {
+function textoPermissaoDemo(estado: EstadoPermissao) {
   if (estado === 'aceite') return 'Aceite na introdução (simulado)';
   if (estado === 'recusada') return 'Continuas sem (simulado)';
   return 'Ainda não decidiste';
@@ -20,6 +25,7 @@ function textoPermissao(estado: EstadoPermissao) {
 export default function DefinicoesScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const queryClient = useQueryClient();
   // The profile header opens this screen with `demo=1` after five quick taps.
   const { demo } = useLocalSearchParams<{ demo?: string }>();
   const {
@@ -30,9 +36,36 @@ export default function DefinicoesScreen() {
     reverIntroducao,
     modoDemo,
     alternarModoDemo,
+    fonte,
   } = useAppState();
+  const [permissaoLocalizacao] = useLocationPermission();
+  const userId = useUserId();
+  const perfil = useMyProfile(fonte === 'conta' ? userId : null);
+  const visibilidade = useUpdateRankingVisibility(userId);
+  const aparecerNosRankings =
+    visibilidade.isPending && visibilidade.variables !== undefined
+      ? visibilidade.variables
+      : (perfil.data?.showInRankings ?? false);
   const notificacoesLigadas = TIPOS_NOTIFICACAO.filter((tipo) => notificacoes[tipo]).length;
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
+  const localizacaoBloqueada =
+    permissaoLocalizacao !== null &&
+    !permissaoLocalizacao.granted &&
+    !permissaoLocalizacao.canAskAgain;
+
+  function textoLocalizacao() {
+    if (modoDemo) return textoPermissaoDemo(permissoes.localizacao);
+    if (permissaoLocalizacao?.granted) return 'Autorizada. Só a usamos para confirmar o check-in.';
+    if (localizacaoBloqueada) return 'Recusada. Toca para abrir as definições do telemóvel.';
+    return 'Pedimos quando fizeres check-in num tasco.';
+  }
+
+  function mudarVisibilidade(mostrar: boolean) {
+    visibilidade.mutate(mostrar, {
+      onSuccess: () => void queryClient.invalidateQueries({ queryKey: rankingsKey(userId) }),
+      onError: () => Alert.alert('Não deu para guardar', 'Verifica a ligação e tenta outra vez.'),
+    });
+  }
 
   return (
     <Screen>
@@ -64,9 +97,13 @@ export default function DefinicoesScreen() {
         />
         <LinhaGrupo
           separador
+          onPress={
+            !modoDemo && localizacaoBloqueada ? () => void Linking.openSettings() : undefined
+          }
           leading={<Icon name={icons.localizacao} size={20} color={theme.accentInk} />}
           title="Localização"
-          subtitle={textoPermissao(permissoes.localizacao)}
+          subtitle={textoLocalizacao()}
+          trailing={!modoDemo && localizacaoBloqueada ? chevron : undefined}
         />
         <LinhaGrupo
           onPress={reverIntroducao}
@@ -77,6 +114,30 @@ export default function DefinicoesScreen() {
           trailing={chevron}
         />
       </Card>
+
+      {fonte === 'conta' ? (
+        <>
+          <SectionHeader title="Rankings" />
+          <Card style={styles.grupo}>
+            <LinhaGrupo
+              leading={<Icon name={icons.ranking} size={20} color={theme.accentInk} />}
+              title="Aparecer nos rankings"
+              subtitle="Com o teu nome e clube, nos tascos verificados e no barulhómetro. Nunca mostramos onde estás."
+              trailing={
+                <Switch
+                  value={aparecerNosRankings}
+                  onValueChange={mudarVisibilidade}
+                  disabled={!perfil.data}
+                  trackColor={{ true: theme.accent, false: theme.border }}
+                  thumbColor={theme.accentText}
+                  ios_backgroundColor={theme.border}
+                  accessibilityLabel="Aparecer nos rankings"
+                />
+              }
+            />
+          </Card>
+        </>
+      ) : null}
 
       {demo === '1' || modoDemo ? (
         <>

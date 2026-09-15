@@ -9,6 +9,8 @@ export type MyProfile = {
   /** Match-day suggestions and the season recap: the user decides. */
   nudgesEnabled: boolean;
   recapEnabled: boolean;
+  /** Name and club in the rankings. Off unless the user turns it on. */
+  showInRankings: boolean;
 };
 
 export type MessagePreferences = Partial<Pick<MyProfile, 'nudgesEnabled' | 'recapEnabled'>>;

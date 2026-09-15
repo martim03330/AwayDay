@@ -3,6 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import { corDoNivel, MedidorBarulho, MostradorBarulho, tintaDoNivel } from '@/components/medidor-barulho';
 import { Spacing } from '@/constants/theme';
+import { useNoiseRanking } from '@/features/presence/hooks/usePresence';
 import { useTheme } from '@/hooks/use-theme';
 import {
   degrauDoNivel,
@@ -11,6 +12,7 @@ import {
   melhorMedicao,
   rankingBarulho,
 } from '@/lib/barulhometro';
+import { useUserId } from '@/lib/session';
 import { medicoesAdeptosMock } from '@/mocks/barulhometro';
 import { obterClube } from '@/mocks/clubes';
 import { obterLocal } from '@/mocks/locais';
@@ -103,7 +105,9 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
   const router = useRouter();
   const theme = useTheme();
   const { desvioMs } = useRelogio();
-  const { visitasLocais, medicoesBarulho, registarMedicao, clubeFavoritoId } = useAppState();
+  const { visitasLocais, medicoesBarulho, registarMedicao, clubeFavoritoId, fonte } = useAppState();
+  const userId = useUserId();
+  const rankingDaConta = useNoiseRanking(fonte === 'conta' ? userId : null, jogo.id);
 
   const estado = estadoDoBarulhometro({
     jogo,
@@ -113,7 +117,21 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
     medicoes: medicoesBarulho,
   });
   const melhor = melhorMedicao(jogo.id, medicoesBarulho);
-  const ranking = rankingBarulho(jogo, medicoesAdeptosMock, { clubeId: clubeFavoritoId, nivel: melhor });
+  // Demo: sample fans. With an account: the server's ranking (others only if they opted in). Without: just you.
+  const ranking =
+    fonte === 'conta' && rankingDaConta.data
+      ? rankingDaConta.data.map((linha) => ({
+          id: linha.isMe ? 'tu' : `adepto-${linha.position}`,
+          nome: linha.isMe ? 'Tu' : linha.displayName,
+          clubeId: linha.isMe ? clubeFavoritoId : linha.clubId,
+          nivel: linha.value,
+          eTu: linha.isMe,
+          posicao: linha.position,
+        }))
+      : rankingBarulho(jogo, fonte === 'demo' ? medicoesAdeptosMock : [], {
+          clubeId: clubeFavoritoId,
+          nivel: melhor,
+        });
 
   function registar(nivel: number) {
     void registarMedicao({
@@ -126,6 +144,11 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
         Alert.alert('Ainda é cedo', 'Só dá para medir outra vez uns minutos depois da última medição.');
       } else if (resultado === 'fora-do-jogo') {
         Alert.alert('O jogo não está a decorrer', 'Só contam medições feitas durante o jogo.');
+      } else if (resultado === 'sem-check-in') {
+        Alert.alert(
+          'Falta o check-in',
+          'Para a medição contar, faz check-in hoje num tasco perto do estádio.'
+        );
       } else if (resultado === 'erro') {
         Alert.alert('Não deu para guardar', 'Verifica a ligação e tenta outra vez.');
       }
@@ -181,9 +204,14 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
           <EscalaBarulho nivelAtual={melhor} />
 
           <SectionHeader title="Os mais barulhentos neste jogo" />
-          <Card style={styles.ranking}>
+          {ranking.length === 0 ? (
+            <ThemedText themeColor="textSecondary">
+              Ainda ninguém mediu o barulho neste jogo.
+            </ThemedText>
+          ) : null}
+          <Card style={[styles.ranking, ranking.length === 0 && styles.escondido]}>
             {ranking.map((entrada) => {
-              const clube = obterClube(entrada.clubeId);
+              const clube = entrada.clubeId ? obterClube(entrada.clubeId) : undefined;
               return (
                 <View
                   key={entrada.id}
@@ -221,8 +249,13 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
       ) : null}
 
       <ThemedText themeColor="textMuted" style={[styles.privacidade, styles.centro]}>
-        O som não é gravado nem guardado: só fica o número. A escala é relativa, não são decibéis. Os
-        outros adeptos são fictícios na demo.
+        {`O som não é gravado nem guardado: só fica o número. A escala é relativa, não são decibéis. ${
+          fonte === 'demo'
+            ? 'Os outros adeptos são fictícios na demo.'
+            : fonte === 'conta'
+              ? 'No ranking só aparecem adeptos que aceitaram mostrar o nome.'
+              : 'Cria conta para entrares no ranking com os outros adeptos.'
+        }`}
       </ThemedText>
     </>
   );
@@ -232,6 +265,9 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
     paddingVertical: 20,
+  },
+  escondido: {
+    display: 'none',
   },
   resultado: {
     alignItems: 'center',

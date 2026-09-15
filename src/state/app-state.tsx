@@ -8,7 +8,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 
 import {
   deletePlaceVisit,
@@ -59,13 +59,25 @@ import {
 } from '@/features/profile/hooks/useNotificationPreferences';
 import { setDemoFixturesActive } from '@/features/fixtures/store';
 import { setDemoPlacesActive } from '@/features/places/store';
+import { checkInAtPlace, checkOutOfPlace } from '@/features/presence/api';
+import { usePlacePulse, useRefreshPresence } from '@/features/presence/hooks/usePresence';
+import { getCurrentPosition } from '@/features/presence/location';
+import {
+  CHECK_IN_MAX_ACCURACY_M,
+  CHECK_IN_MAX_DISTANCE_M,
+  CheckInRefused,
+  type DevicePosition,
+} from '@/features/presence/types';
 import type { NotificationKind, NotificationPreferences } from '@/features/profile/types';
 import { useNow } from '@/hooks/use-now';
+import { distanciaEmLinhaRetaKm } from '@/lib/distancia';
+import { formatarDistancia } from '@/lib/formatos';
 import { checkInsDoDia } from '@/lib/presenca';
 import { currentUserId, useUserId } from '@/lib/session';
 import { fotosIniciais } from '@/mocks/album';
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
 import { obterJogo } from '@/mocks/jogos';
+import { obterLocal } from '@/mocks/locais';
 import { preferenciasIniciais, type TipoNotificacao } from '@/mocks/notificacoes';
 import type {
   AvaliacaoVisita,
@@ -124,7 +136,7 @@ export type Permissoes = { localizacao: EstadoPermissao; notificacoes: EstadoPer
 /** Where the activity on screen comes from. */
 export type FonteDados = 'demo' | 'telemovel' | 'conta';
 
-export type ResultadoMedicao = 'registada' | 'cedo-demais' | 'fora-do-jogo' | 'erro';
+export type ResultadoMedicao = 'registada' | 'cedo-demais' | 'fora-do-jogo' | 'sem-check-in' | 'erro';
 
 /** Your beer (cervejómetro) and food (petiscómetro) scores for a tasco. */
 export type NotasCervejaPetisco = { cerveja: Nota | null; petisco: Nota | null };
@@ -152,9 +164,17 @@ type AppState = {
   confirmarClubeDaTerra: (clubeId: string) => void;
   estadiosVisitados: readonly string[];
   fezCheckIn: (localId: string) => boolean;
-  alternarCheckIn: (localId: string) => void;
-  /** `null` while live presence is not available. */
+  /**
+   * Checks in or undoes it; resolves `true` when it went through. Outside demo mode it reads the location once to
+   * confirm you are at the tasco (with an account the server confirms it, and you count for the crowd).
+   */
+  alternarCheckIn: (localId: string) => Promise<boolean>;
+  /** The tasco whose check-in is being confirmed right now, if any. */
+  checkInEmCurso: string | null;
+  /** `null` while nobody is counted here (live counts only show from 5 people). */
   pessoasAqui: (local: Local) => number | null;
+  /** Clubs with fans at this tasco right now (outside demo mode, only clubs with at least 5 people). */
+  clubesAqui: (local: Local) => readonly string[];
   visitasLocais: readonly VisitaLocal[];
   /** A visita verificada, se existir; senão a visita por verificar. */
   visitaDoLocal: (localId: string) => VisitaLocal | undefined;
@@ -291,6 +311,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [votosDemo, setVotosDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
   /** Photos taken with an account that are still uploading (or samples, which never upload). */
   const [fotosPendentes, setFotosPendentes] = useState<readonly FotoMissao[]>([]);
+  const [checkInEmCurso, setCheckInEmCurso] = useState<string | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -334,6 +355,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const refreshActivity = useRefreshMyActivity(userId);
   const refreshPhotos = useRefreshMissionPhotos(userId);
   const refreshNotifications = useRefreshNotificationPreferences(userId);
+  // Live counts are public aggregates: also read without an account, never in demo mode.
+  const pulse = usePlacePulse(!modoDemo);
+  const refreshPresence = useRefreshPresence(userId);
 
   const daConta: AtividadeLocal = {
     avaliacoes: (reviews.data ?? []).flatMap((review) => {
@@ -371,6 +395,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const atividade = fonte === 'demo' ? demo : fonte === 'conta' ? daConta : atividadeLocal;
   const agora = useNow();
   const checkInsHoje = checkInsDoDia(agora, atividade.visitas);
+  const pulsoPorLocal = new Map((pulse.data ?? []).map((linha) => [linha.placeId, linha]));
 
   /** Hora da app (a simulada, no modo demo), para os registos baterem certo com o relógio do dia de jogo. */
   function agoraDaApp() {
@@ -396,31 +421,52 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setPreferencias(mudar);
   }
 
-  function alternarCheckIn(localId: string) {
-    const atual = checkInsHoje.find((visita) => visita.localId === localId);
-
-    if (fonte === 'conta') {
-      // A check-in that is still being saved has no id on the account yet.
-      if (atual?.id.startsWith('pendente-')) return;
-      const chave = myPlaceVisitsKey(userId);
-      if (atual) {
-        queryClient.setQueryData<PlaceVisitRecord[]>(chave, (lista) =>
-          lista?.filter((visita) => visita.id !== atual.id)
-        );
-        naConta(() => deletePlaceVisit(atual.id), refreshActivity);
-      } else {
-        const temporaria: PlaceVisitRecord = {
-          id: `pendente-${localId}-${Date.now()}`,
-          placeId: localId,
-          visitedAt: new Date().toISOString(),
-          source: 'check-in',
-        };
-        queryClient.setQueryData<PlaceVisitRecord[]>(chave, (lista) => [temporaria, ...(lista ?? [])]);
-        naConta((id) => recordPlaceVisit(id, localId, 'check-in'), refreshActivity);
-      }
-      return;
+  /** Reads the position once, explaining what to do when it cannot. */
+  async function posicaoParaCheckIn(): Promise<DevicePosition | null> {
+    const resultado = await getCurrentPosition();
+    if (resultado.status === 'ok') return resultado.position;
+    if (resultado.status === 'denied') {
+      Alert.alert(
+        'Precisamos da localização',
+        'O check-in só conta quando estás mesmo no tasco. A localização serve só para confirmar isso e não fica guardada.',
+        resultado.canAskAgain
+          ? [{ text: 'OK' }]
+          : [
+              { text: 'Agora não', style: 'cancel' },
+              { text: 'Abrir definições', onPress: () => void Linking.openSettings() },
+            ]
+      );
+    } else {
+      Alert.alert(
+        'Não conseguimos saber onde estás',
+        'Liga a localização do telemóvel e tenta outra vez.'
+      );
     }
+    return null;
+  }
 
+  function avisarCheckInRecusado(recusa: CheckInRefused) {
+    if (recusa.reason === 'too-far') {
+      Alert.alert(
+        'Ainda não estás no tasco',
+        recusa.distanceM === null
+          ? `O check-in só conta a menos de ${CHECK_IN_MAX_DISTANCE_M} m do tasco.`
+          : `Estás a cerca de ${formatarDistancia(recusa.distanceM)}. O check-in só conta a menos de ${CHECK_IN_MAX_DISTANCE_M} m do tasco.`
+      );
+    } else if (recusa.reason === 'low-accuracy') {
+      Alert.alert(
+        'A localização está pouco precisa',
+        'Espera uns segundos, de preferência cá fora, e tenta outra vez.'
+      );
+    } else if (recusa.reason === 'rate-limited') {
+      Alert.alert('Muitos check-ins seguidos', 'Espera um bocadinho e tenta outra vez.');
+    } else {
+      Alert.alert('Tasco não encontrado', 'Este tasco já não está na lista.');
+    }
+  }
+
+  /** Demo, and undoing a check-in kept on the phone. */
+  function alternarCheckInLocal(localId: string, atual: VisitaLocal | undefined) {
     mudarAtividade((anterior) => ({
       ...anterior,
       visitas: atual
@@ -436,6 +482,78 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             ...anterior.visitas,
           ],
     }));
+  }
+
+  /** With an account the server checks the distance, creates the verified visit and counts you for the crowd. */
+  async function alternarCheckInNaConta(localId: string, atual: VisitaLocal | undefined) {
+    const chave = myPlaceVisitsKey(userId);
+    try {
+      if (atual) {
+        // After 3 hours presence has already ended: then only the visit is left to remove.
+        const terminou = await checkOutOfPlace(localId);
+        if (!terminou) await deletePlaceVisit(atual.id);
+        queryClient.setQueryData<PlaceVisitRecord[]>(chave, (lista) =>
+          lista?.filter((visita) => visita.id !== atual.id)
+        );
+        return true;
+      }
+      const posicao = await posicaoParaCheckIn();
+      if (!posicao) return false;
+      const registo = await checkInAtPlace(localId, posicao);
+      queryClient.setQueryData<PlaceVisitRecord[]>(chave, (lista) => [
+        { id: registo.visitId, placeId: localId, visitedAt: registo.visitedAt, source: 'check-in' },
+        ...(lista ?? []).filter((visita) => visita.id !== registo.visitId),
+      ]);
+      return true;
+    } catch (erro: unknown) {
+      if (erro instanceof CheckInRefused) avisarCheckInRecusado(erro);
+      else avisarQueNaoGuardou(erro);
+      return false;
+    } finally {
+      void refreshActivity();
+      void refreshPresence();
+    }
+  }
+
+  /** Without an account the phone checks the distance itself: the visit counts for you, not for the crowd. */
+  async function alternarCheckInNoTelemovel(localId: string, atual: VisitaLocal | undefined) {
+    const local = obterLocal(localId);
+    if (atual || !local) {
+      if (atual) alternarCheckInLocal(localId, atual);
+      return Boolean(atual);
+    }
+    const posicao = await posicaoParaCheckIn();
+    if (!posicao) return false;
+    if (posicao.accuracy === null || posicao.accuracy > CHECK_IN_MAX_ACCURACY_M) {
+      avisarCheckInRecusado(new CheckInRefused('low-accuracy'));
+      return false;
+    }
+    const metros = distanciaEmLinhaRetaKm(posicao, local.coordenadas) * 1000;
+    if (metros > CHECK_IN_MAX_DISTANCE_M) {
+      avisarCheckInRecusado(new CheckInRefused('too-far', Math.round(metros / 50) * 50));
+      return false;
+    }
+    alternarCheckInLocal(localId, undefined);
+    return true;
+  }
+
+  async function alternarCheckIn(localId: string): Promise<boolean> {
+    if (checkInEmCurso) return false;
+    const atual = checkInsHoje.find((visita) => visita.localId === localId);
+
+    if (fonte === 'demo') {
+      alternarCheckInLocal(localId, atual);
+      return true;
+    }
+
+    setCheckInEmCurso(localId);
+    try {
+      return fonte === 'conta'
+        ? await alternarCheckInNaConta(localId, atual)
+        : await alternarCheckInNoTelemovel(localId, atual);
+    } finally {
+      setCheckInEmCurso(null);
+    }
   }
 
   function registarVisitaManual(localId: string) {
@@ -556,11 +674,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (fonte === 'conta') {
       try {
         await recordNoiseMeasurement(medicao.jogoId, medicao.nivel);
-        await refreshActivity();
+        await Promise.all([refreshActivity(), refreshPresence()]);
         return 'registada';
       } catch (erro: unknown) {
         if (erro instanceof NoiseMeasurementRefused) {
-          return erro.reason === 'too-soon' ? 'cedo-demais' : 'fora-do-jogo';
+          if (erro.reason === 'too-soon') return 'cedo-demais';
+          return erro.reason === 'needs-check-in' ? 'sem-check-in' : 'fora-do-jogo';
         }
         if (__DEV__) console.warn('Não foi possível guardar a medição:', erro);
         return 'erro';
@@ -648,7 +767,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           comment: avaliacao.comentario,
         })
       ),
-      ...local.visitas.map((visita) => () => recordPlaceVisit(id, visita.localId, visita.origem, visita.data)),
+      // Only the server verifies visits: the ones checked on the phone come in as "por verificar".
+      ...local.visitas.map((visita) => () => recordPlaceVisit(id, visita.localId, 'manual', visita.data)),
       ...Object.entries(local.notasTascos).map(([localId, nota]) => () => savePlaceRating(id, localId, nota)),
       // After the overall scores: beer and food scores only update an existing rating.
       ...Object.entries(local.notasCervejaPetisco).map(([localId, notas]) => () =>
@@ -799,10 +919,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     ],
     fezCheckIn: (localId) => checkInsHoje.some((visita) => visita.localId === localId),
     alternarCheckIn,
-    pessoasAqui: (local) =>
-      local.pessoasAqui === null
+    checkInEmCurso,
+    pessoasAqui: (local) => {
+      if (fonte !== 'demo') return pulsoPorLocal.get(local.id)?.people ?? null;
+      return local.pessoasAqui === null
         ? null
-        : local.pessoasAqui + (checkInsHoje.some((visita) => visita.localId === local.id) ? 1 : 0),
+        : local.pessoasAqui + (checkInsHoje.some((visita) => visita.localId === local.id) ? 1 : 0);
+    },
+    clubesAqui: (local) =>
+      fonte === 'demo'
+        ? local.clubesAqui
+        : (pulsoPorLocal.get(local.id)?.clubs.map((clube) => clube.clubId) ?? []),
     visitasLocais: atividade.visitas,
     visitaDoLocal: (localId) =>
       atividade.visitas.find((visita) => visita.localId === localId && visita.verificado) ??

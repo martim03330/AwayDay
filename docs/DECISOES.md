@@ -2,6 +2,55 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Sair do modo demo, fatia 3: presença real no dia de jogo
+
+**Check-in com localização.** A app lê a posição uma vez e envia-a à Edge Function `check-in`, que
+mede a distância ao tasco e esquece a posição. Não é guardada nem registada em logs, e à app só se
+devolve a distância arredondada a 50 m. Conta até 150 m, com precisão de 100 m ou melhor. Nova
+dependência: `expo-location` (aprovada a 2026-09-15). Só pede a localização com a app aberta.
+
+**Tabela `checkin`.**
+- Não tem políticas RLS e não guarda coordenadas.
+- Só a alteram `start_checkin` e `end_checkin`, e só a lê `refresh_place_pulse`. Estas três funções
+  só podem ser executadas pelo service role (a Edge Function) e pelo pg_cron, e a app nunca lhes
+  chega. É assim que se cumpre a regra «código que lê `checkin` corre em Edge Function».
+- A presença dura 3 horas. Um check-in noutro tasco termina o anterior.
+- O pg_cron recalcula os agregados de 5 em 5 minutos e apaga os check-ins com mais de 48 horas.
+
+**Agregados (`place_pulse`).**
+- São recalculados a cada check-in e publicados só com 5 ou mais pessoas.
+- A repartição por clube tem o mesmo mínimo; o resto vai para `others`.
+- Qualquer pessoa os lê, mesmo sem conta. No modo demo continuam os números de exemplo.
+
+**Visitas verificadas.** Só o servidor as cria (`place_visit.source = 'check-in'`); a app só pode
+criar visitas `manual`. Isto também protege as fotos das missões e o barulhómetro, que dependem do
+check-in. Anular um check-in termina a presença e apaga a visita que ele criou.
+
+**Sem conta.** O telemóvel verifica a distância com as mesmas regras. A visita conta para o teu
+passaporte, mas não para a claque nem para os rankings. Ao juntar a atividade à conta, estas visitas
+entram «por verificar».
+
+**Rankings.**
+- `verified_places_ranking` (tascos diferentes com visita verificada) e `noise_ranking` (melhor
+  medição por jogo) são calculados no servidor e só estão disponíveis com conta.
+- Outras pessoas só aparecem se ligarem «Aparecer nos rankings» (`profile.show_in_rankings`,
+  desligado por omissão). Vês sempre a tua linha.
+
+**Barulhómetro.** O servidor passou a exigir um check-in verificado nesse dia (em Lisboa) num tasco
+perto do estádio do jogo.
+
+**Testes.** Os testes de RLS e das regras (menos de 5 não publica, clubes com menos de 5 vão para
+outros, expiração, anular, rankings só com quem aceitou, barulho sem check-in) correram numa
+transação revertida antes de aplicar a migração.
+
+### Limitações conhecidas
+
+- O `app.json` ainda não tem o texto da permissão de localização para iOS. O Expo Go funciona, mas
+  uma build precisa dele (pedir antes de alterar o `app.json`).
+- A localização pode ser falsificada com apps de GPS falso. Nesta fase, aceita-se.
+- O ranking de tascos conta visitas de sempre, não por época.
+- O check-in não exige jogo nesse dia.
+
 ## 2026-09-15 — Jogos reais da Liga Portugal (football-data.org)
 
 **O quê.** A Edge Function `sync-fixtures` vai buscar os jogos da Liga Portugal 2026-27 ao

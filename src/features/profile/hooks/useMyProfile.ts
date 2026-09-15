@@ -1,6 +1,11 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { fetchMyProfile, saveProfileClub, updateMessagePreferences } from '@/features/profile/api';
+import {
+  fetchMyProfile,
+  saveProfileClub,
+  updateMessagePreferences,
+  updateRankingVisibility,
+} from '@/features/profile/api';
 import type { ClubRelation, MessagePreferences } from '@/features/profile/types';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
@@ -23,6 +28,17 @@ export function useSaveProfileClub(userId: string | null) {
       return saveProfileClub(userId, relation, clubId);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [PROFILE_KEY, userId] }),
+  });
+}
+
+export function useUpdateRankingVisibility(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (showInRankings: boolean) => {
+      if (!userId) throw new Error('Not signed in.');
+      return updateRankingVisibility(userId, showInRankings);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: [PROFILE_KEY, userId] }),
   });
 }
 
