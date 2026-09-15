@@ -59,7 +59,9 @@ function toDish(row: DishRow): Prato {
     recomendacoes: row.recommendations_count,
     moeda: row.currency,
     fonte:
-      row.source_url && row.checked_on ? { url: row.source_url, verificadoEm: row.checked_on } : null,
+      row.source_url && row.checked_on
+        ? { url: row.source_url, verificadoEm: row.checked_on }
+        : null,
   };
 }
 

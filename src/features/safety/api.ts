@@ -16,7 +16,13 @@ function toSources(value: unknown): SafetyNote['sources'] {
   return value.flatMap((item) => {
     const source = asRecord(item);
     return source && typeof source.title === 'string' && typeof source.url === 'string'
-      ? [{ title: source.title, url: source.url, date: typeof source.date === 'string' ? source.date : null }]
+      ? [
+          {
+            title: source.title,
+            url: source.url,
+            date: typeof source.date === 'string' ? source.date : null,
+          },
+        ]
       : [];
   });
 }

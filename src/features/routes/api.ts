@@ -54,7 +54,11 @@ export async function fetchWalkingRoute(from: RoutePoint, to: RoutePoint): Promi
       ? [{ instruction: step.instruction, distanceM: step.distance_m }]
       : [];
   });
-  if (typeof answer?.distance_m !== 'number' || typeof answer.duration_s !== 'number' || path.length < 2) {
+  if (
+    typeof answer?.distance_m !== 'number' ||
+    typeof answer.duration_s !== 'number' ||
+    path.length < 2
+  ) {
     throw new RouteRefused('no-route');
   }
   return {

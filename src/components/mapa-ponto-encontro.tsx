@@ -59,7 +59,10 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
         return;
       }
       if (posicao.status === 'unavailable') {
-        Alert.alert('Não conseguimos saber onde estás', 'Liga a localização do telemóvel e tenta outra vez.');
+        Alert.alert(
+          'Não conseguimos saber onde estás',
+          'Liga a localização do telemóvel e tenta outra vez.'
+        );
         return;
       }
       const nova = await fetchWalkingRoute(posicao.position, coordenadas);
@@ -93,13 +96,21 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
         <MapView
           ref={mapa}
           style={StyleSheet.absoluteFill}
-          initialRegion={{ ...coordenadas, latitudeDelta: DELTA_INICIAL, longitudeDelta: DELTA_INICIAL }}
+          initialRegion={{
+            ...coordenadas,
+            latitudeDelta: DELTA_INICIAL,
+            longitudeDelta: DELTA_INICIAL,
+          }}
           showsUserLocation={rota !== null}
           pitchEnabled={false}
           rotateEnabled={false}
           toolbarEnabled={false}
           accessibilityLabel={`Mapa com o ponto de encontro: ${nome}`}>
-          <MapMarker coordinate={coordenadas} title={nome} description="Ponto de encontro oficial" zIndex={10}>
+          <MapMarker
+            coordinate={coordenadas}
+            title={nome}
+            description="Ponto de encontro oficial"
+            zIndex={10}>
             <View style={[styles.pino, { backgroundColor: theme.highlight }]}>
               <Icon name={icons.pontoEncontro} size={20} color={theme.highlightText} />
             </View>
@@ -109,12 +120,17 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
               <Icon name={icons.estadio} size={18} color={theme.accentText} />
             </View>
           </MapMarker>
-          {rota ? <Polyline coordinates={rota.path} strokeColor={theme.accent} strokeWidth={5} /> : null}
+          {rota ? (
+            <Polyline coordinates={rota.path} strokeColor={theme.accent} strokeWidth={5} />
+          ) : null}
         </MapView>
       </View>
 
       {rota ? (
-        <View style={styles.resumo} accessible accessibilityLabel={`${formatarDistancia(rota.distanceM)}, cerca de ${minutos(rota.durationS)} minutos a pé`}>
+        <View
+          style={styles.resumo}
+          accessible
+          accessibilityLabel={`${formatarDistancia(rota.distanceM)}, cerca de ${minutos(rota.durationS)} minutos a pé`}>
           <Icon name={icons.aPe} size={20} color={theme.accentInk} />
           <ThemedText style={styles.resumoTexto}>
             {`${formatarDistancia(rota.distanceM)} · cerca de ${minutos(rota.durationS)} min a pé`}
@@ -123,7 +139,13 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
       ) : null}
 
       <Button
-        label={aCalcular ? 'A calcular o caminho…' : rota ? 'Recalcular a partir daqui' : 'Levar-me até lá'}
+        label={
+          aCalcular
+            ? 'A calcular o caminho…'
+            : rota
+              ? 'Recalcular a partir daqui'
+              : 'Levar-me até lá'
+        }
         icon={icons.rota}
         variant={rota ? 'secondary' : 'primary'}
         disabled={aCalcular}
@@ -133,7 +155,9 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
       {passos.length > 0 ? (
         <View style={styles.passos}>
           {passos.map((passo, indice) => (
-            <View key={`${indice}-${passo.instruction}`} style={[styles.passo, { borderTopColor: theme.backgroundSelected }]}>
+            <View
+              key={`${indice}-${passo.instruction}`}
+              style={[styles.passo, { borderTopColor: theme.backgroundSelected }]}>
               <ThemedText type="smallBold" style={styles.numero}>
                 {indice + 1}
               </ThemedText>
