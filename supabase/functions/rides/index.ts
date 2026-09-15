@@ -341,6 +341,8 @@ Deno.serve(async (request) => {
   const departure = typeof body?.departureAt === 'string' ? Date.parse(body.departureAt) : NaN;
   const note = typeof body?.note === 'string' ? body.note.trim() : '';
   const acceptedRules = body?.acceptedRules === true;
+  // Seats home for fans who missed their transport: only on rides that come back anyway.
+  const acceptsReturnRequests = body?.acceptsReturnRequests === true && roundTrip;
   const parkingSpotId =
     typeof body?.parkingSpotId === 'string' && /^[0-9a-f-]{36}$/.test(body.parkingSpotId)
       ? body.parkingSpotId
@@ -422,6 +424,7 @@ Deno.serve(async (request) => {
       total_cents: cost.totalCents,
       note: note || null,
       parking_spot_id: parkingSpotId,
+      accepts_return_requests: acceptsReturnRequests,
       rules_accepted_at: new Date().toISOString(),
     })
     .select('id')

@@ -2,6 +2,36 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Boleia de volta para quem perdeu o transporte
+
+**O problema.** Acaba o jogo e há sempre quem fique sem maneira de voltar: perdeu o autocarro, o
+comboio já foi, o grupo desfez-se. Quem tem carro está ali ao lado e vai fazer o caminho de volta
+vazio.
+
+**Como funciona.** Ao publicar a boleia, quem vai e volta pode ligar «Aceito pedidos de boleia de
+volta». Depois do jogo, no ecrã do jogo aparece «Perdi o transporte: pedir boleia de volta», com os
+carros que voltam e ainda têm lugar. O condutor recebe notificação e decide na hora.
+
+**Janela** (`ride_return_opens_at` / `ride_return_closes_at`, e `src/lib/regras-volta.ts` para a UI):
+dos 60 minutos depois do apito (por volta do intervalo) até 3 h 30 depois (cerca de uma hora depois
+do fim). O condutor tem mais uma hora para responder. Antes disso ninguém perdeu nada; depois disso
+os carros já foram.
+
+**Preço: a parte de metade do custo.** Metade da viagem é a volta. Essa metade é dividida por todos
+os que voltam no carro — condutor, quem já tinha lugar e quem entra agora — e arredondada ao cêntimo
+para cima, como todas as divisões da app. Quantos mais voltarem, menos cada um paga. A conta é feita
+no servidor (`ride_return_share_cents`), com testes em SQL e em `returnShareCents`.
+
+**Privacidade.** O adepto manda a posição só para se calcular a distância ao carro; o que fica
+guardado é apenas essa distância, arredondada a 100 m, e é isso que o condutor vê. A posição não é
+guardada nem mostrada a ninguém, como em toda a app.
+
+**As mesmas regras de fiabilidade.** Quem está suspenso não pede. Um lugar na volta conta como
+qualquer outro lugar: `ride_role` e `settle_rides` passam a incluí-lo, por isso faltar depois de
+aceite é uma falta, com direito a imprevisto e a votação como nas outras boleias.
+
+**Limite.** Só boleias de ida e volta: pedir lugar de volta a quem não volta não faz sentido.
+
 ## 2026-09-16 — Hora de saída pela distância, parques com estimativa de lugar e partilha da boleia
 
 **Hora de saída sugerida, não fixa** (`src/lib/hora-saida.ts`). As opções fixas («3 h antes») não

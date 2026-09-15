@@ -1,12 +1,21 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { fetchRideBoard, fetchRidePeople } from '@/features/rides/api';
+import {
+  fetchReturnBoard,
+  fetchReturnPeople,
+  fetchRideBoard,
+  fetchRidePeople,
+} from '@/features/rides/api';
 
 const RIDES_KEY = 'rides';
 const STALE_MS = 30 * 1000;
 
 export const rideBoardKey = (fixtureId: string | null) => [RIDES_KEY, 'board', fixtureId] as const;
 export const ridePeopleKey = (rideId: string | null) => [RIDES_KEY, 'people', rideId] as const;
+export const returnBoardKey = (fixtureId: string | null) =>
+  [RIDES_KEY, 'return', fixtureId] as const;
+export const returnPeopleKey = (rideId: string | null) =>
+  [RIDES_KEY, 'return-people', rideId] as const;
 
 /** The rides for a game; idle without an account (the board needs one). */
 export function useRideBoard(fixtureId: string | null, signedIn: boolean) {
@@ -25,6 +34,31 @@ export function useRidePeople(rideId: string | null, enabled: boolean) {
     queryKey: ridePeopleKey(rideId),
     queryFn: rideId && enabled ? () => fetchRidePeople(rideId) : skipToken,
     staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/**
+ * Cars going home from this game with room left. Only while the window is open (the server returns nothing outside
+ * it), and it refreshes fast: whoever is asking is standing outside the stadium.
+ */
+export function useReturnBoard(fixtureId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: returnBoardKey(fixtureId),
+    queryFn: fixtureId && enabled ? () => fetchReturnBoard(fixtureId) : skipToken,
+    staleTime: 15 * 1000,
+    refetchInterval: 30 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** Who asked this ride for a seat home. The driver has minutes to answer, so this refreshes fast too. */
+export function useReturnPeople(rideId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: returnPeopleKey(rideId),
+    queryFn: rideId && enabled ? () => fetchReturnPeople(rideId) : skipToken,
+    staleTime: 15 * 1000,
+    refetchInterval: 30 * 1000,
     meta: { persist: false },
   });
 }

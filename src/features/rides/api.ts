@@ -1,5 +1,6 @@
 import { corpoDoErroDaFuncao } from '@/lib/erros-funcoes';
 import { supabase } from '@/lib/supabase';
+import type { Coordenadas } from '@/mocks/tipos';
 
 // Rides to a game (slice 3). Costs always come from the server: the `rides` Edge Function quotes and creates rides,
 // and the database functions keep seats and prices consistent.
@@ -43,6 +44,8 @@ export type NewRide = TripSettings & {
   parkingSpotId: string | null;
   /** The driver went through the commitment screen. */
   acceptedRules: true;
+  /** The driver takes requests for a seat home from fans who missed their transport (round trips only). */
+  acceptsReturnRequests: boolean;
 };
 
 export type RideRefusal =
@@ -61,6 +64,11 @@ export type RideRefusal =
   | 'outside_window'
   | 'not_participant'
   | 'bad_parking'
+  | 'no_return_seats'
+  | 'already_going'
+  | 'too_late'
+  | 'request_not_found'
+  | 'bad_location'
   | 'unknown';
 
 export class RideRefused extends Error {
@@ -474,7 +482,15 @@ export async function fetchReputation(profileId: string): Promise<RideReputation
 }
 
 export type RideAlert = {
-  kind: 'pedidos' | 'aceite' | 'recusado' | 'sem_resposta' | 'cancelada';
+  kind:
+    | 'pedidos'
+    | 'aceite'
+    | 'recusado'
+    | 'sem_resposta'
+    | 'cancelada'
+    | 'volta_pedidos'
+    | 'volta_aceite'
+    | 'volta_recusado';
   rideId: string;
   fixtureId: string;
   /** Requests waiting for an answer (only for 'pedidos'). */
@@ -490,7 +506,10 @@ function isAlertKind(value: string): value is RideAlert['kind'] {
     value === 'aceite' ||
     value === 'recusado' ||
     value === 'sem_resposta' ||
-    value === 'cancelada'
+    value === 'cancelada' ||
+    value === 'volta_pedidos' ||
+    value === 'volta_aceite' ||
+    value === 'volta_recusado'
   );
 }
 
@@ -509,6 +528,111 @@ export async function fetchMyRideAlerts(): Promise<RideAlert[]> {
             requestsCloseAt: row.requests_close_at,
             departureAt: row.departure_at,
             driverName: row.driver_name,
+          },
+        ]
+      : []
+  );
+}
+
+// Boleia de volta: a seat home for a fan who missed their transport. The server decides everything — the window,
+// the price (their share of half the trip) and how far they are from the car. Their position is never stored.
+
+export type ReturnRide = {
+  rideId: string;
+  driverName: string;
+  driverCompleted: number;
+  driverFaults: number;
+  seatsLeft: number;
+  /** What this fan would pay: their share of the way home, in cents. */
+  priceCents: number;
+  parkingName: string | null;
+  parking: { latitude: number; longitude: number } | null;
+  originName: string;
+  myStatus: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled' | null;
+};
+
+export type ReturnPerson = {
+  profileId: string;
+  displayName: string;
+  status: 'pending' | 'accepted';
+  /** How far they are from the car, rounded to 100 m. Never a position. */
+  distanceToCarM: number;
+  shareCents: number;
+  completed: number;
+  faults: number;
+};
+
+function toReturnStatus(value: string | null): ReturnRide['myStatus'] {
+  return value === 'pending' ||
+    value === 'accepted' ||
+    value === 'declined' ||
+    value === 'expired' ||
+    value === 'cancelled'
+    ? value
+    : null;
+}
+
+/** Rides going home from this game with room left, while the window is open. Empty outside it. */
+export async function fetchReturnBoard(fixtureId: string): Promise<ReturnRide[]> {
+  const { data, error } = await client().rpc('ride_return_board', { p_fixture_id: fixtureId });
+  if (error) throw error;
+  return data.map((row) => ({
+    rideId: row.ride_id,
+    driverName: row.driver_name,
+    driverCompleted: row.driver_completed,
+    driverFaults: row.driver_faults,
+    seatsLeft: row.seats_left,
+    priceCents: row.price_cents,
+    parkingName: row.parking_name,
+    parking:
+      row.parking_latitude !== null && row.parking_longitude !== null
+        ? { latitude: row.parking_latitude, longitude: row.parking_longitude }
+        : null,
+    originName: row.origin_name,
+    myStatus: toReturnStatus(row.my_status),
+  }));
+}
+
+/** Asks for a seat home. The position only serves to tell the driver how far away the fan is. */
+export async function requestReturnSeat(rideId: string, here: Coordenadas) {
+  const { error } = await client().rpc('request_return_seat', {
+    p_ride_id: rideId,
+    p_latitude: here.latitude,
+    p_longitude: here.longitude,
+    p_accept_rules: true,
+  });
+  if (error) throw rpcError(error);
+}
+
+export async function answerReturnRequest(rideId: string, profileId: string, accept: boolean) {
+  const { error } = await client().rpc('answer_return_request', {
+    p_ride_id: rideId,
+    p_profile_id: profileId,
+    p_accept: accept,
+  });
+  if (error) throw rpcError(error);
+}
+
+export async function cancelReturnRequest(rideId: string) {
+  const { error } = await client().rpc('cancel_return_request', { p_ride_id: rideId });
+  if (error) throw rpcError(error);
+}
+
+/** Who asked for a seat home in this ride: the driver sees everyone, a fan sees only themselves. */
+export async function fetchReturnPeople(rideId: string): Promise<ReturnPerson[]> {
+  const { data, error } = await client().rpc('ride_return_people', { p_ride_id: rideId });
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.status === 'pending' || row.status === 'accepted'
+      ? [
+          {
+            profileId: row.profile_id,
+            displayName: row.display_name,
+            status: row.status,
+            distanceToCarM: row.distance_to_car_m,
+            shareCents: row.share_cents,
+            completed: row.completed,
+            faults: row.faults,
           },
         ]
       : []

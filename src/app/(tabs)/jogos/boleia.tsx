@@ -9,6 +9,7 @@ import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
 import { Spacing } from '@/constants/theme';
 import {
   answerRequest,
+  answerReturnRequest,
   cancelRide,
   fetchMyAttendance,
   fetchReputation,
@@ -23,7 +24,12 @@ import {
   type RidePerson,
   type RideSummary,
 } from '@/features/rides/api';
-import { useRefreshRides, useRideBoard, useRidePeople } from '@/features/rides/hooks/useRides';
+import {
+  useRefreshRides,
+  useRideBoard,
+  useRidePeople,
+  useReturnPeople,
+} from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDiaEHora, formatarHora } from '@/lib/datas';
@@ -31,6 +37,7 @@ import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regras-boleia';
+import { podeResponderVolta } from '@/lib/regras-volta';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
@@ -153,6 +160,11 @@ export default function BoleiaScreen() {
     ? boleia.isMine || boleia.myStatus === 'accepted' || boleia.myStatus === 'left_late'
     : false;
   const pessoas = useRidePeople(rideId ?? null, participante);
+  // Fans left at the stadium asking for a seat home: only the driver answers, and only while the window is open.
+  const pedidosDaVolta = useReturnPeople(
+    rideId ?? null,
+    boleia?.isMine === true && jogo !== undefined && podeResponderVolta(jogo.inicio, agora)
+  );
   const imprevistos = useQuery({
     queryKey: ['rides', 'incidents', rideId],
     queryFn: rideId && participante ? () => fetchRideIncidents(rideId) : skipToken,
@@ -229,6 +241,9 @@ export default function BoleiaScreen() {
   const lista = pessoas.data ?? [];
   const pedidos = lista.filter((pessoa) => pessoa.status === 'requested');
   const noCarro = lista.filter((pessoa) => pessoa.status !== 'requested');
+  const volta = pedidosDaVolta.data ?? [];
+  const pedidosVolta = volta.filter((pessoa) => pessoa.status === 'pending');
+  const naVolta = volta.filter((pessoa) => pessoa.status === 'accepted');
   const outros = noCarro.filter((pessoa) => pessoa.profileId !== userId);
   const cancelada = boleia.status === 'cancelled';
   const suspensoAte = minhaReputacao.data?.bannedUntil ?? null;
@@ -473,6 +488,68 @@ export default function BoleiaScreen() {
             </Card>
           ))}
         </>
+      ) : null}
+
+      {boleia.isMine && pedidosVolta.length > 0 ? (
+        <>
+          <SectionHeader
+            title="Pedidos de boleia de volta"
+            trailing={String(pedidosVolta.length)}
+          />
+          <ThemedText type="small" themeColor="textSecondary">
+            Ficaram sem transporte depois do jogo. Só sabes a que distância estão do carro: a
+            localização exata não é mostrada a ninguém.
+          </ThemedText>
+          {pedidosVolta.map((pedido) => (
+            <Card key={pedido.profileId} style={styles.grupo}>
+              <ThemedText style={styles.destaque}>{pedido.displayName}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {`A ${formatarDistancia(pedido.distanceToCarM)} do carro · ${plural(pedido.completed, 'boleia', 'boleias')} · ${plural(pedido.faults, 'falta', 'faltas')}`}
+              </ThemedText>
+              <Etiqueta
+                icon={icons.preco}
+                label={`Paga ${formatarCentimos(pedido.shareCents)} da volta`}
+                tone="destaque"
+              />
+              <View style={styles.botoes}>
+                <View style={styles.flex}>
+                  <Button
+                    label="Aceitar"
+                    icon={icons.selecionado}
+                    disabled={aTratar || livres - naVolta.length <= 0}
+                    onPress={() =>
+                      void executar(() => answerReturnRequest(boleia.id, pedido.profileId, true))
+                    }
+                  />
+                </View>
+                <View style={styles.flex}>
+                  <Button
+                    label="Recusar"
+                    variant="secondary"
+                    icon={icons.fechar}
+                    disabled={aTratar}
+                    onPress={() =>
+                      void executar(() => answerReturnRequest(boleia.id, pedido.profileId, false))
+                    }
+                  />
+                </View>
+              </View>
+            </Card>
+          ))}
+        </>
+      ) : null}
+
+      {boleia.isMine && naVolta.length > 0 ? (
+        <Card style={styles.grupo}>
+          <ThemedText style={styles.destaque}>
+            {plural(naVolta.length, 'pessoa vai contigo na volta', 'pessoas vão contigo na volta')}
+          </ThemedText>
+          {naVolta.map((pessoa) => (
+            <ThemedText key={pessoa.profileId} type="small" themeColor="textSecondary">
+              {`${pessoa.displayName} · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${formatarCentimos(pessoa.shareCents)}`}
+            </ThemedText>
+          ))}
+        </Card>
       ) : null}
 
       {participante && (imprevistos.data ?? []).length > 0 ? (

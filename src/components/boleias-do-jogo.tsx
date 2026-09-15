@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
+import { podePedirVolta } from '@/lib/regras-volta';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import type { Jogo } from '@/mocks/tipos';
@@ -91,7 +92,10 @@ function LinhaBoleia({ boleia, onPress }: { boleia: RideSummary; onPress: () => 
 export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
   const router = useRouter();
   const userId = useUserId();
+  const agora = useNow(60 * 1000);
   const quadro = useRideBoard(jogo.id, userId !== null);
+  // From about half time until an hour after the end: the time when someone finds out they have no way home.
+  const voltaAberta = podePedirVolta(jogo.inicio, agora);
 
   if (!userId) {
     return (
@@ -143,6 +147,15 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
           ))}
         </View>
       )}
+      {voltaAberta ? (
+        <Button
+          label="Perdi o transporte: pedir boleia de volta"
+          icon={icons.carro}
+          onPress={() =>
+            router.push({ pathname: '/jogos/boleia-de-volta', params: { jogoId: jogo.id } })
+          }
+        />
+      ) : null}
       {jaOfereco ? (
         <ThemedText type="small" themeColor="textMuted">
           Já ofereces boleia para este jogo. Para mudar alguma coisa, cancela-a e abre outra.

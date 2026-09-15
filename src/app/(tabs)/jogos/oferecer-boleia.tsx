@@ -135,6 +135,8 @@ export default function OferecerBoleiaScreen() {
   const [combustivel, setCombustivel] = useState<(typeof COMBUSTIVEIS)[number]['id']>('gasolina');
   const [precoLitro, setPrecoLitro] = useState('2,072');
   const [idaEVolta, setIdaEVolta] = useState(true);
+  // A seat home for whoever is left at the stadium: only makes sense when the driver is coming back anyway.
+  const [aceitaVolta, setAceitaVolta] = useState(true);
   const [nota, setNota] = useState('');
   const [cotacoes, setCotacoes] = useState<RideQuote[] | null>(null);
   const [escolhida, setEscolhida] = useState<RouteOption | null>(null);
@@ -399,6 +401,7 @@ export default function OferecerBoleiaScreen() {
         note: nota.trim(),
         parkingSpotId: parqueId,
         acceptedRules: true,
+        acceptsReturnRequests: idaEVolta && aceitaVolta,
       });
       await atualizar();
       router.replace({ pathname: '/jogos/boleia', params: { rideId: id, jogoId: jogo.id } });
@@ -684,6 +687,25 @@ export default function OferecerBoleiaScreen() {
             accessibilityLabel="Ida e volta"
           />
         </View>
+        {idaEVolta ? (
+          <>
+            <View style={styles.linhaSwitch}>
+              <ThemedText style={styles.flex}>Aceito pedidos de boleia de volta</ThemedText>
+              <Switch
+                value={aceitaVolta}
+                onValueChange={setAceitaVolta}
+                trackColor={{ true: theme.accent, false: theme.border }}
+                thumbColor={theme.accentText}
+                ios_backgroundColor={theme.border}
+                accessibilityLabel="Aceito pedidos de boleia de volta"
+              />
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              Quem ficar sem transporte depois do jogo pode pedir-te lugar na volta. Decides na hora
+              e a pessoa paga a sua parte da viagem de volta.
+            </ThemedText>
+          </>
+        ) : null}
         <Campo
           label="Nota para quem vai (opcional)"
           value={nota}

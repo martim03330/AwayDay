@@ -57,6 +57,27 @@ function conteudo(alerta: RideAlert) {
         titulo: `${alerta.driverName ?? 'O condutor'} cancelou a boleia`,
         texto: `${jogo} · procura outra boleia`,
       };
+    case 'volta_pedidos':
+      return {
+        tom: 'yellow' as const,
+        icon: icons.carro,
+        titulo: `${plural(alerta.pending, 'pedido', 'pedidos')} de boleia de volta`,
+        texto: `${jogo} · alguém ficou sem transporte e está à espera de resposta`,
+      };
+    case 'volta_aceite':
+      return {
+        tom: 'green' as const,
+        icon: icons.carro,
+        titulo: `${alerta.driverName ?? 'Um adepto'} leva-te de volta`,
+        texto: `${jogo} · combina onde se encontram`,
+      };
+    case 'volta_recusado':
+      return {
+        tom: 'neutral' as const,
+        icon: icons.fechar,
+        titulo: 'Sem boleia de volta neste carro',
+        texto: `${jogo} · vê se há outro carro a voltar`,
+      };
   }
 }
 
@@ -85,10 +106,16 @@ export function AlertasBoleias() {
           <Card
             key={`${alerta.kind}-${alerta.rideId}`}
             onPress={() =>
-              router.push({
-                pathname: '/jogos/boleia',
-                params: { rideId: alerta.rideId, jogoId: alerta.fixtureId },
-              })
+              router.push(
+                // The fan who asked for a seat home goes back to the list of cars going back, not to a ride they
+                // may not be part of; everything else opens the ride itself.
+                alerta.kind === 'volta_aceite' || alerta.kind === 'volta_recusado'
+                  ? { pathname: '/jogos/boleia-de-volta', params: { jogoId: alerta.fixtureId } }
+                  : {
+                      pathname: '/jogos/boleia',
+                      params: { rideId: alerta.rideId, jogoId: alerta.fixtureId },
+                    }
+              )
             }
             accessibilityLabel={`${titulo}. ${texto}. Toca para abrir a boleia.`}>
             <ListRow

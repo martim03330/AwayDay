@@ -29,6 +29,9 @@ export default function JogosLayout() {
       <Stack.Screen name="boleia">
         <Stack.Screen.Title>Boleia</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="boleia-de-volta">
+        <Stack.Screen.Title>Boleia de volta</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen
         name="avaliar"
         options={{
