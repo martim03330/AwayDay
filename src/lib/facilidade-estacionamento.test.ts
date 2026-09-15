@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { facilidadeEstacionamento, minutosAPe } from '@/lib/facilidade-estacionamento';
+import {
+  facilidadeEstacionamento,
+  minutosAPe,
+  minutosExtraDoParque,
+} from '@/lib/facilidade-estacionamento';
 
 const parque = (distanceM: number | null, capacity: number | null = null) => ({
   distanceM,
@@ -51,5 +55,18 @@ describe('minutosAPe', () => {
     expect(minutosAPe(800)).toBe(13);
     expect(minutosAPe(30)).toBe(1);
     expect(minutosAPe(null)).toBeNull();
+  });
+});
+
+describe('minutosExtraDoParque', () => {
+  it('asks for more time where parking is harder', () => {
+    expect(minutosExtraDoParque(parque(2000))).toBe(0);
+    expect(minutosExtraDoParque(parque(800))).toBe(20);
+    expect(minutosExtraDoParque(parque(200))).toBe(45);
+    expect(minutosExtraDoParque(parque(null))).toBe(15);
+  });
+
+  it('asks for more on a big game', () => {
+    expect(minutosExtraDoParque(parque(800), { jogoGrande: true })).toBe(45);
   });
 });

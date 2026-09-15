@@ -26,6 +26,8 @@ export type Trajeto = {
   duracaoS: number | null;
   /** Walk from the chosen car park to the stadium; `null` when no car park was chosen. */
   minutosAPeDoParque: number | null;
+  /** How much earlier this car park asks for, from `minutosExtraDoParque`: the ones that fill early need it. */
+  minutosExtraDoParque?: number;
   jogoGrande: boolean;
 };
 
@@ -49,6 +51,7 @@ export function saidaSugerida(trajeto: Trajeto): Date {
   const antes =
     trajeto.duracaoS * 1000 +
     (trajeto.minutosAPeDoParque ?? 0) * MINUTO_MS +
+    (trajeto.minutosExtraDoParque ?? 0) * MINUTO_MS +
     margemMinutos(trajeto.jogoGrande) * MINUTO_MS;
   return new Date(arredondarParaBaixo(inicio - antes));
 }
@@ -88,4 +91,23 @@ export function ajustarSaida(saida: Date, passos: number, limites: NonNullable<L
 /** Whether leaving at `saida` gives less time than suggested (the driver should be warned). */
 export function saidaApertada(saida: Date, sugerida: Date) {
   return saida.getTime() > sugerida.getTime();
+}
+
+/**
+ * When to be at the car park for it to still have a space: kick-off, minus the walk to the ground, minus the half
+ * hour to get in, minus the extra the car park itself asks for. Rounded down to 5 minutes.
+ */
+export function chegadaRecomendada({
+  inicio,
+  minutosAPeDoParque,
+  minutosExtraDoParque = 0,
+}: {
+  inicio: string;
+  minutosAPeDoParque: number | null;
+  minutosExtraDoParque?: number;
+}): Date {
+  const antes =
+    (CHEGAR_ANTES_MINUTOS + (minutosAPeDoParque ?? 0) + minutosExtraDoParque) * MINUTO_MS;
+  const passo = 5 * MINUTO_MS;
+  return new Date(Math.floor((Date.parse(inicio) - antes) / passo) * passo);
 }

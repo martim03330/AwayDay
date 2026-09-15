@@ -43,6 +43,25 @@ const PIOR: Record<Facilidade, Facilidade> = {
   desconhecida: 'desconhecida',
 };
 
+/**
+ * How much earlier than normal you have to be at a car park for it to still have a space. A car park that fills early
+ * only has room for whoever gets there early: this is the honest price of parking next to the ground.
+ */
+export const MINUTOS_EXTRA: Record<Facilidade, number> = {
+  facil: 0,
+  media: 20,
+  dificil: 45,
+  desconhecida: 15,
+};
+
+/** The extra minutes this car park asks for on this game. */
+export function minutosExtraDoParque(
+  parque: ParqueParaFacilidade,
+  { jogoGrande = false }: { jogoGrande?: boolean } = {}
+) {
+  return MINUTOS_EXTRA[facilidadeEstacionamento(parque, { jogoGrande }).nivel];
+}
+
 /** What the colour means, for the legend and for screen readers. */
 export const ROTULO_FACILIDADE: Record<Facilidade, string> = {
   facil: 'Costuma haver lugar',

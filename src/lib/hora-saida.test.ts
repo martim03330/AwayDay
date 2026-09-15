@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ajustarSaida,
+  chegadaRecomendada,
   limitesDaSaida,
   limitarSaida,
   margemMinutos,
@@ -109,5 +110,43 @@ describe('saidaApertada', () => {
     expect(saidaApertada(new Date('2026-09-20T16:30:00Z'), sugerida)).toBe(true);
     expect(saidaApertada(sugerida, sugerida)).toBe(false);
     expect(saidaApertada(new Date('2026-09-20T15:45:00Z'), sugerida)).toBe(false);
+  });
+});
+
+describe('chegadaRecomendada', () => {
+  it('is kick-off minus the walk, the half hour to get in and what the car park asks for', () => {
+    // 19:30 - 30 min - 9 min a pé - 45 min de um parque que enche cedo = 18:06 -> 18:05
+    expect(
+      chegadaRecomendada({
+        inicio,
+        minutosAPeDoParque: 9,
+        minutosExtraDoParque: 45,
+      }).toISOString()
+    ).toBe('2026-09-20T18:05:00.000Z');
+  });
+
+  it('asks for nothing extra where parking is easy', () => {
+    expect(
+      chegadaRecomendada({ inicio, minutosAPeDoParque: 10, minutosExtraDoParque: 0 }).toISOString()
+    ).toBe('2026-09-20T18:50:00.000Z');
+  });
+});
+
+describe('saidaSugerida with a car park that fills early', () => {
+  it('leaves earlier by exactly what the car park asks for', () => {
+    const base = saidaSugerida({
+      inicio,
+      duracaoS: 3600,
+      minutosAPeDoParque: 0,
+      jogoGrande: false,
+    });
+    const comParqueDificil = saidaSugerida({
+      inicio,
+      duracaoS: 3600,
+      minutosAPeDoParque: 0,
+      minutosExtraDoParque: 45,
+      jogoGrande: false,
+    });
+    expect(base.getTime() - comParqueDificil.getTime()).toBe(45 * 60 * 1000);
   });
 });

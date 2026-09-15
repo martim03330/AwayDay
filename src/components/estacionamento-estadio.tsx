@@ -12,7 +12,13 @@ import {
 } from '@/features/parking/api';
 import { useTheme } from '@/hooks/use-theme';
 import { abrirDirecoes } from '@/lib/direcoes';
-import { facilidadeEstacionamento, minutosAPe } from '@/lib/facilidade-estacionamento';
+import { formatarHora } from '@/lib/datas';
+import {
+  facilidadeEstacionamento,
+  minutosAPe,
+  minutosExtraDoParque,
+} from '@/lib/facilidade-estacionamento';
+import { chegadaRecomendada } from '@/lib/hora-saida';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { useAppState } from '@/state/app-state';
 import { Card } from '@/ui/card';
@@ -107,15 +113,26 @@ function Parque({
   parque,
   destaque,
   jogoGrande,
+  inicio,
 }: {
   parque: ParkingSpot;
   destaque: boolean;
   jogoGrande: boolean;
+  /** Kick-off, when the game is known: then the car park also says by when to be there. */
+  inicio: string | null;
 }) {
   const theme = useTheme();
   const [fontesAbertas, setFontesAbertas] = useState(false);
   const minutos = minutosAPe(parque.distanceM);
   const { motivo } = facilidadeEstacionamento(parque, { jogoGrande });
+  const chegada =
+    inicio && parque.openOnMatchdays !== false
+      ? chegadaRecomendada({
+          inicio,
+          minutosAPeDoParque: minutos,
+          minutosExtraDoParque: minutosExtraDoParque(parque, { jogoGrande }),
+        })
+      : null;
 
   return (
     <View style={styles.parque}>
@@ -149,6 +166,11 @@ function Parque({
       <ThemedText type="small" themeColor="textSecondary">
         {motivo}
       </ThemedText>
+      {chegada ? (
+        <ThemedText style={{ color: theme.accentInk }}>
+          {`Para apanhares lugar, chega por volta das ${formatarHora(chegada)}.`}
+        </ThemedText>
+      ) : null}
       {parque.priceNote ? <ThemedText>{parque.priceNote}</ThemedText> : null}
       {parque.location === null ? (
         <ThemedText type="small" themeColor="textMuted">
@@ -183,9 +205,11 @@ function Parque({
 export function EstacionamentoEstadio({
   estadioId,
   jogoGrande = false,
+  inicio = null,
 }: {
   estadioId: string;
   jogoGrande?: boolean;
+  inicio?: string | null;
 }) {
   const theme = useTheme();
   const { modoDemo } = useAppState();
@@ -220,7 +244,7 @@ export function EstacionamentoEstadio({
           <ThemedText type="eyebrow" themeColor="accentInk">
             Recomendado
           </ThemedText>
-          <Parque parque={recomendado} destaque jogoGrande={jogoGrande} />
+          <Parque parque={recomendado} destaque jogoGrande={jogoGrande} inicio={inicio} />
         </>
       ) : (
         <ThemedText themeColor="textSecondary">
@@ -258,7 +282,13 @@ export function EstacionamentoEstadio({
           />
           {todosAbertos
             ? outros.map((parque) => (
-                <Parque key={parque.id} parque={parque} destaque={false} jogoGrande={jogoGrande} />
+                <Parque
+                  key={parque.id}
+                  parque={parque}
+                  destaque={false}
+                  jogoGrande={jogoGrande}
+                  inicio={inicio}
+                />
               ))
             : null}
         </View>

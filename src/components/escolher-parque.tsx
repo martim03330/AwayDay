@@ -4,7 +4,13 @@ import { corFacilidade, LegendaFacilidade } from '@/components/facilidade-parque
 import { Radius, Spacing } from '@/constants/theme';
 import type { ParkingSpot } from '@/features/parking/api';
 import { useTheme } from '@/hooks/use-theme';
-import { facilidadeEstacionamento, minutosAPe } from '@/lib/facilidade-estacionamento';
+import { formatarHora } from '@/lib/datas';
+import {
+  facilidadeEstacionamento,
+  minutosAPe,
+  minutosExtraDoParque,
+} from '@/lib/facilidade-estacionamento';
+import { chegadaRecomendada } from '@/lib/hora-saida';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -15,12 +21,15 @@ import { ThemedText } from '@/ui/themed-text';
 function Opcao({
   nome,
   detalhe,
+  nota,
   cor,
   escolhido,
   onPress,
 }: {
   nome: string;
   detalhe: string;
+  /** When to be there for it to still have a space. */
+  nota?: string;
   cor: string | null;
   escolhido: boolean;
   onPress: () => void;
@@ -31,7 +40,7 @@ function Opcao({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: escolhido }}
-      accessibilityLabel={`${nome}. ${detalhe}`}
+      accessibilityLabel={[nome, detalhe, nota].filter(Boolean).join('. ')}
       style={({ pressed }) => [
         styles.opcao,
         {
@@ -50,6 +59,11 @@ function Opcao({
         <ThemedText type="small" themeColor="textSecondary">
           {detalhe}
         </ThemedText>
+        {nota ? (
+          <ThemedText type="small" style={{ color: theme.accentInk }}>
+            {nota}
+          </ThemedText>
+        ) : null}
       </View>
       {escolhido ? <Icon name={icons.selecionado} size={16} color={theme.accent} /> : null}
     </Pressable>
@@ -61,11 +75,14 @@ export function EscolherParque({
   escolhido,
   onEscolher,
   jogoGrande,
+  inicio,
 }: {
   parques: readonly ParkingSpot[];
   escolhido: string | null;
   onEscolher: (parqueId: string | null) => void;
   jogoGrande: boolean;
+  /** Kick-off, to say by when you have to be at each car park. */
+  inicio: string;
 }) {
   const theme = useTheme();
 
@@ -94,6 +111,11 @@ export function EscolherParque({
         {parques.map((parque) => {
           const { nivel, motivo } = facilidadeEstacionamento(parque, { jogoGrande });
           const minutos = minutosAPe(parque.distanceM);
+          const chegada = chegadaRecomendada({
+            inicio,
+            minutosAPeDoParque: minutos,
+            minutosExtraDoParque: minutosExtraDoParque(parque, { jogoGrande }),
+          });
           return (
             <Opcao
               key={parque.id}
@@ -101,6 +123,7 @@ export function EscolherParque({
               detalhe={[minutos !== null ? `${minutos} min a pé do estádio` : null, motivo]
                 .filter(Boolean)
                 .join(' · ')}
+              nota={`Chega até às ${formatarHora(chegada)} para apanhares lugar`}
               cor={corFacilidade(theme, nivel)}
               escolhido={escolhido === parque.id}
               onPress={() => onEscolher(parque.id)}

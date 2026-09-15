@@ -274,7 +274,11 @@ export default function JogoScreen() {
         />
 
         <SectionHeader title="Estacionamento" />
-        <EstacionamentoEstadio estadioId={estadio.id} jogoGrande={eJogoGrande(jogo)} />
+        <EstacionamentoEstadio
+          estadioId={estadio.id}
+          jogoGrande={eJogoGrande(jogo)}
+          inicio={jogo.inicio}
+        />
 
         <Button
           label={

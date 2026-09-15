@@ -23,7 +23,7 @@ import { useRefreshRides, useRideBoard } from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDia, formatarHora } from '@/lib/datas';
-import { minutosAPe } from '@/lib/facilidade-estacionamento';
+import { minutosAPe, minutosExtraDoParque } from '@/lib/facilidade-estacionamento';
 import { formatarDistancia } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { eJogoGrande } from '@/lib/classicos';
@@ -282,11 +282,17 @@ export default function OferecerBoleiaScreen() {
   const cotacao = cotacoes?.find((candidata) => candidata.option === escolhida) ?? null;
   const parqueEscolhido = parquesDoEstadio.find((parque) => parque.id === parqueId) ?? null;
   const minutosAPeDoParque = minutosAPe(parqueEscolhido?.distanceM ?? null);
+  // A car park that fills early only has room for whoever gets there early: leave sooner.
+  const jogoGrandeParaParque = eJogoGrande(jogo);
+  const extraDoParque = parqueEscolhido
+    ? minutosExtraDoParque(parqueEscolhido, { jogoGrande: jogoGrandeParaParque })
+    : 0;
   const jogoGrande = eJogoGrande(jogo);
   const sugerida = saidaSugerida({
     inicio: jogo.inicio,
     duracaoS: cotacao?.durationS ?? null,
     minutosAPeDoParque,
+    minutosExtraDoParque: extraDoParque,
     jogoGrande,
   });
   const saida = limites ? limitarSaida(saidaManual ?? sugerida, limites) : sugerida;
@@ -595,7 +601,7 @@ export default function OferecerBoleiaScreen() {
             </View>
             <ThemedText type="small" themeColor="textSecondary">
               {cotacao
-                ? `Sugerido: ${formatarHora(sugerida)} — ${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''} e ${margemMinutos(jogoGrande)} min de margem${jogoGrande ? ' (jogo grande: mais trânsito e filas)' : ''}.`
+                ? `Sugerido: ${formatarHora(sugerida)} — ${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''}${extraDoParque > 0 ? `, mais ${extraDoParque} min porque o parque enche cedo` : ''} e ${margemMinutos(jogoGrande)} min de margem${jogoGrande ? ' (jogo grande: mais trânsito e filas)' : ''}.`
                 : 'Vê os percursos e escolhe o parque: acertamos a hora à distância e ao tipo de jogo.'}
             </ThemedText>
             {apertada ? (
@@ -632,6 +638,7 @@ export default function OferecerBoleiaScreen() {
           escolhido={parqueId}
           onEscolher={setParqueId}
           jogoGrande={jogoGrande}
+          inicio={jogo.inicio}
         />
       </Card>
 
