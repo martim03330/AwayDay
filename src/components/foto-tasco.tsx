@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Radius } from '@/constants/theme';
+import { useFanPhoto } from '@/features/places/hooks/useFanPhotos';
 import { useTheme } from '@/hooks/use-theme';
 import type { Local } from '@/mocks/tipos';
 import { Icon, icons } from '@/ui/icon';
@@ -17,7 +18,22 @@ export function creditoFoto(foto: Foto) {
 /** A small square photo of the tasco for cards, or its icon when there is no photo yet. */
 export function MiniaturaTasco({ local, tamanho = 72 }: { local: Local; tamanho?: number }) {
   const theme = useTheme();
+  // Without a curated photo, a fan's approved photo (if any).
+  const doAdepto = useFanPhoto(local.id, !local.foto);
+  const urlDoAdepto = doAdepto.data?.url ?? null;
   const estilo = [styles.miniatura, { width: tamanho, height: tamanho }];
+
+  if (!local.foto && urlDoAdepto) {
+    return (
+      <Image
+        source={{ uri: urlDoAdepto }}
+        contentFit="cover"
+        transition={150}
+        accessibilityLabel={`Foto do ${local.nome} enviada por um adepto`}
+        style={[estilo, { backgroundColor: theme.backgroundSelected }]}
+      />
+    );
+  }
 
   if (!local.foto) {
     return (
@@ -43,7 +59,25 @@ export function MiniaturaTasco({ local, tamanho = 72 }: { local: Local; tamanho?
 
 /** The tasco's photo across the page, with the credit over it (tap to open the original). */
 export function FotoTasco({ local }: { local: Local }) {
-  if (!local.foto) return null;
+  const doAdepto = useFanPhoto(local.id, !local.foto);
+  if (!local.foto) {
+    const url = doAdepto.data?.url;
+    if (!url) return null;
+    return (
+      <View style={styles.foto}>
+        <Image
+          source={{ uri: url }}
+          contentFit="cover"
+          transition={200}
+          accessibilityLabel={`Foto do ${local.nome} enviada por um adepto`}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.credito}>
+          <ThemedText style={styles.creditoTexto}>Foto de um adepto</ThemedText>
+        </View>
+      </View>
+    );
+  }
   const foto = local.foto;
   const credito = creditoFoto(foto);
 

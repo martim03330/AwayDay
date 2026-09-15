@@ -18,6 +18,8 @@ export type DadosMissoes = {
   visitasLocais: readonly VisitaLocal[];
   /** Missões que já têm foto de prova no álbum. */
   missoesComFoto: ReadonlySet<string>;
+  /** Fotos de tascos que o adepto enviou e foram aprovadas. */
+  fotosTascoAprovadas: number;
   rivais: readonly string[];
   obterJogo: (id: string) => Jogo | undefined;
   obterLocal: (id: string) => Local | undefined;
@@ -42,11 +44,15 @@ function valorDoProgresso(tipo: ProgressoMissao, missao: Missao, dados: DadosMis
       return dados.visitasLocais.filter(
         (visita) =>
           visita.verificado &&
-          (dados.obterLocal(visita.localId)?.clubesAqui.some((clube) => dados.rivais.includes(clube)) ??
+          (dados
+            .obterLocal(visita.localId)
+            ?.clubesAqui.some((clube) => dados.rivais.includes(clube)) ??
             false)
       ).length;
     case 'so-foto':
       return dados.missoesComFoto.has(missao.id) ? 1 : 0;
+    case 'fotos-tasco-aprovadas':
+      return dados.fotosTascoAprovadas;
   }
 }
 
@@ -54,8 +60,11 @@ function valorDoProgresso(tipo: ProgressoMissao, missao: Missao, dados: DadosMis
 export function progressoDaMissao(missao: Missao, dados: DadosMissoes) {
   const atual = Math.min(missao.meta, valorDoProgresso(missao.progresso, missao, dados));
   const cumprida = atual >= missao.meta;
+  // An approved tasco photo is its own proof: no second photo for the album.
+  const provada =
+    missao.progresso === 'fotos-tasco-aprovadas' || dados.missoesComFoto.has(missao.id);
   const estado: EstadoMissao = cumprida
-    ? dados.missoesComFoto.has(missao.id)
+    ? provada
       ? 'concluida'
       : 'por-comprovar'
     : atual > 0

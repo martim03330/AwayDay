@@ -2,6 +2,59 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Estacionamento limpo, adeptos da casa para visitantes e fotos dos adeptos
+
+**Estacionamento mais limpo e ligado às boleias.**
+- Na ficha do jogo aparece primeiro o parque «Recomendado» (aberto em dias de jogo, com localização
+  e mais perto do estádio), com os minutos a pé.
+- Os avisos de dia de jogo, os outros parques e as fontes ficam atrás de um toque.
+- No mapa do jogo, os parques aparecem com um «P» azul, como a sinalização de estrada, e o cartão tem
+  «Como chegar de carro».
+- Ao oferecer boleia, o condutor escolhe «Onde deixamos o carro» entre os parques verificados abertos
+  em dias de jogo, e os passageiros veem-no na boleia com os minutos a pé até ao estádio.
+- Um parque só é chamado «seguro» se uma fonte o disser.
+
+**Localização dos parques.** Procurámos os parques no OpenStreetMap pelo nome e pelo operador e
+confirmámos cada correspondência à mão. Entraram 4:
+- Parque exterior do Estádio Cidade de Barcelos, a 142 m;
+- EMEL Cosme Damião, a 277 m;
+- Fonte Nova, a 650 m;
+- EMEL Estrada da Luz, a 1171 m.
+
+Rejeitámos as correspondências só pela palavra da cidade, por exemplo um parque privado da Câmara de
+Guimarães ou um parque em Monsanto para «Benfica Estádio». Ficaram 7 de 32 parques com pino. Os
+outros mostram a morada.
+
+**Adeptos da casa, para visitantes, em todos os jogos.** A pesquisa com fontes (PSP, clubes, jornais,
+guias) quase não encontrou bares identificados; só um, a «casinha» da Juventude Leonina em Alvalade.
+Encontrou sobretudo bancadas e portas onde não se aceitam cores do visitante, zonas a evitar e os
+percursos oficiais dos visitantes. Com isso:
+- `venue_safety_note` ganhou os tipos `zona_adeptos_casa` e `percurso_visitantes`;
+- foram importadas 22 zonas e 14 percursos, em 16 estádios (`npm run db:adeptos-casa`, só confiança
+  alta ou média);
+- aparecem em «Cuidados para adeptos visitantes» em todos os jogos, e não só nos clássicos.
+
+**Adeptos da casa assinalados no mapa** (`home_fan_report`). Perto do jogo (de 6 h antes a 3 h
+depois), quem tem conta pode carregar em «Assinalar adeptos da casa aqui».
+- **Anonimato:** a app usa a localização só para marcar a célula de cerca de 150 m à volta; o servidor
+  guarda a célula e nunca a posição, e ninguém vê quem assinalou.
+- **Visibilidade:** a zona só aparece no mapa, a laranja, com pelo menos 3 pessoas diferentes, e só até
+  6 h depois do apito. Os avisos são apagados 48 h depois.
+- **Proteção:** de propósito, só se assinalam adeptos da casa e nunca visitantes, porque isso ajudaria
+  a encontrá-los. Não se consegue assinalar a mais de 3 km do estádio, e cada pessoa faz no máximo 10
+  por hora.
+- **Testado:** 2 pessoas não mostram a zona e 3 mostram; ninguém lê quem assinalou; recusa longe do
+  estádio e sem conta.
+
+**Fotos dos tascos enviadas pelos adeptos, com aprovação.** Os adeptos já podiam enviar fotos, mas
+ninguém as aprovava. Agora:
+- os administradores têm o ecrã «Fotos por aprovar» (`moderate_place_photo`);
+- a regra para aprovar é mostrar o tasco e não ter pessoas reconhecíveis em destaque;
+- a foto aprovada aparece no cartão do mapa e na ficha dos tascos sem foto própria, como «Foto de um
+  adepto», sem dizer quem a enviou, através de um endereço temporário, porque o bucket é privado;
+- a missão «Fotografa o teu tasco» fica concluída quando uma foto é aprovada, e a foto aprovada serve
+  de prova.
+
 ## 2026-09-16 — Boleias em que se pode confiar: prazos, compromisso, faltas e imprevistos
 
 **Porquê.** Sem pagamentos na app, não há caução. A confiança vem de regras claras, de uma reputação

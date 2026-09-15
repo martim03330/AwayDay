@@ -333,6 +333,14 @@ export default function PerfilScreen() {
                 subtitle="Encontrados nas notícias dos clubes"
                 trailing={chevron}
               />
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/fotos-por-aprovar')}
+                accessibilityLabel="Fotos de tascos por aprovar. Toca para abrir."
+                leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}
+                title="Fotos de tascos por aprovar"
+                subtitle="Enviadas pelos adeptos"
+                trailing={chevron}
+              />
             </Card>
           </>
         ) : null}

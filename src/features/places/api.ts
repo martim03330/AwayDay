@@ -137,3 +137,81 @@ export async function suggestPlacePhoto(
   if (error.message === 'place_photo_rate_limited') throw new SuggestionRefused('rate-limited');
   throw error;
 }
+
+/** How long a signed link to a fan's photo lasts. The query cache refreshes it before then. */
+const PHOTO_LINK_SECONDS = 60 * 60;
+
+export type FanPhoto = { id: string; url: string };
+
+/** The most recent approved fan photo of a place, as a temporary link; `null` when there is none. */
+export async function fetchApprovedPlacePhoto(placeId: string): Promise<FanPhoto | null> {
+  const { data, error } = await client()
+    .from('place_photo')
+    .select('id, storage_path')
+    .eq('place_id', placeId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const signed = await client()
+    .storage.from('place-photos')
+    .createSignedUrl(data.storage_path, PHOTO_LINK_SECONDS);
+  if (signed.error) throw signed.error;
+  return { id: data.id, url: signed.data.signedUrl };
+}
+
+export type PendingPhoto = {
+  id: string;
+  placeId: string;
+  url: string;
+  createdAt: string;
+};
+
+/** Photos waiting for approval, oldest first (admins only; others get an empty list). */
+export async function fetchPendingPlacePhotos(): Promise<PendingPhoto[]> {
+  const { data, error } = await client()
+    .from('place_photo')
+    .select('id, place_id, storage_path, created_at')
+    .eq('status', 'pending')
+    .order('created_at')
+    .limit(50);
+  if (error) throw error;
+  if (data.length === 0) return [];
+  const signed = await client()
+    .storage.from('place-photos')
+    .createSignedUrls(
+      data.map((row) => row.storage_path),
+      PHOTO_LINK_SECONDS
+    );
+  if (signed.error) throw signed.error;
+  const urls = new Map(
+    signed.data.flatMap((item) =>
+      item.path && item.signedUrl ? [[item.path, item.signedUrl]] : []
+    )
+  );
+  return data.flatMap((row) => {
+    const url = urls.get(row.storage_path);
+    return url ? [{ id: row.id, placeId: row.place_id, url, createdAt: row.created_at }] : [];
+  });
+}
+
+export async function moderatePlacePhoto(photoId: string, approve: boolean) {
+  const { error } = await client().rpc('moderate_place_photo', {
+    p_photo_id: photoId,
+    p_approve: approve,
+  });
+  if (error) throw error;
+}
+
+/** How many of the user's photos of tascos were approved (for the photo mission). */
+export async function fetchMyApprovedPhotoCount(userId: string): Promise<number> {
+  const { count, error } = await client()
+    .from('place_photo')
+    .select('id', { count: 'exact', head: true })
+    .eq('submitted_by', userId)
+    .eq('status', 'approved');
+  if (error) throw error;
+  return count ?? 0;
+}

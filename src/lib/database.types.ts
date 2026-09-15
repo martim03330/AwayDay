@@ -1118,6 +1118,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          moderated_at: string | null
+          moderated_by: string | null
           place_id: string
           status: string
           storage_path: string
@@ -1126,6 +1128,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
           place_id: string
           status?: string
           storage_path: string
@@ -1134,12 +1138,21 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
           place_id?: string
           status?: string
           storage_path?: string
           submitted_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "place_photo_moderated_by_fkey"
+            columns: ["moderated_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "place_photo_place_id_fkey"
             columns: ["place_id"]
@@ -2221,6 +2234,10 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
+      moderate_place_photo: {
+        Args: { p_approve: boolean; p_photo_id: string }
+        Returns: undefined
+      }
       my_ride_attendance: {
         Args: { p_ride_id: string }
         Returns: {

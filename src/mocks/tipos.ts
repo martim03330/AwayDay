@@ -196,7 +196,9 @@ export type ProgressoMissao =
   | 'jogo-a-chuva'
   | 'check-in-com-rivais'
   /** A própria foto é a missão (ex.: foto com um adepto rival). */
-  | 'so-foto';
+  | 'so-foto'
+  /** Fotos de tascos enviadas e aprovadas: a foto aprovada já é a prova. */
+  | 'fotos-tasco-aprovadas';
 
 /** `por-comprovar`: o objetivo está cumprido, mas falta a foto que o prova. */
 export type EstadoMissao = 'por-fazer' | 'em-curso' | 'por-comprovar' | 'concluida';

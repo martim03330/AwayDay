@@ -19,6 +19,9 @@ export default function PerfilLayout() {
       <Stack.Screen name="pontos-de-encontro">
         <Stack.Screen.Title>Pontos de encontro</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="fotos-por-aprovar">
+        <Stack.Screen.Title>Fotos por aprovar</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="definicoes">
         <Stack.Screen.Title>Definições</Stack.Screen.Title>
       </Stack.Screen>

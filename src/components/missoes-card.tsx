@@ -6,7 +6,9 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useCarimbosNovos } from '@/hooks/use-carimbos-novos';
 import { useTheme } from '@/hooks/use-theme';
 import { useTirarFoto } from '@/hooks/use-tirar-foto';
+import { useMyApprovedPhotoCount } from '@/features/places/hooks/useFanPhotos';
 import { podeTirarFoto, progressoDaMissao, type DadosMissoes } from '@/lib/missoes';
+import { useUserId } from '@/lib/session';
 import { estadiosNacionais } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { obterLocal, obterPrato } from '@/mocks/locais';
@@ -36,6 +38,8 @@ type ProgressoComMissao = { missao: Missao; atual: number; meta: number; estado:
 /** Progress of every mission, from the app state. Shared by the profile summary and the missions screen. */
 function useMissoes() {
   const app = useAppState();
+  const userId = useUserId();
+  const fotosAprovadas = useMyApprovedPhotoCount(app.modoDemo ? null : userId);
 
   const rivais = rivaisDe(app.clubeFavoritoId);
   const idsNacionais = new Set(estadiosNacionais.map((estadio) => estadio.id));
@@ -46,6 +50,7 @@ function useMissoes() {
     avaliacoes: app.avaliacoes,
     visitasLocais: app.visitasLocais,
     missoesComFoto: new Set(app.fotosMissoes.map((foto) => foto.missaoId)),
+    fotosTascoAprovadas: fotosAprovadas.data ?? 0,
     rivais,
     obterJogo,
     obterLocal,
@@ -90,7 +95,12 @@ function Azulejo({
       accessibilityLabel={`Distintivo ${missao.distintivo.nome}, ${estado === 'concluida' ? 'ganho' : 'por ganhar'}`}
       style={[
         styles.azulejo,
-        { width: tamanho, height: tamanho, borderRadius: tamanho * 0.3, backgroundColor: cores.fundo },
+        {
+          width: tamanho,
+          height: tamanho,
+          borderRadius: tamanho * 0.3,
+          backgroundColor: cores.fundo,
+        },
       ]}>
       <Icon name={missao.distintivo.icon} size={tamanho / 2} color={cores.tinta} />
     </Carimbo>
@@ -153,10 +163,15 @@ function ResumoMissoes({
       accessibilityLabel={`${concluidas} de ${total} missões concluídas${porComprovar > 0 ? `, ${porComprovar} à espera de foto` : ''}`}
       style={styles.resumo}>
       <View style={styles.resumoLinha}>
-        <ThemedText type="score" themeColor={noEcra ? 'accent' : 'text'} style={styles.resumoContagem}>
+        <ThemedText
+          type="score"
+          themeColor={noEcra ? 'accent' : 'text'}
+          style={styles.resumoContagem}>
           {`${concluidas} de ${total}`}
         </ThemedText>
-        <ThemedText themeColor="textSecondary" style={[styles.resumoLegenda, noEcra && styles.resumoLegendaEcra]}>
+        <ThemedText
+          themeColor="textSecondary"
+          style={[styles.resumoLegenda, noEcra && styles.resumoLegendaEcra]}>
           {porComprovar > 0 ? `${legenda} · ${porComprovar} à espera de foto` : legenda}
         </ThemedText>
       </View>
@@ -190,7 +205,11 @@ function LinhaMissao({ progresso, novo }: { progresso: ProgressoComMissao; novo:
   const info = estados[estado];
   const mostrarBarra = meta > 1 && estado === 'em-curso';
   const corEstado =
-    estado === 'concluida' ? theme.success : estado === 'por-fazer' ? theme.textSecondary : theme.warning;
+    estado === 'concluida'
+      ? theme.success
+      : estado === 'por-fazer'
+        ? theme.textSecondary
+        : theme.warning;
 
   return (
     <View style={[styles.linhaMissao, { backgroundColor: theme.background }]}>
@@ -215,7 +234,9 @@ function LinhaMissao({ progresso, novo }: { progresso: ProgressoComMissao; novo:
         ) : (
           <View style={styles.linhaEstado}>
             {info.icon ? <Icon name={info.icon} size={14} color={corEstado} /> : null}
-            <ThemedText style={[styles.linhaContagem, { color: corEstado }]}>{info.label}</ThemedText>
+            <ThemedText style={[styles.linhaContagem, { color: corEstado }]}>
+              {info.label}
+            </ThemedText>
           </View>
         )}
       </View>
@@ -240,7 +261,11 @@ export function MissoesCard() {
     <Card style={styles.cartao}>
       <ResumoMissoes concluidas={concluidas.length} porComprovar={porComprovar} noEcra={false} />
       {mostradas.map((progresso) => (
-        <LinhaMissao key={progresso.missao.id} progresso={progresso} novo={eNovo(progresso.missao.id)} />
+        <LinhaMissao
+          key={progresso.missao.id}
+          progresso={progresso}
+          novo={eNovo(progresso.missao.id)}
+        />
       ))}
       <Pressable
         onPress={() => router.push('/perfil/missoes')}
@@ -251,7 +276,9 @@ export function MissoesCard() {
           { borderColor: theme.border },
           pressed && { backgroundColor: theme.backgroundSelected },
         ]}>
-        <ThemedText style={[styles.verTodasTexto, { color: theme.accentInk }]}>{verTodas}</ThemedText>
+        <ThemedText style={[styles.verTodasTexto, { color: theme.accentInk }]}>
+          {verTodas}
+        </ThemedText>
         <Icon name={icons.seguinte} size={16} color={theme.accentInk} />
       </Pressable>
     </Card>
@@ -280,7 +307,11 @@ function CartaoMissao({
   const comFoto = foto !== undefined && concluida;
 
   return (
-    <Card style={[styles.cartao, estado === 'por-comprovar' && { borderWidth: 2, borderColor: theme.highlight }]}>
+    <Card
+      style={[
+        styles.cartao,
+        estado === 'por-comprovar' && { borderWidth: 2, borderColor: theme.highlight },
+      ]}>
       <View style={styles.cabecalho}>
         <Azulejo missao={missao} estado={estado} novo={novo} tamanho={52} />
         <View style={styles.corpo}>
@@ -351,7 +382,10 @@ function CartaoMissao({
           <View style={styles.flex}>
             <ThemedText style={styles.fotoTitulo}>Ver no álbum</ThemedText>
             <ThemedText
-              style={[styles.fotoEstado, { color: foto.verificada ? theme.accentInk : theme.warning }]}>
+              style={[
+                styles.fotoEstado,
+                { color: foto.verificada ? theme.accentInk : theme.warning },
+              ]}>
               {`Distintivo: ${missao.distintivo.nome} · ${foto.verificada ? 'Foto verificada' : 'Foto por verificar'}`}
             </ThemedText>
           </View>

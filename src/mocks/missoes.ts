@@ -48,7 +48,8 @@ export const missoes: Missao[] = [
   {
     id: 'cerveja-com-rival',
     titulo: 'Bebe uma cerveja no mesmo tasco que um adepto rival',
-    descricao: 'Faz check-in num tasco onde estejam adeptos de um clube rival. Cada um no seu copo.',
+    descricao:
+      'Faz check-in num tasco onde estejam adeptos de um clube rival. Cada um no seu copo.',
     distintivo: { icon: 'brinde', nome: 'Paz à mesa' },
     meta: 1,
     progresso: 'check-in-com-rivais',
@@ -58,12 +59,24 @@ export const missoes: Missao[] = [
   {
     id: 'foto-com-rival',
     titulo: 'Tira uma foto com um adepto rival',
-    descricao: 'Pede primeiro. Cada um com a sua camisola, lado a lado e sem contacto. A foto é a prova.',
+    descricao:
+      'Pede primeiro. Cada um com a sua camisola, lado a lado e sem contacto. A foto é a prova.',
     distintivo: { icon: 'camara', nome: 'Selfie diplomática' },
     meta: 1,
     progresso: 'so-foto',
     dicaFoto: 'Tu e o adepto rival, cada um com a sua camisola, sem contacto.',
     fotoComOutraPessoa: true,
+  },
+  {
+    id: 'foto-do-tasco',
+    titulo: 'Fotografa o teu tasco',
+    descricao:
+      'Envia uma foto de um tasco na ficha dele. Quando for aprovada, ajuda quem vai escolher onde comer antes do jogo.',
+    distintivo: { icon: 'tasco', nome: 'Repórter de tasco' },
+    meta: 1,
+    progresso: 'fotos-tasco-aprovadas',
+    dicaFoto: 'A fachada ou o balcão do tasco, sem pessoas reconhecíveis em destaque.',
+    fotoComOutraPessoa: false,
   },
 ];
 
