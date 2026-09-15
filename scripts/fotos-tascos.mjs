@@ -1,6 +1,7 @@
 // Photos of tascos from Wikimedia Commons. Only freely licensed files (CC0, CC BY, CC BY-SA, public domain), always
-// with author, licence and a link to the file page. A file counts when Commons places it within 150 m of the tasco,
-// or, without coordinates, when its title carries the tasco's name. Every photo must still be checked by eye before
+// with author, licence and a link to the file page. A file counts when its title carries the tasco's name and Commons
+// places it within 150 m of the tasco, or, without coordinates, when the title starts with the name ("The Albert" must
+// not match "Zebu in front of the Albert Dock"). Every photo must still be checked by eye before
 // it is uploaded: the script only gathers candidates.
 //
 // Usage:
@@ -142,6 +143,8 @@ for (const place of places) {
         distance,
         licence: plain(imageinfo?.extmetadata?.LicenseShortName?.value),
         namedAfter: name.length >= 4 && normalise(page.title).includes(name),
+        titledAfter:
+          name.length >= 4 && normalise(page.title.replace(/^File:/, '')).startsWith(name),
       };
     })
     .filter(
@@ -149,7 +152,7 @@ for (const place of places) {
         candidate.imageinfo?.thumburl &&
         FREE_LICENCE.test(candidate.licence) &&
         (candidate.distance === null
-          ? candidate.namedAfter
+          ? candidate.titledAfter
           : candidate.distance <= MAX_DISTANCE_M && candidate.namedAfter)
     )
     .sort((a, b) => (a.distance ?? MAX_DISTANCE_M) - (b.distance ?? MAX_DISTANCE_M))[0];

@@ -3,9 +3,9 @@
 //
 // For each place, in order:
 // 1. a place we already list near that stadium with the same name gets the note and sources;
-// 2. otherwise the place is looked up by name in OpenStreetMap (through Nominatim) near the stadium and added;
+// 2. otherwise the place is looked up by name in OpenStreetMap near the stadium (Nominatim, then Overpass) and added;
 // 3. otherwise its address is geocoded with Nominatim and it is added as a manual place.
-// Places not found, or more than 2.5 km from the stadium, are only reported. Nothing is guessed.
+// Places not found, or more than 1.5 km from the stadium, are only reported. Nothing is guessed.
 // Only high and medium confidence are imported (and confirm the place). Low confidence means no source ties the place
 // to match days (e.g. a generic restaurant list), which is exactly what the OSM suggestions already are.
 //
@@ -18,8 +18,10 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+const OVERPASS = 'https://maps.mail.ru/osm/tools/overpass/api/interpreter';
 const USER_AGENT = 'AwayDay/0.1 (match-day places research import; developer machine)';
-const MAX_DISTANCE_M = 2500;
+/** Match-day places are a walk from the ground; a namesake further away is most likely another place. */
+const MAX_DISTANCE_M = 1500;
 const DETOUR_FACTOR = 1.3;
 const WALKING_M_PER_MIN = 80;
 const PAUSE_MS = 1500;
@@ -32,6 +34,9 @@ const KINDS = {
   roulote: 'roulotte',
   roulotte: 'roulotte',
 };
+/** Only food and drink places match a researched name ("Restaurante Alameda" once matched "Farmácia Alameda"). */
+const FOOD_AND_DRINK = 'restaurant|bar|pub|cafe|fast_food|biergarten|food_court|ice_cream';
+const FOOD_AND_DRINK_TYPES = new Set(FOOD_AND_DRINK.split('|'));
 /** Quick and cheap, as the OSM import decides: cafés, snack bars, tascas and bars. */
 const QUICK_AND_CHEAP = new Set(['tasca', 'cafe', 'bar', 'roulotte']);
 
@@ -148,7 +153,8 @@ async function findInOsm(place, venue) {
   const candidates = (results ?? [])
     .filter(
       (result) =>
-        ['amenity', 'shop', 'tourism', 'leisure'].includes(result.category) &&
+        result.category === 'amenity' &&
+        FOOD_AND_DRINK_TYPES.has(result.type) &&
         ['node', 'way', 'relation'].includes(result.osm_type) &&
         sameName(result.name ?? '', place.name)
     )
@@ -158,6 +164,36 @@ async function findInOsm(place, venue) {
       latitude: Number(result.lat),
       longitude: Number(result.lon),
     }))
+    .map((candidate) => ({ ...candidate, distance: distanceMeters(venue, candidate) }))
+    .sort((x, y) => x.distance - y.distance);
+  return candidates[0] ?? null;
+}
+
+/** Nominatim misses some named places (and throttles); Overpass finds a food or drink place with that name nearby. */
+async function findInOverpass(place, venue) {
+  const words = normalise(place.name)
+    .split(' ')
+    .filter((word) => word.length >= 3);
+  if (words.length === 0) return null;
+  const pattern = [...words].sort((a, b) => b.length - a.length)[0].replace(/[^a-z0-9]/g, '');
+  const query =
+    `[out:json][timeout:40];` +
+    `nwr(around:${MAX_DISTANCE_M},${venue.latitude},${venue.longitude})[amenity~"^(${FOOD_AND_DRINK})$"][name~"${pattern}",i];` +
+    `out tags center;`;
+  const result = await getJson(OVERPASS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ data: query }),
+  });
+  await sleep(PAUSE_MS);
+  const candidates = (result?.elements ?? [])
+    .map((element) => ({
+      osmId: `${element.type}/${element.id}`,
+      name: element.tags?.name ?? '',
+      latitude: element.lat ?? element.center?.lat,
+      longitude: element.lon ?? element.center?.lon,
+    }))
+    .filter((candidate) => candidate.latitude !== undefined && sameName(candidate.name, place.name))
     .map((candidate) => ({ ...candidate, distance: distanceMeters(venue, candidate) }))
     .sort((x, y) => x.distance - y.distance);
   return candidates[0] ?? null;
@@ -255,7 +291,7 @@ for (const file of files) {
         continue;
       }
 
-      const osm = await findInOsm(place, venue);
+      const osm = (await findInOsm(place, venue)) ?? (await findInOverpass(place, venue));
       const point = osm ?? (await geocode(place, venue));
       if (!point || point.distance > MAX_DISTANCE_M) {
         report.missing.push(

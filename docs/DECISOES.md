@@ -12,7 +12,14 @@ Wikimedia Commons, e cada uma tem de cumprir três condições:
 - ser confirmada a olho antes de ser enviada.
 
 A foto aparece no cartão do mapa (miniatura) e no topo da página do tasco, sempre com autor, licença
-e ligação à origem. O Commons só tem fotos de sítios conhecidos (por exemplo The Arkles, em Anfield).
+e ligação à origem.
+
+Na primeira passagem (2026-09-16) o script encontrou 8 fotos para os tascos pesquisados:
+- **Aplicadas (6):** The Sandon, The Townley, Mary D's, Grove Inn, The Corner Shop e Café Vianna,
+  todas confirmadas a olho.
+- **Recusadas (2):** «The Albert» deu uma foto das docas Albert Dock e «The Park» deu o Stanley Park.
+
+Desde então, uma foto sem coordenadas só conta se o título começar pelo nome do tasco. O Commons só tem fotos de sítios conhecidos (por exemplo The Arkles, em Anfield).
 As tascas portuguesas quase nunca lá estão e ficam com o ícone até haver foto.
 
 **Porque não usamos já as fotos e as estrelas do Google.** As fotos e a nota do Google (Places API)
@@ -58,6 +65,20 @@ alimentação não são sítio de dia de jogo. Os locais sugeridos dentro de um 
 todos e uma nova importação não os traz de volta. Só contam centros com mais de 8000 m². Em Portugal
 «Centro Comercial» também dá nome a galerias antigas de rua, e os cafés virados para a rua dessas
 galerias são tascos a sério. Os WC públicos dentro dos centros comerciais ficam, porque são úteis.
+
+Na primeira passagem (2026-09-16) o OSM tinha 360 sítios de comer e beber dentro de centros
+comerciais perto dos estádios. Destes, 60 estavam na app e ficaram escondidos: 21 na Luz (Colombo e
+Fonte Nova), 19 no Leça (MarShopping), 8 em Coimbra, 5 em Viana do Castelo, 2 no Dragão (Alameda) e
+alguns lá fora.
+
+**Associações da pesquisa confirmadas à mão.** A primeira versão da importação juntou mal dois
+tascos:
+- o Bago de Arroz a um homónimo a 2,25 km;
+- o Restaurante Alameda à Farmácia Alameda.
+
+Por isso a procura por nome ficou limitada a sítios de comer e beber a menos de 1,5 km, a morada só
+conta ao nível do edifício (nunca da rua) e cada associação ao OSM é confirmada nas etiquetas antes
+de ser aplicada.
 
 **Tascos de dia de jogo pesquisados.** Pesquisámos na web (jornais, fóruns e Reddit, guias de
 estádios, blogues de groundhopping) onde os adeptos vão antes do jogo, nos 38 estádios com jogos
