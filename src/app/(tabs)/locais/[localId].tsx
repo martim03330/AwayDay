@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AjudarTasco } from '@/components/ajudar-tasco';
 import { DestaquesMenu } from '@/components/destaques-menu';
 import { MenuTasco } from '@/components/menu-tasco';
 import { TascoPorConfirmar } from '@/components/tasco-por-confirmar';
@@ -365,6 +366,9 @@ export default function LocalScreen() {
           />
         </>
       ) : null}
+
+      <SectionHeader title="Ajuda a completar" />
+      <AjudarTasco local={local} />
 
       <SectionHeader title="Detalhes" />
       <Card style={styles.listaCard}>

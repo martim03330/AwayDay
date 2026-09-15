@@ -1,4 +1,5 @@
 import type { PlaceCatalogRows, PlaceScoreRow } from '@/features/places/types';
+import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
 import { supabase } from '@/lib/supabase';
 
 /** Places (confirmed and suggestions) and their approved dishes. RLS never returns hidden places. */
@@ -38,4 +39,73 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
   }));
 
   return { places: places.data, dishes: dishes.data, scores: scoreRows };
+}
+
+/** Why the server refused a fan's suggestion. */
+export type SuggestionRefusal = 'duplicate' | 'rate-limited';
+
+export class SuggestionRefused extends Error {
+  readonly reason: SuggestionRefusal;
+
+  constructor(reason: SuggestionRefusal) {
+    super(reason);
+    this.name = 'SuggestionRefused';
+    this.reason = reason;
+  }
+}
+
+function client() {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  return supabase;
+}
+
+export type DishSuggestion = {
+  placeId: string;
+  name: string;
+  /** Integer cents, or `null` when the fan does not know the price. */
+  priceCents: number | null;
+  prepMinutes: number | null;
+  temperature: 'hot' | 'cold' | null;
+};
+
+/** Suggests a dish for a place. It stays pending (invisible to others) until the owner approves it. */
+export async function suggestDish(suggestion: DishSuggestion) {
+  const { error } = await client().from('dish').insert({
+    place_id: suggestion.placeId,
+    name: suggestion.name.trim(),
+    price_cents: suggestion.priceCents,
+    prep_minutes: suggestion.prepMinutes,
+    temperature: suggestion.temperature,
+  });
+  if (!error) return;
+  if (error.code === '23505') throw new SuggestionRefused('duplicate');
+  if (error.message === 'dish_suggestion_rate_limited') throw new SuggestionRefused('rate-limited');
+  throw error;
+}
+
+/** Uploads a photo of a place to the uploader's folder and records it as pending moderation. */
+export async function suggestPlacePhoto(
+  userId: string,
+  placeId: string,
+  uri: string,
+  mimeType: string
+) {
+  const bucket = client().storage.from('place-photos');
+  const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/heic' ? 'heic' : 'jpg';
+  const path = `${userId}/${placeId}-${Date.now()}.${extension}`;
+
+  const upload = await bucket.upload(path, base64ParaBytes(await lerFicheiroEmBase64(uri)), {
+    contentType: mimeType,
+    upsert: false,
+  });
+  if (upload.error) throw upload.error;
+
+  const { error } = await client()
+    .from('place_photo')
+    .insert({ place_id: placeId, storage_path: path });
+  if (!error) return;
+  // Do not leave an orphan file behind.
+  await bucket.remove([path]);
+  if (error.message === 'place_photo_rate_limited') throw new SuggestionRefused('rate-limited');
+  throw error;
 }

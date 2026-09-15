@@ -10,6 +10,15 @@ export default function LocaisLayout() {
       <Stack.Screen name="[localId]" options={{ headerShown: false }}>
         <Stack.Screen.Title>Local</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen
+        name="sugerir-prato"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.92],
+          sheetGrabberVisible: true,
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
