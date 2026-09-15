@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
 import MapView, { MapMarker } from 'react-native-maps';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
@@ -35,6 +35,7 @@ import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
+import { Etiqueta } from '@/ui/etiqueta';
 import { LinkTexto } from '@/ui/link-texto';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
@@ -129,7 +130,9 @@ export default function OferecerBoleiaScreen() {
   const [escolhida, setEscolhida] = useState<RouteOption | null>(null);
   const [aCarregar, setACarregar] = useState(false);
   const [aquiEstou, setAquiEstou] = useState<Coordenadas | null>(null);
-  const [localizacaoNegada, setLocalizacaoNegada] = useState(false);
+  const [estadoLocalizacao, setEstadoLocalizacao] = useState<
+    'a-procurar' | 'ok' | 'negada' | 'indisponivel'
+  >('a-procurar');
   const [mapaPronto, setMapaPronto] = useState(false);
   const [pesquisa, setPesquisa] = useState('');
   const [resultados, setResultados] = useState<PlaceResult[] | null>(null);
@@ -156,7 +159,7 @@ export default function OferecerBoleiaScreen() {
     void getCurrentPosition().then((resultado) => {
       if (!ativo) return;
       if (resultado.status !== 'ok') {
-        setLocalizacaoNegada(true);
+        setEstadoLocalizacao(resultado.status === 'denied' ? 'negada' : 'indisponivel');
         return;
       }
       const aqui = {
@@ -164,6 +167,7 @@ export default function OferecerBoleiaScreen() {
         longitude: resultado.position.longitude,
       };
       setAquiEstou(aqui);
+      setEstadoLocalizacao('ok');
       setPartida((atual) => atual ?? aqui);
     });
     return () => {
@@ -263,6 +267,12 @@ export default function OferecerBoleiaScreen() {
     (parque) => parque.openOnMatchdays !== false
   );
   const nomeLimpo = nomePartida.trim();
+  // About 20 m: the pin still counts as "where you are" after a tiny drag.
+  const naMinhaLocalizacao =
+    aquiEstou !== null &&
+    partida !== null &&
+    Math.abs(aquiEstou.latitude - partida.latitude) < 0.0002 &&
+    Math.abs(aquiEstou.longitude - partida.longitude) < 0.0002;
   const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null;
   const cotacao = cotacoes?.find((candidata) => candidata.option === escolhida) ?? null;
 
@@ -270,6 +280,25 @@ export default function OferecerBoleiaScreen() {
     // Anything that changes the cost makes the quotes stale.
     setCotacoes(null);
     setEscolhida(null);
+  }
+
+  // Asks for the position again (it may have changed, or permission may have been given since) and puts the pin there.
+  function usarAMinhaLocalizacao() {
+    setEstadoLocalizacao('a-procurar');
+    void getCurrentPosition().then((resultado) => {
+      if (resultado.status !== 'ok') {
+        setEstadoLocalizacao(resultado.status === 'denied' ? 'negada' : 'indisponivel');
+        return;
+      }
+      const aqui = {
+        latitude: resultado.position.latitude,
+        longitude: resultado.position.longitude,
+      };
+      setAquiEstou(aqui);
+      setPartida(aqui);
+      setEstadoLocalizacao('ok');
+      mudou();
+    });
   }
 
   async function procurar() {
@@ -461,19 +490,45 @@ export default function OferecerBoleiaScreen() {
             </View>
           )
         ) : null}
-        {aquiEstou ? (
-          <LinkTexto
-            label="Usar a minha localização"
-            onPress={() => {
-              setPartida(aquiEstou);
-              mudou();
-            }}
-          />
-        ) : localizacaoNegada ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Sem acesso à localização: procura a rua ou toca no mapa.
-          </ThemedText>
-        ) : null}
+        <View style={[styles.estadoLocalizacao, { backgroundColor: theme.backgroundSelected }]}>
+          {estadoLocalizacao === 'a-procurar' ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              A procurar a tua localização…
+            </ThemedText>
+          ) : estadoLocalizacao === 'ok' && naMinhaLocalizacao ? (
+            <Etiqueta
+              icon={icons.selecionado}
+              label="O ponto de encontro está na tua localização atual"
+              tone="positivo"
+            />
+          ) : estadoLocalizacao === 'ok' ? (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                O pino está num sítio escolhido por ti, não na tua localização.
+              </ThemedText>
+              <LinkTexto label="Usar a minha localização" onPress={usarAMinhaLocalizacao} />
+            </>
+          ) : estadoLocalizacao === 'negada' ? (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                Sem acesso à localização. Ativa-a nas Definições para pôr o pino onde estás, ou
+                procura a rua.
+              </ThemedText>
+              <View style={styles.linksLocalizacao}>
+                <LinkTexto label="Abrir Definições" onPress={() => void Linking.openSettings()} />
+                <LinkTexto label="Tentar outra vez" onPress={usarAMinhaLocalizacao} />
+              </View>
+            </>
+          ) : (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                Não conseguimos saber onde estás (a localização do telemóvel pode estar desligada).
+                Procura a rua ou toca no mapa.
+              </ThemedText>
+              <LinkTexto label="Tentar outra vez" onPress={usarAMinhaLocalizacao} />
+            </>
+          )}
+        </View>
         <ThemedText type="small" themeColor="textMuted">
           Toca no mapa ou arrasta o pino para acertar. Escolhe um sítio público (uma estação, uma
           bomba de gasolina), nunca a tua casa.
@@ -739,6 +794,17 @@ const styles = StyleSheet.create({
   },
   centro: {
     textAlign: 'center',
+  },
+  estadoLocalizacao: {
+    gap: 4,
+    padding: 10,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+  },
+  linksLocalizacao: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.three,
   },
   pesquisa: {
     flexDirection: 'row',
