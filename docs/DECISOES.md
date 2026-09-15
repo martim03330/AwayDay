@@ -69,6 +69,11 @@ migração). O estádio é o `home_venue_id` do visitado, porque a API não indi
 e o Europeu. Liga 2, Liga 3, taças e Liga Europa não vêm na chave (a Liga 2 responde 404). A Liga dos
 Campeões fica para depois: faltam clubes e estádios estrangeiros.
 
+**API-Football (testada a 2026-09-15).** Tem a Liga 2 (id 95), a Liga 3 (865), a Taça de Portugal
+(96) e a Taça da Liga (97), com o estádio de cada jogo. O plano grátis, porém, só dá acesso às
+épocas de 2022 a 2024 e recusa a de 2026. Para ter estes jogos é preciso um plano pago (Pro, 19 $ por
+mês) ou carregá-los à mão. A chave está guardada no segredo `API_FOOTBALL_KEY` e ainda não é usada.
+
 ### Limitações conhecidas
 
 - Um jogo guardado que depois é adiado ou cancelado fica com a data antiga até a API lhe dar uma nova.

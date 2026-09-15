@@ -49,7 +49,15 @@
           "microphonePermission": "O AwayDay usa o microfone durante 10 segundos para medir o barulho da bancada. Nada é gravado."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O AwayDay usa a tua localização só quando fazes check-in, para confirmar que estás no tasco. Não fica guardada.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
