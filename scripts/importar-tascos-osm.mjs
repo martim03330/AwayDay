@@ -2,7 +2,7 @@
 // public.place_candidate. Then `select public.suggest_place_candidates();` shows them in the app as suggestions.
 //
 // Usage:
-//   npm run db:tascos -- [venue ids...] > /tmp/candidatos.sql
+//   npm run --silent db:tascos -- [venue ids...] > /tmp/candidatos.sql   (--silent: npm would print its header into the SQL)
 //   supabase db query --linked -f /tmp/candidatos.sql
 // Without ids: every Portuguese stadium. With ids: exactly those, stadiums abroad included.
 //
