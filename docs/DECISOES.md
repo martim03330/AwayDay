@@ -2,6 +2,35 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Boleias: uma por jogo e pesquisa de ruas; fotos do Mapillary postas de parte
+
+**Uma boleia aberta por pessoa por jogo.** Duas ofertas da mesma pessoa não fazem sentido e dividiam
+os passageiros. Há um índice único parcial em `ride (fixture_id, driver_id) where status = 'open'`,
+e a Edge Function responde `already_offering` antes de calcular percursos. Cancelar e abrir outra
+continua a funcionar. Quem já oferece vê a sua boleia em vez do formulário.
+
+**Ponto de encontro perto de quem conduz.**
+- O mapa abre na localização de quem conduz; antes esperava o estádio.
+- O movimento só é feito quando o mapa está pronto (`onMapReady`), porque antes disso perdia-se sem
+  aviso.
+- Há «Usar a minha localização» e pesquisa de rua ou sítio.
+
+A pesquisa usa o Nominatim (OpenStreetMap) através da Edge Function `rides`, com 30 pesquisas por
+hora por conta. Só pesquisa ao carregar em «Procurar», porque as regras do Nominatim não permitem
+pesquisar enquanto se escreve.
+
+**Jogos fora de Portugal.** As boleias continuam disponíveis, com o aviso de que a maioria vai de
+avião. Um jogo perto da fronteira pode justificar ir de carro.
+
+**Fotos de rua do Mapillary: testadas e postas de parte.** O script procurava, para cada tasco sem
+foto, a imagem mais próxima tirada a 6–35 m, com a câmara virada para o tasco (menos de 30°), a
+partir de 2018 e sem panorâmicas. Encontrou candidatas para cerca de metade dos tascos dos estádios
+da Liga, mas nenhuma das cinco vistas a olho servia. Eram imagens de câmaras de carro (uma de noite)
+com a estrada, carros estacionados ou contentores, e o tasco não se reconhecia. Uma foto que não
+mostra o sítio engana mais do que ajuda, por isso não aplicámos nenhuma e retirámos o script. A chave
+fica só no `.env.local` para uma nova experiência. O caminho mais promissor para as fotos dos tascos
+são as que os adeptos já podem enviar (`place_photo`), com um ecrã de moderação.
+
 ## 2026-09-16 — Fatia 3: boleias com lugares e preço por pessoa
 
 **O quê.** Em «O meu jogo», um condutor abre uma boleia para o jogo com:
