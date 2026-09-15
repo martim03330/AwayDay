@@ -53,9 +53,11 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
         <ThemedText type="smallBold" themeColor="textSecondary">
           {`Fonte: ${ponto.publicadoPor} · ${ponto.fonte.titulo}, ${ponto.fonte.publicadoEm}`}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {`Publicado para o jogo ${ponto.fonte.jogoOriginal}.`}
-        </ThemedText>
+        {ponto.fonte.jogoOriginal ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Publicado para o jogo ${ponto.fonte.jogoOriginal}.`}
+          </ThemedText>
+        ) : null}
         <ThemedText type="small" themeColor="textSecondary" selectable numberOfLines={2}>
           {ponto.fonte.url}
         </ThemedText>

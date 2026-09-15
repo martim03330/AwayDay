@@ -2,9 +2,54 @@ import type {
   ClubRow,
   FixtureCatalogRows,
   FixtureRow,
+  MeetingPointRow,
   VenueRow,
 } from '@/features/fixtures/types';
-import type { Clube, Competicao, Divisao, Jogo, Regiao, RoofCoverage, Venue } from '@/mocks/tipos';
+import type {
+  Clube,
+  Competicao,
+  Divisao,
+  Jogo,
+  OrigemPontoEncontro,
+  PontoEncontro,
+  Regiao,
+  RoofCoverage,
+  Venue,
+} from '@/mocks/tipos';
+
+const MEETING_POINT_ORIGINS: Record<OrigemPontoEncontro, true> = { clube: true, camara: true, policia: true };
+
+const publishedDate = new Intl.DateTimeFormat('pt-PT', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+function isMeetingPointOrigin(value: string): value is OrigemPontoEncontro {
+  return Object.prototype.hasOwnProperty.call(MEETING_POINT_ORIGINS, value);
+}
+
+function toMeetingPoint(row: MeetingPointRow): PontoEncontro | null {
+  const origin = row.origin;
+  if (!isMeetingPointOrigin(origin)) return null;
+  return {
+    nome: row.name,
+    morada: row.address,
+    horario: row.schedule,
+    transporte: row.transport,
+    nota: row.note,
+    origem: origin,
+    publicadoPor: row.published_by,
+    fonte: {
+      titulo: row.source_title,
+      url: row.source_url,
+      publicadoEm: publishedDate.format(new Date(row.published_on)),
+      // Published for this very fixture.
+      jogoOriginal: null,
+    },
+  };
+}
 
 /** Fields the database does not have yet, joined by id. */
 export type CatalogExtras = {
@@ -114,7 +159,8 @@ function toFixture(
   row: FixtureRow,
   extras: CatalogExtras['fixtures'],
   clubIds: ReadonlySet<string>,
-  venueIds: ReadonlySet<string>
+  venueIds: ReadonlySet<string>,
+  meetingPoints: ReadonlyMap<string, PontoEncontro>
 ): Jogo | null {
   const competition = row.competition_id;
   const extra = extras[row.id];
@@ -137,7 +183,7 @@ function toFixture(
     inicio: new Date(row.kickoff_at).toISOString(),
     horaConfirmada: row.kickoff_confirmed ?? true,
     meteorologia: extra?.meteorologia ?? null,
-    pontoEncontro: extra?.pontoEncontro ?? null,
+    pontoEncontro: extra?.pontoEncontro ?? meetingPoints.get(row.id) ?? null,
   };
 }
 
@@ -208,10 +254,16 @@ export function buildFixtureCatalog(
   });
   const venueIds = new Set(venues.map((venue) => venue.id));
 
+  const meetingPoints = new Map<string, PontoEncontro>();
+  for (const row of rows.meetingPoints ?? []) {
+    const ponto = toMeetingPoint(row);
+    if (ponto) meetingPoints.set(row.fixture_id, ponto);
+  }
+
   const fixtures = collect(
     rows.fixtures,
     'fixture',
-    (row) => toFixture(row, extras.fixtures, clubIds, venueIds),
+    (row) => toFixture(row, extras.fixtures, clubIds, venueIds, meetingPoints),
     skipped
   ).sort((a, b) => a.inicio.localeCompare(b.inicio));
 

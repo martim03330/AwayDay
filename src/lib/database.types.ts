@@ -510,6 +510,62 @@ export type Database = {
           },
         ]
       }
+      fixture_meeting_point: {
+        Row: {
+          address: string
+          created_at: string
+          fixture_id: string
+          name: string
+          note: string | null
+          origin: string
+          published_by: string
+          published_on: string
+          schedule: string
+          source_title: string
+          source_url: string
+          transport: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          fixture_id: string
+          name: string
+          note?: string | null
+          origin: string
+          published_by: string
+          published_on: string
+          schedule: string
+          source_title: string
+          source_url: string
+          transport: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          fixture_id?: string
+          name?: string
+          note?: string | null
+          origin?: string
+          published_by?: string
+          published_on?: string
+          schedule?: string
+          source_title?: string
+          source_url?: string
+          transport?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_meeting_point_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: true
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mission_photo: {
         Row: {
           fixture_id: string | null

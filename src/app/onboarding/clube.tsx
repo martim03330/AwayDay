@@ -32,7 +32,8 @@ export default function OnboardingClubeScreen() {
           onPress={() => {
             if (!selecionado) return;
             escolherClube(selecionado.id);
-            router.push('/onboarding/clube-terra');
+            // The clube da terra step is out for now (MOSTRAR_CLUBE_DA_TERRA).
+            router.push('/onboarding/permissoes');
           }}
         />
       }>

@@ -109,6 +109,21 @@ export default function LocaisScreen() {
       );
     }
 
+    const estadioDaMalta = obterEstadio(estadioDoClube);
+    if (perto.length === 0 && estadio.regiao === 'estrangeiro' && estadioDaMalta) {
+      return (
+        <EmptyState
+          icon={icons.semLocais}
+          title={`Não vais a ${estadio.cidade}?`}
+          message={`Ainda não mapeámos tascos perto do ${estadio.nome}. Se ficas por cá, ao menos sai do sofá: vê o jogo num tasco com a malta.`}
+          action={{
+            label: `Ver tascos perto do ${estadioDaMalta.nome}`,
+            onPress: () => router.setParams({ estadio: estadioDaMalta.id }),
+          }}
+        />
+      );
+    }
+
     if (perto.length === 0) {
       return (
         <EmptyState

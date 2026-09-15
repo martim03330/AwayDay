@@ -18,6 +18,12 @@ export const nomesDivisao: Record<Divisao, string> = {
  */
 export const DIVISOES_NA_ESCOLHA: readonly Divisao[] = [1];
 
+/**
+ * The clube da terra makes most sense with Liga 2 and Liga 3 clubs, which have no fixtures in the first version: it
+ * stays out of the introduction, the profile and the fixtures list. What was already chosen is kept.
+ */
+export const MOSTRAR_CLUBE_DA_TERRA = false;
+
 export const clubes: Clube[] = [];
 
 /** Portuguese clubs grouped by division, in alphabetical order. */

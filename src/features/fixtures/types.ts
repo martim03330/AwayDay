@@ -38,9 +38,26 @@ export type FixtureRow = Pick<
   // Optional so the bundled sample fixtures need not carry it (they all have a set time).
   Partial<Pick<Tables<'fixture'>, 'kickoff_confirmed'>>;
 
+export type MeetingPointRow = Pick<
+  Tables<'fixture_meeting_point'>,
+  | 'fixture_id'
+  | 'name'
+  | 'address'
+  | 'schedule'
+  | 'transport'
+  | 'note'
+  | 'origin'
+  | 'published_by'
+  | 'source_title'
+  | 'source_url'
+  | 'published_on'
+>;
+
 export type FixtureCatalogRows = {
   competitions: CompetitionRow[];
   venues: VenueRow[];
   clubs: ClubRow[];
   fixtures: FixtureRow[];
+  /** Official meeting points for travelling fans. The bundled catalogue has none. */
+  meetingPoints?: MeetingPointRow[];
 };

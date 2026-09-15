@@ -10,7 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-const TOTAL_PASSOS = 4;
+const TOTAL_PASSOS = 3;
 /** Acima deste número de caracteres, a frase usa letra mais pequena para não ocupar o ecrã todo. */
 const LIMITE_FRASE_CURTA = 70;
 /** Mowing stripes: 36 px wide, every 72 px. */

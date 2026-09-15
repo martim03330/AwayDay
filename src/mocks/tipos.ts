@@ -101,8 +101,8 @@ export type PontoEncontro = {
     titulo: string;
     url: string;
     publicadoEm: string;
-    /** Jogo real para o qual a informação foi publicada. */
-    jogoOriginal: string;
+    /** Jogo real para o qual a informação foi publicada; `null` quando é este mesmo jogo. */
+    jogoOriginal: string | null;
   };
 };
 

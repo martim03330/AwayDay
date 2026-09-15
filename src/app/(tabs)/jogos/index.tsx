@@ -23,7 +23,7 @@ import {
   type FiltroCompeticao,
 } from '@/lib/jogos';
 import { useUserId } from '@/lib/session';
-import { obterClube } from '@/mocks/clubes';
+import { MOSTRAR_CLUBE_DA_TERRA, obterClube } from '@/mocks/clubes';
 import { jogos } from '@/mocks/jogos';
 import type { Clube, Jogo } from '@/mocks/tipos';
 import { useAICoach } from '@/state/ai-coach';
@@ -33,6 +33,7 @@ import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
+import { LinkTexto } from '@/ui/link-texto';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -42,6 +43,9 @@ const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string 
   // First version: Liga 2, Liga 3 and the cups have no fixtures yet, so their filters stay hidden.
   { id: 'europa', label: 'Europa', emTexto: ' nas competições europeias' },
 ];
+
+/** How many upcoming games of your club the list shows before "Ver o calendário todo". */
+const PROXIMOS_DO_CLUBE = 2;
 
 /** Today's date for the header eyebrow ("segunda-feira, 14 de setembro"), always in Lisbon. */
 const formatoHoje = new Intl.DateTimeFormat('pt-PT', {
@@ -138,9 +142,14 @@ export default function JogosScreen() {
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   // Only the user's clubs by default; the rest is one (humorous) tap away.
   const [verConcorrencia, setVerConcorrencia] = useState(false);
+  // The next games of your club by default; the whole season only when asked for.
+  const [verCalendario, setVerCalendario] = useState(false);
   const { loading, refreshing, refresh } = useSimulatedLoading('jogos');
 
-  const idsMeusClubes = clubesDoUtilizador(clubeFavoritoId, clubeDaTerraId);
+  const idsMeusClubes = clubesDoUtilizador(
+    clubeFavoritoId,
+    MOSTRAR_CLUBE_DA_TERRA ? clubeDaTerraId : null
+  );
   const meusClubes = idsMeusClubes
     .map((id) => obterClube(id))
     .filter((clube): clube is Clube => clube !== undefined);
@@ -154,7 +163,9 @@ export default function JogosScreen() {
   const terminados = filtrados
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado')
     .reverse();
-  const grupos = agruparPorDia(proximos);
+  const resumido = !verConcorrencia && !verCalendario;
+  const grupos = agruparPorDia(resumido ? proximos.slice(0, PROXIMOS_DO_CLUBE) : proximos);
+  const clubeFavorito = obterClube(clubeFavoritoId);
   const hoje = formatoHoje.format(new Date(agora));
 
   function limparFiltros() {
@@ -220,6 +231,16 @@ export default function JogosScreen() {
             {grupo.jogos.map(renderJogo)}
           </View>
         ))}
+        {!verConcorrencia && proximos.length > PROXIMOS_DO_CLUBE ? (
+          <LinkTexto
+            label={
+              verCalendario
+                ? 'Mostrar só os próximos jogos'
+                : `Ver o calendário todo${clubeFavorito ? ` do ${clubeFavorito.nomeCurto}` : ''} (${plural(proximos.length, 'jogo', 'jogos')})`
+            }
+            onPress={() => setVerCalendario((atual) => !atual)}
+          />
+        ) : null}
         {terminados.length > 0 ? (
           <View style={styles.grupo}>
             <CabecalhoDia titulo="Jogos a que foste" total={terminados.length} apagado />

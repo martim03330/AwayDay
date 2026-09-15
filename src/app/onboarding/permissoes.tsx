@@ -62,7 +62,7 @@ export default function OnboardingPermissoesScreen() {
 
   return (
     <OnboardingPasso
-      passo={3}
+      passo={2}
       frase="Pedimos pouco: localização para os tascos e WC mais perto, e notificações para não perderes uma mudança de horário."
       rodape={
         <Button

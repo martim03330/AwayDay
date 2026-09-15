@@ -1,6 +1,27 @@
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import type { PlaceCatalogRows, PlaceScoreRow } from '@/features/places/types';
 import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
 import { supabase } from '@/lib/supabase';
+
+/** The API returns at most this many rows per request (max_rows). */
+const PAGE_SIZE = 1000;
+
+/** Reads every row, page by page: one request alone would stop at 1000 rows and silently drop the rest. */
+async function allPages<Row>(
+  page: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: Row[] | null; error: PostgrestError | null }>
+) {
+  const rows: Row[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await page(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < PAGE_SIZE) return rows;
+  }
+}
 
 /** Places (confirmed and suggestions) and their approved dishes. RLS never returns hidden places. */
 export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
@@ -9,25 +30,32 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
       'Supabase is not configured: set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY.'
     );
   }
+  const client = supabase;
 
   const [places, dishes, scores] = await Promise.all([
-    supabase
-      .from('place')
-      .select(
-        'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no'
-      ),
+    allPages((from, to) =>
+      client
+        .from('place')
+        .select(
+          'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no'
+        )
+        .order('id')
+        .range(from, to)
+    ),
     // Someone's own pending suggestions are readable too, but the menu only shows approved dishes.
-    supabase
-      .from('dish')
-      .select(
-        'id, place_id, name, price_cents, prep_minutes, temperature, is_specialty, recommendations_count'
-      )
-      .eq('status', 'approved'),
-    supabase.rpc('place_scores_all'),
+    allPages((from, to) =>
+      client
+        .from('dish')
+        .select(
+          'id, place_id, name, price_cents, prep_minutes, temperature, is_specialty, recommendations_count'
+        )
+        .eq('status', 'approved')
+        .order('id')
+        .range(from, to)
+    ),
+    client.rpc('place_scores_all'),
   ]);
 
-  if (places.error) throw places.error;
-  if (dishes.error) throw dishes.error;
   if (scores.error) throw scores.error;
 
   // An average is null when nobody gave that kind of score, whatever the generated types say.
@@ -38,7 +66,7 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
     food_score: typeof row.food_score === 'number' ? row.food_score : null,
   }));
 
-  return { places: places.data, dishes: dishes.data, scores: scoreRows };
+  return { places, dishes, scores: scoreRows };
 }
 
 /** Why the server refused a fan's suggestion. */

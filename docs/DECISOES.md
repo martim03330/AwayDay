@@ -2,6 +2,29 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Locais em páginas, só os próximos jogos, sem clube da terra e pontos de encontro
+
+**Locais em páginas.** A API do Supabase devolve no máximo 1000 linhas por pedido (`max_rows`). Com
+1486 locais, os últimos a entrar (os 403 à volta dos estádios estrangeiros) nunca chegavam à app, e o
+Milan–Benfica aparecia sem tascos. `fetchPlaceCatalogRows` passou a ler os locais e os pratos página a
+página, ordenados por id. Qualquer tabela que possa passar das 1000 linhas tem de ser lida assim.
+
+**Estádio estrangeiro sem tascos.** Em vez de sugerir um estádio qualquer, a app pergunta
+«Não vais a Milão?» e sugere tascos perto do estádio do teu clube, para veres o jogo com a malta.
+
+**Só os próximos jogos.** A página Jogos mostra os 2 próximos jogos do teu clube e o link
+«Ver o calendário todo». A seguir vêm «Jogos a que foste» e «Espreitar a concorrência», que assim
+ficam à vista.
+
+**Clube da terra fora da primeira versão.** Faz mais sentido com a Liga 2 e a Liga 3, que ainda não
+têm jogos. `MOSTRAR_CLUBE_DA_TERRA = false` tira-o da introdução (passa a ter 3 passos), do Perfil,
+da lista de jogos e do treinador. O que já estava escolhido fica guardado.
+
+**Pontos de encontro oficiais.** Nova tabela `fixture_meeting_point`, pública e só de leitura, com
+fonte obrigatória: quem publicou, título, URL e data. Para já é preenchida à mão a partir do site do
+clube, da câmara ou da polícia. A app mostra-a na ficha do jogo; os dados de exemplo continuam só no
+modo demo.
+
 ## 2026-09-15 — Check-out automático, dica que abre o tasco e «Como chegar»
 
 **Check-out automático.** Um check-in termina quando começa um jogo no estádio desse tasco: quem lá

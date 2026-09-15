@@ -15,6 +15,7 @@ import type { CoachMessage } from '@/features/coach/types';
 import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
 import { useNow } from '@/hooks/use-now';
 import { useUserId } from '@/lib/session';
+import { MOSTRAR_CLUBE_DA_TERRA } from '@/mocks/clubes';
 import { jogos, obterJogo } from '@/mocks/jogos';
 import type { VisitaLocal } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
@@ -59,7 +60,7 @@ export function AICoachProvider({ children }: { children: ReactNode }) {
         userId,
         now: agora,
         supporterClubId: clubeFavoritoId,
-        hometownClubId: clubeDaTerraId,
+        hometownClubId: MOSTRAR_CLUBE_DA_TERRA ? clubeDaTerraId : null,
         fixtures: jogos,
         visitedVenueIds: estadiosVisitados,
         lastCheckIn: ultimoCheckIn ? { id: ultimoCheckIn.id, at: Date.parse(ultimoCheckIn.data) } : null,

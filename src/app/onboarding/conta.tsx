@@ -54,7 +54,7 @@ export default function OnboardingContaScreen() {
 
   return (
     <OnboardingPasso
-      passo={4}
+      passo={3}
       frase="Guarda o teu passaporte: com conta, os teus clubes vêm contigo para qualquer telemóvel."
       rodape={
         <View style={styles.botoes}>

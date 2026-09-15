@@ -24,7 +24,7 @@ import { formatarNumero, plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { contarTascosVerificados, ID_UTILIZADOR, montarRanking } from '@/lib/tascos';
-import { nomesDivisao, obterClube } from '@/mocks/clubes';
+import { MOSTRAR_CLUBE_DA_TERRA, nomesDivisao, obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { rankingMock } from '@/mocks/ranking';
 import type { Clube } from '@/mocks/tipos';
@@ -233,30 +233,34 @@ export default function PerfilScreen() {
           />
         ) : null}
 
-        <SectionHeader title="Clube da terra" />
-        {clubeDaTerra ? (
-          <CartaoClube
-            clube={clubeDaTerra}
-            onPress={() => router.push('/perfil/clube-terra')}
-            accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
-            subtitle={`${formatarNumero(clubeDaTerra.adeptosNaApp)} adeptos na app`}
-            chevron={chevron}
-          />
-        ) : (
-          <Card style={styles.semClube}>
-            <ListRow
-              leading={<IconCircle name={icons.casa} />}
-              title="Ainda sem clube da terra"
-              subtitle="Diz-nos de onde és. Nós sugerimos, tu confirmas."
-            />
-            <Button
-              label="Escolher clube da terra"
-              variant="secondary"
-              icon={icons.localizacao}
-              onPress={() => router.push('/perfil/clube-terra')}
-            />
-          </Card>
-        )}
+        {MOSTRAR_CLUBE_DA_TERRA ? (
+          <>
+            <SectionHeader title="Clube da terra" />
+            {clubeDaTerra ? (
+              <CartaoClube
+                clube={clubeDaTerra}
+                onPress={() => router.push('/perfil/clube-terra')}
+                accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
+                subtitle={`${formatarNumero(clubeDaTerra.adeptosNaApp)} adeptos na app`}
+                chevron={chevron}
+              />
+            ) : (
+              <Card style={styles.semClube}>
+                <ListRow
+                  leading={<IconCircle name={icons.casa} />}
+                  title="Ainda sem clube da terra"
+                  subtitle="Diz-nos de onde és. Nós sugerimos, tu confirmas."
+                />
+                <Button
+                  label="Escolher clube da terra"
+                  variant="secondary"
+                  icon={icons.localizacao}
+                  onPress={() => router.push('/perfil/clube-terra')}
+                />
+              </Card>
+            )}
+          </>
+        ) : null}
 
         <SectionHeader title="Passaporte de estádios" />
         <PassaporteCard estadiosVisitados={estadiosVisitados} avaliacoes={avaliacoes} limite={3} />
