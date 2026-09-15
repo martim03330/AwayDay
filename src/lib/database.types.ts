@@ -841,6 +841,74 @@ export type Database = {
           },
         ]
       }
+      parking_spot: {
+        Row: {
+          address: string | null
+          checked_on: string
+          confidence: string
+          created_at: string
+          distance_m: number | null
+          id: string
+          kind: string
+          latitude: number | null
+          location: unknown
+          longitude: number | null
+          name: string
+          note: string | null
+          open_on_matchdays: boolean | null
+          operator: string | null
+          price_note: string | null
+          sources: Json
+          venue_id: string
+        }
+        Insert: {
+          address?: string | null
+          checked_on: string
+          confidence: string
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          kind: string
+          latitude?: number | null
+          location?: unknown
+          longitude?: number | null
+          name: string
+          note?: string | null
+          open_on_matchdays?: boolean | null
+          operator?: string | null
+          price_note?: string | null
+          sources: Json
+          venue_id: string
+        }
+        Update: {
+          address?: string | null
+          checked_on?: string
+          confidence?: string
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          kind?: string
+          latitude?: number | null
+          location?: unknown
+          longitude?: number | null
+          name?: string
+          note?: string | null
+          open_on_matchdays?: boolean | null
+          operator?: string | null
+          price_note?: string | null
+          sources?: Json
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parking_spot_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place: {
         Row: {
           attribution: string | null
@@ -1724,6 +1792,38 @@ export type Database = {
           short_name_article?: string | null
         }
         Relationships: []
+      }
+      venue_parking: {
+        Row: {
+          checked_on: string
+          summary: string | null
+          summary_sources: Json
+          venue_id: string
+          warnings: Json
+        }
+        Insert: {
+          checked_on: string
+          summary?: string | null
+          summary_sources?: Json
+          venue_id: string
+          warnings?: Json
+        }
+        Update: {
+          checked_on?: string
+          summary?: string | null
+          summary_sources?: Json
+          venue_id?: string
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_parking_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venue_review: {
         Row: {

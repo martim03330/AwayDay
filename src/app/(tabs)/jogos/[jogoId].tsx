@@ -8,6 +8,7 @@ import { ComoChegar } from '@/components/como-chegar';
 import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
+import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
 import { EstadioCard } from '@/components/estadio-card';
 import { MapaJogo } from '@/components/mapa-jogo';
 import { MapaPontoEncontro } from '@/components/mapa-ponto-encontro';
@@ -261,12 +262,16 @@ export default function JogoScreen() {
 
         <SectionHeader title="Como chegar" />
         {estadio.transportes.length > 0 ? <ComoChegar opcoes={estadio.transportes} /> : null}
+
         <Button
           label="Abrir o caminho no mapa"
           variant="secondary"
           icon={icons.rota}
           onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
         />
+
+        <SectionHeader title="Estacionamento" />
+        <EstacionamentoEstadio estadioId={estadio.id} />
 
         <Button
           label={
