@@ -37,6 +37,16 @@ dependermos do Commons em cada abertura. O autor, a licença e a ligação à or
 (há uma restrição que não deixa haver foto sem crédito) e aparecem sobre a foto, como a licença
 exige. Os estádios sem foto livre mantêm a capa com as cores do clube.
 
+**Confirmar que a foto é do estádio certo.** A pesquisa por nome enganou-se em estádios com nomes
+repetidos:
+- «Allianz Stadium» deu o de Sydney, e não o de Turim;
+- «Raiffeisen Arena» deu o Waldstadion de Pasching;
+- «Campo da Mata» deu o emblema de um clube de Caranguejeira.
+
+Tirámos essas fotos. Agora um resultado só conta se as coordenadas da Wikidata (P625) ficarem a menos
+de 3 km do nosso estádio. Os que a pesquisa não acerta ficam com o item fixado em `KNOWN_ITEMS`.
+Todas as fotos aplicadas foram verificadas por distância e as que não tinham coordenadas, a olho.
+
 ## 2026-09-16 — Fatia 2: «O meu jogo»
 
 **O quê.** Marcar «Vou a este jogo» abre um ecrã só desse jogo (`/jogos/o-meu-jogo`). Chega-se lá pelo
