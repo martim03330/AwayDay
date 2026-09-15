@@ -2,6 +2,38 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Tascos sugeridos pelos próprios adeptos (e os que ficam mais longe)
+
+**O buraco.** Todos os tascos vinham do OpenStreetMap ou da pesquisa. Quem conhecia um sítio que não
+estava em lado nenhum não tinha como o pôr na app — e os sítios a mais de 20 min a pé eram escondidos
+da lista, por bons que fossem.
+
+**Sugerir um tasco** (`suggest_place`, ecrã `/locais/sugerir-tasco`). Nome, tipo, pino no mapa (começa
+onde a pessoa está) e, se quiser, porque é que vale a pena. As travas, todas no servidor:
+- é preciso conta; no máximo 3 sugestões por dia e 10 por mês;
+- até 45 minutos a pé de um estádio com jogos — mais longe do que isso já não é um sítio de dia de
+  jogo;
+- nada de duplicados: não entra se já houver um tasco a menos de 60 m ou com o mesmo nome nesse
+  estádio (nomes comparados sem acentos nem pontuação);
+- links, emails e números de telefone no nome são anúncios, não tascos: recusados;
+- nasce como sugestão e só fica confirmado com **5 adeptos diferentes** a dizer que sim, como
+  qualquer outra sugestão. Quem sugere não vota no seu próprio tasco: a política de RLS recusa o voto
+  e a contagem ignora-o;
+- uma sugestão que ninguém votou em 60 dias é apagada por um cron diário.
+
+A app mostra sempre de onde vem: etiqueta «De um adepto», a nota de quem sugeriu e quantos
+confirmaram. As fotos continuam a passar pela moderação que já existia.
+
+**Mais longe, mas vale a caminhada.** A lista continua a mostrar primeiro os que ficam a menos de
+20 min, mas passa a ter uma secção com os que ficam para lá disso **e** foram confirmados ou
+sugeridos por adeptos (`valeACaminhada`, com testes). Um sítio longe que ninguém recomendou continua
+de fora: longe *e* desconhecido não é uma dica.
+
+**Correção de fundo: não havia `npm run typecheck`.** O script nunca existiu no `package.json`, por
+isso o comando não verificava nada. Foi acrescentado (`tsc --noEmit`) e os **71 erros de tipos** que
+estavam escondidos foram corrigidos — mocks dos estádios e dos locais, tipos da navegação da conta,
+um ícone em falta e um tom de ícone que não existia. O projeto passa agora o `tsc` sem erros.
+
 ## 2026-09-16 — Ruas dos adeptos da casa e hora de chegada pelo parque
 
 **Ruas dos adeptos da casa.** Até agora a app só sabia onde estavam os adeptos da casa *durante* um

@@ -10,7 +10,7 @@ import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useTheme } from '@/hooks/use-theme';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { plural } from '@/lib/formatos';
-import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE, ordenarTascos } from '@/lib/locais';
+import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE, ordenarTascos, valeACaminhada } from '@/lib/locais';
 import { obterClube } from '@/mocks/clubes';
 import { estadiosNacionais, obterEstadio } from '@/mocks/estadios';
 import { locaisDoEstadio } from '@/mocks/locais';
@@ -81,7 +81,10 @@ export default function LocaisScreen() {
     obterEstadio(params.estadio ?? estadioDoClube) ??
     obterEstadio(estadioDoClube) ??
     estadiosNacionais[0];
-  const { perto: pertoPorDistancia, maisLonge } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
+  const todosOsLocais = locaisDoEstadio(estadio.id);
+  const { perto: pertoPorDistancia, maisLonge } = filtrarPorTempoAPe(todosOsLocais);
+  // Further than the list normally goes, but worth it: confirmed by fans, or put there by one.
+  const valeAPena = valeACaminhada(todosOsLocais);
   const perto = ordenarTascos(pertoPorDistancia);
   const confirmados = perto.filter((local) => local.confirmacao === 'confirmado');
   const sugestoes = perto.filter((local) => local.confirmacao === 'sugerido');
@@ -186,16 +189,36 @@ export default function LocaisScreen() {
           </>
         ) : null}
         {sugestoes.map(cartao)}
-        {maisLonge > 0 ? (
+        {valeAPena.length > 0 ? (
+          <>
+            <SectionHeader
+              title="Mais longe, mas vale a caminhada"
+              trailing={plural(valeAPena.length, 'sítio', 'sítios')}
+            />
+            <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
+              {`Ficam a mais de ${MAX_MINUTOS_A_PE} min a pé, mas foram confirmados ou sugeridos por adeptos.`}
+            </ThemedText>
+            {valeAPena.map(cartao)}
+          </>
+        ) : null}
+        {maisLonge - valeAPena.length > 0 ? (
           <View style={[styles.banco, { borderColor: theme.borderStrong }]}>
             <Icon name={icons.aPe} size={18} color={theme.textSecondary} />
             <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
-              {maisLonge === 1
-                ? `1 tasco fica a mais de ${MAX_MINUTOS_A_PE} min a pé e ficou no banco.`
-                : `${maisLonge} tascos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e ficaram no banco.`}
+              {maisLonge - valeAPena.length === 1
+                ? `1 tasco fica a mais de ${MAX_MINUTOS_A_PE} min a pé e ainda ninguém o recomendou.`
+                : `${maisLonge - valeAPena.length} tascos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e ainda ninguém os recomendou.`}
             </ThemedText>
           </View>
         ) : null}
+        <Button
+          label="Sugerir um tasco"
+          variant="secondary"
+          icon={icons.checkIn}
+          onPress={() =>
+            router.push({ pathname: '/locais/sugerir-tasco', params: { estadioId: estadio.id } })
+          }
+        />
       </>
     );
   }

@@ -17,7 +17,16 @@ export const nomesTipoLocal: Record<TipoLocal, string> = {
  */
 type LocalBase = Omit<
   Local,
-  'pratos' | 'confirmacao' | 'rapidoEBarato' | 'pontuacaoSugestao' | 'votos'
+  | 'pratos'
+  | 'confirmacao'
+  | 'rapidoEBarato'
+  | 'pontuacaoSugestao'
+  | 'votos'
+  | 'deAdepto'
+  | 'notaDeAdepto'
+  | 'referencia'
+  | 'wcNoTasco'
+  | 'foto'
 >;
 
 const locaisBase: LocalBase[] = [
@@ -485,6 +494,8 @@ export const locaisDemo: Local[] = locaisBase.map((local) => ({
   ...local,
   pratos: gerarPratos(local),
   confirmacao: 'confirmado',
+  deAdepto: false,
+  notaDeAdepto: null,
   rapidoEBarato: local.tipo === 'tasca' || local.tipo === 'roulotte' || local.tipo === 'bar',
   pontuacaoSugestao: 0,
   votos: { sim: 0, nao: 0 },

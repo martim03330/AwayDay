@@ -43,7 +43,7 @@ import { useUserId } from '@/lib/session';
 import { useAppState } from '@/state/app-state';
 import { obterClube } from '@/mocks/clubes';
 import { locaisDoEstadio } from '@/mocks/locais';
-import type { Coordenadas, Local, Restroom, Venue } from '@/mocks/tipos';
+import type { Coordenadas, Jogo, Local, Restroom, Venue } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Escudo } from '@/ui/escudo';
@@ -187,7 +187,7 @@ export function MapaJogo({
   /** 'estadio': open already zoomed on the stadium with the tascos and WC showing (Locais tab). */
   inicio?: 'cidade' | 'estadio';
   /** The game this map is for: shows and lets fans flag where home fans are, around kick-off. */
-  jogo?: { id: string; inicio: string };
+  jogo?: { id: string; inicio: string } & Partial<Pick<Jogo, 'casaId' | 'foraId' | 'competicao'>>;
 }) {
   const router = useRouter();
   const theme = useTheme();
@@ -217,7 +217,10 @@ export function MapaJogo({
     parque.location ? [{ parque, coordenadas: parque.location }] : []
   );
   // Big games fill everything near the ground earlier, so the colours change with the game.
-  const jogoGrande = jogo ? eJogoGrande(jogo) : false;
+  const jogoGrande =
+    jogo?.casaId && jogo.foraId && jogo.competicao
+      ? eJogoGrande({ casaId: jogo.casaId, foraId: jogo.foraId, competicao: jogo.competicao })
+      : false;
   const inicioDoJogo = jogo ? Date.parse(jogo.inicio) : null;
   const agoraMs = useNow(60 * 1000);
   // Fans can flag home fans from 6 h before kick-off until 3 h after; flags show until 6 h after.

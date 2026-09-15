@@ -37,7 +37,7 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
       client
         .from('place')
         .select(
-          'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no, matchday_note, matchday_sources, home_fans_heavy, toilet_yes, toilet_no, photo_url, photo_author, photo_license, photo_source_url'
+          'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no, matchday_note, matchday_sources, home_fans_heavy, toilet_yes, toilet_no, photo_url, photo_author, photo_license, photo_source_url, source, fan_note'
         )
         .order('id')
         .range(from, to)
@@ -70,7 +70,8 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
 }
 
 /** Why the server refused a fan's suggestion. */
-export type SuggestionRefusal = 'duplicate' | 'rate-limited';
+export type SuggestionRefusal =
+  'duplicate' | 'rate-limited' | 'too-far' | 'bad-name' | 'bad-location' | 'not-signed-in';
 
 export class SuggestionRefused extends Error {
   readonly reason: SuggestionRefusal;
@@ -214,4 +215,42 @@ export async function fetchMyApprovedPhotoCount(userId: string): Promise<number>
     .eq('status', 'approved');
   if (error) throw error;
   return count ?? 0;
+}
+
+export type NewPlace = {
+  name: string;
+  kind: 'tasca' | 'cervejaria' | 'bar' | 'roulotte' | 'churrasqueira' | 'restaurante' | 'cafe';
+  location: { latitude: number; longitude: number };
+  /** Why it is worth it, in the fan's own words. */
+  note: string;
+};
+
+/**
+ * Suggests a tasco that is not in the app yet. The server decides everything: which stadium it belongs to, how far
+ * it is (up to 45 minutes on foot), whether it is a duplicate and how many suggestions this fan may make. It is born
+ * as a suggestion and only becomes a confirmed place when 5 other fans say it is good.
+ */
+export async function suggestPlace(place: NewPlace): Promise<string> {
+  const { data, error } = await client().rpc('suggest_place', {
+    p_name: place.name.trim(),
+    p_kind: place.kind,
+    p_latitude: place.location.latitude,
+    p_longitude: place.location.longitude,
+    p_note: place.note.trim(),
+  });
+  if (error) {
+    if (error.message === 'duplicate_place') throw new SuggestionRefused('duplicate');
+    if (error.message === 'rate_limited') throw new SuggestionRefused('rate-limited');
+    if (error.message === 'too_far') throw new SuggestionRefused('too-far');
+    if (
+      error.message === 'bad_name' ||
+      error.message === 'bad_kind' ||
+      error.message === 'bad_note'
+    )
+      throw new SuggestionRefused('bad-name');
+    if (error.message === 'bad_location') throw new SuggestionRefused('bad-location');
+    if (error.message === 'not_signed_in') throw new SuggestionRefused('not-signed-in');
+    throw error;
+  }
+  return data;
 }

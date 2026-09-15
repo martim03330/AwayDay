@@ -262,7 +262,13 @@ export default function JogoScreen() {
           venue={estadio}
           zonas={zonas}
           zonasCasa={zonasCasa}
-          jogo={{ id: jogo.id, inicio: jogo.inicio }}
+          jogo={{
+            id: jogo.id,
+            inicio: jogo.inicio,
+            casaId: jogo.casaId,
+            foraId: jogo.foraId,
+            competicao: jogo.competicao,
+          }}
         />
 
         {jogo.meteorologia ? (

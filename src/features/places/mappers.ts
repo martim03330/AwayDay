@@ -20,7 +20,6 @@ function toPriceLevel(value: number | null): Local['precoMedio'] {
   return value === 1 || value === 2 || value === 3 ? value : null;
 }
 
-
 /** The researched sources, as stored ([{ url, title, published }]); anything malformed is dropped. */
 function toSources(value: PlaceRow['matchday_sources']) {
   if (!Array.isArray(value)) return [];
@@ -87,6 +86,8 @@ function toPlace(row: PlaceRow, dishes: Prato[], score: PlaceScoreRow | undefine
     precoMedio: toPriceLevel(row.price_level),
     notas: [],
     confirmacao,
+    deAdepto: row.source === 'adepto',
+    notaDeAdepto: row.fan_note,
     rapidoEBarato: row.quick_and_cheap,
     pontuacaoSugestao: row.suitability,
     votos: { sim: row.votes_yes, nao: row.votes_no },

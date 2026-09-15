@@ -292,6 +292,19 @@ export default function LocalScreen() {
 
       <FotoTasco local={local} />
       {local.referencia ? <ReferenciaAdeptos referencia={local.referencia} /> : null}
+      {local.deAdepto ? (
+        <Card style={styles.notas}>
+          <ThemedText type="eyebrow" themeColor="accentInk">
+            Sugerido por um adepto
+          </ThemedText>
+          {local.notaDeAdepto ? <ThemedText>{local.notaDeAdepto}</ThemedText> : null}
+          <ThemedText type="small" themeColor="textSecondary">
+            {local.confirmacao === 'confirmado'
+              ? 'Já foi confirmado por outros adeptos.'
+              : `Ainda por confirmar: ${local.votos.sim} de 5 adeptos disseram que é bom.`}
+          </ThemedText>
+        </Card>
+      ) : null}
       {local.confirmacao === 'sugerido' ? <TascoPorConfirmar local={local} /> : null}
 
       <View style={styles.checkIn}>

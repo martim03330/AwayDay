@@ -1021,6 +1021,7 @@ export type Database = {
           confirmation: string
           created_at: string
           distance_m: number
+          fan_note: string | null
           home_fans_heavy: boolean | null
           id: string
           kind: string
@@ -1042,6 +1043,8 @@ export type Database = {
           rejection_reason: string | null
           source: string
           specialty: string | null
+          suggested_at: string | null
+          suggested_by: string | null
           suitability: number
           toilet_no: number
           toilet_yes: number
@@ -1056,6 +1059,7 @@ export type Database = {
           confirmation?: string
           created_at?: string
           distance_m: number
+          fan_note?: string | null
           home_fans_heavy?: boolean | null
           id: string
           kind: string
@@ -1077,6 +1081,8 @@ export type Database = {
           rejection_reason?: string | null
           source?: string
           specialty?: string | null
+          suggested_at?: string | null
+          suggested_by?: string | null
           suitability?: number
           toilet_no?: number
           toilet_yes?: number
@@ -1091,6 +1097,7 @@ export type Database = {
           confirmation?: string
           created_at?: string
           distance_m?: number
+          fan_note?: string | null
           home_fans_heavy?: boolean | null
           id?: string
           kind?: string
@@ -1112,6 +1119,8 @@ export type Database = {
           rejection_reason?: string | null
           source?: string
           specialty?: string | null
+          suggested_at?: string | null
+          suggested_by?: string | null
           suitability?: number
           toilet_no?: number
           toilet_yes?: number
@@ -1122,6 +1131,13 @@ export type Database = {
           walking_minutes?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "place_suggested_by_fkey"
+            columns: ["suggested_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "place_venue_id_fkey"
             columns: ["venue_id"]
@@ -2380,6 +2396,7 @@ export type Database = {
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
+      delete_stale_fan_places: { Args: never; Returns: number }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
@@ -2448,6 +2465,7 @@ export type Database = {
           rank_position: number
         }[]
       }
+      place_name_key: { Args: { p_name: string }; Returns: string }
       place_scores: {
         Args: { p_venue_id: string }
         Returns: {
@@ -2659,6 +2677,16 @@ export type Database = {
       start_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: Json
+      }
+      suggest_place: {
+        Args: {
+          p_kind: string
+          p_latitude: number
+          p_longitude: number
+          p_name: string
+          p_note: string
+        }
+        Returns: string
       }
       suggest_place_candidates: { Args: never; Returns: number }
       take_rate_limit: {

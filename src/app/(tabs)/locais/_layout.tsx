@@ -19,6 +19,15 @@ export default function LocaisLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="sugerir-tasco"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.92],
+          sheetGrabberVisible: true,
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

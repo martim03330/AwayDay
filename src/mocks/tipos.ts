@@ -128,13 +128,7 @@ export type Jogo = {
 };
 
 export type TipoLocal =
-  | 'tasca'
-  | 'cervejaria'
-  | 'bar'
-  | 'roulotte'
-  | 'churrasqueira'
-  | 'restaurante'
-  | 'cafe';
+  'tasca' | 'cervejaria' | 'bar' | 'roulotte' | 'churrasqueira' | 'restaurante' | 'cafe';
 
 export type Prato = {
   id: string;
@@ -278,6 +272,10 @@ export type Local = {
   notas: string[];
   /** `sugerido`: found automatically near the stadium, fans have not confirmed it yet. */
   confirmacao: 'sugerido' | 'confirmado';
+  /** Suggested by a fan who knows the place, not found automatically. */
+  deAdepto: boolean;
+  /** Why that fan says it is worth it. Their word, with no source behind it. */
+  notaDeAdepto: string | null;
   /** Cafés, snack bars, tascas and bars: what fans usually want right before a game. */
   rapidoEBarato: boolean;
   /** Ranking hint for suggestions (higher first). */

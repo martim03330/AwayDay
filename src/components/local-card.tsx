@@ -68,6 +68,9 @@ export function LocalCard({ local, pessoas, checkedIn, onPress }: LocalCardProps
               {local.rapidoEBarato ? (
                 <Etiqueta icon={icons.preco} label="Rápido e barato" tone="destaque" />
               ) : null}
+              {local.deAdepto ? (
+                <Etiqueta icon={icons.perfil} label="De um adepto" tone="info" />
+              ) : null}
               {local.confirmacao === 'sugerido' ? (
                 <Etiqueta icon={icons.porVerificar} label="Por confirmar" tone="aviso" />
               ) : null}

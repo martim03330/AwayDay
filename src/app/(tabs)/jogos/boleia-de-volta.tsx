@@ -260,13 +260,13 @@ export default function BoleiaDeVoltaScreen() {
             ))}
           </View>
         )}
-        {erro ? <Aviso tone="negativo" icon={icons.aviso} label={erro} /> : null}
+        {erro ? <Aviso tone="erro" title="Não deu" message={erro} /> : null}
       </Card>
 
       <Aviso
         tone="aviso"
-        icon={icons.aviso}
-        label="Um lugar na volta vale como qualquer outro: se o condutor aceitar e não apareceres, conta como falta."
+        title="Um lugar na volta é um compromisso"
+        message="Vale como qualquer outro lugar: se o condutor aceitar e não apareceres, conta como falta."
       />
       <ThemedText type="small" themeColor="textMuted">
         O condutor só vê a que distância estás do carro, arredondada a 100 m. A tua localização não

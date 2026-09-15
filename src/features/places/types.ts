@@ -29,6 +29,8 @@ export type PlaceRow = Pick<
   | 'photo_author'
   | 'photo_license'
   | 'photo_source_url'
+  | 'source'
+  | 'fan_note'
 >;
 
 export type DishRow = Pick<

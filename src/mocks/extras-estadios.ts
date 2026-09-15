@@ -4,36 +4,69 @@ import type { Venue } from '@/mocks/tipos';
  * Demo-only data for each venue, joined by id with the catalogue from Supabase:
  * shade, shelter and transport options are illustrative and there are no photos yet.
  */
-export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' | 'hasShelter' | 'transportes'>> = {
-  'luz': {
+export const extrasEstadios: Record<
+  string,
+  Pick<Venue, 'photoUrl' | 'fotoCredito' | 'hasShade' | 'hasShelter' | 'transportes'>
+> = {
+  luz: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'metro', descricao: 'Linha Azul até Colégio Militar/Luz', minutos: 25, precoEuros: 1.85 },
-      { modo: 'autocarro', descricao: 'Carris até à paragem Estádio da Luz', minutos: 35, precoEuros: 2.1 },
-      { modo: 'tvde', descricao: 'TVDE a partir do Marquês de Pombal', minutos: 15, precoEuros: 9.5 },
+      {
+        modo: 'metro',
+        descricao: 'Linha Azul até Colégio Militar/Luz',
+        minutos: 25,
+        precoEuros: 1.85,
+      },
+      {
+        modo: 'autocarro',
+        descricao: 'Carris até à paragem Estádio da Luz',
+        minutos: 35,
+        precoEuros: 2.1,
+      },
+      {
+        modo: 'tvde',
+        descricao: 'TVDE a partir do Marquês de Pombal',
+        minutos: 15,
+        precoEuros: 9.5,
+      },
     ],
   },
-  'dragao': {
+  dragao: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'metro', descricao: 'Metro do Porto até Estádio do Dragão', minutos: 20, precoEuros: 1.4 },
-      { modo: 'comboio', descricao: 'CP até Campanhã e 10 min a pé', minutos: 25, precoEuros: 1.65 },
+      {
+        modo: 'metro',
+        descricao: 'Metro do Porto até Estádio do Dragão',
+        minutos: 20,
+        precoEuros: 1.4,
+      },
+      {
+        modo: 'comboio',
+        descricao: 'CP até Campanhã e 10 min a pé',
+        minutos: 25,
+        precoEuros: 1.65,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir dos Aliados', minutos: 12, precoEuros: 8 },
     ],
   },
-  'alvalade': {
+  alvalade: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'metro', descricao: 'Linha Verde ou Amarela até Campo Grande', minutos: 20, precoEuros: 1.85 },
+      {
+        modo: 'metro',
+        descricao: 'Linha Verde ou Amarela até Campo Grande',
+        minutos: 20,
+        precoEuros: 1.85,
+      },
       { modo: 'autocarro', descricao: 'Carris até Campo Grande', minutos: 30, precoEuros: 2.1 },
       { modo: 'tvde', descricao: 'TVDE a partir da Baixa', minutos: 15, precoEuros: 9 },
     ],
@@ -44,7 +77,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: false,
     transportes: [
-      { modo: 'autocarro', descricao: 'TUB até ao Estádio Municipal', minutos: 25, precoEuros: 1.7 },
+      {
+        modo: 'autocarro',
+        descricao: 'TUB até ao Estádio Municipal',
+        minutos: 25,
+        precoEuros: 1.7,
+      },
       { modo: 'a-pe', descricao: 'Do centro, a subir o Monte Castro', minutos: 40, precoEuros: 0 },
       { modo: 'tvde', descricao: 'TVDE a partir da Avenida Central', minutos: 10, precoEuros: 6.5 },
     ],
@@ -56,7 +94,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShelter: true,
     transportes: [
       { modo: 'a-pe', descricao: 'A partir do Largo do Toural', minutos: 15, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao estádio', minutos: 15, precoEuros: 1.4 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao estádio',
+        minutos: 15,
+        precoEuros: 1.4,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir da estação', minutos: 8, precoEuros: 5 },
     ],
   },
@@ -66,7 +109,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'comboio', descricao: 'CP desde o Porto e 15 min a pé', minutos: 50, precoEuros: 3.25 },
+      {
+        modo: 'comboio',
+        descricao: 'CP desde o Porto e 15 min a pé',
+        minutos: 50,
+        precoEuros: 3.25,
+      },
       { modo: 'a-pe', descricao: 'A partir do centro da cidade', minutos: 15, precoEuros: 0 },
       { modo: 'tvde', descricao: 'TVDE a partir da estação', minutos: 8, precoEuros: 5 },
     ],
@@ -78,7 +126,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShelter: true,
     transportes: [
       { modo: 'comboio', descricao: 'CP desde o Porto até Barcelos', minutos: 60, precoEuros: 3.6 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano desde o centro', minutos: 15, precoEuros: 1.5 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano desde o centro',
+        minutos: 15,
+        precoEuros: 1.5,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir da estação', minutos: 10, precoEuros: 6 },
     ],
   },
@@ -88,18 +141,28 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'carro', descricao: 'Desde Guimarães, com estacionamento perto', minutos: 20, precoEuros: 3 },
+      {
+        modo: 'carro',
+        descricao: 'Desde Guimarães, com estacionamento perto',
+        minutos: 20,
+        precoEuros: 3,
+      },
       { modo: 'autocarro', descricao: 'Autocarro desde Guimarães', minutos: 35, precoEuros: 2.5 },
       { modo: 'tvde', descricao: 'TVDE desde Guimarães', minutos: 20, precoEuros: 14 },
     ],
   },
-  'arcos': {
+  arcos: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'metro', descricao: 'Linha B até Vila do Conde e 15 min a pé', minutos: 55, precoEuros: 2.6 },
+      {
+        modo: 'metro',
+        descricao: 'Linha B até Vila do Conde e 15 min a pé',
+        minutos: 55,
+        precoEuros: 2.6,
+      },
       { modo: 'a-pe', descricao: 'A partir do centro histórico', minutos: 15, precoEuros: 0 },
       { modo: 'tvde', descricao: 'TVDE a partir do centro', minutos: 8, precoEuros: 6 },
     ],
@@ -110,8 +173,18 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: false,
     transportes: [
-      { modo: 'comboio', descricao: 'Linha de Cascais até Estoril e 20 min a pé', minutos: 45, precoEuros: 2.4 },
-      { modo: 'autocarro', descricao: 'Autocarro desde a estação do Estoril', minutos: 20, precoEuros: 2 },
+      {
+        modo: 'comboio',
+        descricao: 'Linha de Cascais até Estoril e 20 min a pé',
+        minutos: 45,
+        precoEuros: 2.4,
+      },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro desde a estação do Estoril',
+        minutos: 20,
+        precoEuros: 2,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir de Cascais', minutos: 12, precoEuros: 7 },
     ],
   },
@@ -121,7 +194,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'carro', descricao: 'Desde Lisboa pela A15, com portagens', minutos: 60, precoEuros: 12 },
+      {
+        modo: 'carro',
+        descricao: 'Desde Lisboa pela A15, com portagens',
+        minutos: 60,
+        precoEuros: 12,
+      },
       { modo: 'autocarro', descricao: 'Expresso desde Lisboa', minutos: 80, precoEuros: 9.5 },
       { modo: 'a-pe', descricao: 'A partir do centro de Rio Maior', minutos: 15, precoEuros: 0 },
     ],
@@ -148,15 +226,25 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
       { modo: 'tvde', descricao: 'TVDE a partir do centro', minutos: 8, precoEuros: 5 },
     ],
   },
-  'madeira': {
+  madeira: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
-      { modo: 'autocarro', descricao: 'Autocarro urbano até à Choupana', minutos: 35, precoEuros: 2 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até à Choupana',
+        minutos: 35,
+        precoEuros: 2,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir da Baixa do Funchal', minutos: 15, precoEuros: 8 },
-      { modo: 'carro', descricao: 'Carro desde o centro, com estacionamento', minutos: 20, precoEuros: 2 },
+      {
+        modo: 'carro',
+        descricao: 'Carro desde o centro, com estacionamento',
+        minutos: 20,
+        precoEuros: 2,
+      },
     ],
   },
   'cd-aves': {
@@ -176,8 +264,18 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'metro', descricao: 'Linha Azul até Reboleira e 10 min a pé', minutos: 35, precoEuros: 1.85 },
-      { modo: 'comboio', descricao: 'Linha de Sintra até Reboleira', minutos: 25, precoEuros: 1.85 },
+      {
+        modo: 'metro',
+        descricao: 'Linha Azul até Reboleira e 10 min a pé',
+        minutos: 35,
+        precoEuros: 1.85,
+      },
+      {
+        modo: 'comboio',
+        descricao: 'Linha de Sintra até Reboleira',
+        minutos: 25,
+        precoEuros: 1.85,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir de Lisboa', minutos: 20, precoEuros: 12 },
     ],
   },
@@ -209,7 +307,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'autocarro', descricao: 'Autocarro urbano até aos Barreiros', minutos: 20, precoEuros: 1.95 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até aos Barreiros',
+        minutos: 20,
+        precoEuros: 1.95,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir da Baixa do Funchal', minutos: 10, precoEuros: 6 },
       { modo: 'a-pe', descricao: 'A partir da zona do Lido', minutos: 25, precoEuros: 0 },
     ],
@@ -221,7 +324,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShelter: false,
     transportes: [
       { modo: 'a-pe', descricao: 'A partir do centro histórico', minutos: 15, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao estádio', minutos: 10, precoEuros: 1.2 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao estádio',
+        minutos: 10,
+        precoEuros: 1.2,
+      },
       { modo: 'carro', descricao: 'Desde Vila Real pela A24', minutos: 45, precoEuros: 6 },
     ],
   },
@@ -236,14 +344,19 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
       { modo: 'tvde', descricao: 'TVDE desde o centro do Porto', minutos: 18, precoEuros: 10 },
     ],
   },
-  'fontelo': {
+  fontelo: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
       { modo: 'a-pe', descricao: 'A partir do Rossio', minutos: 15, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao Fontelo', minutos: 10, precoEuros: 1.1 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao Fontelo',
+        minutos: 10,
+        precoEuros: 1.1,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir do centro', minutos: 6, precoEuros: 5 },
     ],
   },
@@ -254,8 +367,18 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShelter: true,
     transportes: [
       { modo: 'a-pe', descricao: 'A partir do centro de Leiria', minutos: 10, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao estádio', minutos: 10, precoEuros: 1.2 },
-      { modo: 'comboio', descricao: 'Comboio até Leiria e 25 min a pé', minutos: 25, precoEuros: 1.5 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao estádio',
+        minutos: 10,
+        precoEuros: 1.2,
+      },
+      {
+        modo: 'comboio',
+        descricao: 'Comboio até Leiria e 25 min a pé',
+        minutos: 25,
+        precoEuros: 1.5,
+      },
     ],
   },
   'marcolino-de-castro': {
@@ -265,18 +388,28 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShelter: true,
     transportes: [
       { modo: 'a-pe', descricao: 'A partir do castelo', minutos: 15, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao estádio', minutos: 15, precoEuros: 1.5 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao estádio',
+        minutos: 15,
+        precoEuros: 1.5,
+      },
       { modo: 'carro', descricao: 'Desde o Porto pela A1', minutos: 30, precoEuros: 4 },
     ],
   },
-  'restelo': {
+  restelo: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
       { modo: 'autocarro', descricao: 'Carris até ao Restelo', minutos: 30, precoEuros: 2.1 },
-      { modo: 'comboio', descricao: 'Linha de Cascais até Belém e 20 min a pé', minutos: 35, precoEuros: 1.85 },
+      {
+        modo: 'comboio',
+        descricao: 'Linha de Cascais até Belém e 20 min a pé',
+        minutos: 35,
+        precoEuros: 1.85,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir do Cais do Sodré', minutos: 15, precoEuros: 9 },
     ],
   },
@@ -286,7 +419,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao estádio', minutos: 15, precoEuros: 1.6 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao estádio',
+        minutos: 15,
+        precoEuros: 1.6,
+      },
       { modo: 'a-pe', descricao: 'A partir da Praça da República', minutos: 20, precoEuros: 0 },
       { modo: 'tvde', descricao: 'TVDE a partir da Baixa', minutos: 8, precoEuros: 5.5 },
     ],
@@ -297,7 +435,12 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'metro', descricao: 'Linha B até Póvoa de Varzim e 15 min a pé', minutos: 60, precoEuros: 2.6 },
+      {
+        modo: 'metro',
+        descricao: 'Linha B até Póvoa de Varzim e 15 min a pé',
+        minutos: 60,
+        precoEuros: 2.6,
+      },
       { modo: 'a-pe', descricao: 'A partir da marginal', minutos: 15, precoEuros: 0 },
       { modo: 'tvde', descricao: 'TVDE a partir do centro', minutos: 8, precoEuros: 6 },
     ],
@@ -308,20 +451,45 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: false,
     hasShelter: false,
     transportes: [
-      { modo: 'a-pe', descricao: 'A partir do centro, sempre a descer', minutos: 20, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Autocarro urbano até ao estádio', minutos: 15, precoEuros: 1.2 },
+      {
+        modo: 'a-pe',
+        descricao: 'A partir do centro, sempre a descer',
+        minutos: 20,
+        precoEuros: 0,
+      },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarro urbano até ao estádio',
+        minutos: 15,
+        precoEuros: 1.2,
+      },
       { modo: 'tvde', descricao: 'TVDE a partir do centro', minutos: 8, precoEuros: 6 },
     ],
   },
-  'medideira': {
+  medideira: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
-      { modo: 'comboio', descricao: 'Fertagus até Fogueteiro e 20 min a pé', minutos: 45, precoEuros: 3.1 },
-      { modo: 'autocarro', descricao: 'Carris Metropolitana desde Cacilhas', minutos: 25, precoEuros: 2 },
-      { modo: 'carro', descricao: 'Desde Lisboa pela Ponte 25 de Abril', minutos: 25, precoEuros: 4 },
+      {
+        modo: 'comboio',
+        descricao: 'Fertagus até Fogueteiro e 20 min a pé',
+        minutos: 45,
+        precoEuros: 3.1,
+      },
+      {
+        modo: 'autocarro',
+        descricao: 'Carris Metropolitana desde Cacilhas',
+        minutos: 25,
+        precoEuros: 2,
+      },
+      {
+        modo: 'carro',
+        descricao: 'Desde Lisboa pela Ponte 25 de Abril',
+        minutos: 25,
+        precoEuros: 4,
+      },
     ],
   },
   'campo-da-mata': {
@@ -341,8 +509,18 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: false,
     transportes: [
-      { modo: 'autocarro', descricao: 'Autocarros para visitantes a partir de Villa Borghese', minutos: 25, precoEuros: 0 },
-      { modo: 'metro', descricao: 'Linha A até Flaminio e elétrico 2', minutos: 35, precoEuros: 1.5 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarros para visitantes a partir de Villa Borghese',
+        minutos: 25,
+        precoEuros: 0,
+      },
+      {
+        modo: 'metro',
+        descricao: 'Linha A até Flaminio e elétrico 2',
+        minutos: 35,
+        precoEuros: 1.5,
+      },
       { modo: 'tvde', descricao: 'Táxi a partir do centro', minutos: 20, precoEuros: 18 },
     ],
   },
@@ -352,8 +530,18 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'autocarro', descricao: 'Autocarros grátis a partir do Parco del Valentino', minutos: 35, precoEuros: 0 },
-      { modo: 'autocarro', descricao: 'Linha 72 a partir de Bertola Cap', minutos: 40, precoEuros: 1.9 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarros grátis a partir do Parco del Valentino',
+        minutos: 35,
+        precoEuros: 0,
+      },
+      {
+        modo: 'autocarro',
+        descricao: 'Linha 72 a partir de Bertola Cap',
+        minutos: 40,
+        precoEuros: 1.9,
+      },
       { modo: 'tvde', descricao: 'Táxi a partir do centro', minutos: 25, precoEuros: 22 },
     ],
   },
@@ -363,19 +551,34 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
     hasShade: true,
     hasShelter: true,
     transportes: [
-      { modo: 'autocarro', descricao: 'Autocarros grátis a partir da Rudolfskai 16', minutos: 25, precoEuros: 0 },
-      { modo: 'comboio', descricao: 'S-Bahn até Taxham Europark e 15 min a pé', minutos: 30, precoEuros: 2.6 },
+      {
+        modo: 'autocarro',
+        descricao: 'Autocarros grátis a partir da Rudolfskai 16',
+        minutos: 25,
+        precoEuros: 0,
+      },
+      {
+        modo: 'comboio',
+        descricao: 'S-Bahn até Taxham Europark e 15 min a pé',
+        minutos: 30,
+        precoEuros: 2.6,
+      },
       { modo: 'tvde', descricao: 'Táxi a partir do centro', minutos: 20, precoEuros: 25 },
     ],
   },
-  'emirates': {
+  emirates: {
     photoUrl: null,
     fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
       { modo: 'metro', descricao: 'Piccadilly Line até Arsenal', minutos: 25, precoEuros: 3.1 },
-      { modo: 'comboio', descricao: 'Overground até Highbury & Islington', minutos: 30, precoEuros: 3.1 },
+      {
+        modo: 'comboio',
+        descricao: 'Overground até Highbury & Islington',
+        minutos: 30,
+        precoEuros: 3.1,
+      },
       { modo: 'tvde', descricao: 'Táxi a partir do centro', minutos: 30, precoEuros: 30 },
     ],
   },

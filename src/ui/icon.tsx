@@ -88,14 +88,21 @@ const glyphs = {
     ],
   },
   probabilidadeChuva: {
-    paths: ['M12 21.5a6.5 6.5 0 0 0 6.5-6.5c0-3.5-2.6-6.8-6.5-12-3.9 5.2-6.5 8.5-6.5 12a6.5 6.5 0 0 0 6.5 6.5z'],
+    paths: [
+      'M12 21.5a6.5 6.5 0 0 0 6.5-6.5c0-3.5-2.6-6.8-6.5-12-3.9 5.2-6.5 8.5-6.5 12a6.5 6.5 0 0 0 6.5 6.5z',
+    ],
   },
   vento: {
-    paths: ['M12.8 19.6A2 2 0 1 0 14 16H2', 'M17.5 8a2.5 2.5 0 1 1 2 4H2', 'M9.8 4.4A2 2 0 1 1 11 8H2'],
+    paths: [
+      'M12.8 19.6A2 2 0 1 0 14 16H2',
+      'M17.5 8a2.5 2.5 0 1 1 2 4H2',
+      'M9.8 4.4A2 2 0 1 1 11 8H2',
+    ],
   },
   seguinte: { paths: ['M9 5l7 7-7 7'] },
   voltar: { paths: ['M15 5l-7 7 7 7'] },
   fechar: { paths: ['M6 6l12 12M18 6L6 18'] },
+  lista: { paths: ['M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01'] },
   visitado: {
     paths: [
       'M3.9 8.6a4 4 0 0 1 4.7-4.7 4 4 0 0 1 6.8 0 4 4 0 0 1 4.7 4.7 4 4 0 0 1 0 6.8 4 4 0 0 1-4.7 4.7 4 4 0 0 1-6.8 0 4 4 0 0 1-4.7-4.7 4 4 0 0 1 0-6.8z',
@@ -122,7 +129,11 @@ const glyphs = {
   erro: { paths: [circle(12, 12, 9), 'M12 7.5v5.5M12 16.5h.01'] },
   cobertura: { paths: ['M3 12a9 9 0 0 1 18 0z', 'M12 12v6.5a2 2 0 0 1-4 0'] },
   sombra: {
-    paths: ['M12 3v2M5.6 5.6L7 7M18.4 5.6L17 7M3 12h2M19 12h2', 'M7.5 12a4.5 4.5 0 0 1 9 0', 'M3 16h18M6 20h12'],
+    paths: [
+      'M12 3v2M5.6 5.6L7 7M18.4 5.6L17 7M3 12h2M19 12h2',
+      'M7.5 12a4.5 4.5 0 0 1 9 0',
+      'M3 16h18M6 20h12',
+    ],
   },
   abrigo: { paths: [...HOUSE, 'M10 20v-6h4v6'] },
   casa: {
@@ -188,7 +199,9 @@ const glyphs = {
   },
   preco: { paths: [circle(12, 12, 9), 'M15 8.5a4 4 0 1 0 0 7', 'M7.5 11h5M7.5 13.5h5'] },
   acessivel: { paths: [circle(10, 4.5, 1.8), 'M10 8v6h6l2.5 5', 'M7 11.5a5.5 5.5 0 1 0 8 6.5'] },
-  acesso: { paths: ['M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z', 'M15 7.5v2M15 11v2M15 14.5v2'] },
+  acesso: {
+    paths: ['M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z', 'M15 7.5v2M15 11v2M15 14.5v2'],
+  },
   quente: {
     paths: [
       'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z',
@@ -203,10 +216,18 @@ const glyphs = {
   },
   microfone: { paths: [rect(9, 3, 6, 11, 3), 'M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21'] },
   introducao: {
-    paths: ['M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z', 'M19 3v4M17 5h4', 'M5 17v3M3.5 18.5h3'],
+    paths: [
+      'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
+      'M19 3v4M17 5h4',
+      'M5 17v3M3.5 18.5h3',
+    ],
   },
   demo: {
-    paths: ['M3 21l9-9', 'M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M12.2 6.2L11 5', 'M15 9h.01'],
+    paths: [
+      'M3 21l9-9',
+      'M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M12.2 6.2L11 5',
+      'M15 9h.01',
+    ],
   },
   camara: { paths: ['M4 8h3.2l1.8-3h6l1.8 3H20v11H4z', circle(12, 13, 3.4)] },
   album: {
@@ -218,16 +239,31 @@ const glyphs = {
     ],
   },
   definicoes: {
-    paths: ['M4 6h9M17 6h3', circle(15, 6, 2), 'M4 12h3M11 12h9', circle(9, 12, 2), 'M4 18h11M19 18h1', circle(17, 18, 2)],
+    paths: [
+      'M4 6h9M17 6h3',
+      circle(15, 6, 2),
+      'M4 12h3M11 12h9',
+      circle(9, 12, 2),
+      'M4 18h11M19 18h1',
+      circle(17, 18, 2),
+    ],
   },
   espreitar: { paths: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z', circle(12, 12, 3)] },
   brinde: {
-    paths: ['M5 3h5l-.5 6a2 2 0 0 1-4 0z', 'M14 3h5l.5 6a2 2 0 0 1-4 0z', 'M7.5 11v9M16.5 11v9M5.5 20h4M14.5 20h4'],
+    paths: [
+      'M5 3h5l-.5 6a2 2 0 0 1-4 0z',
+      'M14 3h5l.5 6a2 2 0 0 1-4 0z',
+      'M7.5 11v9M16.5 11v9M5.5 20h4M14.5 20h4',
+    ],
   },
   recomecar: { paths: ['M3 12a9 9 0 1 0 3-6.7', 'M3 4v5h5'] },
   silencio: { paths: ['M11 5L6 9H3v6h3l5 4z', 'M16 9l5 6M21 9l-5 6'] },
   cafe: {
-    paths: ['M4 9h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z', 'M17 11h1.5a2.5 2.5 0 0 1 0 5H17', 'M8 3v3M12 3v3'],
+    paths: [
+      'M4 9h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z',
+      'M17 11h1.5a2.5 2.5 0 0 1 0 5H17',
+      'M8 3v3M12 3v3',
+    ],
   },
   megafone: { paths: ['M3 11l18-5v12L3 14z', 'M11.6 16.8a3 3 0 1 1-5.8-1.6'] },
   explosao: {
@@ -280,13 +316,14 @@ export function Icon({ name, size = 20, color, strokeWidth = 2 }: IconProps) {
   );
 }
 
-export type IconTone = 'green' | 'yellow' | 'sky' | 'neutral';
+export type IconTone = 'green' | 'yellow' | 'sky' | 'neutral' | 'red';
 
 const tileTones: Record<IconTone, { background: string; ink: string }> = {
   green: { background: Colors.successBackground, ink: Colors.accentInk },
   yellow: { background: Colors.highlight, ink: Colors.highlightText },
   sky: { background: Colors.infoBackground, ink: Colors.infoText },
   neutral: { background: Colors.backgroundSelected, ink: Colors.text },
+  red: { background: Colors.dangerBackground, ink: Colors.dangerText },
 };
 
 /** Icon on a rounded tile. The name is kept from when it was a circle. */

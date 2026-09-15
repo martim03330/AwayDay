@@ -24,3 +24,14 @@ export function ordenarTascos(locais: readonly Local[]) {
       a.distanciaMetros - b.distanciaMetros
   );
 }
+
+/**
+ * Places further than the 20 minutes the list normally shows, but worth the walk: the ones fans confirmed or put
+ * there themselves. A place found automatically and never confirmed stays out — far *and* unknown is not a tip.
+ */
+export function valeACaminhada(locais: readonly Local[]) {
+  return locais
+    .filter((local) => local.minutosAPe >= MAX_MINUTOS_A_PE)
+    .filter((local) => local.confirmacao === 'confirmado' || local.deAdepto)
+    .sort((a, b) => a.distanciaMetros - b.distanciaMetros);
+}
