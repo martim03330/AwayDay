@@ -19,3 +19,16 @@ export function notasParaVisitante<Nota extends { visitingClubId: string | null 
     (nota) => nota.visitingClubId === null || nota.visitingClubId === visitanteId
   );
 }
+
+/**
+ * Big games need more time to park and get in: Benfica, FC Porto or Sporting playing, or a European night.
+ */
+export function eJogoGrande(jogo: Pick<Jogo, 'casaId' | 'foraId' | 'competicao'>) {
+  return (
+    GRANDES.includes(jogo.casaId) ||
+    GRANDES.includes(jogo.foraId) ||
+    jogo.competicao === 'champions' ||
+    jogo.competicao === 'liga-europa' ||
+    jogo.competicao === 'conference'
+  );
+}

@@ -21,10 +21,19 @@ import {
 import { useRefreshRides, useRideBoard } from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarData, formatarDiaEHora } from '@/lib/datas';
+import { formatarData, formatarDia, formatarHora } from '@/lib/datas';
 import { formatarDistancia } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
-import { CRIAR_HORAS_ANTES, podeCriarBoleia } from '@/lib/regras-boleia';
+import { eJogoGrande } from '@/lib/classicos';
+import {
+  ajustarSaida,
+  limitarSaida,
+  limitesDaSaida,
+  margemMinutos,
+  saidaApertada,
+  saidaSugerida,
+} from '@/lib/hora-saida';
+import { CRIAR_HORAS_ANTES } from '@/lib/regras-boleia';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
@@ -47,9 +56,7 @@ const COMBUSTIVEIS = [
   { id: 'gasolina', nome: 'Gasolina 95', milesimas: 2072 },
   { id: 'gasoleo', nome: 'Gasóleo', milesimas: 2152 },
 ] as const;
-const HORAS_ANTES = [1, 2, 3, 4, 6] as const;
 const LUGARES = [1, 2, 3, 4, 5, 6, 7] as const;
-const HORA_MS = 60 * 60 * 1000;
 const DELTA = 0.05;
 
 const OPCOES: Record<RouteOption, { titulo: string; descricao: string }> = {
@@ -119,7 +126,8 @@ export default function OferecerBoleiaScreen() {
 
   const [partida, setPartida] = useState<Coordenadas | null>(null);
   const [nomePartida, setNomePartida] = useState('');
-  const [horasAntes, setHorasAntes] = useState<(typeof HORAS_ANTES)[number]>(3);
+  // A departure the driver set by hand; `null` follows the suggestion.
+  const [saidaManual, setSaidaManual] = useState<Date | null>(null);
   const [lugares, setLugares] = useState<(typeof LUGARES)[number]>(3);
   const [consumo, setConsumo] = useState('6,5');
   const [combustivel, setCombustivel] = useState<(typeof COMBUSTIVEIS)[number]['id']>('gasolina');
@@ -253,16 +261,9 @@ export default function OferecerBoleiaScreen() {
 
   const consumoCl = lerConsumo(consumo);
   const precoMilesimas = lerPrecoLitro(precoLitro);
-  const inicio = new Date(jogo.inicio);
-  // A ride is published at least 3 h before it leaves: only departure times still far enough ahead.
-  const horasPossiveis = HORAS_ANTES.filter((horas) =>
-    podeCriarBoleia(new Date(inicio.getTime() - horas * HORA_MS), agora)
-  );
-  const horasEfetivas = horasPossiveis.includes(horasAntes)
-    ? horasAntes
-    : (horasPossiveis[0] ?? horasAntes);
-  const saida = new Date(inicio.getTime() - horasEfetivas * HORA_MS);
-  const semTempo = horasPossiveis.length === 0;
+  // The window the server accepts: published 3 h before, at most 3 days before, 30 min before kick-off at the latest.
+  const limites = limitesDaSaida(jogo.inicio, agora);
+  const semTempo = limites === null;
   const parquesDoEstadio = (parques.data?.spots ?? []).filter(
     (parque) => parque.openOnMatchdays !== false
   );
@@ -275,6 +276,18 @@ export default function OferecerBoleiaScreen() {
     Math.abs(aquiEstou.longitude - partida.longitude) < 0.0002;
   const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null;
   const cotacao = cotacoes?.find((candidata) => candidata.option === escolhida) ?? null;
+  const parqueEscolhido = parquesDoEstadio.find((parque) => parque.id === parqueId) ?? null;
+  const minutosAPeDoParque =
+    parqueEscolhido?.distanceM != null ? Math.round((parqueEscolhido.distanceM * 1.3) / 80) : null;
+  const jogoGrande = eJogoGrande(jogo);
+  const sugerida = saidaSugerida({
+    inicio: jogo.inicio,
+    duracaoS: cotacao?.durationS ?? null,
+    minutosAPeDoParque,
+    jogoGrande,
+  });
+  const saida = limites ? limitarSaida(saidaManual ?? sugerida, limites) : sugerida;
+  const apertada = cotacao !== null && saidaApertada(saida, sugerida);
 
   function mudou() {
     // Anything that changes the cost makes the quotes stale.
@@ -545,26 +558,54 @@ export default function OferecerBoleiaScreen() {
 
       <SectionHeader title="Quando e quantos" />
       <Card style={styles.grupo}>
-        <ThemedText style={styles.rotulo}>Saída antes do apito</ThemedText>
-        <View style={styles.chips}>
-          {horasPossiveis.map((horas) => (
-            <Chip
-              key={horas}
-              label={`${horas} h`}
-              selected={horas === horasEfetivas}
-              emCartao
-              onPress={() => setHorasAntes(horas)}
-            />
-          ))}
-        </View>
-        {semTempo ? (
+        <ThemedText style={styles.rotulo}>Hora de saída</ThemedText>
+        {semTempo || !limites ? (
           <ThemedText type="small" themeColor="textSecondary">
             {`Já não dá para oferecer boleia para este jogo: tem de ser publicada pelo menos ${CRIAR_HORAS_ANTES} h antes da saída.`}
           </ThemedText>
         ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            {`Sais ${formatarDiaEHora(saida).toLowerCase()}${jogo.horaConfirmada ? '' : ' (a hora do jogo ainda está por definir)'}. Os pedidos fecham 2 h antes.`}
-          </ThemedText>
+          <>
+            <View style={styles.hora}>
+              <View style={styles.flex}>
+                <Button
+                  label="−15 min"
+                  variant="secondary"
+                  disabled={saida.getTime() <= limites.maisCedo.getTime()}
+                  onPress={() => setSaidaManual(ajustarSaida(saida, -1, limites))}
+                />
+              </View>
+              <View style={styles.horaCentro}>
+                <ThemedText style={styles.horaValor}>{formatarHora(saida)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {formatarDia(saida, agora)}
+                </ThemedText>
+              </View>
+              <View style={styles.flex}>
+                <Button
+                  label="+15 min"
+                  variant="secondary"
+                  disabled={saida.getTime() >= limites.maisTarde.getTime()}
+                  onPress={() => setSaidaManual(ajustarSaida(saida, 1, limites))}
+                />
+              </View>
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              {cotacao
+                ? `Sugerido: ${formatarHora(sugerida)} — ${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''} e ${margemMinutos(jogoGrande)} min de margem${jogoGrande ? ' (jogo grande: mais trânsito e filas)' : ''}.`
+                : 'Vê os percursos e escolhe o parque: acertamos a hora à distância e ao tipo de jogo.'}
+            </ThemedText>
+            {apertada ? (
+              <ThemedText type="small" style={{ color: theme.warningText }}>
+                Com esta hora chegam mais em cima do apito do que sugerimos.
+              </ThemedText>
+            ) : null}
+            {saidaManual !== null ? (
+              <LinkTexto label="Usar a hora sugerida" onPress={() => setSaidaManual(null)} />
+            ) : null}
+            <ThemedText type="small" themeColor="textMuted">
+              Os pedidos de lugar fecham 2 h antes da saída.
+            </ThemedText>
+          </>
         )}
         <ThemedText style={styles.rotulo}>Lugares livres</ThemedText>
         <View style={styles.chips}>
@@ -783,6 +824,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.one,
+  },
+  hora: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  horaCentro: {
+    alignItems: 'center',
+    minWidth: 96,
+  },
+  horaValor: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: 800,
+    fontVariant: ['tabular-nums'],
   },
   linhaSwitch: {
     flexDirection: 'row',
