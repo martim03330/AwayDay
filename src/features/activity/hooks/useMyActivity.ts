@@ -5,6 +5,7 @@ import {
   fetchMyNoiseMeasurements,
   fetchMyPlaceRatings,
   fetchMyPlaceSubScores,
+  fetchMyPlaceVotes,
   fetchMyPlaceVisits,
   fetchMyReviews,
 } from '@/features/activity/api';
@@ -26,6 +27,8 @@ export const myDishRecommendationsKey = (userId: string | null) =>
   [...myActivityKey(userId), 'dish-recommendations'] as const;
 export const myPlaceSubScoresKey = (userId: string | null) =>
   [...myActivityKey(userId), 'place-sub-scores'] as const;
+export const myPlaceVotesKey = (userId: string | null) =>
+  [...myActivityKey(userId), 'place-votes'] as const;
 
 export function useMyReviews(userId: string | null) {
   return useQuery({
@@ -71,6 +74,14 @@ export function useMyPlaceSubScores(userId: string | null) {
   return useQuery({
     queryKey: myPlaceSubScoresKey(userId),
     queryFn: userId ? () => fetchMyPlaceSubScores(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyPlaceVotes(userId: string | null) {
+  return useQuery({
+    queryKey: myPlaceVotesKey(userId),
+    queryFn: userId ? () => fetchMyPlaceVotes(userId) : skipToken,
     staleTime: STALE_MS,
   });
 }

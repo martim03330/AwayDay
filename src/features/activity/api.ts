@@ -254,3 +254,21 @@ export async function savePlaceSubScores(userId: string, placeId: string, scores
     .eq('place_id', placeId);
   if (error) throw error;
 }
+
+/** The user's answers to "is this a good place for match day?", by place id. */
+export async function fetchMyPlaceVotes(userId: string): Promise<Record<string, boolean>> {
+  const { data, error } = await client()
+    .from('place_vote')
+    .select('place_id, is_good')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.place_id, row.is_good]));
+}
+
+/** Answers for a suggested place. The server counts the votes and confirms or hides the place. */
+export async function votePlace(userId: string, placeId: string, isGood: boolean) {
+  const { error } = await client()
+    .from('place_vote')
+    .upsert({ profile_id: userId, place_id: placeId, is_good: isGood }, { onConflict: 'profile_id,place_id' });
+  if (error) throw error;
+}

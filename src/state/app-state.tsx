@@ -19,6 +19,7 @@ import {
   savePlaceRating,
   savePlaceSubScores,
   unrecommendDish,
+  votePlace,
   type PlaceSubScores,
 } from '@/features/activity/api';
 import { useMyAttendance } from '@/features/activity/hooks/useAttendance';
@@ -26,11 +27,13 @@ import {
   myDishRecommendationsKey,
   myPlaceRatingsKey,
   myPlaceSubScoresKey,
+  myPlaceVotesKey,
   myPlaceVisitsKey,
   myReviewsKey,
   useMyDishRecommendations,
   useMyNoiseMeasurements,
   useMyPlaceSubScores,
+  useMyPlaceVotes,
   useMyPlaceRatings,
   useMyPlaceVisits,
   useMyReviews,
@@ -168,6 +171,9 @@ type AppState = {
   /** Your beer and food scores, by tasco. Only after an overall score. */
   notasCervejaPetisco: Readonly<Partial<Record<string, NotasCervejaPetisco>>>;
   darNotaCervejaPetisco: (localId: string, notas: Partial<NotasCervejaPetisco>) => void;
+  /** Your answer to "is this a good place for match day?" for suggested tascos. Needs an account (demo: memory). */
+  votosTascos: Readonly<Partial<Record<string, boolean>>>;
+  votarTasco: (localId: string, bom: boolean) => void;
   /** A tua nota a cada tasco. */
   notasTascos: Readonly<Partial<Record<string, Nota>>>;
   darNotaTasco: (localId: string, nota: Nota) => void;
@@ -281,6 +287,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [pratosRecomendados, setPratosRecomendados] = useState<ReadonlySet<string>>(new Set());
   /** With an account: recommendation taps made in this session, on top of what the account says. */
   const [recomendacoesTocadas, setRecomendacoesTocadas] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const [votosDemo, setVotosDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
   const [notasCervejaPetiscoLocais, setNotasCervejaPetiscoLocais] = useState<
     Readonly<Partial<Record<string, NotasCervejaPetisco>>>
   >({});
@@ -324,6 +331,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const attendance = useMyAttendance(userId);
   const dishRecommendations = useMyDishRecommendations(userId);
   const placeSubScores = useMyPlaceSubScores(userId);
+  const placeVotes = useMyPlaceVotes(userId);
   const notificationPreferences = useNotificationPreferences(userId);
   const refreshActivity = useRefreshMyActivity(userId);
   const refreshPhotos = useRefreshMissionPhotos(userId);
@@ -735,6 +743,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setNotasCervejaPetiscoLocais((todas) => ({ ...todas, [localId]: proximas }));
   }
 
+  const votosTascos: Readonly<Partial<Record<string, boolean>>> =
+    fonte === 'conta' ? (placeVotes.data ?? {}) : fonte === 'demo' ? votosDemo : {};
+
+  function votarTasco(localId: string, bom: boolean) {
+    if (fonte === 'demo') {
+      setVotosDemo((atuais) => ({ ...atuais, [localId]: bom }));
+      return;
+    }
+    if (fonte !== 'conta') return;
+    queryClient.setQueryData<Record<string, boolean>>(myPlaceVotesKey(userId), (atuais) => ({
+      ...atuais,
+      [localId]: bom,
+    }));
+    naConta((id) => votePlace(id, localId, bom), refreshActivity);
+  }
+
   const visitadosNaConta =
     fonte === 'conta'
       ? Object.entries(attendance.data ?? {}).flatMap(([fixtureId, status]) => {
@@ -785,6 +809,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     alternarRecomendacao,
     notasCervejaPetisco,
     darNotaCervejaPetisco,
+    votosTascos,
+    votarTasco,
     notasTascos: atividade.notasTascos,
     darNotaTasco,
     fotosMissoes: atividade.fotos,

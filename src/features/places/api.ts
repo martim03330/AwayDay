@@ -1,7 +1,7 @@
 import type { PlaceCatalogRows, PlaceScoreRow } from '@/features/places/types';
 import { supabase } from '@/lib/supabase';
 
-/** Published places and their approved dishes. RLS only ever returns published places. */
+/** Places (confirmed and suggestions) and their approved dishes. RLS never returns hidden places. */
 export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
   if (!supabase) {
     throw new Error(
@@ -13,7 +13,7 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
     supabase
       .from('place')
       .select(
-        'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty'
+        'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no'
       ),
     // Someone's own pending suggestions are readable too, but the menu only shows approved dishes.
     supabase

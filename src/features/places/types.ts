@@ -15,6 +15,11 @@ export type PlaceRow = Pick<
   | 'opening_hours'
   | 'price_level'
   | 'specialty'
+  | 'confirmation'
+  | 'quick_and_cheap'
+  | 'suitability'
+  | 'votes_yes'
+  | 'votes_no'
 >;
 
 export type DishRow = Pick<

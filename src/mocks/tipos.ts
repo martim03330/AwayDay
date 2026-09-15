@@ -256,6 +256,14 @@ export type Local = {
   horario: string | null;
   precoMedio: 1 | 2 | 3 | null;
   notas: string[];
+  /** `sugerido`: found automatically near the stadium, fans have not confirmed it yet. */
+  confirmacao: 'sugerido' | 'confirmado';
+  /** Cafés, snack bars, tascas and bars: what fans usually want right before a game. */
+  rapidoEBarato: boolean;
+  /** Ranking hint for suggestions (higher first). */
+  pontuacaoSugestao: number;
+  /** Fans' answers to "is this a good place for match day?" while it is a suggestion. */
+  votos: { sim: number; nao: number };
 };
 
 /** Avaliação de uma visita a um estádio: uma por jogo, várias por estádio. */

@@ -624,6 +624,7 @@ export type Database = {
       place: {
         Row: {
           attribution: string | null
+          confirmation: string
           created_at: string
           distance_m: number
           id: string
@@ -636,14 +637,19 @@ export type Database = {
           opening_hours: string | null
           osm_id: string | null
           price_level: number | null
+          quick_and_cheap: boolean
           source: string
           specialty: string | null
+          suitability: number
           updated_at: string
           venue_id: string
+          votes_no: number
+          votes_yes: number
           walking_minutes: number
         }
         Insert: {
           attribution?: string | null
+          confirmation?: string
           created_at?: string
           distance_m: number
           id: string
@@ -656,14 +662,19 @@ export type Database = {
           opening_hours?: string | null
           osm_id?: string | null
           price_level?: number | null
+          quick_and_cheap?: boolean
           source?: string
           specialty?: string | null
+          suitability?: number
           updated_at?: string
           venue_id: string
+          votes_no?: number
+          votes_yes?: number
           walking_minutes: number
         }
         Update: {
           attribution?: string | null
+          confirmation?: string
           created_at?: string
           distance_m?: number
           id?: string
@@ -676,10 +687,14 @@ export type Database = {
           opening_hours?: string | null
           osm_id?: string | null
           price_level?: number | null
+          quick_and_cheap?: boolean
           source?: string
           specialty?: string | null
+          suitability?: number
           updated_at?: string
           venue_id?: string
+          votes_no?: number
+          votes_yes?: number
           walking_minutes?: number
         }
         Relationships: [
@@ -864,6 +879,45 @@ export type Database = {
           },
           {
             foreignKeyName: "place_visit_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_vote: {
+        Row: {
+          created_at: string
+          is_good: boolean
+          place_id: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          is_good: boolean
+          place_id: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          is_good?: boolean
+          place_id?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_vote_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_vote_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profile"
@@ -1191,6 +1245,7 @@ export type Database = {
         }[]
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
+      confirm_place: { Args: { p_place_id: string }; Returns: undefined }
       place_scores: {
         Args: { p_venue_id: string }
         Returns: {
@@ -1242,6 +1297,7 @@ export type Database = {
         Args: { p_platform: string; p_token: string }
         Returns: undefined
       }
+      reject_place: { Args: { p_place_id: string }; Returns: undefined }
       season_recap_candidates: {
         Args: { p_season_id: string }
         Returns: {
@@ -1252,6 +1308,7 @@ export type Database = {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
       }
+      suggest_place_candidates: { Args: never; Returns: number }
       take_rate_limit: {
         Args: {
           p_bucket: string

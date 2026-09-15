@@ -2,6 +2,31 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Tascos sugeridos, confirmados pelos adeptos
+
+**Muda a curadoria da fatia 2.** Em vez de esperar que o dono aprove cada tasco, os candidatos do OpenStreetMap
+passam a aparecer logo como **"Por confirmar"**, com o aviso de que podem não ser um tasco para dia de jogo. No
+lançamento há poucos adeptos a avaliar, e a app não pode abrir sem tascos; com o tempo, são os adeptos que decidem.
+- `suggest_place_candidates()` (só o dono) copia os candidatos pendentes para `place` com `confirmation =
+  'suggested'`, id, artigo e etiquetas calculados. Pode correr outra vez: só pega nos pendentes. Primeira publicação:
+  628 sugestões em 29 estádios, mais os 455 candidatos dos 28 estádios da época 2026-27.
+- **Rápido e barato** (`quick_and_cheap`): cafés, comida rápida, bares, pubs, nomes de tasco (tasca, snack, bifana,
+  petiscos, cervejaria…) e cozinhas de snack, sandes ou kebab. Cozinhas pouco próprias para antes do jogo (sushi,
+  japonesa, chinesa, italiana, mexicana, marisqueira, casa de carnes) nunca levam a etiqueta e descem na lista.
+  O OpenStreetMap quase nunca tem preços: "barato" é uma aproximação pelo tipo de sítio.
+- **Votos** (`place_vote`, só com conta): "É um bom sítio para ir antes do jogo?". Com pelo menos 5 respostas e o dobro
+  de um lado, a sugestão fica confirmada ou escondida (`rejected`, invisível para todos). Só se vota em sugestões.
+- **O dono manda sempre:** `confirm_place` e `reject_place`, e `publish_place_candidate` publica logo confirmado.
+- **O treinador só sugere tascos confirmados** (`coach_nearby_place`). As Edge Functions que leem nomes de tascos só
+  os usam como lista de proteção do texto do modelo, por isso não precisaram de mudar.
+- **Na app:** a lista mostra primeiro os confirmados e depois as sugestões (rápidos e baratos à frente, depois pela
+  pontuação e pela distância); o cartão e a ficha têm as etiquetas "Rápido e barato" e "Por confirmar"; a ficha tem
+  o bloco de voto (sem conta, convida a entrar; no modo demo, fica em memória). A ordem dos estádios e a sugestão
+  "Ver tascos perto de…" deixaram de assumir que só a Luz tem tascos.
+- Testado com um bloco SQL revertido: pontuação e etiquetas, publicação repetida, a app sem acesso às funções do dono
+  nem à contagem, 5 votos a confirmar e a esconder, sem votos em confirmados, e o treinador só com confirmados.
+- Os 27 jogos de exemplo foram apagados da base de dados alojada (a pedido do dono).
+
 ## 2026-09-15 — Sair do modo demo, fatia 2: tascos, pratos e época 2026-27
 
 **Tascos reais, com curadoria.** `npm run db:tascos` procura no OpenStreetMap cafés, bares e restaurantes com nome a

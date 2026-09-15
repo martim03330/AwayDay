@@ -15,7 +15,12 @@ export const nomesTipoLocal: Record<TipoLocal, string> = {
 /**
  * Locais fictícios à volta dos estádios. Só 6 estádios têm locais, para a demo mostrar o estado vazio nos restantes. Alguns ficam a mais de 20 min a pé, para testar o filtro.
  */
-const locaisBase: Omit<Local, 'pratos'>[] = [
+type LocalBase = Omit<
+  Local,
+  'pratos' | 'confirmacao' | 'rapidoEBarato' | 'pontuacaoSugestao' | 'votos'
+>;
+
+const locaisBase: LocalBase[] = [
   // Estádio da Luz
   {
     id: 'tasca-terceiro-anel',
@@ -24,7 +29,7 @@ const locaisBase: Omit<Local, 'pratos'>[] = [
     estadioId: 'luz',
     distanciaMetros: 350,
     minutosAPe: 4,
-    coordenadas: { latitude: 38.75133, longitude: -9.18740 },
+    coordenadas: { latitude: 38.75133, longitude: -9.1874 },
     homeFanHeavy: true,
     clubesAqui: ['benfica'],
     cervejometro: 4,
@@ -78,7 +83,7 @@ const locaisBase: Omit<Local, 'pratos'>[] = [
     estadioId: 'luz',
     distanciaMetros: 900,
     minutosAPe: 11,
-    coordenadas: { latitude: 38.74630, longitude: -9.18585 },
+    coordenadas: { latitude: 38.7463, longitude: -9.18585 },
     homeFanHeavy: false,
     clubesAqui: ['benfica'],
     cervejometro: 4,
@@ -133,7 +138,7 @@ const locaisBase: Omit<Local, 'pratos'>[] = [
     estadioId: 'dragao',
     distanciaMetros: 250,
     minutosAPe: 3,
-    coordenadas: { latitude: 41.16000, longitude: -8.58388 },
+    coordenadas: { latitude: 41.16, longitude: -8.58388 },
     homeFanHeavy: false,
     clubesAqui: ['porto'],
     cervejometro: 3,
@@ -476,7 +481,14 @@ const locaisBase: Omit<Local, 'pratos'>[] = [
 ];
 
 /** Fictional places with their dish menus, shown only in demo mode. */
-export const locaisDemo: Local[] = locaisBase.map((local) => ({ ...local, pratos: gerarPratos(local) }));
+export const locaisDemo: Local[] = locaisBase.map((local) => ({
+  ...local,
+  pratos: gerarPratos(local),
+  confirmacao: 'confirmado',
+  rapidoEBarato: local.tipo === 'tasca' || local.tipo === 'roulotte' || local.tipo === 'bar',
+  pontuacaoSugestao: 0,
+  votos: { sim: 0, nao: 0 },
+}));
 registerDemoPlaces(locaisDemo);
 
 /**

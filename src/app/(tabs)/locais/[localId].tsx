@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DestaquesMenu } from '@/components/destaques-menu';
 import { MenuTasco } from '@/components/menu-tasco';
+import { TascoPorConfirmar } from '@/components/tasco-por-confirmar';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -199,6 +200,12 @@ export default function LocalScreen() {
             <ThemedText style={styles.etiquetaTexto}>{'€'.repeat(local.precoMedio)}</ThemedText>
           </View>
         ) : null}
+        {local.rapidoEBarato ? (
+          <Etiqueta icon={icons.preco} label="Rápido e barato" tone="destaque" />
+        ) : null}
+        {local.confirmacao === 'sugerido' ? (
+          <Etiqueta icon={icons.porVerificar} label="Por confirmar" tone="aviso" />
+        ) : null}
         {checkedIn ? (
           <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
         ) : null}
@@ -239,6 +246,8 @@ export default function LocalScreen() {
   return (
     <Pagina cabecalho={cabecalho}>
       <Stack.Screen options={{ title: local.nome }} />
+
+      {local.confirmacao === 'sugerido' ? <TascoPorConfirmar local={local} /> : null}
 
       <View style={styles.checkIn}>
         <BotaoAlternar

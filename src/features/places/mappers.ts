@@ -62,6 +62,13 @@ function toDish(row: DishRow): Prato {
 
 function toPlace(row: PlaceRow, dishes: Prato[], score: PlaceScoreRow | undefined): Local | null {
   if (!isKind(row.kind) || row.latitude === null || row.longitude === null) return null;
+  const confirmacao =
+    row.confirmation === 'confirmed'
+      ? 'confirmado'
+      : row.confirmation === 'suggested'
+        ? 'sugerido'
+        : null;
+  if (!confirmacao) return null;
   return {
     id: row.id,
     nome: row.name,
@@ -81,6 +88,10 @@ function toPlace(row: PlaceRow, dishes: Prato[], score: PlaceScoreRow | undefine
     horario: horarioEmPortugues(row.opening_hours),
     precoMedio: toPriceLevel(row.price_level),
     notas: [],
+    confirmacao,
+    rapidoEBarato: row.quick_and_cheap,
+    pontuacaoSugestao: row.suitability,
+    votos: { sim: row.votes_yes, nao: row.votes_no },
   };
 }
 

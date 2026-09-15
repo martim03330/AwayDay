@@ -60,9 +60,17 @@ export function LocalCard({ local, pessoas, checkedIn, onPress }: LocalCardProps
               {distancia}
             </ThemedText>
           </View>
-          {checkedIn ? (
+          {checkedIn || local.rapidoEBarato || local.confirmacao === 'sugerido' ? (
             <View style={styles.estasAqui}>
-              <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
+              {checkedIn ? (
+                <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
+              ) : null}
+              {local.rapidoEBarato ? (
+                <Etiqueta icon={icons.preco} label="Rápido e barato" tone="destaque" />
+              ) : null}
+              {local.confirmacao === 'sugerido' ? (
+                <Etiqueta icon={icons.porVerificar} label="Por confirmar" tone="aviso" />
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -129,6 +137,8 @@ const styles = StyleSheet.create({
   },
   estasAqui: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
   },
   tracejado: {
     height: 1.5,

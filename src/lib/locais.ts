@@ -11,3 +11,14 @@ export function filtrarPorTempoAPe(locais: readonly Local[]) {
 
   return { perto, maisLonge: locais.length - perto.length };
 }
+
+/** Confirmed places first; among suggestions, quick and cheap ones first, then the best ranked, then the nearest. */
+export function ordenarTascos(locais: readonly Local[]) {
+  return [...locais].sort(
+    (a, b) =>
+      Number(b.confirmacao === 'confirmado') - Number(a.confirmacao === 'confirmado') ||
+      Number(b.rapidoEBarato) - Number(a.rapidoEBarato) ||
+      b.pontuacaoSugestao - a.pontuacaoSugestao ||
+      a.distanciaMetros - b.distanciaMetros
+  );
+}

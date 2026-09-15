@@ -8,7 +8,7 @@ import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useTheme } from '@/hooks/use-theme';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { plural } from '@/lib/formatos';
-import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
+import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE, ordenarTascos } from '@/lib/locais';
 import { obterClube } from '@/mocks/clubes';
 import { estadiosNacionais, obterEstadio } from '@/mocks/estadios';
 import { locaisDoEstadio } from '@/mocks/locais';
@@ -17,19 +17,20 @@ import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
+import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
-
-const ESTADIO_COM_LOCAIS = 'luz';
 
 function temLocaisPerto(estadioId: string) {
   return filtrarPorTempoAPe(locaisDoEstadio(estadioId)).perto.length > 0;
 }
 
-/** Estádios com locais perto primeiro, mantendo a ordem original dentro de cada grupo. */
-const estadiosOrdenados = [...estadiosNacionais].sort(
-  (a, b) => Number(temLocaisPerto(b.id)) - Number(temLocaisPerto(a.id))
-);
+/** Estádios com locais perto primeiro, mantendo a ordem original. Calculado a cada render: os tascos chegam depois. */
+function ordenarEstadios() {
+  return [...estadiosNacionais].sort(
+    (a, b) => Number(temLocaisPerto(b.id)) - Number(temLocaisPerto(a.id))
+  );
+}
 
 type ChipRelvadoProps = {
   clubeId: string;
@@ -70,11 +71,32 @@ export default function LocaisScreen() {
   const params = useLocalSearchParams<{ estadio?: string }>();
   const { clubeFavoritoId, fezCheckIn, pessoasAqui } = useAppState();
 
-  const estadioDoClube = obterClube(clubeFavoritoId)?.estadioId ?? ESTADIO_COM_LOCAIS;
+  const estadiosOrdenados = ordenarEstadios();
+  const estadioComLocais = estadiosOrdenados.find((candidato) => temLocaisPerto(candidato.id));
+  const estadioDoClube = obterClube(clubeFavoritoId)?.estadioId ?? estadiosNacionais[0].id;
   const estadio =
-    obterEstadio(params.estadio ?? estadioDoClube) ?? obterEstadio(estadioDoClube) ?? estadiosNacionais[0];
-  const { perto, maisLonge } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
+    obterEstadio(params.estadio ?? estadioDoClube) ??
+    obterEstadio(estadioDoClube) ??
+    estadiosNacionais[0];
+  const { perto: pertoPorDistancia, maisLonge } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
+  const perto = ordenarTascos(pertoPorDistancia);
+  const confirmados = perto.filter((local) => local.confirmacao === 'confirmado');
+  const sugestoes = perto.filter((local) => local.confirmacao === 'sugerido');
   const { loading, refreshing, refresh } = useSimulatedLoading(`locais-${estadio.id}`);
+
+  function cartao(local: (typeof perto)[number]) {
+    return (
+      <LocalCard
+        key={local.id}
+        local={local}
+        pessoas={pessoasAqui(local)}
+        checkedIn={fezCheckIn(local.id)}
+        onPress={() =>
+          router.push({ pathname: '/locais/[localId]', params: { localId: local.id } })
+        }
+      />
+    );
+  }
 
   function renderConteudo() {
     if (loading) {
@@ -97,27 +119,37 @@ export default function LocaisScreen() {
               ? `Os tascos que conhecemos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé do ${estadio.nome}. Longe demais para ir a pé.`
               : `Ainda não mapeámos tascos perto do ${estadio.nome}.`
           }
-          action={{
-            label: 'Ver tascos perto da Luz',
-            onPress: () => router.setParams({ estadio: ESTADIO_COM_LOCAIS }),
-          }}
+          action={
+            estadioComLocais && estadioComLocais.id !== estadio.id
+              ? {
+                  label: `Ver tascos perto do ${estadioComLocais.nome}`,
+                  onPress: () => router.setParams({ estadio: estadioComLocais.id }),
+                }
+              : undefined
+          }
         />
       );
     }
 
     return (
       <>
-        {perto.map((local) => (
-          <LocalCard
-            key={local.id}
-            local={local}
-            pessoas={pessoasAqui(local)}
-            checkedIn={fezCheckIn(local.id)}
-            onPress={() =>
-              router.push({ pathname: '/locais/[localId]', params: { localId: local.id } })
-            }
-          />
-        ))}
+        {confirmados.length > 0 && sugestoes.length > 0 ? (
+          <SectionHeader title="Confirmados pelos adeptos" />
+        ) : null}
+        {confirmados.map(cartao)}
+        {sugestoes.length > 0 ? (
+          <>
+            <SectionHeader
+              title="Sugestões por confirmar"
+              trailing={plural(sugestoes.length, 'sítio', 'sítios')}
+            />
+            <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
+              Encontrados automaticamente perto do estádio. Podem não ser tascos para dia de jogo:
+              ajuda a confirmar.
+            </ThemedText>
+          </>
+        ) : null}
+        {sugestoes.map(cartao)}
         {maisLonge > 0 ? (
           <View style={[styles.banco, { borderColor: theme.borderStrong }]}>
             <Icon name={icons.aPe} size={18} color={theme.textSecondary} />
