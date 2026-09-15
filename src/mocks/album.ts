@@ -1,4 +1,4 @@
-import { obterJogo } from '@/mocks/jogos';
+import { getDemoFixture } from '@/features/fixtures/store';
 import type { FotoMissao } from '@/mocks/tipos';
 import { visitasIniciais } from '@/mocks/visitas';
 
@@ -9,7 +9,7 @@ function minutosDepois(iso: string | undefined, minutos: number) {
   return new Date(base + minutos * MINUTO_MS).toISOString();
 }
 
-const jogoNoDragao = obterJogo('porto-gil-vicente');
+const jogoNoDragao = getDemoFixture('porto-gil-vicente');
 const visitaCampanha = visitasIniciais.find((visita) => visita.id === 'visita-bifanas-campanha');
 
 /**

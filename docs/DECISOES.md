@@ -2,6 +2,62 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Sair do modo demo, fatia 2: tascos, pratos e época 2026-27
+
+**Tascos reais, com curadoria.** `npm run db:tascos` procura no OpenStreetMap cafés, bares e restaurantes com nome a
+menos de 1,2 km de cada estádio português, deixa de fora cadeias (etiqueta `brand`), sugere o tipo e estima o tempo a
+pé (distância em linha reta × 1,3, a 80 m/min). Corre na máquina de quem desenvolve, nunca na app. Os resultados vão
+para `place_candidate`, sem nenhum acesso da app; só `publish_place_candidate` (dono, painel ou CLI) os copia para
+`place`, com atribuição "© contribuidores do OpenStreetMap". Assim, tudo o que lê `place` (app, treinador, dicas,
+retrospetiva) só vê tascos publicados, sem mexer nessas funções.
+- Os 25 tascos fictícios foram apagados da base de dados e ficam só no modo demo (`src/mocks/locais.ts`).
+- `place` ganha os tipos `restaurante` e `cafe`, horário, nível de preço, especialidade, origem e coordenadas geradas.
+- Primeira importação: 628 candidatos para os 30 estádios que já existiam.
+
+**Pratos e fotos sugeridos pelos adeptos, com moderação.** Uma sugestão fica `pending` até o dono a aprovar no painel
+do Supabase. Um trigger põe o autor e o estado (a app não escreve essas colunas), recusa duplicados e limita a 20
+pratos e 10 fotos por dia. As fotos ficam no bucket privado `place-photos`; os ficheiros só são legíveis por quem os
+enviou ou, depois de aprovados, por todos. Os ecrãs para sugerir pratos e fotos ainda estão por fazer.
+
+**Dinheiro em cêntimos.** `src/lib/money.ts` (ler preços escritos à mão, somar, comparar, formatar) com testes em
+Vitest, a dependência de desenvolvimento aprovada nesta fatia (`npm run test`). O preço dos pratos passa a
+`precoCentimos`. Os preços dos transportes e das casas de banho continuam em euros até à fatia 4.
+
+**Recomendações e notas.** `dish_recommendation` guarda quem recomenda o quê, só visível ao próprio; a contagem vive no
+prato e é mantida por um trigger. Na app, a contagem mostrada nunca conta a tua recomendação duas vezes (pode ficar
+uma abaixo até a app recarregar o catálogo). `place_rating` ganha `beer_score` e `food_score`; as médias
+(`place_scores`, `place_scores_all`) só aparecem com pelo menos 5 pessoas. Sem conta, as notas de cerveja e comida
+ficam só em memória.
+
+**Catálogo dos tascos na app** (`src/features/places`), com o mesmo desenho do catálogo de jogos: em modo real lê os
+tascos publicados, os pratos aprovados e as médias; em modo demo usa os fictícios. Os mocks mantêm os exports.
+Campos que os tascos reais ainda não têm passam a opcionais e os ecrãs escondem-nos: cervejómetro e petiscómetro,
+pessoas no tasco, especialidade, horário (traduzido do formato do OpenStreetMap), preço médio, e preço, tempo e
+temperatura dos pratos. A versão da cache guardada passou a `catalog-v3`.
+
+**Estádios e jogos sem dados extra deixam de ficar de fora.** Meteorologia, transportes, sombra, abrigo e cobertura
+passam a opcionais; a ficha do jogo e o cartão do estádio só mostram o que se sabe.
+
+**Época 2026-27.** Divisões confirmadas na Wikipédia, no A Bola e no zerozero: sobem à Liga Portugal o Marítimo e o
+Académico de Viseu; descem à Liga 2 o AVS e o Tondela; a Académica sobe à Liga 2; o Amora desce ao Campeonato de
+Portugal (fica sem divisão). Entram 28 estádios e 27 clubes da Liga 2 e da Liga 3, com fontes por campo.
+Artigos, nomes curtos e distritos novos em `supabase/seed/07_names_2026_27.sql`.
+- O AVS passa a aparecer como AFS (nome curto e sigla); o nome legal continua "AVS - Futebol SAD".
+- **Provisório, por confirmar:** cores neutras (preto e branco) para Louletano, União de Santarém e São João de Ver;
+  capacidade de 1 468 para o Campo Chã das Padeiras (zerozero, antes das obras).
+- **A ter em conta nos jogos:** o Lourosa não tem estádio próprio esta época (jogos noutros campos), o Porto B divide
+  jogos entre o Olival e Pedroso, e o Louletano já mudou um jogo para Albufeira: o estádio tem de vir de cada jogo.
+- Capacidades dos estádios que já existiam e que a Wikipédia dá diferentes (Restelo, São Miguel, Varzim, Cidade de
+  Coimbra, Estádio do Mar, Santos Pinto, Magalhães Pessoa) não foram revistas.
+
+**Jogos de exemplo só no modo demo.** O catálogo de jogos tem uma versão demo (os 27 jogos de exemplo do snapshot,
+com meteorologia simulada) e uma real (só o que vem da base de dados). O modo real aceita não haver jogos e aplica
+logo a primeira resposta. O seed deixou de escrever jogos: os reais vêm da sincronização com a football-data.org
+(Liga Portugal e Champions no plano grátis), ainda à espera da chave.
+- **Pendente:** apagar os 27 jogos de exemplo da base de dados alojada. Não levam atividade (0 idas, avaliações e
+  medições; 4 dicas e 2 fotos só perdem a ligação ao jogo). O pedido foi bloqueado pelas permissões do Claude Code e
+  fica para o dono decidir. Até lá, o modo real ainda os mostra.
+
 ## 2026-09-14 — Sair do modo demo, fatia 1: a tua atividade fica guardada
 
 **Três origens de dados, escolhidas no `AppStateProvider`.**

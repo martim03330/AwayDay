@@ -1,5 +1,5 @@
 import { obterEstadio } from '@/mocks/estadios';
-import { obterLocal } from '@/mocks/locais';
+import { locaisDemo } from '@/mocks/locais';
 import type { Coordenadas, Restroom } from '@/mocks/tipos';
 
 const METROS_POR_GRAU_LATITUDE = 111320;
@@ -10,8 +10,9 @@ function coordenadasDoEstadio(estadioId: string): Coordenadas {
   return estadio.coordenadas;
 }
 
+/** The fictional places always exist in the demo list; the on-screen list can still be empty at load time. */
 function coordenadasDoLocal(localId: string): Coordenadas {
-  const local = obterLocal(localId);
+  const local = locaisDemo.find((candidato) => candidato.id === localId);
   if (!local) throw new Error(`Local desconhecido nos mocks de WC: ${localId}`);
   return local.coordenadas;
 }

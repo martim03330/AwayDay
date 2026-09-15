@@ -62,20 +62,13 @@ function toVenue(
   extras: CatalogExtras['venues']
 ): Venue | null {
   const region = REGIONS.get(row.region);
-  const extra = extras[row.id];
-  const roofCoverage = row.roof_coverage;
-  if (
-    !region ||
-    !homeClubId ||
-    !extra ||
-    row.capacity === null ||
-    row.latitude === null ||
-    row.longitude === null ||
-    roofCoverage === null ||
-    !hasKey(ROOF_COVERAGES, roofCoverage)
-  ) {
+  // Capacity and coordinates are required by the stadium card, the distance and the map.
+  if (!region || !homeClubId || row.capacity === null || row.latitude === null || row.longitude === null) {
     return null;
   }
+  const extra = extras[row.id];
+  const roofCoverage =
+    row.roof_coverage !== null && hasKey(ROOF_COVERAGES, row.roof_coverage) ? row.roof_coverage : null;
   return {
     id: row.id,
     nome: row.name,
@@ -85,11 +78,12 @@ function toVenue(
     clubeId: homeClubId,
     regiao: region,
     coordenadas: { latitude: row.latitude, longitude: row.longitude },
-    photoUrl: extra.photoUrl,
+    // Stadiums without these details still show up; the screens hide what is unknown.
+    photoUrl: extra?.photoUrl ?? null,
     roofCoverage,
-    hasShade: extra.hasShade,
-    hasShelter: extra.hasShelter,
-    transportes: extra.transportes,
+    hasShade: extra?.hasShade ?? null,
+    hasShelter: extra?.hasShelter ?? null,
+    transportes: extra?.transportes ?? [],
   };
 }
 
@@ -122,7 +116,6 @@ function toFixture(
   const competition = row.competition_id;
   const extra = extras[row.id];
   if (
-    !extra ||
     !hasKey(COMPETITIONS, competition) ||
     !clubIds.has(row.home_club_id) ||
     !clubIds.has(row.away_club_id) ||
@@ -139,8 +132,8 @@ function toFixture(
     estadioId: row.venue_id,
     // Postgres returns "+00:00"; the app works with the "Z" form of ISO 8601.
     inicio: new Date(row.kickoff_at).toISOString(),
-    meteorologia: extra.meteorologia,
-    pontoEncontro: extra.pontoEncontro,
+    meteorologia: extra?.meteorologia ?? null,
+    pontoEncontro: extra?.pontoEncontro ?? null,
   };
 }
 

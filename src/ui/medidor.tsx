@@ -12,7 +12,8 @@ export type TomMedidor = 'amarelo' | 'verde';
 type MedidorProps = {
   label: string;
   icon: IconName;
-  value: Nota;
+  /** `null` until enough people rated. */
+  value: Nota | null;
   tone?: TomMedidor;
   compact?: boolean;
 };
@@ -22,7 +23,8 @@ const ESCALA = [1, 2, 3, 4, 5] as const;
 /** Escala de 1 a 5 com ícones, usada no cervejómetro e no petiscómetro. */
 export function Medidor({ label, icon, value, tone = 'verde', compact = false }: MedidorProps) {
   const theme = useTheme();
-  const accessibilityLabel = `${label}: ${value} de 5`;
+  const accessibilityLabel =
+    value === null ? `${label}: ainda sem notas suficientes` : `${label}: ${value} de 5`;
   const cores = {
     amarelo: { fundo: theme.warningBackground, texto: theme.warning, cheio: theme.warning },
     verde: { fundo: theme.successBackground, texto: theme.successText, cheio: theme.accent },
@@ -35,7 +37,9 @@ export function Medidor({ label, icon, value, tone = 'verde', compact = false }:
         accessibilityLabel={accessibilityLabel}
         style={[styles.pill, { backgroundColor: cores.fundo }]}>
         <Icon name={icon} size={16} color={cores.texto} />
-        <ThemedText style={[styles.pillTexto, { color: cores.texto }]}>{`${value}/5`}</ThemedText>
+        <ThemedText style={[styles.pillTexto, { color: cores.texto }]}>
+          {value === null ? 'Sem notas' : `${value}/5`}
+        </ThemedText>
       </View>
     );
   }
@@ -50,17 +54,23 @@ export function Medidor({ label, icon, value, tone = 'verde', compact = false }:
               key={step}
               name={icon}
               size={24}
-              color={step <= value ? cores.cheio : theme.borderStrong}
+              color={value !== null && step <= value ? cores.cheio : theme.borderStrong}
             />
           ))}
         </View>
       </View>
-      <ThemedText type="score" style={styles.valor}>
-        {value}
-        <ThemedText type="score" themeColor="textMuted" style={styles.deCinco}>
-          {' de 5'}
+      {value === null ? (
+        <ThemedText themeColor="textMuted" style={styles.semNotas}>
+          Poucas notas
         </ThemedText>
-      </ThemedText>
+      ) : (
+        <ThemedText type="score" style={styles.valor}>
+          {value}
+          <ThemedText type="score" themeColor="textMuted" style={styles.deCinco}>
+            {' de 5'}
+          </ThemedText>
+        </ThemedText>
+      )}
     </View>
   );
 }
@@ -106,5 +116,10 @@ const styles = StyleSheet.create({
   deCinco: {
     fontSize: 16,
     lineHeight: 32,
+  },
+  semNotas: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: 700,
   },
 });

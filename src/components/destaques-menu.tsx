@@ -2,7 +2,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Colors, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarPreco, plural } from '@/lib/formatos';
+import { plural } from '@/lib/formatos';
+import { formatarCentimos } from '@/lib/money';
 import { destaquesDoMenu, type PratoComContagem } from '@/lib/pratos';
 import type { Prato } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
@@ -15,13 +16,20 @@ type Lembrete = { tipo: 'calor' | 'frio'; texto: string };
 type DestaquesMenuProps = {
   pratos: readonly Prato[];
   recomendados: ReadonlySet<string>;
+  /** Recommendations the dish counts already include (see contagemDoPrato). */
+  jaContados?: ReadonlySet<string>;
   /** Lembrete da meteorologia, mostrado por baixo dos destaques. */
   lembrete: Lembrete | null;
 };
 
 type Tom = { fundo: string; tinta: string };
 
-type Destaque = PratoComContagem & { rotulo: string; icon: IconName; tom: Tom; detalhes: string[] };
+type Destaque = PratoComContagem & {
+  rotulo: string;
+  icon: IconName;
+  tom: Tom;
+  detalhes: string[];
+};
 
 const TONS = {
   amarelo: { fundo: Colors.warningBackground, tinta: Colors.warning },
@@ -29,9 +37,20 @@ const TONS = {
   azul: { fundo: Colors.infoBackground, tinta: Colors.infoText },
 } satisfies Record<string, Tom>;
 
-export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuProps) {
+/** "pronto em 5 min", when the time is known. */
+function tempoDePreparacao(prato: Prato) {
+  return prato.minutosPreparacao === null ? [] : [`pronto em ${prato.minutosPreparacao} min`];
+}
+
+function preco(prato: Prato) {
+  return prato.precoCentimos === null
+    ? 'preço por confirmar'
+    : formatarCentimos(prato.precoCentimos);
+}
+
+export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: DestaquesMenuProps) {
   const theme = useTheme();
-  const destaques = destaquesDoMenu(pratos, recomendados);
+  const destaques = destaquesDoMenu(pratos, recomendados, jaContados);
 
   if (!destaques) {
     return (
@@ -54,23 +73,28 @@ export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuP
       tom: TONS.amarelo,
       detalhes: [plural(maisRecomendado.recomendacoes, 'recomendação', 'recomendações')],
     },
-    {
-      ...maisBarato,
-      rotulo: 'Mais barato',
-      icon: icons.preco,
-      tom: TONS.verde,
-      detalhes: [`pronto em ${maisBarato.prato.minutosPreparacao} min`],
-    },
-    {
-      ...maisRapido,
-      rotulo: 'Mais rápido',
-      icon: icons.horario,
-      tom: TONS.azul,
-      detalhes: [
-        `pronto em ${maisRapido.prato.minutosPreparacao} min`,
-        'para quem tem o jogo já a seguir',
-      ],
-    },
+    ...(maisBarato
+      ? [
+          {
+            ...maisBarato,
+            rotulo: 'Mais barato',
+            icon: icons.preco,
+            tom: TONS.verde,
+            detalhes: tempoDePreparacao(maisBarato.prato),
+          },
+        ]
+      : []),
+    ...(maisRapido
+      ? [
+          {
+            ...maisRapido,
+            rotulo: 'Mais rápido',
+            icon: icons.horario,
+            tom: TONS.azul,
+            detalhes: [...tempoDePreparacao(maisRapido.prato), 'para quem tem o jogo já a seguir'],
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -85,7 +109,7 @@ export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuP
           <Card
             key={item.rotulo}
             style={[styles.card, indice === 0 && { borderWidth: 2, borderColor: theme.highlight }]}
-            accessibilityLabel={`${item.rotulo}: ${item.prato.nome}, ${formatarPreco(item.prato.precoEuros)}, ${item.detalhes.join(', ')}`}>
+            accessibilityLabel={`${item.rotulo}: ${item.prato.nome}, ${preco(item.prato)}, ${item.detalhes.join(', ')}`}>
             <View style={[styles.azulejo, { backgroundColor: item.tom.fundo }]}>
               <Icon name={item.icon} size={18} color={item.tom.tinta} />
             </View>
@@ -94,7 +118,7 @@ export function DestaquesMenu({ pratos, recomendados, lembrete }: DestaquesMenuP
             </ThemedText>
             <ThemedText style={styles.nome}>{item.prato.nome}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.detalhes}>
-              {[formatarPreco(item.prato.precoEuros), ...item.detalhes].join(' · ')}
+              {[preco(item.prato), ...item.detalhes].join(' · ')}
             </ThemedText>
           </Card>
         ))}

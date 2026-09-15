@@ -1,4 +1,4 @@
-import { obterJogo } from '@/mocks/jogos';
+import { getDemoFixture } from '@/features/fixtures/store';
 import type { AvaliacaoVisita, Nota } from '@/mocks/tipos';
 
 type AvaliacaoMock = {
@@ -37,7 +37,7 @@ const avaliacoesMock: AvaliacaoMock[] = [
 
 /** Avaliações de exemplo: duas visitas à Luz e uma ao Dragão. */
 export const avaliacoesIniciais: AvaliacaoVisita[] = avaliacoesMock.flatMap((mock) => {
-  const jogo = obterJogo(mock.jogoId);
+  const jogo = getDemoFixture(mock.jogoId);
   if (!jogo) return [];
   return [
     {

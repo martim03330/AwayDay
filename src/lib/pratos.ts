@@ -1,3 +1,4 @@
+import { compararCentimos } from '@/lib/money';
 import type { Meteorologia, Prato } from '@/mocks/tipos';
 
 /** A partir destas temperaturas (°C) à hora do jogo, o destaque do topo inclui um lembrete. */
@@ -6,40 +7,78 @@ export const LIMIAR_FRIO = 13;
 
 export type PratoComContagem = { prato: Prato; recomendacoes: number };
 
-function comContagem(pratos: readonly Prato[], recomendados: ReadonlySet<string>) {
+const NENHUM: ReadonlySet<string> = new Set();
+
+/**
+ * How many recommendations to show: the dish's count, minus yours if that count already included it (`jaContados`,
+ * from the server), plus yours if you recommend it now. It never counts you twice.
+ */
+function contagem(
+  prato: Prato,
+  recomendados: ReadonlySet<string>,
+  jaContados: ReadonlySet<string>
+) {
+  return (
+    prato.recomendacoes - (jaContados.has(prato.id) ? 1 : 0) + (recomendados.has(prato.id) ? 1 : 0)
+  );
+}
+
+function comContagem(
+  pratos: readonly Prato[],
+  recomendados: ReadonlySet<string>,
+  jaContados: ReadonlySet<string>
+) {
   return pratos.map((prato) => ({
     prato,
-    recomendacoes: prato.recomendacoes + (recomendados.has(prato.id) ? 1 : 0),
+    recomendacoes: contagem(prato, recomendados, jaContados),
   }));
 }
 
-/** Os três destaques do menu. Um prato pode ganhar mais do que um. */
-export function destaquesDoMenu(pratos: readonly Prato[], recomendados: ReadonlySet<string>) {
-  const lista = comContagem(pratos, recomendados);
+/**
+ * Os destaques do menu. Um prato pode ganhar mais do que um. "Mais barato" e "Mais rápido" só contam pratos
+ * com preço ou tempo confirmados, e ficam `null` se nenhum tiver.
+ */
+export function destaquesDoMenu(
+  pratos: readonly Prato[],
+  recomendados: ReadonlySet<string>,
+  jaContados: ReadonlySet<string> = NENHUM
+) {
+  const lista = comContagem(pratos, recomendados, jaContados);
   if (lista.length === 0) return null;
 
-  const maisRecomendado = [...lista].sort(
-    (a, b) => b.recomendacoes - a.recomendacoes || a.prato.precoEuros - b.prato.precoEuros
-  )[0];
-  const maisBarato = [...lista].sort(
-    (a, b) => a.prato.precoEuros - b.prato.precoEuros || b.recomendacoes - a.recomendacoes
-  )[0];
-  const maisRapido = [...lista].sort(
-    (a, b) =>
-      a.prato.minutosPreparacao - b.prato.minutosPreparacao ||
-      a.prato.precoEuros - b.prato.precoEuros
-  )[0];
+  const maisRecomendado = [...lista].sort((a, b) => b.recomendacoes - a.recomendacoes)[0];
+
+  const comPreco = lista.flatMap((item) =>
+    item.prato.precoCentimos === null ? [] : [{ ...item, preco: item.prato.precoCentimos }]
+  );
+  const maisBarato =
+    [...comPreco].sort(
+      (a, b) => compararCentimos(a.preco, b.preco) || b.recomendacoes - a.recomendacoes
+    )[0] ?? null;
+
+  const comTempo = lista.flatMap((item) =>
+    item.prato.minutosPreparacao === null
+      ? []
+      : [{ ...item, minutos: item.prato.minutosPreparacao }]
+  );
+  const maisRapido =
+    [...comTempo].sort((a, b) => a.minutos - b.minutos || b.recomendacoes - a.recomendacoes)[0] ??
+    null;
 
   return { maisRecomendado, maisBarato, maisRapido };
 }
 
-export function contagemDoPrato(prato: Prato, recomendados: ReadonlySet<string>) {
-  return prato.recomendacoes + (recomendados.has(prato.id) ? 1 : 0);
+export function contagemDoPrato(
+  prato: Prato,
+  recomendados: ReadonlySet<string>,
+  jaContados: ReadonlySet<string> = NENHUM
+) {
+  return contagem(prato, recomendados, jaContados);
 }
 
 /** Lembrete para o destaque do topo, condicionado pela meteorologia do próximo jogo. */
 export function lembretePelaMeteorologia(
-  meteorologia: Meteorologia | undefined,
+  meteorologia: Meteorologia | null | undefined,
   pratos: readonly Prato[]
 ) {
   if (!meteorologia) return null;
@@ -55,7 +94,7 @@ export function lembretePelaMeteorologia(
   if (temperatura <= LIMIAR_FRIO) {
     const quente = pratos
       .filter((prato) => prato.temperatura === 'quente')
-      .sort((a, b) => a.minutosPreparacao - b.minutosPreparacao)[0];
+      .sort((a, b) => (a.minutosPreparacao ?? Infinity) - (b.minutosPreparacao ?? Infinity))[0];
     return {
       tipo: 'frio' as const,
       texto: quente

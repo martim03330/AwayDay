@@ -44,7 +44,8 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.11"
   },
   "scripts": {
     "start": "expo start",
@@ -52,7 +53,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "db:seed": "node scripts/generate-fixtures-seed.mjs"
+    "db:seed": "node --experimental-strip-types scripts/generate-fixtures-seed.mjs",
+    "test": "vitest run",
+    "db:tascos": "node --experimental-strip-types scripts/importar-tascos-osm.mjs"
   },
   "private": true
 }

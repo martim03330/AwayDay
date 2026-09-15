@@ -14,7 +14,7 @@ import { ThemedText } from '@/ui/themed-text';
 
 type LocalCardProps = {
   local: Local;
-  pessoas: number;
+  pessoas: number | null;
   checkedIn: boolean;
   onPress: () => void;
 };
@@ -37,13 +37,23 @@ export function LocalCard({ local, pessoas, checkedIn, onPress }: LocalCardProps
     <Card
       onPress={onPress}
       style={styles.card}
-      accessibilityLabel={`${local.nome}, ${nomesTipoLocal[local.tipo]}, ${distancia} do estádio, cervejómetro ${local.cervejometro} de 5, petiscómetro ${local.petiscometro} de 5, ${pessoas} pessoas aqui, especialidade ${local.especialidade}`}>
+      accessibilityLabel={[
+        local.nome,
+        nomesTipoLocal[local.tipo],
+        `${distancia} do estádio`,
+        local.cervejometro === null ? null : `cervejómetro ${local.cervejometro} de 5`,
+        local.petiscometro === null ? null : `petiscómetro ${local.petiscometro} de 5`,
+        pessoas === null ? null : `${pessoas} pessoas aqui`,
+        local.especialidade ? `especialidade ${local.especialidade}` : null,
+      ]
+        .filter(Boolean)
+        .join(', ')}>
       <View style={styles.topo}>
         <View style={styles.textos}>
           <ThemedText style={styles.nome}>{local.nome}</ThemedText>
           <View style={styles.meta}>
             <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
-              {`${nomesTipoLocal[local.tipo]} · ${'€'.repeat(local.precoMedio)} ·`}
+              {`${[nomesTipoLocal[local.tipo], local.precoMedio ? '€'.repeat(local.precoMedio) : null].filter(Boolean).join(' · ')} ·`}
             </ThemedText>
             <Icon name={icons.aPe} size={15} color={theme.textSecondary} />
             <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
@@ -56,7 +66,7 @@ export function LocalCard({ local, pessoas, checkedIn, onPress }: LocalCardProps
             </View>
           ) : null}
         </View>
-        <ContadorPessoas count={pessoas} variant="tile" />
+        {pessoas === null ? null : <ContadorPessoas count={pessoas} variant="tile" />}
       </View>
 
       <Tracejado />
@@ -76,11 +86,13 @@ export function LocalCard({ local, pessoas, checkedIn, onPress }: LocalCardProps
           tone="verde"
           value={local.petiscometro}
         />
-        <ThemedText
-          numberOfLines={1}
-          style={[styles.especialidade, { color: theme.textSecondary }]}>
-          {local.especialidade}
-        </ThemedText>
+        {local.especialidade ? (
+          <ThemedText
+            numberOfLines={1}
+            style={[styles.especialidade, { color: theme.textSecondary }]}>
+            {local.especialidade}
+          </ThemedText>
+        ) : null}
       </View>
     </Card>
   );

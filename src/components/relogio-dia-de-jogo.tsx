@@ -152,7 +152,9 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
       return (
         <>
           <ThemedText type="small">
-            {`A malta já se está a juntar. ${tasco.nome}: já lá estão ${plural(pessoasAqui(tasco), 'pessoa', 'pessoas')}.`}
+            {pessoasAqui(tasco) === null
+              ? `A malta já se está a juntar. Sugestão: ${tasco.nome}, a ${tasco.minutosAPe} min a pé do estádio.`
+              : `A malta já se está a juntar. ${tasco.nome}: já lá estão ${plural(pessoasAqui(tasco) ?? 0, 'pessoa', 'pessoas')}.`}
           </ThemedText>
           <Button
             label="Ir fazer check-in"
@@ -168,25 +170,28 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
       const ondeFizesteCheckIn = perto.find((local) => fezCheckIn(local.id));
       const origem = ondeFizesteCheckIn ?? tascoMaisConcorrido(perto, pessoasAqui);
       const chuva = avisoDeChuva(jogo.meteorologia, venue);
-      const calor = jogo.meteorologia.temperatura >= LIMIAR_CALOR;
+      const temperatura = jogo.meteorologia?.temperatura;
+      const calor = temperatura !== undefined && temperatura >= LIMIAR_CALOR;
       const avisos = (
         <>
           {chuva ? <LinhaAviso icon={icons.cobertura} texto={chuva.mensagem} /> : null}
           {calor ? (
             <LinhaAviso
               icon={icons.agua}
-              texto={`Estão ${jogo.meteorologia.temperatura} °C: leva água para a bancada.`}
+              texto={`Estão ${temperatura} °C: leva água para a bancada.`}
             />
           ) : null}
         </>
       );
 
       if (!origem) {
-        const maisRapido = Math.min(...venue.transportes.map((transporte) => transporte.minutos));
+        const tempos = venue.transportes.map((transporte) => transporte.minutos);
         return (
           <>
             <ThemedText type="small">
-              {`Está na hora de ir para o estádio: a opção mais rápida demora ${maisRapido} min.`}
+              {tempos.length > 0
+                ? `Está na hora de ir para o estádio: a opção mais rápida demora ${Math.min(...tempos)} min.`
+                : 'Está na hora de ir para o estádio.'}
             </ThemedText>
             {avisos}
           </>

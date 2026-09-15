@@ -1,7 +1,8 @@
 import { queryOptions, useQuery, type QueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { fetchFixtureCatalogRows } from '@/features/fixtures/api';
-import { applyFixtureCatalogRows } from '@/features/fixtures/store';
+import { applyFixtureCatalogRows, hasAppliedRealFixtures } from '@/features/fixtures/store';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
@@ -18,9 +19,13 @@ export function restoreFixtureCatalog(queryClient: QueryClient) {
 }
 
 /**
- * Revalidates the catalogue in the background. Fresh data is persisted and used from the next
- * launch, so fixtures never change under a screen that is already open.
+ * Revalidates the catalogue in the background. The bundled catalogue has no real fixtures, so the very first
+ * answer is applied right away; later ones are persisted and used from the next launch, so fixtures never change
+ * under a screen that is already open.
  */
 export function useFixtureCatalogSync() {
-  useQuery(fixtureCatalogQuery);
+  const { data } = useQuery(fixtureCatalogQuery);
+  useEffect(() => {
+    if (data && !hasAppliedRealFixtures()) applyFixtureCatalogRows(data);
+  }, [data]);
 }

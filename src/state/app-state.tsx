@@ -12,17 +12,25 @@ import { Alert } from 'react-native';
 
 import {
   deletePlaceVisit,
+  recommendDish,
   recordNoiseMeasurement,
   recordPlaceVisit,
   recordReview,
   savePlaceRating,
+  savePlaceSubScores,
+  unrecommendDish,
+  type PlaceSubScores,
 } from '@/features/activity/api';
 import { useMyAttendance } from '@/features/activity/hooks/useAttendance';
 import {
+  myDishRecommendationsKey,
   myPlaceRatingsKey,
+  myPlaceSubScoresKey,
   myPlaceVisitsKey,
   myReviewsKey,
+  useMyDishRecommendations,
   useMyNoiseMeasurements,
+  useMyPlaceSubScores,
   useMyPlaceRatings,
   useMyPlaceVisits,
   useMyReviews,
@@ -46,6 +54,8 @@ import {
   useNotificationPreferences,
   useRefreshNotificationPreferences,
 } from '@/features/profile/hooks/useNotificationPreferences';
+import { setDemoFixturesActive } from '@/features/fixtures/store';
+import { setDemoPlacesActive } from '@/features/places/store';
 import type { NotificationKind, NotificationPreferences } from '@/features/profile/types';
 import { useNow } from '@/hooks/use-now';
 import { checkInsDoDia } from '@/lib/presenca';
@@ -113,6 +123,9 @@ export type FonteDados = 'demo' | 'telemovel' | 'conta';
 
 export type ResultadoMedicao = 'registada' | 'cedo-demais' | 'fora-do-jogo' | 'erro';
 
+/** Your beer (cervejómetro) and food (petiscómetro) scores for a tasco. */
+export type NotasCervejaPetisco = { cerveja: Nota | null; petisco: Nota | null };
+
 export type ResultadoJuntar = { juntados: number; falhados: number; medicoesQueFicam: number };
 
 type AppState = {
@@ -137,7 +150,8 @@ type AppState = {
   estadiosVisitados: readonly string[];
   fezCheckIn: (localId: string) => boolean;
   alternarCheckIn: (localId: string) => void;
-  pessoasAqui: (local: Local) => number;
+  /** `null` while live presence is not available. */
+  pessoasAqui: (local: Local) => number | null;
   visitasLocais: readonly VisitaLocal[];
   /** A visita verificada, se existir; senão a visita por verificar. */
   visitaDoLocal: (localId: string) => VisitaLocal | undefined;
@@ -146,9 +160,14 @@ type AppState = {
   avaliacaoDoJogo: (jogoId: string) => AvaliacaoVisita | undefined;
   /** Cria ou atualiza a avaliação da visita (uma por jogo). */
   guardarAvaliacao: (avaliacao: NovaAvaliacao) => void;
-  /** Pratos que o utilizador recomendou. Só em memória até os pratos estarem na base de dados. */
+  /** Pratos que recomendas. Com conta ficam guardados na conta; sem conta e no modo demo, só em memória. */
   pratosRecomendados: ReadonlySet<string>;
+  /** Recommendations already included in each dish's count (from the server), so they are not counted twice. */
+  recomendacoesJaContadas: ReadonlySet<string>;
   alternarRecomendacao: (pratoId: string) => void;
+  /** Your beer and food scores, by tasco. Only after an overall score. */
+  notasCervejaPetisco: Readonly<Partial<Record<string, NotasCervejaPetisco>>>;
+  darNotaCervejaPetisco: (localId: string, notas: Partial<NotasCervejaPetisco>) => void;
   /** A tua nota a cada tasco. */
   notasTascos: Readonly<Partial<Record<string, Nota>>>;
   darNotaTasco: (localId: string, nota: Nota) => void;
@@ -260,6 +279,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [atividadeLocal, setAtividadeLocal] = useState<AtividadeLocal>(ATIVIDADE_VAZIA);
   const [demo, setDemo] = useState<AtividadeLocal>(atividadeDemo);
   const [pratosRecomendados, setPratosRecomendados] = useState<ReadonlySet<string>>(new Set());
+  /** With an account: recommendation taps made in this session, on top of what the account says. */
+  const [recomendacoesTocadas, setRecomendacoesTocadas] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const [notasCervejaPetiscoLocais, setNotasCervejaPetiscoLocais] = useState<
+    Readonly<Partial<Record<string, NotasCervejaPetisco>>>
+  >({});
   /** Photos taken with an account that are still uploading (or samples, which never upload). */
   const [fotosPendentes, setFotosPendentes] = useState<readonly FotoMissao[]>([]);
 
@@ -267,6 +291,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     let ativo = true;
     void Promise.all([lerPreferencias(), lerAtividadeLocal()]).then(([guardadas, atividade]) => {
       if (!ativo) return;
+      // Before the first screen renders, so it never shows the wrong list of places.
+      setDemoFixturesActive(guardadas.modoDemo);
+      setDemoPlacesActive(guardadas.modoDemo);
       setPreferencias(guardadas);
       setAtividadeLocal(atividade);
       setCarregado(true);
@@ -295,6 +322,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const noise = useMyNoiseMeasurements(userId);
   const photos = useMyMissionPhotos(userId);
   const attendance = useMyAttendance(userId);
+  const dishRecommendations = useMyDishRecommendations(userId);
+  const placeSubScores = useMyPlaceSubScores(userId);
   const notificationPreferences = useNotificationPreferences(userId);
   const refreshActivity = useRefreshMyActivity(userId);
   const refreshPhotos = useRefreshMissionPhotos(userId);
@@ -568,6 +597,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   function alternarModoDemo() {
     const ligar = !modoDemo;
+    setDemoFixturesActive(ligar);
+    setDemoPlacesActive(ligar);
     if (ligar) {
       setDemo(atividadeDemo());
     } else {
@@ -643,6 +674,67 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return { juntados: tarefas.length - falhados, falhados, medicoesQueFicam: local.medicoes.length };
   }
 
+  const recomendadosNaConta: ReadonlySet<string> = new Set(dishRecommendations.data ?? []);
+  const recomendadosAgora: ReadonlySet<string> =
+    fonte === 'conta'
+      ? new Set(
+          [...recomendadosNaConta, ...recomendacoesTocadas.keys()].filter(
+            (pratoId) => recomendacoesTocadas.get(pratoId) ?? recomendadosNaConta.has(pratoId)
+          )
+        )
+      : pratosRecomendados;
+
+  function alternarRecomendacao(pratoId: string) {
+    if (fonte !== 'conta') {
+      setPratosRecomendados((atuais) => alternarEmConjunto(atuais, pratoId));
+      return;
+    }
+    const id = currentUserId();
+    if (!id) return;
+    const recomendar = !recomendadosAgora.has(pratoId);
+    setRecomendacoesTocadas((atuais) => new Map(atuais).set(pratoId, recomendar));
+    void (recomendar ? recommendDish(id, pratoId) : unrecommendDish(id, pratoId))
+      .catch((erro: unknown) => {
+        avisarQueNaoGuardou(erro);
+        setRecomendacoesTocadas((atuais) => {
+          const proximas = new Map(atuais);
+          proximas.delete(pratoId);
+          return proximas;
+        });
+      })
+      .finally(() => void queryClient.invalidateQueries({ queryKey: myDishRecommendationsKey(userId) }));
+  }
+
+  function notaOuNada(valor: number | null): Nota | null {
+    return valor !== null && eNota(valor) ? valor : null;
+  }
+
+  const notasCervejaPetisco: Readonly<Partial<Record<string, NotasCervejaPetisco>>> =
+    fonte === 'conta'
+      ? Object.fromEntries(
+          Object.entries(placeSubScores.data ?? {}).map(([localId, notas]) => [
+            localId,
+            { cerveja: notaOuNada(notas.beerScore), petisco: notaOuNada(notas.foodScore) },
+          ])
+        )
+      : notasCervejaPetiscoLocais;
+
+  function darNotaCervejaPetisco(localId: string, notas: Partial<NotasCervejaPetisco>) {
+    const atuais = notasCervejaPetisco[localId] ?? { cerveja: null, petisco: null };
+    const proximas: NotasCervejaPetisco = { ...atuais, ...notas };
+
+    if (fonte === 'conta') {
+      const paraConta: PlaceSubScores = { beerScore: proximas.cerveja, foodScore: proximas.petisco };
+      queryClient.setQueryData<Record<string, PlaceSubScores>>(myPlaceSubScoresKey(userId), (lista) => ({
+        ...lista,
+        [localId]: paraConta,
+      }));
+      naConta((id) => savePlaceSubScores(id, localId, paraConta), refreshActivity);
+      return;
+    }
+    setNotasCervejaPetiscoLocais((todas) => ({ ...todas, [localId]: proximas }));
+  }
+
   const visitadosNaConta =
     fonte === 'conta'
       ? Object.entries(attendance.data ?? {}).flatMap(([fixtureId, status]) => {
@@ -677,7 +769,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     fezCheckIn: (localId) => checkInsHoje.some((visita) => visita.localId === localId),
     alternarCheckIn,
     pessoasAqui: (local) =>
-      local.pessoasAqui + (checkInsHoje.some((visita) => visita.localId === local.id) ? 1 : 0),
+      local.pessoasAqui === null
+        ? null
+        : local.pessoasAqui + (checkInsHoje.some((visita) => visita.localId === local.id) ? 1 : 0),
     visitasLocais: atividade.visitas,
     visitaDoLocal: (localId) =>
       atividade.visitas.find((visita) => visita.localId === localId && visita.verificado) ??
@@ -686,9 +780,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     avaliacoes: atividade.avaliacoes,
     avaliacaoDoJogo: (jogoId) => atividade.avaliacoes.find((avaliacao) => avaliacao.jogoId === jogoId),
     guardarAvaliacao,
-    pratosRecomendados,
-    alternarRecomendacao: (pratoId) =>
-      setPratosRecomendados((atuais) => alternarEmConjunto(atuais, pratoId)),
+    pratosRecomendados: recomendadosAgora,
+    recomendacoesJaContadas: fonte === 'conta' ? recomendadosNaConta : new Set<string>(),
+    alternarRecomendacao,
+    notasCervejaPetisco,
+    darNotaCervejaPetisco,
     notasTascos: atividade.notasTascos,
     darNotaTasco,
     fotosMissoes: atividade.fotos,

@@ -45,7 +45,10 @@ function CabecalhoTasco({ children }: { children?: ReactNode }) {
     <View
       style={[
         styles.cabecalho,
-        { backgroundColor: theme.highlight, paddingTop: insets.top + Spacing.two },
+        {
+          backgroundColor: theme.highlight,
+          paddingTop: insets.top + Spacing.two,
+        },
       ]}>
       <View style={styles.decoracao} pointerEvents="none">
         <Icon name={icons.tasco} size={190} color={theme.text} strokeWidth={1.4} />
@@ -76,7 +79,9 @@ function Pagina({ children, cabecalho }: { children: ReactNode; cabecalho: React
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}>
+      contentContainerStyle={{
+        paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
+      }}>
       {cabecalho}
       <View style={styles.conteudo}>{children}</View>
     </ScrollView>
@@ -102,7 +107,10 @@ function LinhaDetalhe({
       accessibilityLabel={`${label}: ${valor}`}
       style={[
         styles.linhaDetalhe,
-        !ultima && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
+        !ultima && {
+          borderBottomWidth: 1,
+          borderBottomColor: theme.backgroundSelected,
+        },
       ]}>
       <Icon name={icon} size={20} color={theme.accentInk} />
       <ThemedText type="small" themeColor="textSecondary" style={styles.detalheLabel}>
@@ -126,7 +134,10 @@ export default function LocalScreen() {
     visitaDoLocal,
     registarVisitaManual,
     pratosRecomendados,
+    recomendacoesJaContadas,
     alternarRecomendacao,
+    notasCervejaPetisco,
+    darNotaCervejaPetisco,
     notasTascos,
     darNotaTasco,
   } = useAppState();
@@ -168,6 +179,7 @@ export default function LocalScreen() {
     .map((clubeId) => obterClube(clubeId))
     .filter((clube): clube is Clube => Boolean(clube));
   const clubesAqui = clubesPresentes.map((clube) => clube.nomeCurto);
+  const pessoas = pessoasAqui(local);
 
   function alternar() {
     if (!local) return;
@@ -182,10 +194,14 @@ export default function LocalScreen() {
         <View style={[styles.etiquetaBranca, { backgroundColor: theme.backgroundElement }]}>
           <ThemedText style={styles.etiquetaTexto}>{nomesTipoLocal[local.tipo]}</ThemedText>
         </View>
-        <View style={[styles.etiquetaBranca, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText style={styles.etiquetaTexto}>{'€'.repeat(local.precoMedio)}</ThemedText>
-        </View>
-        {checkedIn ? <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" /> : null}
+        {local.precoMedio ? (
+          <View style={[styles.etiquetaBranca, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText style={styles.etiquetaTexto}>{'€'.repeat(local.precoMedio)}</ThemedText>
+          </View>
+        ) : null}
+        {checkedIn ? (
+          <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
+        ) : null}
       </View>
 
       <View style={styles.titulos}>
@@ -195,24 +211,28 @@ export default function LocalScreen() {
         <ThemedText style={styles.perto}>{`Perto do ${estadio.nome} · ${distancia}`}</ThemedText>
       </View>
 
-      <View style={[styles.pessoas, { backgroundColor: theme.backgroundElement }]}>
-        <ContadorPessoas
-          count={pessoasAqui(local)}
-          variant="hero"
-          detail={
-            clubesAqui.length > 0 ? `Hoje por cá: adeptos do ${clubesAqui.join(' e do ')}` : undefined
-          }
-          detailLeading={
-            clubesPresentes.length > 0 ? (
-              <View style={styles.escudos}>
-                {clubesPresentes.map((clube) => (
-                  <Escudo key={clube.id} clube={clube} size={15} />
-                ))}
-              </View>
-            ) : undefined
-          }
-        />
-      </View>
+      {pessoas === null ? null : (
+        <View style={[styles.pessoas, { backgroundColor: theme.backgroundElement }]}>
+          <ContadorPessoas
+            count={pessoas}
+            variant="hero"
+            detail={
+              clubesAqui.length > 0
+                ? `Hoje por cá: adeptos do ${clubesAqui.join(' e do ')}`
+                : undefined
+            }
+            detailLeading={
+              clubesPresentes.length > 0 ? (
+                <View style={styles.escudos}>
+                  {clubesPresentes.map((clube) => (
+                    <Escudo key={clube.id} clube={clube} size={15} />
+                  ))}
+                </View>
+              ) : undefined
+            }
+          />
+        </View>
+      )}
     </CabecalhoTasco>
   );
 
@@ -229,7 +249,9 @@ export default function LocalScreen() {
         />
         <ThemedText themeColor="textSecondary" style={styles.centro}>
           {checkedIn
-            ? `Já contas para a claque: tu e mais ${plural(local.pessoasAqui, 'adepto', 'adeptos')}. Toca outra vez para anular.`
+            ? local.pessoasAqui === null
+              ? 'Check-in feito. Toca outra vez para anular.'
+              : `Já contas para a claque: tu e mais ${plural(local.pessoasAqui, 'adepto', 'adeptos')}. Toca outra vez para anular.`
             : 'Diz à malta que já cá estás.'}
         </ThemedText>
 
@@ -264,7 +286,12 @@ export default function LocalScreen() {
             : undefined
         }
       />
-      <DestaquesMenu pratos={local.pratos} recomendados={pratosRecomendados} lembrete={lembrete} />
+      <DestaquesMenu
+        pratos={local.pratos}
+        recomendados={pratosRecomendados}
+        jaContados={recomendacoesJaContadas}
+        lembrete={lembrete}
+      />
 
       <SectionHeader title="WC mais próximo" />
       <WcMaisProximo origem={local.coordenadas} />
@@ -277,6 +304,22 @@ export default function LocalScreen() {
           value={notasTascos[local.id] ?? null}
           onChange={(nota) => darNotaTasco(local.id, nota)}
         />
+        {notasTascos[local.id] ? (
+          <>
+            <SeletorNota
+              label="Cervejómetro"
+              description="Como está a cerveja?"
+              value={notasCervejaPetisco[local.id]?.cerveja ?? null}
+              onChange={(nota) => darNotaCervejaPetisco(local.id, { cerveja: nota })}
+            />
+            <SeletorNota
+              label="Petiscómetro"
+              description="E os petiscos?"
+              value={notasCervejaPetisco[local.id]?.petisco ?? null}
+              onChange={(nota) => darNotaCervejaPetisco(local.id, { petisco: nota })}
+            />
+          </>
+        ) : null}
       </Card>
 
       <SectionHeader title="Avaliação dos adeptos" />
@@ -296,31 +339,48 @@ export default function LocalScreen() {
         />
       </Card>
 
-      <SectionHeader title="Menu" trailing={plural(local.pratos.length, 'prato', 'pratos')} />
-      <MenuTasco
-        pratos={local.pratos}
-        recomendados={pratosRecomendados}
-        onAlternarRecomendacao={alternarRecomendacao}
-      />
+      {local.pratos.length > 0 ? (
+        <>
+          <SectionHeader title="Menu" trailing={plural(local.pratos.length, 'prato', 'pratos')} />
+          <MenuTasco
+            pratos={local.pratos}
+            recomendados={pratosRecomendados}
+            jaContados={recomendacoesJaContadas}
+            onAlternarRecomendacao={alternarRecomendacao}
+          />
+        </>
+      ) : null}
 
       <SectionHeader title="Detalhes" />
       <Card style={styles.listaCard}>
-        <LinhaDetalhe icon={icons.especialidade} label="Especialidade" valor={local.especialidade} />
-        <LinhaDetalhe icon={icons.horario} label="Horário" valor={local.horario} />
+        {local.especialidade ? (
+          <LinhaDetalhe
+            icon={icons.especialidade}
+            label="Especialidade"
+            valor={local.especialidade}
+          />
+        ) : null}
+        {local.horario ? (
+          <LinhaDetalhe icon={icons.horario} label="Horário" valor={local.horario} />
+        ) : null}
         <LinhaDetalhe icon={icons.aPe} label="Distância a pé" valor={distancia} ultima />
       </Card>
 
-      <SectionHeader title="Notas" />
-      <Card style={styles.notas}>
-        {local.notas.map((nota) => (
-          <View key={nota} style={styles.nota}>
-            <View style={[styles.marcador, { backgroundColor: theme.accent }]} />
-            <ThemedText type="small" style={styles.flex}>
-              {nota}
-            </ThemedText>
-          </View>
-        ))}
-      </Card>
+      {local.notas.length > 0 ? (
+        <>
+          <SectionHeader title="Notas" />
+          <Card style={styles.notas}>
+            {local.notas.map((nota) => (
+              <View key={nota} style={styles.nota}>
+                <View style={[styles.marcador, { backgroundColor: theme.accent }]} />
+                <ThemedText type="small" style={styles.flex}>
+                  {nota}
+                </ThemedText>
+              </View>
+            ))}
+          </Card>
+        </>
+      ) : null}
     </Pagina>
   );
 }

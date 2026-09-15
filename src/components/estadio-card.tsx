@@ -24,7 +24,7 @@ type EstadioCardProps = {
 
 export function EstadioCard({ venue, nota }: EstadioCardProps) {
   const theme = useTheme();
-  const cobertura = coberturas[venue.roofCoverage];
+  const cobertura = venue.roofCoverage ? coberturas[venue.roofCoverage] : null;
 
   return (
     <Card style={styles.card}>
@@ -53,17 +53,23 @@ export function EstadioCard({ venue, nota }: EstadioCardProps) {
           ) : null}
         </View>
         <View style={styles.etiquetas}>
-          <Etiqueta icon={icons.cobertura} label={cobertura.label} tone={cobertura.tone} />
-          <Etiqueta
-            icon={icons.sombra}
-            label={venue.hasShade ? 'Com sombra' : 'Sem sombra'}
-            tone={venue.hasShade ? 'positivo' : 'neutro'}
-          />
-          <Etiqueta
-            icon={icons.abrigo}
-            label={venue.hasShelter ? 'Com abrigo' : 'Sem abrigo'}
-            tone={venue.hasShelter ? 'positivo' : 'neutro'}
-          />
+          {cobertura ? (
+            <Etiqueta icon={icons.cobertura} label={cobertura.label} tone={cobertura.tone} />
+          ) : null}
+          {venue.hasShade === null ? null : (
+            <Etiqueta
+              icon={icons.sombra}
+              label={venue.hasShade ? 'Com sombra' : 'Sem sombra'}
+              tone={venue.hasShade ? 'positivo' : 'neutro'}
+            />
+          )}
+          {venue.hasShelter === null ? null : (
+            <Etiqueta
+              icon={icons.abrigo}
+              label={venue.hasShelter ? 'Com abrigo' : 'Sem abrigo'}
+              tone={venue.hasShelter ? 'positivo' : 'neutro'}
+            />
+          )}
         </View>
       </View>
     </Card>

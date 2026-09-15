@@ -197,3 +197,60 @@ export async function recordNoiseMeasurement(fixtureId: string, level: number): 
   }
   return { id: data.id, fixtureId: data.fixture_id, level: data.level, measuredAt: data.measured_at };
 }
+
+/** Ids of the approved dishes the user recommends. Who recommends what is private; only counts are public. */
+export async function fetchMyDishRecommendations(userId: string): Promise<string[]> {
+  const { data, error } = await client()
+    .from('dish_recommendation')
+    .select('dish_id')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  return data.map((row) => row.dish_id);
+}
+
+/** Recommends an approved dish. Recommending twice is harmless. The server keeps the dish's count. */
+export async function recommendDish(userId: string, dishId: string) {
+  const { error } = await client()
+    .from('dish_recommendation')
+    .upsert(
+      { profile_id: userId, dish_id: dishId },
+      { onConflict: 'profile_id,dish_id', ignoreDuplicates: true }
+    );
+  if (error) throw error;
+}
+
+export async function unrecommendDish(userId: string, dishId: string) {
+  const { error } = await client()
+    .from('dish_recommendation')
+    .delete()
+    .eq('profile_id', userId)
+    .eq('dish_id', dishId);
+  if (error) throw error;
+}
+
+export type PlaceSubScores = { beerScore: number | null; foodScore: number | null };
+
+/** The user's beer and food scores, by place id, for the places they rated. */
+export async function fetchMyPlaceSubScores(userId: string): Promise<Record<string, PlaceSubScores>> {
+  const { data, error } = await client()
+    .from('place_rating')
+    .select('place_id, beer_score, food_score')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  return Object.fromEntries(
+    data.map((row) => [row.place_id, { beerScore: row.beer_score, foodScore: row.food_score }])
+  );
+}
+
+/**
+ * Beer and food scores for a place the user already rated: the overall score is required first, so this only
+ * updates an existing rating (and changes nothing otherwise).
+ */
+export async function savePlaceSubScores(userId: string, placeId: string, scores: PlaceSubScores) {
+  const { error } = await client()
+    .from('place_rating')
+    .update({ beer_score: scores.beerScore, food_score: scores.foodScore })
+    .eq('profile_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}

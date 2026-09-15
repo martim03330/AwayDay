@@ -83,14 +83,17 @@ export function formatarContagem(ms: number) {
 /** O tasco com melhor petiscómetro; em empate, o mais perto do estádio. */
 export function tascoParaAlmocar(locais: readonly Local[]) {
   return [...locais].sort(
-    (a, b) => b.petiscometro - a.petiscometro || a.distanciaMetros - b.distanciaMetros
+    (a, b) => (b.petiscometro ?? 0) - (a.petiscometro ?? 0) || a.distanciaMetros - b.distanciaMetros
   )[0];
 }
 
 /** O tasco com mais gente agora; em empate, o mais perto do estádio. */
-export function tascoMaisConcorrido(locais: readonly Local[], pessoasAqui: (local: Local) => number) {
+export function tascoMaisConcorrido(
+  locais: readonly Local[],
+  pessoasAqui: (local: Local) => number | null
+) {
   return [...locais].sort(
-    (a, b) => pessoasAqui(b) - pessoasAqui(a) || a.distanciaMetros - b.distanciaMetros
+    (a, b) => (pessoasAqui(b) ?? 0) - (pessoasAqui(a) ?? 0) || a.distanciaMetros - b.distanciaMetros
   )[0];
 }
 

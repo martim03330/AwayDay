@@ -72,13 +72,8 @@ const files = {
     (row) =>
       [row.id, row.name, row.short_name, row.abbreviation, row.country, row.primary_color, row.secondary_color, row.tier, row.home_venue_id].map(literal)
   ),
-  '04_fixtures.sql': upsert(
-    'fixture',
-    ['id', 'competition_id', 'stage', 'home_club_id', 'away_club_id', 'venue_id', 'kickoff_at', 'season_id'],
-    fixtures,
-    (row) =>
-      [row.id, row.competition_id, row.stage, row.home_club_id, row.away_club_id, row.venue_id, row.kickoff_at, seasonOf(row.kickoff_at)].map(literal)
-  ),
+  // The snapshot's fixtures are samples for demo mode: real fixtures come from the fixtures sync.
+  '04_fixtures.sql': `${header}-- No fixtures are seeded. Real fixtures come from the fixtures sync; the sample fixtures in the snapshot\n-- only exist in the app's demo mode.\n`,
 };
 
 mkdirSync(seedDir, { recursive: true });

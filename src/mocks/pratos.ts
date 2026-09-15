@@ -1,41 +1,52 @@
 import type { Local, Prato, TipoLocal } from '@/mocks/tipos';
 
-type PratoDoMenu = Pick<Prato, 'nome' | 'precoEuros' | 'minutosPreparacao' | 'temperatura'>;
+type PratoDoMenu = Pick<Prato, 'nome' | 'precoCentimos' | 'minutosPreparacao' | 'temperatura'>;
 
 /** Pratos típicos por tipo de local (mock). */
 const menuPorTipo: Record<TipoLocal, PratoDoMenu[]> = {
   tasca: [
-    { nome: 'Bifana no pão', precoEuros: 3, minutosPreparacao: 5, temperatura: 'quente' },
-    { nome: 'Caldo verde', precoEuros: 2.5, minutosPreparacao: 3, temperatura: 'quente' },
-    { nome: 'Pica-pau', precoEuros: 8.5, minutosPreparacao: 15, temperatura: 'quente' },
-    { nome: 'Tremoços', precoEuros: 1, minutosPreparacao: 1, temperatura: 'fria' },
+    { nome: 'Bifana no pão', precoCentimos: 300, minutosPreparacao: 5, temperatura: 'quente' },
+    { nome: 'Caldo verde', precoCentimos: 250, minutosPreparacao: 3, temperatura: 'quente' },
+    { nome: 'Pica-pau', precoCentimos: 850, minutosPreparacao: 15, temperatura: 'quente' },
+    { nome: 'Tremoços', precoCentimos: 100, minutosPreparacao: 1, temperatura: 'fria' },
   ],
   cervejaria: [
-    { nome: 'Prego no pão', precoEuros: 4.5, minutosPreparacao: 8, temperatura: 'quente' },
-    { nome: 'Sopa do dia', precoEuros: 2.5, minutosPreparacao: 3, temperatura: 'quente' },
-    { nome: 'Salada de polvo', precoEuros: 7.5, minutosPreparacao: 5, temperatura: 'fria' },
-    { nome: 'Amendoins', precoEuros: 1.5, minutosPreparacao: 1, temperatura: 'fria' },
+    { nome: 'Prego no pão', precoCentimos: 450, minutosPreparacao: 8, temperatura: 'quente' },
+    { nome: 'Sopa do dia', precoCentimos: 250, minutosPreparacao: 3, temperatura: 'quente' },
+    { nome: 'Salada de polvo', precoCentimos: 750, minutosPreparacao: 5, temperatura: 'fria' },
+    { nome: 'Amendoins', precoCentimos: 150, minutosPreparacao: 1, temperatura: 'fria' },
   ],
   bar: [
-    { nome: 'Tosta mista', precoEuros: 3, minutosPreparacao: 6, temperatura: 'quente' },
-    { nome: 'Batatas fritas', precoEuros: 2.5, minutosPreparacao: 7, temperatura: 'quente' },
-    { nome: 'Tremoços', precoEuros: 1, minutosPreparacao: 1, temperatura: 'fria' },
+    { nome: 'Tosta mista', precoCentimos: 300, minutosPreparacao: 6, temperatura: 'quente' },
+    { nome: 'Batatas fritas', precoCentimos: 250, minutosPreparacao: 7, temperatura: 'quente' },
+    { nome: 'Tremoços', precoCentimos: 100, minutosPreparacao: 1, temperatura: 'fria' },
   ],
   roulotte: [
-    { nome: 'Bifana', precoEuros: 3, minutosPreparacao: 4, temperatura: 'quente' },
-    { nome: 'Cachorro no pão', precoEuros: 3.5, minutosPreparacao: 5, temperatura: 'quente' },
-    { nome: 'Caldo verde em copo', precoEuros: 2, minutosPreparacao: 2, temperatura: 'quente' },
-    { nome: 'Farturas', precoEuros: 2, minutosPreparacao: 4, temperatura: 'quente' },
+    { nome: 'Bifana', precoCentimos: 300, minutosPreparacao: 4, temperatura: 'quente' },
+    { nome: 'Cachorro no pão', precoCentimos: 350, minutosPreparacao: 5, temperatura: 'quente' },
+    { nome: 'Caldo verde em copo', precoCentimos: 200, minutosPreparacao: 2, temperatura: 'quente' },
+    { nome: 'Farturas', precoCentimos: 200, minutosPreparacao: 4, temperatura: 'quente' },
   ],
   churrasqueira: [
-    { nome: 'Meio frango no churrasco', precoEuros: 7, minutosPreparacao: 12, temperatura: 'quente' },
-    { nome: 'Batata frita', precoEuros: 2.5, minutosPreparacao: 6, temperatura: 'quente' },
-    { nome: 'Caldo verde', precoEuros: 2.5, minutosPreparacao: 3, temperatura: 'quente' },
-    { nome: 'Salada mista', precoEuros: 3, minutosPreparacao: 4, temperatura: 'fria' },
+    { nome: 'Meio frango no churrasco', precoCentimos: 700, minutosPreparacao: 12, temperatura: 'quente' },
+    { nome: 'Batata frita', precoCentimos: 250, minutosPreparacao: 6, temperatura: 'quente' },
+    { nome: 'Caldo verde', precoCentimos: 250, minutosPreparacao: 3, temperatura: 'quente' },
+    { nome: 'Salada mista', precoCentimos: 300, minutosPreparacao: 4, temperatura: 'fria' },
+  ],
+  restaurante: [
+    { nome: 'Prato do dia', precoCentimos: 950, minutosPreparacao: 15, temperatura: 'quente' },
+    { nome: 'Sopa do dia', precoCentimos: 250, minutosPreparacao: 3, temperatura: 'quente' },
+    { nome: 'Prego no prato', precoCentimos: 850, minutosPreparacao: 12, temperatura: 'quente' },
+  ],
+  cafe: [
+    { nome: 'Bifana', precoCentimos: 300, minutosPreparacao: 5, temperatura: 'quente' },
+    { nome: 'Tosta mista', precoCentimos: 300, minutosPreparacao: 6, temperatura: 'quente' },
+    { nome: 'Pastel de nata', precoCentimos: 130, minutosPreparacao: 1, temperatura: 'fria' },
   ],
 };
 
-const PRECO_ESPECIALIDADE: Record<Local['precoMedio'], number> = { 1: 4, 2: 7, 3: 12 };
+/** Specialty price by price level, in integer cents. */
+const PRECO_ESPECIALIDADE: Record<NonNullable<Local['precoMedio']>, number> = { 1: 400, 2: 700, 3: 1200 };
 const ESPECIALIDADE_FRIA = /cerveja|imperial|fino|shots|marisco|tremo|salada/i;
 
 function hash(texto: string) {
@@ -46,15 +57,20 @@ function hash(texto: string) {
 
 /** Menu mock de um local: a especialidade da casa mais os pratos típicos do seu tipo. */
 export function gerarPratos(local: Pick<Local, 'id' | 'tipo' | 'especialidade' | 'precoMedio'>): Prato[] {
-  const especialidade: Prato = {
-    id: `${local.id}-especialidade`,
-    nome: local.especialidade,
-    precoEuros: PRECO_ESPECIALIDADE[local.precoMedio],
-    minutosPreparacao: 10,
-    temperatura: ESPECIALIDADE_FRIA.test(local.especialidade) ? 'fria' : 'quente',
-    especialidade: true,
-    recomendacoes: 40 + (hash(local.id) % 40),
-  };
+  const nomeEspecialidade = local.especialidade;
+  const especialidade: Prato[] = nomeEspecialidade
+    ? [
+        {
+          id: `${local.id}-especialidade`,
+          nome: nomeEspecialidade,
+          precoCentimos: PRECO_ESPECIALIDADE[local.precoMedio ?? 1],
+          minutosPreparacao: 10,
+          temperatura: ESPECIALIDADE_FRIA.test(nomeEspecialidade) ? 'fria' : 'quente',
+          especialidade: true,
+          recomendacoes: 40 + (hash(local.id) % 40),
+        },
+      ]
+    : [];
 
   const outros = menuPorTipo[local.tipo].map((prato, indice) => ({
     ...prato,
@@ -63,5 +79,5 @@ export function gerarPratos(local: Pick<Local, 'id' | 'tipo' | 'especialidade' |
     recomendacoes: 3 + (hash(`${local.id}-${indice}`) % 45),
   }));
 
-  return [especialidade, ...outros];
+  return [...especialidade, ...outros];
 }

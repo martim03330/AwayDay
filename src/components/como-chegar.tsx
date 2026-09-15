@@ -20,6 +20,7 @@ export const modosTransporte: Record<ModoTransporte, { nome: string; icon: IconN
 
 export function ComoChegar({ opcoes }: { opcoes: readonly OpcaoTransporte[] }) {
   const theme = useTheme();
+  if (opcoes.length === 0) return null;
   const maisRapida = Math.min(...opcoes.map((opcao) => opcao.minutos));
 
   return (

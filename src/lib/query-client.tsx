@@ -8,7 +8,7 @@ import { AppState, Platform } from 'react-native';
 /** How long a persisted cache is trusted. Queries must live at least this long to be persisted. */
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Change when the shape of persisted data changes, so old caches are discarded. */
-const CACHE_BUSTER = 'catalog-v2';
+const CACHE_BUSTER = 'catalog-v3';
 
 export const queryClient = new QueryClient({
   defaultOptions: {

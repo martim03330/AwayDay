@@ -216,14 +216,22 @@ export default function JogoScreen() {
         <SectionHeader title="Mapa" />
         <MapaJogo venue={estadio} />
 
-        <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
-        <MeteorologiaCard meteorologia={jogo.meteorologia} />
+        {jogo.meteorologia ? (
+          <>
+            <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
+            <MeteorologiaCard meteorologia={jogo.meteorologia} />
+          </>
+        ) : null}
 
         <SectionHeader title="Distância" />
         <DistanciaCard venue={estadio} />
 
-        <SectionHeader title="Como chegar" />
-        <ComoChegar opcoes={estadio.transportes} />
+        {estadio.transportes.length > 0 ? (
+          <>
+            <SectionHeader title="Como chegar" />
+            <ComoChegar opcoes={estadio.transportes} />
+          </>
+        ) : null}
 
         <Button
           label={

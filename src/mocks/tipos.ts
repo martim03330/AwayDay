@@ -56,12 +56,14 @@ export type Venue = {
   coordenadas: Coordenadas;
   /** Fotografia do estádio; `null` enquanto não houver fotos (a demo não usa rede). */
   photoUrl: string | null;
-  roofCoverage: RoofCoverage;
+  /** `null` when unknown. */
+  roofCoverage: RoofCoverage | null;
   /** Há bancadas à sombra em jogos de dia. */
-  hasShade: boolean;
+  hasShade: boolean | null;
   /** Há zonas cobertas para esperar fora do estádio, junto às portas. */
-  hasShelter: boolean;
-  transportes: [OpcaoTransporte, OpcaoTransporte, OpcaoTransporte];
+  hasShelter: boolean | null;
+  /** Empty until someone describes how to get there. */
+  transportes: readonly OpcaoTransporte[];
 };
 
 export type Competicao =
@@ -112,19 +114,28 @@ export type Jogo = {
   estadioId: string;
   /** Data e hora de início em ISO 8601 (UTC). */
   inicio: string;
-  meteorologia: Meteorologia;
+  /** `null` until there is a forecast for this fixture. */
+  meteorologia: Meteorologia | null;
   /** Só nos jogos europeus; `null` quando ninguém indicou um ponto de encontro. */
   pontoEncontro: PontoEncontro | null;
 };
 
-export type TipoLocal = 'tasca' | 'cervejaria' | 'bar' | 'roulotte' | 'churrasqueira';
+export type TipoLocal =
+  | 'tasca'
+  | 'cervejaria'
+  | 'bar'
+  | 'roulotte'
+  | 'churrasqueira'
+  | 'restaurante'
+  | 'cafe';
 
 export type Prato = {
   id: string;
   nome: string;
-  precoEuros: number;
-  minutosPreparacao: number;
-  temperatura: 'quente' | 'fria';
+  /** Integer cents (see src/lib/money.ts); `null` while nobody confirmed the price. */
+  precoCentimos: number | null;
+  minutosPreparacao: number | null;
+  temperatura: 'quente' | 'fria' | null;
   /** Especialidade da casa. */
   especialidade: boolean;
   /** Recomendações de outros utilizadores; não é o dono que declara. */
@@ -236,13 +247,14 @@ export type Local = {
   /** Clubes com adeptos presentes hoje (mock). */
   clubesAqui: string[];
   pratos: Prato[];
-  cervejometro: Nota;
-  petiscometro: Nota;
-  /** Pessoas presentes antes do teu check-in. */
-  pessoasAqui: number;
-  especialidade: string;
-  horario: string;
-  precoMedio: 1 | 2 | 3;
+  /** Fans' averages; `null` until enough people rated. */
+  cervejometro: Nota | null;
+  petiscometro: Nota | null;
+  /** Pessoas presentes antes do teu check-in; `null` while live presence is not available. */
+  pessoasAqui: number | null;
+  especialidade: string | null;
+  horario: string | null;
+  precoMedio: 1 | 2 | 3 | null;
   notas: string[];
 };
 

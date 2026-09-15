@@ -20,6 +20,8 @@ import { LigacaoDemo } from '@/components/ligacao-demo';
 import { Colors, fontFamily } from '@/constants/theme';
 import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalogSync';
 import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatalog';
+import { PlaceCatalogSync } from '@/features/places/components/PlaceCatalogSync';
+import { restorePlaceCatalog } from '@/features/places/hooks/usePlaceCatalog';
 import { QueryProvider } from '@/lib/query-client';
 import { AICoachProvider } from '@/state/ai-coach';
 import { AppStateProvider, useAppState } from '@/state/app-state';
@@ -91,8 +93,13 @@ export default function RootLayout() {
   if (!fontsSettled) return null;
 
   return (
-    <QueryProvider onRestored={restoreFixtureCatalog}>
+    <QueryProvider
+      onRestored={(client) => {
+        restoreFixtureCatalog(client);
+        restorePlaceCatalog(client);
+      }}>
       <FixtureCatalogSync />
+      <PlaceCatalogSync />
       <ThemeProvider value={navigationTheme}>
         <RelogioProvider>
           <AppStateProvider>

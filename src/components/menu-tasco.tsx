@@ -2,7 +2,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarPreco, plural } from '@/lib/formatos';
+import { plural } from '@/lib/formatos';
+import { formatarCentimos } from '@/lib/money';
 import { contagemDoPrato } from '@/lib/pratos';
 import type { Prato } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
@@ -15,17 +16,24 @@ import { ThemedText } from '@/ui/themed-text';
 type MenuTascoProps = {
   pratos: readonly Prato[];
   recomendados: ReadonlySet<string>;
+  /** Recommendations the dish counts already include (see contagemDoPrato). */
+  jaContados?: ReadonlySet<string>;
   onAlternarRecomendacao: (pratoId: string) => void;
 };
 
-export function MenuTasco({ pratos, recomendados, onAlternarRecomendacao }: MenuTascoProps) {
+export function MenuTasco({
+  pratos,
+  recomendados,
+  jaContados,
+  onAlternarRecomendacao,
+}: MenuTascoProps) {
   const theme = useTheme();
 
   return (
     <Card style={styles.card}>
       {pratos.map((prato) => {
         const recomendado = recomendados.has(prato.id);
-        const total = contagemDoPrato(prato, recomendados);
+        const total = contagemDoPrato(prato, recomendados, jaContados);
         return (
           <View
             key={prato.id}
@@ -38,8 +46,12 @@ export function MenuTasco({ pratos, recomendados, onAlternarRecomendacao }: Menu
               </View>
               <LinhaDetalhes
                 partes={[
-                  formatarPreco(prato.precoEuros),
-                  `pronto em ${prato.minutosPreparacao} min`,
+                  prato.precoCentimos === null
+                    ? 'preço por confirmar'
+                    : formatarCentimos(prato.precoCentimos),
+                  prato.minutosPreparacao === null
+                    ? null
+                    : `pronto em ${prato.minutosPreparacao} min`,
                   plural(total, 'recomendação', 'recomendações'),
                 ]}
               />
@@ -50,7 +62,12 @@ export function MenuTasco({ pratos, recomendados, onAlternarRecomendacao }: Menu
               onPress={() => onAlternarRecomendacao(prato.id)}
               leading={
                 recomendado ? (
-                  <Icon name={icons.selecionado} size={13} color={theme.accentText} strokeWidth={3} />
+                  <Icon
+                    name={icons.selecionado}
+                    size={13}
+                    color={theme.accentText}
+                    strokeWidth={3}
+                  />
                 ) : undefined
               }
               accessibilityLabel={

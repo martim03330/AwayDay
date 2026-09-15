@@ -1,8 +1,10 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  fetchMyDishRecommendations,
   fetchMyNoiseMeasurements,
   fetchMyPlaceRatings,
+  fetchMyPlaceSubScores,
   fetchMyPlaceVisits,
   fetchMyReviews,
 } from '@/features/activity/api';
@@ -20,6 +22,10 @@ export const myPlaceVisitsKey = (userId: string | null) => [...myActivityKey(use
 export const myPlaceRatingsKey = (userId: string | null) => [...myActivityKey(userId), 'place-ratings'] as const;
 export const myNoiseMeasurementsKey = (userId: string | null) =>
   [...myActivityKey(userId), 'noise-measurements'] as const;
+export const myDishRecommendationsKey = (userId: string | null) =>
+  [...myActivityKey(userId), 'dish-recommendations'] as const;
+export const myPlaceSubScoresKey = (userId: string | null) =>
+  [...myActivityKey(userId), 'place-sub-scores'] as const;
 
 export function useMyReviews(userId: string | null) {
   return useQuery({
@@ -49,6 +55,22 @@ export function useMyNoiseMeasurements(userId: string | null) {
   return useQuery({
     queryKey: myNoiseMeasurementsKey(userId),
     queryFn: userId ? () => fetchMyNoiseMeasurements(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyDishRecommendations(userId: string | null) {
+  return useQuery({
+    queryKey: myDishRecommendationsKey(userId),
+    queryFn: userId ? () => fetchMyDishRecommendations(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyPlaceSubScores(userId: string | null) {
+  return useQuery({
+    queryKey: myPlaceSubScoresKey(userId),
+    queryFn: userId ? () => fetchMyPlaceSubScores(userId) : skipToken,
     staleTime: STALE_MS,
   });
 }

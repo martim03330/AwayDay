@@ -225,6 +225,99 @@ export type Database = {
           },
         ]
       }
+      dish: {
+        Row: {
+          created_at: string
+          id: string
+          is_specialty: boolean
+          name: string
+          place_id: string
+          prep_minutes: number | null
+          price_cents: number | null
+          recommendations_count: number
+          status: string
+          submitted_by: string | null
+          temperature: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_specialty?: boolean
+          name: string
+          place_id: string
+          prep_minutes?: number | null
+          price_cents?: number | null
+          recommendations_count?: number
+          status?: string
+          submitted_by?: string | null
+          temperature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_specialty?: boolean
+          name?: string
+          place_id?: string
+          prep_minutes?: number | null
+          price_cents?: number | null
+          recommendations_count?: number
+          status?: string
+          submitted_by?: string | null
+          temperature?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dish_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dish_recommendation: {
+        Row: {
+          created_at: string
+          dish_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          dish_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          dish_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_recommendation_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dish"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dish_recommendation_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixture: {
         Row: {
           away_club_id: string
@@ -530,35 +623,62 @@ export type Database = {
       }
       place: {
         Row: {
+          attribution: string | null
           created_at: string
           distance_m: number
           id: string
           kind: string
+          latitude: number | null
           location: unknown
+          longitude: number | null
           name: string
           name_article: string
+          opening_hours: string | null
+          osm_id: string | null
+          price_level: number | null
+          source: string
+          specialty: string | null
+          updated_at: string
           venue_id: string
           walking_minutes: number
         }
         Insert: {
+          attribution?: string | null
           created_at?: string
           distance_m: number
           id: string
           kind: string
+          latitude?: number | null
           location: unknown
+          longitude?: number | null
           name: string
           name_article: string
+          opening_hours?: string | null
+          osm_id?: string | null
+          price_level?: number | null
+          source?: string
+          specialty?: string | null
+          updated_at?: string
           venue_id: string
           walking_minutes: number
         }
         Update: {
+          attribution?: string | null
           created_at?: string
           distance_m?: number
           id?: string
           kind?: string
+          latitude?: number | null
           location?: unknown
+          longitude?: number | null
           name?: string
           name_article?: string
+          opening_hours?: string | null
+          osm_id?: string | null
+          price_level?: number | null
+          source?: string
+          specialty?: string | null
+          updated_at?: string
           venue_id?: string
           walking_minutes?: number
         }
@@ -572,23 +692,121 @@ export type Database = {
           },
         ]
       }
-      place_rating: {
+      place_candidate: {
+        Row: {
+          decision: string
+          distance_m: number
+          imported_at: string
+          location: unknown
+          name: string
+          notes: string | null
+          osm_id: string
+          osm_tags: Json
+          suggested_kind: string | null
+          venue_id: string
+          walking_minutes: number
+        }
+        Insert: {
+          decision?: string
+          distance_m: number
+          imported_at?: string
+          location: unknown
+          name: string
+          notes?: string | null
+          osm_id: string
+          osm_tags?: Json
+          suggested_kind?: string | null
+          venue_id: string
+          walking_minutes: number
+        }
+        Update: {
+          decision?: string
+          distance_m?: number
+          imported_at?: string
+          location?: unknown
+          name?: string
+          notes?: string | null
+          osm_id?: string
+          osm_tags?: Json
+          suggested_kind?: string | null
+          venue_id?: string
+          walking_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_candidate_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_photo: {
         Row: {
           created_at: string
+          id: string
+          place_id: string
+          status: string
+          storage_path: string
+          submitted_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          place_id: string
+          status?: string
+          storage_path: string
+          submitted_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          place_id?: string
+          status?: string
+          storage_path?: string
+          submitted_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_photo_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_photo_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_rating: {
+        Row: {
+          beer_score: number | null
+          created_at: string
+          food_score: number | null
           place_id: string
           profile_id: string
           score: number
           updated_at: string
         }
         Insert: {
+          beer_score?: number | null
           created_at?: string
+          food_score?: number | null
           place_id: string
           profile_id: string
           score: number
           updated_at?: string
         }
         Update: {
+          beer_score?: number | null
           created_at?: string
+          food_score?: number | null
           place_id?: string
           profile_id?: string
           score?: number
@@ -973,6 +1191,37 @@ export type Database = {
         }[]
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
+      place_scores: {
+        Args: { p_venue_id: string }
+        Returns: {
+          beer_score: number
+          food_score: number
+          place_id: string
+          ratings: number
+          score: number
+        }[]
+      }
+      place_scores_all: {
+        Args: never
+        Returns: {
+          beer_score: number
+          food_score: number
+          place_id: string
+          ratings: number
+          score: number
+        }[]
+      }
+      publish_place_candidate: {
+        Args: {
+          p_kind: string
+          p_name_article: string
+          p_osm_id: string
+          p_place_id: string
+          p_price_level?: number
+          p_specialty?: string
+        }
+        Returns: undefined
+      }
       record_noise_measurement: {
         Args: { p_fixture_id: string; p_level: number }
         Returns: {

@@ -1,3 +1,4 @@
+import { registerDemoPlaces, subscribeToPlaces } from '@/features/places/store';
 import { gerarPratos } from '@/mocks/pratos';
 import type { Local, TipoLocal } from '@/mocks/tipos';
 
@@ -7,6 +8,8 @@ export const nomesTipoLocal: Record<TipoLocal, string> = {
   bar: 'Bar',
   roulotte: 'Roulotte',
   churrasqueira: 'Churrasqueira',
+  restaurante: 'Restaurante',
+  cafe: 'Café',
 };
 
 /**
@@ -472,8 +475,19 @@ const locaisBase: Omit<Local, 'pratos'>[] = [
   },
 ];
 
-/** Locais com o menu de pratos (mock). */
-export const locais: Local[] = locaisBase.map((local) => ({ ...local, pratos: gerarPratos(local) }));
+/** Fictional places with their dish menus, shown only in demo mode. */
+export const locaisDemo: Local[] = locaisBase.map((local) => ({ ...local, pratos: gerarPratos(local) }));
+registerDemoPlaces(locaisDemo);
+
+/**
+ * Places on screen: the fictional ones in demo mode, otherwise the real ones from Supabase
+ * (src/features/places). The screens keep using this export; it is filled in place on every change.
+ */
+export const locais: Local[] = [];
+
+subscribeToPlaces((lista) => {
+  locais.splice(0, locais.length, ...lista);
+});
 
 export function obterLocal(id: string) {
   return locais.find((local) => local.id === id);
