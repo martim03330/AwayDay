@@ -111,3 +111,16 @@ export function priceLadder(totalCents: number, seatsOffered: number) {
     sharePerPersonCents(totalCents, taken + 1)
   );
 }
+
+/**
+ * What a seat home costs someone who missed their transport: half the trip — the way back — split between everyone
+ * in the car on the way home (the driver included), rounded up to the cent. The same rule lives in
+ * `ride_return_share_cents` in the database, which is what actually charges people.
+ */
+export function returnShareCents(totalCents: number, people: number) {
+  wholeNonNegative(totalCents, 'totalCents');
+  if (!Number.isSafeInteger(people) || people < 1) {
+    throw new RangeError(`people must be a whole number of at least 1, got ${people}.`);
+  }
+  return sharePerPersonCents(Math.floor((totalCents + 1) / 2), people);
+}

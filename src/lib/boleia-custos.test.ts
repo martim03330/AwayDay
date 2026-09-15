@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   fuelCents,
   priceLadder,
+  returnShareCents,
   sharePerPersonCents,
   tollCents,
   tripCost,
@@ -136,5 +137,34 @@ describe('priceLadder', () => {
 
   it('refuses a ride without seats', () => {
     expect(() => priceLadder(1000, 0)).toThrow(RangeError);
+  });
+});
+
+describe('returnShareCents', () => {
+  it('is a share of half the trip: the way home', () => {
+    // 20,00 € there and back -> 10,00 € home, split by the driver and one passenger.
+    expect(returnShareCents(2000, 2)).toBe(500);
+  });
+
+  it('gets cheaper as more people come back', () => {
+    expect(returnShareCents(2000, 1)).toBe(1000);
+    expect(returnShareCents(2000, 4)).toBe(250);
+  });
+
+  it('rounds up to the cent, like every other share', () => {
+    // 10,01 € -> 5,01 € home, split by three: 1,67 € each.
+    expect(returnShareCents(1001, 3)).toBe(167);
+    expect(returnShareCents(1, 1)).toBe(1);
+  });
+
+  it('never costs more than going and coming back', () => {
+    for (const total of [0, 1, 999, 2000, 54321]) {
+      expect(returnShareCents(total, 2)).toBeLessThanOrEqual(sharePerPersonCents(total, 2));
+    }
+  });
+
+  it('refuses nonsense', () => {
+    expect(() => returnShareCents(-1, 2)).toThrow(RangeError);
+    expect(() => returnShareCents(100, 0)).toThrow(RangeError);
   });
 });

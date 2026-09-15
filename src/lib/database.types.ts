@@ -1550,6 +1550,7 @@ export type Database = {
       }
       ride: {
         Row: {
+          accepts_return_requests: boolean
           cancelled_at: string | null
           consumption_cl_per_100km: number
           created_at: string
@@ -1577,6 +1578,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepts_return_requests?: boolean
           cancelled_at?: string | null
           consumption_cl_per_100km: number
           created_at?: string
@@ -1604,6 +1606,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepts_return_requests?: boolean
           cancelled_at?: string | null
           consumption_cl_per_100km?: number
           created_at?: string
@@ -1855,6 +1858,57 @@ export type Database = {
           },
           {
             foreignKeyName: "ride_passenger_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_return_request: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          distance_to_car_m: number
+          profile_id: string
+          ride_id: string
+          rules_accepted_at: string
+          share_cents: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          distance_to_car_m: number
+          profile_id: string
+          ride_id: string
+          rules_accepted_at: string
+          share_cents: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          distance_to_car_m?: number
+          profile_id?: string
+          ride_id?: string
+          rules_accepted_at?: string
+          share_cents?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_return_request_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_return_request_ride_id_fkey"
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "ride"
@@ -2200,10 +2254,15 @@ export type Database = {
           recap_output_tokens: number
         }[]
       }
+      answer_return_request: {
+        Args: { p_accept: boolean; p_profile_id: string; p_ride_id: string }
+        Returns: undefined
+      }
       answer_ride_request: {
         Args: { p_accept: boolean; p_profile_id: string; p_ride_id: string }
         Returns: undefined
       }
+      cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       club_supporter_counts: {
         Args: never
@@ -2353,6 +2412,15 @@ export type Database = {
         Args: { p_note: string; p_reason: string; p_ride_id: string }
         Returns: undefined
       }
+      request_return_seat: {
+        Args: {
+          p_accept_rules: boolean
+          p_latitude: number
+          p_longitude: number
+          p_ride_id: string
+        }
+        Returns: undefined
+      }
       request_ride_seat: {
         Args: { p_accept_rules: boolean; p_ride_id: string }
         Returns: undefined
@@ -2431,6 +2499,41 @@ export type Database = {
       ride_requests_close_at: {
         Args: { p_departure_at: string }
         Returns: string
+      }
+      ride_return_board: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          driver_completed: number
+          driver_faults: number
+          driver_name: string
+          my_status: string
+          origin_name: string
+          parking_latitude: number
+          parking_longitude: number
+          parking_name: string
+          price_cents: number
+          ride_id: string
+          seats_left: number
+        }[]
+      }
+      ride_return_closes_at: { Args: { p_kickoff: string }; Returns: string }
+      ride_return_opens_at: { Args: { p_kickoff: string }; Returns: string }
+      ride_return_people: {
+        Args: { p_ride_id: string }
+        Returns: {
+          completed: number
+          display_name: string
+          distance_to_car_m: number
+          faults: number
+          profile_id: string
+          share_cents: number
+          status: string
+        }[]
+      }
+      ride_return_people_count: { Args: { p_ride_id: string }; Returns: number }
+      ride_return_share_cents: {
+        Args: { p_people: number; p_total_cents: number }
+        Returns: number
       }
       ride_role: {
         Args: { p_profile_id: string; p_ride_id: string }

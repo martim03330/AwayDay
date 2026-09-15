@@ -3,7 +3,9 @@
 // - a request is accepted          -> the passenger (meeting point and time);
 // - a request is declined/expires  -> the passenger;
 // - a passenger leaves             -> the driver;
-// - the driver cancels             -> every passenger with a seat.
+// - the driver cancels             -> every passenger with a seat;
+// - a seat home is asked for       -> the driver (how far the fan is from the car and what they pay);
+// - that request is answered       -> the fan.
 // Every notification opens the ride. Nothing is sent to people without a registered phone.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
@@ -41,6 +43,17 @@ function diaEHora(iso: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(iso));
+}
+
+/** "1,2 km" or "600 m": how far the fan is from the car, as the driver reads it. */
+function distancia(metros: number) {
+  return metros >= 1000
+    ? `${(metros / 1000).toFixed(1).replace('.', ',')} km`
+    : `${Math.round(metros)} m`;
+}
+
+function euros(cents: number) {
+  return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
 }
 
 async function tokensOf(admin: SupabaseClient, profileIds: readonly string[]) {
@@ -81,7 +94,7 @@ Deno.serve(async (request) => {
   const ride = await admin
     .from('ride')
     .select(
-      'id, fixture_id, driver_id, origin_name, departure_at, fixture:fixture_id (home:home_club_id (short_name), away:away_club_id (short_name))'
+      'id, fixture_id, driver_id, origin_name, departure_at, parking:parking_spot_id (name), fixture:fixture_id (home:home_club_id (short_name), away:away_club_id (short_name))'
     )
     .eq('id', rideId)
     .maybeSingle();
@@ -124,6 +137,30 @@ Deno.serve(async (request) => {
       recipients = [driverId];
       title = 'Saiu da tua boleia';
       text = `${await nameOf(admin, passengerId)} já não vai na tua boleia para ${jogo}. O lugar ficou livre.`;
+    }
+  } else if (kind === 'return') {
+    // A seat home for someone who missed their transport: it is decided in the next minutes, so it goes out at once.
+    const fanId = typeof body?.profile_id === 'string' ? body.profile_id : null;
+    if (!fanId) return json(400, { error: 'bad_request' });
+    const metros = typeof body?.distance_m === 'number' ? body.distance_m : null;
+    const share = typeof body?.share_cents === 'number' ? body.share_cents : null;
+    const parque = asRecord(ride.data.parking)?.name;
+    if (status === 'pending') {
+      recipients = [driverId];
+      title = 'Pedido de boleia de volta';
+      text = `${await nameOf(admin, fanId)} ficou sem transporte no ${jogo}${
+        metros !== null ? ` e está a ${distancia(metros)} do carro` : ''
+      }.${share !== null ? ` Paga ${euros(share)} da volta.` : ''}`;
+    } else if (status === 'accepted') {
+      recipients = [fanId];
+      title = 'Tens boleia de volta!';
+      text = `${await nameOf(admin, driverId)} leva-te de volta${
+        typeof parque === 'string' ? `. O carro ficou no ${parque}` : ''
+      }. Combina já onde se encontram.`;
+    } else if (status === 'declined') {
+      recipients = [fanId];
+      title = 'Sem boleia de volta';
+      text = `Não foi desta. Vê se há outro carro a voltar do ${jogo}.`;
     }
   } else if (kind === 'ride' && status === 'cancelled') {
     const passengers = await admin
