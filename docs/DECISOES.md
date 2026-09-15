@@ -2,6 +2,31 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Jogos reais da Liga Portugal (football-data.org)
+
+**O quê.** A Edge Function `sync-fixtures` vai buscar os jogos da Liga Portugal 2026-27 ao
+football-data.org e guarda-os em `public.fixture` (upsert por id `casa-fora-2026-27`). O pg_cron
+chama-a de 6 em 6 horas (`15 */6 * * *`) com o segredo do Vault, como o `generate-nudges`. A primeira
+execução guardou 305 jogos (1 adiado ficou de fora).
+
+**Porquê assim.** A chave da API só existe nos segredos da função (`FOOTBALL_DATA_API_KEY`); a app lê
+a cache em Postgres (regra 3). Cada clube tem `club.football_data_id` (os 18 da Liga preenchidos na
+migração). O estádio é o `home_venue_id` do visitado, porque a API não indica o estádio.
+
+**Hora por confirmar.** Os jogos `SCHEDULED` têm data provisória: ficam com
+`fixture.kickoff_confirmed = false` (198 à data). A app ainda não mostra esta diferença.
+
+**Cobertura.** O plano gratuito só inclui, em Portugal e Europa, a Liga Portugal, a Liga dos Campeões
+e o Europeu. Liga 2, Liga 3, taças e Liga Europa não vêm na chave (a Liga 2 responde 404). A Liga dos
+Campeões fica para depois: faltam clubes e estádios estrangeiros.
+
+### Limitações conhecidas
+
+- Um jogo guardado que depois é adiado ou cancelado fica com a data antiga até a API lhe dar uma nova.
+- Se um clube jogar fora do seu estádio (castigo, obras), o estádio fica errado.
+- A chave foi partilhada numa conversa: gerar uma nova antes do lançamento e voltar a guardá-la com
+  `supabase secrets set`.
+
 ## 2026-09-15 — Tascos sugeridos, confirmados pelos adeptos
 
 **Muda a curadoria da fatia 2.** Em vez de esperar que o dono aprove cada tasco, os candidatos do OpenStreetMap

@@ -89,6 +89,7 @@ export type Database = {
           abbreviation: string
           country: string
           created_at: string
+          football_data_id: number | null
           home_venue_id: string | null
           id: string
           name: string
@@ -102,6 +103,7 @@ export type Database = {
           abbreviation: string
           country: string
           created_at?: string
+          football_data_id?: number | null
           home_venue_id?: string | null
           id: string
           name: string
@@ -115,6 +117,7 @@ export type Database = {
           abbreviation?: string
           country?: string
           created_at?: string
+          football_data_id?: number | null
           home_venue_id?: string | null
           id?: string
           name?: string
@@ -327,6 +330,7 @@ export type Database = {
           home_club_id: string
           id: string
           kickoff_at: string
+          kickoff_confirmed: boolean
           season_id: string | null
           stage: string
           venue_id: string
@@ -339,6 +343,7 @@ export type Database = {
           home_club_id: string
           id: string
           kickoff_at: string
+          kickoff_confirmed?: boolean
           season_id?: string | null
           stage: string
           venue_id: string
@@ -351,6 +356,7 @@ export type Database = {
           home_club_id?: string
           id?: string
           kickoff_at?: string
+          kickoff_confirmed?: boolean
           season_id?: string | null
           stage?: string
           venue_id?: string
