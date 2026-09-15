@@ -17,7 +17,7 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
   const [profile, clubs] = await Promise.all([
     client()
       .from('profile')
-      .select('id, display_name, nudges_enabled, recap_enabled, show_in_rankings')
+      .select('id, display_name, nudges_enabled, recap_enabled, show_in_rankings, is_admin')
       .eq('id', userId)
       .maybeSingle(),
     client().from('profile_club').select('relation, club_id').eq('profile_id', userId),
@@ -37,6 +37,7 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
     nudgesEnabled: profile.data.nudges_enabled,
     recapEnabled: profile.data.recap_enabled,
     showInRankings: profile.data.show_in_rankings,
+    isAdmin: profile.data.is_admin,
   };
 }
 

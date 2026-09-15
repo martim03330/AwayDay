@@ -484,6 +484,7 @@ export type Database = {
         Row: {
           created_at: string
           fixture_id: string
+          place_id: string | null
           profile_id: string
           status: string
           updated_at: string
@@ -491,6 +492,7 @@ export type Database = {
         Insert: {
           created_at?: string
           fixture_id: string
+          place_id?: string | null
           profile_id: string
           status: string
           updated_at?: string
@@ -498,6 +500,7 @@ export type Database = {
         Update: {
           created_at?: string
           fixture_id?: string
+          place_id?: string | null
           profile_id?: string
           status?: string
           updated_at?: string
@@ -508,6 +511,13 @@ export type Database = {
             columns: ["fixture_id"]
             isOneToOne: false
             referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_attendance_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
             referencedColumns: ["id"]
           },
           {
@@ -576,6 +586,67 @@ export type Database = {
             foreignKeyName: "fixture_meeting_point_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: true
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_point_draft: {
+        Row: {
+          club_id: string
+          decided_at: string | null
+          decided_by: string | null
+          excerpt: string
+          fixture_id: string
+          found_at: string
+          id: string
+          source_title: string
+          source_url: string
+          status: string
+        }
+        Insert: {
+          club_id: string
+          decided_at?: string | null
+          decided_by?: string | null
+          excerpt: string
+          fixture_id: string
+          found_at?: string
+          id?: string
+          source_title: string
+          source_url: string
+          status?: string
+        }
+        Update: {
+          club_id?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          excerpt?: string
+          fixture_id?: string
+          found_at?: string
+          id?: string
+          source_title?: string
+          source_url?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_point_draft_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_point_draft_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_point_draft_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
             referencedRelation: "fixture"
             referencedColumns: ["id"]
           },
@@ -1121,6 +1192,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_admin: boolean
           nudges_enabled: boolean
           recap_enabled: boolean
           show_in_rankings: boolean
@@ -1130,6 +1202,7 @@ export type Database = {
           created_at?: string
           display_name: string
           id: string
+          is_admin?: boolean
           nudges_enabled?: boolean
           recap_enabled?: boolean
           show_in_rankings?: boolean
@@ -1139,6 +1212,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_admin?: boolean
           nudges_enabled?: boolean
           recap_enabled?: boolean
           show_in_rankings?: boolean
@@ -1507,6 +1581,7 @@ export type Database = {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
       noise_ranking: {
         Args: { p_fixture_id: string; p_limit?: number }
         Returns: {

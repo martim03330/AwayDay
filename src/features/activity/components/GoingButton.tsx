@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeIn,
   interpolateColor,
@@ -11,38 +12,47 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Spacing } from '@/constants/theme';
-import { useAttendance, useSetGoing } from '@/features/activity/hooks/useAttendance';
 import { useTheme } from '@/hooks/use-theme';
-import { useUserId } from '@/lib/session';
+import { usePlanosJogos } from '@/state/planos-jogos';
+import { Button } from '@/ui/button';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 const DURACAO_MS = 300;
 
-/** "Vou a este jogo" on an upcoming fixture. Only with an account: it feeds the match-day suggestions. */
+/**
+ * "Vou a este jogo" on an upcoming fixture. With an account it is saved there (and feeds the match-day suggestions);
+ * without one, on this phone. Once marked, it opens "O meu jogo".
+ */
 export function GoingButton({ fixtureId }: { fixtureId: string }) {
-  const userId = useUserId();
-  const attendance = useAttendance(userId, fixtureId);
-  const setGoing = useSetGoing(userId, fixtureId);
-
-  if (!userId) return null;
-
-  const going = attendance.data === 'going' || attendance.data === 'attended';
+  const router = useRouter();
+  const { vou, alternarVou } = usePlanosJogos();
+  const [aGuardar, setAGuardar] = useState(false);
+  const going = vou(fixtureId);
 
   function toggle() {
-    if (setGoing.isPending) return;
-    setGoing.mutate(!going, {
-      onError: () => Alert.alert('Não deu para guardar', 'Tenta outra vez daqui a nada.'),
-    });
+    if (aGuardar) return;
+    setAGuardar(true);
+    void alternarVou(fixtureId).finally(() => setAGuardar(false));
   }
 
   return (
     <View style={styles.block}>
       <BilheteAlternar going={going} onPress={toggle} />
+      {going ? (
+        <Button
+          label="Abrir o meu jogo"
+          variant="secondary"
+          icon={icons.acesso}
+          onPress={() =>
+            router.push({ pathname: '/jogos/o-meu-jogo', params: { jogoId: fixtureId } })
+          }
+        />
+      ) : null}
       <ThemedText themeColor="textSecondary" style={styles.help}>
         {going
           ? 'Toca outra vez se mudares de planos.'
-          : 'Marca e dizemos-te o que há perto do estádio no dia.'}
+          : 'Marca e preparamos o teu dia: tasco, horas e avisos.'}
       </ThemedText>
     </View>
   );
@@ -82,7 +92,9 @@ function BilheteAlternar({ going, onPress }: { going: boolean; onPress: () => vo
 
   function tocar() {
     if (!reduzirMovimento) {
-      escala.set(withSequence(withTiming(0.96, { duration: 90 }), withTiming(1, { duration: 160 })));
+      escala.set(
+        withSequence(withTiming(0.96, { duration: 90 }), withTiming(1, { duration: 160 }))
+      );
     }
     onPress();
   }

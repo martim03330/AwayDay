@@ -26,6 +26,7 @@ import { restorePlaceCatalog } from '@/features/places/hooks/usePlaceCatalog';
 import { QueryProvider } from '@/lib/query-client';
 import { AICoachProvider } from '@/state/ai-coach';
 import { AppStateProvider, useAppState } from '@/state/app-state';
+import { PlanosJogosProvider } from '@/state/planos-jogos';
 import { JuntarAtividade } from '@/state/juntar-atividade';
 import { RelogioProvider } from '@/state/relogio';
 import { NotificacoesPush } from '@/state/notificacoes-push';
@@ -112,15 +113,17 @@ export default function RootLayout() {
         <ThemeProvider value={navigationTheme}>
           <RelogioProvider>
             <AppStateProvider>
-              <SonsProvider>
-                <AICoachProvider>
-                  <LigacaoDemo />
-                  <SincronizarConta />
-                  <JuntarAtividade />
-                  <NotificacoesPush />
-                  <NavegacaoRaiz />
-                </AICoachProvider>
-              </SonsProvider>
+              <PlanosJogosProvider>
+                <SonsProvider>
+                  <AICoachProvider>
+                    <LigacaoDemo />
+                    <SincronizarConta />
+                    <JuntarAtividade />
+                    <NotificacoesPush />
+                    <NavegacaoRaiz />
+                  </AICoachProvider>
+                </SonsProvider>
+              </PlanosJogosProvider>
             </AppStateProvider>
           </RelogioProvider>
         </ThemeProvider>

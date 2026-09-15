@@ -468,6 +468,20 @@ verify_jwt = false
 import_map = "./functions/walking-route/deno.json"
 entrypoint = "./functions/walking-route/index.ts"
 
+[functions.check-meeting-points]
+enabled = true
+# Called only by pg_cron with the x-cron-secret header, checked inside the function.
+verify_jwt = false
+import_map = "./functions/check-meeting-points/deno.json"
+entrypoint = "./functions/check-meeting-points/index.ts"
+
+[functions.meeting-point-drafts]
+enabled = true
+# Called by admins in the app with their session; checked inside the function.
+verify_jwt = false
+import_map = "./functions/meeting-point-drafts/deno.json"
+entrypoint = "./functions/meeting-point-drafts/index.ts"
+
 [functions.sync-fixtures]
 enabled = true
 # Called only by pg_cron with the x-cron-secret header, checked inside the function.

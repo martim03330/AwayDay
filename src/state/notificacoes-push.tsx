@@ -47,6 +47,10 @@ export function NotificacoesPush() {
         }
       }
       if (tipo === 'recap') router.push('/perfil/retrospetiva');
+      if (tipo === 'meeting-point-draft') router.push('/perfil/pontos-de-encontro');
+      if (tipo === 'o-meu-jogo' && typeof jogoId === 'string' && obterJogo(jogoId)) {
+        router.push({ pathname: '/jogos/o-meu-jogo', params: { jogoId } });
+      }
     });
     return () => subscricao.remove();
   }, [router]);

@@ -321,6 +321,22 @@ export default function PerfilScreen() {
           </ThemedText>
         )}
 
+        {perfilDaConta.data?.isAdmin ? (
+          <>
+            <SectionHeader title="Administração" />
+            <Card style={styles.grupo}>
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/pontos-de-encontro')}
+                accessibilityLabel="Pontos de encontro por confirmar. Toca para abrir."
+                leading={<Icon name={icons.pontoEncontro} size={20} color={theme.accentInk} />}
+                title="Pontos de encontro por confirmar"
+                subtitle="Encontrados nas notícias dos clubes"
+                trailing={chevron}
+              />
+            </Card>
+          </>
+        ) : null}
+
         <SectionHeader title="Definições" />
         <Card style={styles.grupo}>
           <LinhaGrupo

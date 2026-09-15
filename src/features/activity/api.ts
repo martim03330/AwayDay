@@ -274,3 +274,25 @@ export async function votePlace(userId: string, placeId: string, isGood: boolean
     .upsert({ profile_id: userId, place_id: placeId, is_good: isGood }, { onConflict: 'profile_id,place_id' });
   if (error) throw error;
 }
+
+/** The fixtures the user is going to, with the tasco picked for each (`null` when none yet). */
+export async function fetchMyPlans(userId: string): Promise<Record<string, string | null>> {
+  const { data, error } = await client()
+    .from('fixture_attendance')
+    .select('fixture_id, place_id')
+    .eq('profile_id', userId)
+    .eq('status', 'going');
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.fixture_id, row.place_id]));
+}
+
+/** Picks (or clears, with `null`) the tasco for a game the user is going to. */
+export async function setPlanPlace(userId: string, fixtureId: string, placeId: string | null) {
+  const { error } = await client()
+    .from('fixture_attendance')
+    .update({ place_id: placeId })
+    .eq('profile_id', userId)
+    .eq('fixture_id', fixtureId)
+    .eq('status', 'going');
+  if (error) throw error;
+}

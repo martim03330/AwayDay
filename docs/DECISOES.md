@@ -2,6 +2,70 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Fatia 2: «O meu jogo»
+
+**O quê.** Marcar «Vou a este jogo» abre um ecrã só desse jogo (`/jogos/o-meu-jogo`). Chega-se lá pelo
+botão do jogo, pelo cartão «O teu próximo jogo» no topo da lista de Jogos ou tocando num aviso. O ecrã
+mostra:
+- a contagem decrescente, ou «hora por definir»;
+- o tasco escolhido, com os primeiros sugeridos pela mesma ordem da lista de Locais, «Ver o tasco» e
+  «Como chegar a pé»;
+- as horas do dia;
+- o ponto de encontro oficial, quando existe;
+- um espaço reservado para a boleia e as contas (fatias 3 e 4);
+- os avisos deste jogo.
+
+**Onde fica guardado.** O botão «Vou» passou a funcionar sem conta.
+- **Com conta:** `fixture_attendance`, com `status = 'going'` e a nova coluna `place_id`.
+- **Sem conta:** no telemóvel (`awayday-planos-jogos-v1`).
+- **Modo demo:** só em memória.
+
+O estado fica em `src/state/planos-jogos.tsx`. Os planos guardados sem conta não passam para a conta
+ao entrar (limitação conhecida).
+
+**As horas** (`src/lib/avisos-jogo.ts`, com testes):
+- chegar ao tasco 2 h 30 antes do apito;
+- sair do tasco a tempo de andar, com 15 min para entrar e mais 10 min de folga;
+- sem tasco, ir para o estádio 90 min antes.
+
+**Avisos.** São notificações locais agendadas no telemóvel: não passam pelo servidor e funcionam no
+Expo Go. A permissão é pedida na primeira vez que se marca um jogo. Os avisos:
+- «Faltam 3 dias» às 19:00, nunca na véspera (dar tempo para planear);
+- «Hora de ir para o tasco»;
+- «Hora de ir para o estádio».
+
+Com a hora do jogo por definir só há o de planear, e os outros entram quando a hora for confirmada.
+São reagendados sempre que muda o jogo, a hora ou o tasco. Cada jogo pode desligá-los neste
+telemóvel. No modo demo não há avisos, porque a hora é simulada.
+
+## 2026-09-16 — Pontos de encontro semi-automáticos
+
+**Como funciona.**
+1. **Procura:** o pg_cron chama `check-meeting-points` três vezes por dia (8h, 14h e 19h UTC). Para
+   cada jogo europeu fora de casa do Benfica, do FC Porto ou do Sporting nos 7 dias seguintes, e ainda
+   sem ponto de encontro, a função lê a página de notícias do clube.
+2. **Filtro:** fica com as ligações de «informações aos adeptos» que mencionam o adversário ou a
+   cidade.
+3. **Rascunho:** da notícia guarda o título, a ligação e as frases úteis (ponto de encontro,
+   transporte, portas, bilhetes, proibições) em `meeting_point_draft`.
+4. **Aviso:** os administradores recebem uma notificação push.
+5. **Confirmação:** um administrador abre Perfil → «Pontos de encontro por confirmar», preenche os
+   campos a partir do excerto e publica.
+6. **Publicação:** a função `meeting-point-drafts` localiza o sítio com o geocodificador do
+   OpenStreetMap (Nominatim) e grava em `fixture_meeting_point`. Nada chega aos adeptos sem esta
+   confirmação.
+
+**Porquê sem IA.** Não há chave de modelo no servidor e a primeira versão é sem custos. Os sites não
+têm formato fixo, por isso extrair os campos automaticamente sem revisão arriscava mandar adeptos
+para o sítio errado.
+
+**Administradores.** `profile.is_admin`, que só o dono altera: não há permissão de escrita para essa
+coluna. A conta do dono foi marcada como administrador a 2026-09-16.
+
+**Cobertura.** Benfica, FC Porto e Sporting. As páginas de notícias do Braga e do Torreense são
+geradas por JavaScript e não trazem as ligações no HTML; esses pontos continuam à mão. Testado com a
+notícia real do Benfica para o Milan–Benfica.
+
 ## 2026-09-15 — Cuidados nos clássicos, caminho até ao ponto de encontro e pratos para todos os tascos
 
 **Cuidados para adeptos visitantes (Benfica, Porto e Sporting entre si).**

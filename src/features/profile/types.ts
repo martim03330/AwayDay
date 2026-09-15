@@ -11,6 +11,8 @@ export type MyProfile = {
   recapEnabled: boolean;
   /** Name and club in the rankings. Off unless the user turns it on. */
   showInRankings: boolean;
+  /** Can confirm meeting point drafts. Only the owner sets it, never the app. */
+  isAdmin: boolean;
 };
 
 export type MessagePreferences = Partial<Pick<MyProfile, 'nudgesEnabled' | 'recapEnabled'>>;
