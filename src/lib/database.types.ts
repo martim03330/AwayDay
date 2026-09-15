@@ -2224,6 +2224,7 @@ export type Database = {
         Returns: boolean
       }
       expire_ride_requests: { Args: never; Returns: number }
+      fixture_going_count: { Args: { p_fixture_id: string }; Returns: number }
       home_fan_zones: {
         Args: { p_fixture_id: string }
         Returns: {

@@ -1,3 +1,4 @@
+import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -12,7 +13,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Spacing } from '@/constants/theme';
+import { fetchGoingCount } from '@/features/activity/api';
 import { useTheme } from '@/hooks/use-theme';
+import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { Button } from '@/ui/button';
 import { Icon, icons } from '@/ui/icon';
@@ -29,11 +32,23 @@ export function GoingButton({ fixtureId }: { fixtureId: string }) {
   const { vou, alternarVou } = usePlanosJogos();
   const [aGuardar, setAGuardar] = useState(false);
   const going = vou(fixtureId);
+  const { modoDemo } = useAppState();
+  const queryClient = useQueryClient();
+  // Fans with an account who said they are going; only shown from 5 people up.
+  const quantos = useQuery({
+    queryKey: ['going-count', fixtureId],
+    queryFn: modoDemo ? skipToken : () => fetchGoingCount(fixtureId),
+    staleTime: 60 * 1000,
+    meta: { persist: false },
+  });
 
   function toggle() {
     if (aGuardar) return;
     setAGuardar(true);
-    void alternarVou(fixtureId).finally(() => setAGuardar(false));
+    void alternarVou(fixtureId).finally(() => {
+      setAGuardar(false);
+      void queryClient.invalidateQueries({ queryKey: ['going-count', fixtureId] });
+    });
   }
 
   return (
@@ -54,6 +69,13 @@ export function GoingButton({ fixtureId }: { fixtureId: string }) {
           ? 'Toca outra vez se mudares de planos.'
           : 'Marca e preparamos o teu dia: tasco, horas e avisos.'}
       </ThemedText>
+      {modoDemo || quantos.isLoading ? null : (
+        <ThemedText type="smallBold" style={styles.help}>
+          {quantos.data != null
+            ? `${quantos.data} adeptos da app vão a este jogo`
+            : 'Ainda são menos de 5 adeptos da app a ir a este jogo. Mostramos o número a partir de 5.'}
+        </ThemedText>
+      )}
     </View>
   );
 }

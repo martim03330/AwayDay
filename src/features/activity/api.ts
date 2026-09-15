@@ -121,7 +121,9 @@ export async function deletePlaceVisit(visitId: string) {
 export async function fetchMyReviews(userId: string): Promise<ReviewRecord[]> {
   const { data, error } = await client()
     .from('venue_review')
-    .select('fixture_id, stadium_score, atmosphere_score, access_score, comment, created_at, updated_at')
+    .select(
+      'fixture_id, stadium_score, atmosphere_score, access_score, comment, created_at, updated_at'
+    )
     .eq('profile_id', userId);
   if (error) throw error;
   return data.map((row) => ({
@@ -162,7 +164,10 @@ export async function fetchMyPlaceRatings(userId: string): Promise<Record<string
 export async function savePlaceRating(userId: string, placeId: string, score: number) {
   const { error } = await client()
     .from('place_rating')
-    .upsert({ profile_id: userId, place_id: placeId, score }, { onConflict: 'profile_id,place_id' });
+    .upsert(
+      { profile_id: userId, place_id: placeId, score },
+      { onConflict: 'profile_id,place_id' }
+    );
   if (error) throw error;
 }
 
@@ -186,18 +191,28 @@ export async function fetchMyNoiseMeasurements(userId: string): Promise<NoiseMea
  * that day near the stadium, and at least 8 minutes after the previous one; otherwise this throws
  * NoiseMeasurementRefused.
  */
-export async function recordNoiseMeasurement(fixtureId: string, level: number): Promise<NoiseMeasurementRecord> {
+export async function recordNoiseMeasurement(
+  fixtureId: string,
+  level: number
+): Promise<NoiseMeasurementRecord> {
   const { data, error } = await client().rpc('record_noise_measurement', {
     p_fixture_id: fixtureId,
     p_level: Math.round(level),
   });
   if (error) {
-    if (error.message === 'noise_measurement_too_soon') throw new NoiseMeasurementRefused('too-soon');
+    if (error.message === 'noise_measurement_too_soon')
+      throw new NoiseMeasurementRefused('too-soon');
     if (error.message === 'fixture_not_live') throw new NoiseMeasurementRefused('not-live');
-    if (error.message === 'noise_needs_checkin') throw new NoiseMeasurementRefused('needs-check-in');
+    if (error.message === 'noise_needs_checkin')
+      throw new NoiseMeasurementRefused('needs-check-in');
     throw error;
   }
-  return { id: data.id, fixtureId: data.fixture_id, level: data.level, measuredAt: data.measured_at };
+  return {
+    id: data.id,
+    fixtureId: data.fixture_id,
+    level: data.level,
+    measuredAt: data.measured_at,
+  };
 }
 
 /** Ids of the approved dishes the user recommends. Who recommends what is private; only counts are public. */
@@ -233,7 +248,9 @@ export async function unrecommendDish(userId: string, dishId: string) {
 export type PlaceSubScores = { beerScore: number | null; foodScore: number | null };
 
 /** The user's beer and food scores, by place id, for the places they rated. */
-export async function fetchMyPlaceSubScores(userId: string): Promise<Record<string, PlaceSubScores>> {
+export async function fetchMyPlaceSubScores(
+  userId: string
+): Promise<Record<string, PlaceSubScores>> {
   const { data, error } = await client()
     .from('place_rating')
     .select('place_id, beer_score, food_score')
@@ -271,7 +288,10 @@ export async function fetchMyPlaceVotes(userId: string): Promise<Record<string, 
 export async function votePlace(userId: string, placeId: string, isGood: boolean) {
   const { error } = await client()
     .from('place_vote')
-    .upsert({ profile_id: userId, place_id: placeId, is_good: isGood }, { onConflict: 'profile_id,place_id' });
+    .upsert(
+      { profile_id: userId, place_id: placeId, is_good: isGood },
+      { onConflict: 'profile_id,place_id' }
+    );
   if (error) throw error;
 }
 
@@ -316,4 +336,11 @@ export async function setPlanPlace(userId: string, fixtureId: string, placeId: s
     .eq('fixture_id', fixtureId)
     .eq('status', 'going');
   if (error) throw error;
+}
+
+/** How many fans said they are going to a game; `null` below 5 (aggregates are never published for fewer). */
+export async function fetchGoingCount(fixtureId: string): Promise<number | null> {
+  const { data, error } = await client().rpc('fixture_going_count', { p_fixture_id: fixtureId });
+  if (error) throw error;
+  return typeof data === 'number' ? data : null;
 }

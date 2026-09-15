@@ -1,7 +1,8 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import * as Linking from 'expo-linking';
+import { Alert, Share, StyleSheet, View } from 'react-native';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
 import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
@@ -32,6 +33,7 @@ import { formatarCentimos } from '@/lib/money';
 import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regras-boleia';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
+import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { Aviso } from '@/ui/aviso';
@@ -236,6 +238,30 @@ export default function BoleiaScreen() {
       ? Math.round((boleia.parking.distanceM * DETOUR_FACTOR) / METROS_POR_MINUTO)
       : null;
 
+  /** Shares the ride with a link that opens it in the app, so the group organises itself here. */
+  async function partilhar() {
+    if (!boleia || !jogo) return;
+    const link = Linking.createURL('/jogos/boleia', {
+      queryParams: { rideId: boleia.id, jogoId: jogo.id },
+    });
+    const casa = obterClube(jogo.casaId)?.nomeCurto ?? '';
+    const fora = obterClube(jogo.foraId)?.nomeCurto ?? '';
+    const lugares = boleia.seatsOffered - boleia.seatsTaken;
+    const mensagem = [
+      `Boleia para ${casa} x ${fora}`,
+      `Sai de ${boleia.originName}, ${formatarDiaEHora(partida, agora).toLowerCase()}`,
+      lugares > 0
+        ? `${plural(lugares, 'lugar livre', 'lugares livres')} · ${formatarCentimos(boleia.shareFullCents)} a ${formatarCentimos(boleia.shareNowCents)} por pessoa`
+        : 'Boleia cheia',
+      `Pede lugar no AwayDay: ${link}`,
+    ].join('\n');
+    try {
+      await Share.share({ message: mensagem });
+    } catch {
+      Alert.alert('Não foi possível partilhar', 'Tenta outra vez.');
+    }
+  }
+
   function sair() {
     if (!boleia) return;
     if (fase === 'aberta' || boleia.myStatus === 'requested') {
@@ -319,6 +345,14 @@ export default function BoleiaScreen() {
           icon={icons.carro}
           onPress={() => abrirDirecoes(boleia.origin, 'carro')}
         />
+        {cancelada ? null : (
+          <Button
+            label="Partilhar boleia"
+            variant="secondary"
+            icon={icons.partilhar}
+            onPress={() => void partilhar()}
+          />
+        )}
       </Card>
 
       {cancelada ? null : (
