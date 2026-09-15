@@ -2,7 +2,13 @@ import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
-import MapView, { Circle, MapMarker, type MapPressEvent, type Region } from 'react-native-maps';
+import MapView, {
+  Circle,
+  MapMarker,
+  Polyline,
+  type MapPressEvent,
+  type Region,
+} from 'react-native-maps';
 import Animated, {
   FadeInDown,
   FadeOutDown,
@@ -17,7 +23,12 @@ import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
 import { getCurrentPosition } from '@/features/presence/location';
-import { fetchHomeFanZones, HomeFanReportRefused, reportHomeFans } from '@/features/safety/api';
+import {
+  fetchHomeFanStreets,
+  fetchHomeFanZones,
+  HomeFanReportRefused,
+  reportHomeFans,
+} from '@/features/safety/api';
 import { useRestroomsNear } from '@/features/restrooms/hooks/useRestrooms';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -64,6 +75,8 @@ const DETOUR_FACTOR = 1.3;
 const METROS_POR_MINUTO = 80;
 /** Radius drawn for a cell flagged by fans (the cells are ~150 m). */
 const RAIO_ZONA_ADEPTOS_M = 110;
+/** Researched home-fan ground, darker than the flags fans raise during the game. */
+const COR_ADEPTOS_PESQUISA = '#A34509';
 
 function regiao(coordenadas: Coordenadas, delta: number): Region {
   return { ...coordenadas, latitudeDelta: delta, longitudeDelta: delta };
@@ -163,11 +176,14 @@ export type ZonaMapa = { id: string; titulo: string; centro: Coordenadas; raioM:
 export function MapaJogo({
   venue,
   zonas = [],
+  zonasCasa = [],
   inicio = 'cidade',
   jogo,
 }: {
   venue: Venue;
   zonas?: readonly ZonaMapa[];
+  /** Places the research names as home-fan ground: permanent, unlike the flags raised during a game. */
+  zonasCasa?: readonly ZonaMapa[];
   /** 'estadio': open already zoomed on the stadium with the tascos and WC showing (Locais tab). */
   inicio?: 'cidade' | 'estadio';
   /** The game this map is for: shows and lets fans flag where home fans are, around kick-off. */
@@ -217,6 +233,12 @@ export function MapaJogo({
         : skipToken,
     refetchInterval: 60 * 1000,
     meta: { persist: false },
+  });
+  // The streets where home fans usually are: what fans flagged in earlier games at this stadium, not just today's.
+  const ruasDaCasa = useQuery({
+    queryKey: ['home-fan-streets', venue.id],
+    queryFn: modoDemo ? skipToken : () => fetchHomeFanStreets(venue.id),
+    staleTime: 24 * 60 * 60 * 1000,
   });
   const [aAssinalar, setAAssinalar] = useState(false);
 
@@ -382,6 +404,27 @@ export function MapaJogo({
               strokeColor={COR_ADEPTOS_DA_CASA}
               strokeWidth={2}
               fillColor="rgba(232, 89, 12, 0.22)"
+            />
+          ))}
+
+          {zonasCasa.map((zona) => (
+            <Circle
+              key={zona.id}
+              center={zona.centro}
+              radius={zona.raioM}
+              strokeColor={COR_ADEPTOS_PESQUISA}
+              strokeWidth={2}
+              fillColor="rgba(163, 69, 9, 0.14)"
+            />
+          ))}
+
+          {(ruasDaCasa.data ?? []).map((rua, indice) => (
+            <Polyline
+              key={`${rua.name}-${indice}`}
+              coordinates={rua.path}
+              strokeColor={COR_ADEPTOS_DA_CASA}
+              strokeWidth={6}
+              lineCap="round"
             />
           ))}
 
@@ -569,6 +612,20 @@ export function MapaJogo({
             <ThemedText style={styles.legendaTexto}>Estacionamento</ThemedText>
           </View>
         ) : null}
+        {zonasCasa.length > 0 ? (
+          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
+            <View style={[styles.pontoLegenda, { backgroundColor: COR_ADEPTOS_PESQUISA }]} />
+            <ThemedText style={styles.legendaTexto}>
+              Zonas conhecidas dos adeptos da casa
+            </ThemedText>
+          </View>
+        ) : null}
+        {(ruasDaCasa.data ?? []).length > 0 ? (
+          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
+            <View style={[styles.pontoLegenda, { backgroundColor: COR_ADEPTOS_DA_CASA }]} />
+            <ThemedText style={styles.legendaTexto}>Ruas com adeptos da casa</ThemedText>
+          </View>
+        ) : null}
         {(zonasAdeptos.data ?? []).length > 0 ? (
           <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
             <View style={[styles.pontoLegenda, { backgroundColor: 'rgba(232, 89, 12, 0.5)' }]} />
@@ -610,6 +667,9 @@ export function MapaJogo({
 
       <ThemedText themeColor="textMuted" style={styles.nota}>
         O fundo do mapa precisa de internet. Tascos e WC do OpenStreetMap e dos adeptos.
+        {(ruasDaCasa.data ?? []).length > 0
+          ? ' As ruas marcadas foram assinaladas pelos adeptos em vários jogos aqui.'
+          : ''}
       </ThemedText>
     </Card>
   );

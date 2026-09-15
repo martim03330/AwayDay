@@ -2,6 +2,32 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Ruas dos adeptos da casa e hora de chegada pelo parque
+
+**Ruas dos adeptos da casa.** Até agora a app só sabia onde estavam os adeptos da casa *durante* um
+jogo: alguém assinalava uma célula, três pessoas concordavam, e 48 h depois estava tudo apagado.
+Nada se transformava em «costuma ser aqui».
+
+Passa a haver três camadas no mapa, com origens diferentes e cores diferentes:
+- **ruas** (linha laranja): o que os adeptos assinalaram, jogo após jogo, encostado à rua onde
+  aconteceu. `venue_street` guarda as ruas com nome até 1,5 km de cada estádio (OpenStreetMap,
+  13 814 troços em 19 estádios) e `home_fan_cell` guarda a contagem por célula e por estádio —
+  só números, nunca quem assinalou. Uma rua só aparece a partir de **5 pessoas diferentes e
+  2 jogos diferentes**, a mesma regra de todos os agregados da app;
+- **zonas conhecidas** (círculo laranja escuro): as notas pesquisadas que nomeiam um sítio real ao ar
+  livre. Quatro ficaram com coordenadas (Pavilhão João Rocha, Avenida Padre Cruz, Praça Cosme Damião,
+  Alto dos Moinhos); as outras três não eram inequívocas e ficaram sem pino, como deve ser. As notas
+  sobre bancadas, portas e setores continuam só em texto: um mapa de ruas não as sabe mostrar;
+- **adeptos agora** (o que já existia): os sinais do próprio jogo.
+
+A conversão é feita por `roll_up_home_fan_reports()`, de hora a hora, antes de os sinais em bruto
+serem apagados — o apagamento continua igual.
+
+**Hora de chegada conforme o parque.** Dizer «enche cedo» não chega: agora cada parque diz a que
+horas é preciso lá estar (`chegadaRecomendada`). Um parque vermelho pede mais 45 min, um amarelo mais
+20, um verde nada, e nos jogos grandes tudo o que está perto do estádio sobe um nível. Na boleia,
+escolher um parque que enche cedo puxa a hora de saída sugerida para trás e explica porquê.
+
 ## 2026-09-16 — Boleia de volta para quem perdeu o transporte
 
 **O problema.** Acaba o jogo e há sempre quem fique sem maneira de voltar: perdeu o autocarro, o

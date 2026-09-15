@@ -591,6 +591,41 @@ export type Database = {
           },
         ]
       }
+      home_fan_cell: {
+        Row: {
+          cell_latitude: number
+          cell_longitude: number
+          fixtures: number
+          last_seen_at: string
+          reporters: number
+          venue_id: string
+        }
+        Insert: {
+          cell_latitude: number
+          cell_longitude: number
+          fixtures?: number
+          last_seen_at?: string
+          reporters?: number
+          venue_id: string
+        }
+        Update: {
+          cell_latitude?: number
+          cell_longitude?: number
+          fixtures?: number
+          last_seen_at?: string
+          reporters?: number
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_fan_cell_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_fan_report: {
         Row: {
           cell_latitude: number
@@ -626,6 +661,29 @@ export type Database = {
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_fan_rollup: {
+        Row: {
+          done_at: string
+          fixture_id: string
+        }
+        Insert: {
+          done_at?: string
+          fixture_id: string
+        }
+        Update: {
+          done_at?: string
+          fixture_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_fan_rollup_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: true
+            referencedRelation: "fixture"
             referencedColumns: ["id"]
           },
         ]
@@ -2239,6 +2297,41 @@ export type Database = {
           },
         ]
       }
+      venue_street: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          osm_id: string
+          path: unknown
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          osm_id: string
+          path: unknown
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          osm_id?: string
+          path?: unknown
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_street_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2293,6 +2386,14 @@ export type Database = {
       }
       expire_ride_requests: { Args: never; Returns: number }
       fixture_going_count: { Args: { p_fixture_id: string }; Returns: number }
+      home_fan_usual_streets: {
+        Args: { p_venue_id: string }
+        Returns: {
+          fixtures: number
+          name: string
+          path: Json
+        }[]
+      }
       home_fan_zones: {
         Args: { p_fixture_id: string }
         Returns: {
@@ -2543,6 +2644,7 @@ export type Database = {
         Args: { p_people: number; p_total_cents: number }
         Returns: number
       }
+      roll_up_home_fan_reports: { Args: never; Returns: number }
       season_recap_candidates: {
         Args: { p_season_id: string }
         Returns: {

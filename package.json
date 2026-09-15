@@ -64,6 +64,8 @@
     "db:fotos-tascos": "node --env-file=.env.local scripts/fotos-tascos.mjs",
     "db:estacionamento": "node --env-file=.env.local scripts/importar-estacionamento.mjs",
     "db:parques-osm": "node --env-file=.env.local scripts/importar-parques-osm.mjs",
+    "db:ruas": "node --env-file=.env.local scripts/importar-ruas-estadios.mjs",
+    "db:notas-adeptos": "node --env-file=.env.local scripts/geocodificar-notas-adeptos.mjs",
     "db:adeptos-casa": "node scripts/importar-adeptos-casa.mjs"
   },
   "private": true

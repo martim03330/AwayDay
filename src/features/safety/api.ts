@@ -108,3 +108,31 @@ export async function reportHomeFans(
       : 'unknown';
   throw new HomeFanReportRefused(reason);
 }
+
+export type HomeFanStreet = {
+  name: string;
+  /** In how many games fans flagged this street. */
+  fixtures: number;
+  path: { latitude: number; longitude: number }[];
+};
+
+/**
+ * The streets where home fans usually are at a stadium: what fans flagged, game after game, snapped to the street it
+ * happened on. The server only publishes a street from 5 different people and 2 different games up — below that it
+ * could point at one person's evening, and never at a person.
+ */
+export async function fetchHomeFanStreets(venueId: string): Promise<HomeFanStreet[]> {
+  const { data, error } = await client().rpc('home_fan_usual_streets', { p_venue_id: venueId });
+  if (error) throw error;
+  return data.flatMap((row) => {
+    const shape = asRecord(row.path);
+    const coordinates = shape?.type === 'LineString' ? shape.coordinates : null;
+    if (!Array.isArray(coordinates)) return [];
+    const path = coordinates.flatMap((point) =>
+      Array.isArray(point) && typeof point[0] === 'number' && typeof point[1] === 'number'
+        ? [{ latitude: point[1], longitude: point[0] }]
+        : []
+    );
+    return path.length >= 2 ? [{ name: row.name, fixtures: row.fixtures, path }] : [];
+  });
+}

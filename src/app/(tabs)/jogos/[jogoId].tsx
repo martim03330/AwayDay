@@ -108,6 +108,13 @@ export default function JogoScreen() {
       ? [{ id: nota.id, titulo: nota.title, centro: nota.point, raioM: nota.radiusM }]
       : []
   );
+  // Places the research names as home-fan ground (a club house, an avenue, a metro station), when we could put them
+  // on the map without guessing. The rest of the notes are about stands and gates, which no street map can show.
+  const zonasCasa = notasVisitante.flatMap((nota) =>
+    nota.kind === 'zona_adeptos_casa' && nota.point && nota.radiusM
+      ? [{ id: nota.id, titulo: nota.title, centro: nota.point, raioM: nota.radiusM }]
+      : []
+  );
 
   const inicio = new Date(jogo.inicio);
   const dia = formatarDia(inicio, agora);
@@ -251,7 +258,12 @@ export default function JogoScreen() {
         ) : null}
 
         <SectionHeader title="Mapa" />
-        <MapaJogo venue={estadio} zonas={zonas} jogo={{ id: jogo.id, inicio: jogo.inicio }} />
+        <MapaJogo
+          venue={estadio}
+          zonas={zonas}
+          zonasCasa={zonasCasa}
+          jogo={{ id: jogo.id, inicio: jogo.inicio }}
+        />
 
         {jogo.meteorologia ? (
           <>
