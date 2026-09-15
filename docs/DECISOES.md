@@ -2,6 +2,19 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Ao abrir, a app espera uns segundos por dados novos
+
+**Problema.** Os catálogos (jogos, estádios, tascos, pontos de encontro) ficam guardados no telemóvel.
+Os dados novos só eram aplicados na abertura seguinte à que os descarregou. Quem abria a app uma vez
+depois de uma mudança continuava a ver a versão antiga: aconteceu com os tascos do estrangeiro e com o
+ponto de encontro do Milan–Benfica.
+
+**Decisão.** Ao abrir, se a cópia guardada tiver mais de 5 minutos, a app pede dados novos e espera no
+máximo 3 segundos, com o ecrã inicial ainda visível (`freshOrSaved` em `src/lib/query-client.tsx`).
+Sem rede ou se o servidor demorar, abre com a cópia guardada, como antes. Com a app já aberta, os
+dados continuam a não mudar debaixo de um ecrã (o React Compiler memoriza o que os ecrãs calculam).
+A mudança passa a aparecer na abertura seguinte.
+
 ## 2026-09-15 — Locais em páginas, só os próximos jogos, sem clube da terra e pontos de encontro
 
 **Locais em páginas.** A API do Supabase devolve no máximo 1000 linhas por pedido (`max_rows`). Com

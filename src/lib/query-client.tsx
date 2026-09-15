@@ -1,6 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { defaultShouldDehydrateQuery, focusManager, QueryClient } from '@tanstack/react-query';
+import {
+  defaultShouldDehydrateQuery,
+  focusManager,
+  QueryClient,
+  type QueryKey,
+} from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -9,6 +14,32 @@ import { AppState, Platform } from 'react-native';
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Change when the shape of persisted data changes, so old caches are discarded. */
 const CACHE_BUSTER = 'catalog-v3';
+/** At launch, how long the app waits for fresh data when the saved copy is old. Offline, the saved copy is used. */
+const LAUNCH_WAIT_MS = 3000;
+
+/**
+ * The data to open the app with: the saved copy while it is recent; otherwise fresh data from the server, waiting at
+ * most LAUNCH_WAIT_MS (then, or offline, the saved copy). Without this, new data only showed from the launch after
+ * the one that downloaded it.
+ */
+export async function freshOrSaved<T>(
+  client: QueryClient,
+  queryKey: QueryKey,
+  fetchFresh: () => Promise<T>,
+  staleTimeMs: number
+): Promise<T | undefined> {
+  const saved = client.getQueryData<T>(queryKey);
+  const updatedAt = client.getQueryState(queryKey)?.dataUpdatedAt ?? 0;
+  if (saved !== undefined && Date.now() - updatedAt < staleTimeMs) return saved;
+  const giveUp = new Promise<T | undefined>((resolve) =>
+    setTimeout(() => resolve(saved), LAUNCH_WAIT_MS)
+  );
+  try {
+    return await Promise.race([fetchFresh(), giveUp]);
+  } catch {
+    return saved;
+  }
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,8 +57,8 @@ const persister = createAsyncStoragePersister({
 
 type QueryProviderProps = {
   children: ReactNode;
-  /** Runs once the persisted cache is back in memory, before any child renders. */
-  onRestored?: (client: QueryClient) => void;
+  /** Runs once the persisted cache is back in memory; children render when it finishes. */
+  onRestored?: (client: QueryClient) => void | Promise<void>;
 };
 
 /**
@@ -60,8 +91,9 @@ export function QueryProvider({ children, onRestored }: QueryProviderProps) {
         },
       }}
       onSuccess={() => {
-        onRestored?.(queryClient);
-        setRestored(true);
+        void Promise.resolve(onRestored?.(queryClient))
+          .catch(() => undefined)
+          .finally(() => setRestored(true));
       }}
       // A broken cache is discarded by TanStack Query; the app carries on with its bundled data.
       onError={() => setRestored(true)}>

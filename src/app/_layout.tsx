@@ -71,6 +71,17 @@ function NavegacaoRaiz() {
   );
 }
 
+/**
+ * Hides the splash screen once the app can draw real screens: fonts settled (a failed font falls back to the system
+ * font) and the catalogue restored, which may wait a few seconds for fresh data.
+ */
+function EsconderSplash() {
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+  return null;
+}
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     BigShoulders_700Bold,
@@ -85,19 +96,14 @@ export default function RootLayout() {
   });
   const fontsSettled = fontsLoaded || fontError !== null;
 
-  useEffect(() => {
-    // If a font fails to load, the app still opens: text falls back to the system font.
-    if (fontsSettled) SplashScreen.hideAsync();
-  }, [fontsSettled]);
-
   if (!fontsSettled) return null;
 
   return (
     <QueryProvider
-      onRestored={(client) => {
-        restoreFixtureCatalog(client);
-        restorePlaceCatalog(client);
+      onRestored={async (client) => {
+        await Promise.all([restoreFixtureCatalog(client), restorePlaceCatalog(client)]);
       }}>
+      <EsconderSplash />
       <FixtureCatalogSync />
       <PlaceCatalogSync />
       <ThemeProvider value={navigationTheme}>
