@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AjudarTasco } from '@/components/ajudar-tasco';
+import { DeslizarEntreLocais } from '@/components/deslizar-locais';
 import { DestaquesMenu } from '@/components/destaques-menu';
 import { MenuTasco } from '@/components/menu-tasco';
 import { TascoPorConfirmar } from '@/components/tasco-por-confirmar';
@@ -16,11 +17,12 @@ import { formatarDia, formatarDiaEHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { proximoJogoNoEstadio } from '@/lib/jogos';
+import { filtrarPorTempoAPe, ordenarTascos } from '@/lib/locais';
 import { lembretePelaMeteorologia } from '@/lib/pratos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { jogos } from '@/mocks/jogos';
-import { nomesTipoLocal, obterLocal } from '@/mocks/locais';
+import { locaisDoEstadio, nomesTipoLocal, obterLocal } from '@/mocks/locais';
 import type { Clube } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
 import { useSons } from '@/state/sons';
@@ -129,7 +131,8 @@ export default function LocalScreen() {
   const theme = useTheme();
   const agora = useNow();
   const { localId } = useLocalSearchParams<{ localId: string }>();
-  const { loading } = useSimulatedLoading(`local-${localId}`);
+  // Keyed by stadium: swiping to the next tasco near the same stadium does not show the skeleton again.
+  const { loading } = useSimulatedLoading(`local-${obterLocal(localId)?.estadioId ?? localId}`);
   const {
     fezCheckIn,
     alternarCheckIn,
@@ -188,6 +191,9 @@ export default function LocalScreen() {
   const clubesAqui = clubesPresentes.map((clube) => clube.nomeCurto);
   const pessoas = pessoasAqui(local);
   const aConfirmar = checkInEmCurso === local.id;
+  // Same order as the Locais list, so swiping goes to the next card the user saw there.
+  const vizinhos = ordenarTascos(filtrarPorTempoAPe(locaisDoEstadio(local.estadioId)).perto);
+  const indice = vizinhos.findIndex((vizinho) => vizinho.id === local.id);
 
   function alternar() {
     if (!local || checkInEmCurso) return;
@@ -218,60 +224,68 @@ export default function LocalScreen() {
 
   const cabecalho = (
     <CabecalhoTasco>
-      <View style={styles.etiquetas}>
-        <View style={[styles.etiquetaBranca, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText style={styles.etiquetaTexto}>{nomesTipoLocal[local.tipo]}</ThemedText>
-        </View>
-        {local.precoMedio ? (
+      <DeslizarEntreLocais
+        anterior={indice > 0 ? vizinhos[indice - 1] : undefined}
+        seguinte={indice >= 0 ? vizinhos[indice + 1] : undefined}
+        posicao={indice + 1}
+        total={indice >= 0 ? vizinhos.length : 0}
+        onMudar={(id) => router.setParams({ localId: id })}>
+        <View style={styles.etiquetas}>
           <View style={[styles.etiquetaBranca, { backgroundColor: theme.backgroundElement }]}>
-            <ThemedText style={styles.etiquetaTexto}>{'€'.repeat(local.precoMedio)}</ThemedText>
+            <ThemedText style={styles.etiquetaTexto}>{nomesTipoLocal[local.tipo]}</ThemedText>
           </View>
-        ) : null}
-        {local.rapidoEBarato ? (
-          <Etiqueta icon={icons.preco} label="Rápido e barato" tone="destaque" />
-        ) : null}
-        {local.confirmacao === 'sugerido' ? (
-          <Etiqueta icon={icons.porVerificar} label="Por confirmar" tone="aviso" />
-        ) : null}
-        {checkedIn ? (
-          <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
-        ) : null}
-      </View>
-
-      <View style={styles.titulos}>
-        <ThemedText type="title" style={styles.nome} accessibilityRole="header">
-          {local.nome}
-        </ThemedText>
-        <ThemedText style={styles.perto}>{`Perto do ${estadio.nome} · ${distancia}`}</ThemedText>
-      </View>
-
-      {pessoas === null ? null : (
-        <View style={[styles.pessoas, { backgroundColor: theme.backgroundElement }]}>
-          <ContadorPessoas
-            count={pessoas}
-            variant="hero"
-            detail={
-              clubesAqui.length > 0
-                ? `Hoje por cá: adeptos do ${clubesAqui.join(' e do ')}`
-                : undefined
-            }
-            detailLeading={
-              clubesPresentes.length > 0 ? (
-                <View style={styles.escudos}>
-                  {clubesPresentes.map((clube) => (
-                    <Escudo key={clube.id} clube={clube} size={15} />
-                  ))}
-                </View>
-              ) : undefined
-            }
-          />
+          {local.precoMedio ? (
+            <View style={[styles.etiquetaBranca, { backgroundColor: theme.backgroundElement }]}>
+              <ThemedText style={styles.etiquetaTexto}>{'€'.repeat(local.precoMedio)}</ThemedText>
+            </View>
+          ) : null}
+          {local.rapidoEBarato ? (
+            <Etiqueta icon={icons.preco} label="Rápido e barato" tone="destaque" />
+          ) : null}
+          {local.confirmacao === 'sugerido' ? (
+            <Etiqueta icon={icons.porVerificar} label="Por confirmar" tone="aviso" />
+          ) : null}
+          {checkedIn ? (
+            <Etiqueta icon={icons.selecionado} label="Estás aqui" tone="positivo" />
+          ) : null}
         </View>
-      )}
+
+        <View style={styles.titulos}>
+          <ThemedText type="title" style={styles.nome} accessibilityRole="header">
+            {local.nome}
+          </ThemedText>
+          <ThemedText style={styles.perto}>{`Perto do ${estadio.nome} · ${distancia}`}</ThemedText>
+        </View>
+
+        {pessoas === null ? null : (
+          <View style={[styles.pessoas, { backgroundColor: theme.backgroundElement }]}>
+            <ContadorPessoas
+              count={pessoas}
+              variant="hero"
+              detail={
+                clubesAqui.length > 0
+                  ? `Hoje por cá: adeptos do ${clubesAqui.join(' e do ')}`
+                  : undefined
+              }
+              detailLeading={
+                clubesPresentes.length > 0 ? (
+                  <View style={styles.escudos}>
+                    {clubesPresentes.map((clube) => (
+                      <Escudo key={clube.id} clube={clube} size={15} />
+                    ))}
+                  </View>
+                ) : undefined
+              }
+            />
+          </View>
+        )}
+      </DeslizarEntreLocais>
     </CabecalhoTasco>
   );
 
   return (
-    <Pagina cabecalho={cabecalho}>
+    // Keyed by tasco: after a swipe the new page starts at the top.
+    <Pagina key={local.id} cabecalho={cabecalho}>
       <Stack.Screen options={{ title: local.nome }} />
 
       {local.confirmacao === 'sugerido' ? <TascoPorConfirmar local={local} /> : null}

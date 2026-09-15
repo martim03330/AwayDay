@@ -2,6 +2,18 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Deslizar entre tascos
+
+Na ficha de um tasco, deslizar o cabeçalho para os lados (ou tocar nas setas) passa ao tasco anterior
+ou seguinte perto do mesmo estádio, pela mesma ordem da lista de Locais
+(`src/components/deslizar-locais.tsx`). Os detalhes:
+- Muda o parâmetro da rota em vez de abrir outro ecrã, por isso não se empilham ecrãs.
+- A página volta ao topo a cada mudança.
+- Não mostra outra vez o carregamento simulado.
+- O gesto só reage a movimentos laterais e deixa o scroll vertical livre.
+- Com «reduzir movimento» ligado, o cabeçalho não acompanha o dedo.
+- A raiz da app passou a ter `GestureHandlerRootView`, que os gestos precisam.
+
 ## 2026-09-15 — Ao abrir, a app espera uns segundos por dados novos
 
 **Problema.** Os catálogos (jogos, estádios, tascos, pontos de encontro) ficam guardados no telemóvel.

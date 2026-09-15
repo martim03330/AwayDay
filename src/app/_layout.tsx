@@ -14,6 +14,7 @@ import {
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect } from 'react';
 
 import { LigacaoDemo } from '@/components/ligacao-demo';
@@ -99,28 +100,31 @@ export default function RootLayout() {
   if (!fontsSettled) return null;
 
   return (
-    <QueryProvider
-      onRestored={async (client) => {
-        await Promise.all([restoreFixtureCatalog(client), restorePlaceCatalog(client)]);
-      }}>
-      <EsconderSplash />
-      <FixtureCatalogSync />
-      <PlaceCatalogSync />
-      <ThemeProvider value={navigationTheme}>
-        <RelogioProvider>
-          <AppStateProvider>
-            <SonsProvider>
-              <AICoachProvider>
-                <LigacaoDemo />
-                <SincronizarConta />
-                <JuntarAtividade />
-                <NotificacoesPush />
-                <NavegacaoRaiz />
-              </AICoachProvider>
-            </SonsProvider>
-          </AppStateProvider>
-        </RelogioProvider>
-      </ThemeProvider>
-    </QueryProvider>
+    // Gestures (e.g. swiping between tascos) need this root.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryProvider
+        onRestored={async (client) => {
+          await Promise.all([restoreFixtureCatalog(client), restorePlaceCatalog(client)]);
+        }}>
+        <EsconderSplash />
+        <FixtureCatalogSync />
+        <PlaceCatalogSync />
+        <ThemeProvider value={navigationTheme}>
+          <RelogioProvider>
+            <AppStateProvider>
+              <SonsProvider>
+                <AICoachProvider>
+                  <LigacaoDemo />
+                  <SincronizarConta />
+                  <JuntarAtividade />
+                  <NotificacoesPush />
+                  <NavegacaoRaiz />
+                </AICoachProvider>
+              </SonsProvider>
+            </AppStateProvider>
+          </RelogioProvider>
+        </ThemeProvider>
+      </QueryProvider>
+    </GestureHandlerRootView>
   );
 }
