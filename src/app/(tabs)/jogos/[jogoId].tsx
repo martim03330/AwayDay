@@ -25,7 +25,7 @@ import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { notaDoEstadio } from '@/lib/avaliacoes';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
-import { eClassico, notasParaVisitante } from '@/lib/classicos';
+import { eClassico, eJogoGrande, notasParaVisitante } from '@/lib/classicos';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { plural } from '@/lib/formatos';
@@ -274,7 +274,7 @@ export default function JogoScreen() {
         />
 
         <SectionHeader title="Estacionamento" />
-        <EstacionamentoEstadio estadioId={estadio.id} />
+        <EstacionamentoEstadio estadioId={estadio.id} jogoGrande={eJogoGrande(jogo)} />
 
         <Button
           label={

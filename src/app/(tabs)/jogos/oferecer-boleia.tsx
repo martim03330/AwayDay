@@ -5,6 +5,7 @@ import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-nativ
 import MapView, { MapMarker } from 'react-native-maps';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
+import { EscolherParque } from '@/components/escolher-parque';
 import { Radius, Spacing } from '@/constants/theme';
 import { fetchStadiumParking } from '@/features/parking/api';
 import { getCurrentPosition } from '@/features/presence/location';
@@ -22,6 +23,7 @@ import { useRefreshRides, useRideBoard } from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDia, formatarHora } from '@/lib/datas';
+import { minutosAPe } from '@/lib/facilidade-estacionamento';
 import { formatarDistancia } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { eJogoGrande } from '@/lib/classicos';
@@ -277,8 +279,7 @@ export default function OferecerBoleiaScreen() {
   const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null;
   const cotacao = cotacoes?.find((candidata) => candidata.option === escolhida) ?? null;
   const parqueEscolhido = parquesDoEstadio.find((parque) => parque.id === parqueId) ?? null;
-  const minutosAPeDoParque =
-    parqueEscolhido?.distanceM != null ? Math.round((parqueEscolhido.distanceM * 1.3) / 80) : null;
+  const minutosAPeDoParque = minutosAPe(parqueEscolhido?.distanceM ?? null);
   const jogoGrande = eJogoGrande(jogo);
   const sugerida = saidaSugerida({
     inicio: jogo.inicio,
@@ -623,39 +624,12 @@ export default function OferecerBoleiaScreen() {
 
       <SectionHeader title="Onde deixamos o carro" />
       <Card style={styles.grupo}>
-        {parquesDoEstadio.length === 0 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            Ainda não temos parques verificados perto deste estádio. Combina com a malta no ponto de
-            encontro.
-          </ThemedText>
-        ) : (
-          <>
-            <ThemedText type="small" themeColor="textSecondary">
-              Parques verificados perto do estádio. Quem vai contigo vê onde deixam o carro.
-            </ThemedText>
-            <View style={styles.chips}>
-              <Chip
-                label="Ainda não sei"
-                selected={parqueId === null}
-                emCartao
-                onPress={() => setParqueId(null)}
-              />
-              {parquesDoEstadio.map((parque) => (
-                <Chip
-                  key={parque.id}
-                  label={
-                    parque.distanceM !== null
-                      ? `${parque.name} · ${formatarDistancia(parque.distanceM)}`
-                      : parque.name
-                  }
-                  selected={parqueId === parque.id}
-                  emCartao
-                  onPress={() => setParqueId(parque.id)}
-                />
-              ))}
-            </View>
-          </>
-        )}
+        <EscolherParque
+          parques={parquesDoEstadio}
+          escolhido={parqueId}
+          onEscolher={setParqueId}
+          jogoGrande={jogoGrande}
+        />
       </Card>
 
       <SectionHeader title="O teu carro" />

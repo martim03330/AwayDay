@@ -2,6 +2,42 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Hora de saída pela distância, parques com estimativa de lugar e partilha da boleia
+
+**Hora de saída sugerida, não fixa** (`src/lib/hora-saida.ts`). As opções fixas («3 h antes») não
+serviam: a viagem pode ser de 20 minutos ou de três horas. A sugestão é o apito menos o tempo de
+viagem do percurso escolhido, menos os minutos a pé do parque, menos a margem: 45 minutos nos jogos
+normais e 75 nos jogos grandes (Benfica, FC Porto ou Sporting em campo, ou jogos europeus), porque
+há mais trânsito, mais filas e mais polícia. O condutor ajusta de 15 em 15 minutos dentro da janela
+que o servidor aceita (pelo menos 3 h a partir de agora, no máximo 3 dias antes, até 30 minutos
+antes do apito) e é avisado quando escolhe menos margem do que a sugerida.
+
+**Mais parques, com uma cor honesta** (`src/lib/facilidade-estacionamento.ts`,
+`scripts/importar-parques-osm.mjs`). Aos parques pesquisados juntam-se os parques públicos do
+OpenStreetMap até 3 km do estádio (sem estacionamento na rua nem parques privados; sem nome no
+OpenStreetMap, ficam com o nome da rua onde estão, pelo Nominatim). A coluna `source` separa os dois:
+os pesquisados têm fontes de dia de jogo, os do OpenStreetMap não têm, e a app diz sempre de onde
+vêm.
+
+A cor é uma **estimativa**, nunca lugares livres em tempo real — isso ninguém publica de graça:
+- verde, costuma haver lugar: longe do estádio, ou perto mas grande (300+ lugares);
+- amarelo, pode ser difícil;
+- vermelho, enche cedo: colado ao estádio, ou fechado em dia de jogo;
+- cinzento, sem dados.
+Num jogo grande, tudo o que fica a menos de 1,2 km desce um nível. O parque recomendado passou a ser
+o de melhor estimativa, e não o mais perto: o mais perto é o primeiro a encher. Regras testadas em
+`src/lib/facilidade-estacionamento.test.ts`.
+
+**Localização ao oferecer boleia.** O ponto de partida diz agora em que estado está: à procura,
+encontrada, recusada (com atalho para as Definições) ou indisponível, e «Usar a minha localização»
+mostra quando o pino já está lá.
+
+**Quantos adeptos vão** (`fixture_going_count`). O número só aparece a partir de 5 pessoas, como
+todos os agregados da app; abaixo disso a app explica-o em vez de mostrar um número.
+
+**Partilhar boleia por link.** O botão partilha um link `Linking.createURL('/jogos/boleia')` com o
+id da boleia e do jogo, que abre a boleia dentro da app a quem já a tem instalada.
+
 ## 2026-09-16 — Avisos das boleias: notificações e destaque ao abrir a app
 
 **Porquê.** No teste com duas contas, o pedido de lugar só aparecia a quem abrisse a boleia. Um

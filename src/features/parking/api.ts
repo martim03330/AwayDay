@@ -18,6 +18,10 @@ export type ParkingSpot = {
   id: string;
   name: string;
   kind: ParkingKind;
+  /** 'pesquisa': researched, with match-day sources. 'osm': a public car park from OpenStreetMap, without them. */
+  source: 'pesquisa' | 'osm';
+  /** Spaces, when the source says how many. */
+  capacity: number | null;
   address: string | null;
   operator: string | null;
   location: { latitude: number; longitude: number } | null;
@@ -79,7 +83,7 @@ export async function fetchStadiumParking(venueId: string): Promise<StadiumParki
     client()
       .from('parking_spot')
       .select(
-        'id, name, kind, address, operator, latitude, longitude, distance_m, open_on_matchdays, price_note, note, sources'
+        'id, name, kind, source, capacity, address, operator, latitude, longitude, distance_m, open_on_matchdays, price_note, note, sources'
       )
       .eq('venue_id', venueId)
       .order('distance_m', { nullsFirst: false }),
@@ -96,6 +100,8 @@ export async function fetchStadiumParking(venueId: string): Promise<StadiumParki
       id: row.id,
       name: row.name,
       kind: toKind(row.kind),
+      source: row.source === 'osm' ? 'osm' : 'pesquisa',
+      capacity: row.capacity,
       address: row.address,
       operator: row.operator,
       location:

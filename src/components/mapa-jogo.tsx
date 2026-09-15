@@ -12,6 +12,7 @@ import Animated, {
 
 import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
 import { CarrosselLocais } from '@/components/carrossel-locais';
+import { corFacilidade, LegendaFacilidade } from '@/components/facilidade-parque';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
@@ -22,6 +23,8 @@ import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
+import { eJogoGrande } from '@/lib/classicos';
+import { facilidadeEstacionamento } from '@/lib/facilidade-estacionamento';
 import { plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
 import { casasDeBanho } from '@/mocks/casas-de-banho';
@@ -197,6 +200,8 @@ export function MapaJogo({
   const parquesNoMapa: ParquePerto[] = (parquesDados.data?.spots ?? []).flatMap((parque) =>
     parque.location ? [{ parque, coordenadas: parque.location }] : []
   );
+  // Big games fill everything near the ground earlier, so the colours change with the game.
+  const jogoGrande = jogo ? eJogoGrande(jogo) : false;
   const inicioDoJogo = jogo ? Date.parse(jogo.inicio) : null;
   const agoraMs = useNow(60 * 1000);
   // Fans can flag home fans from 6 h before kick-off until 3 h after; flags show until 6 h after.
@@ -435,7 +440,10 @@ export function MapaJogo({
                           {
                             width: tamanho + 6,
                             height: tamanho + 6,
-                            backgroundColor: COR_ESTACIONAMENTO,
+                            backgroundColor: corFacilidade(
+                              theme,
+                              facilidadeEstacionamento(ponto.parque, { jogoGrande }).nivel
+                            ),
                           },
                         ]}>
                         <ThemedText style={[styles.letraParque, { fontSize: tamanho * 0.62 }]}>
@@ -574,6 +582,8 @@ export function MapaJogo({
           </View>
         ) : null}
       </View>
+
+      {parquesNoMapa.length > 0 ? <LegendaFacilidade /> : null}
 
       <ThemedText themeColor="textSecondary" style={styles.dica}>
         {dica}

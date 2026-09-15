@@ -883,6 +883,7 @@ export type Database = {
       parking_spot: {
         Row: {
           address: string | null
+          capacity: number | null
           checked_on: string
           confidence: string
           created_at: string
@@ -896,12 +897,15 @@ export type Database = {
           note: string | null
           open_on_matchdays: boolean | null
           operator: string | null
+          osm_id: string | null
           price_note: string | null
+          source: string
           sources: Json
           venue_id: string
         }
         Insert: {
           address?: string | null
+          capacity?: number | null
           checked_on: string
           confidence: string
           created_at?: string
@@ -915,12 +919,15 @@ export type Database = {
           note?: string | null
           open_on_matchdays?: boolean | null
           operator?: string | null
+          osm_id?: string | null
           price_note?: string | null
+          source?: string
           sources: Json
           venue_id: string
         }
         Update: {
           address?: string | null
+          capacity?: number | null
           checked_on?: string
           confidence?: string
           created_at?: string
@@ -934,7 +941,9 @@ export type Database = {
           note?: string | null
           open_on_matchdays?: boolean | null
           operator?: string | null
+          osm_id?: string | null
           price_note?: string | null
+          source?: string
           sources?: Json
           venue_id?: string
         }
