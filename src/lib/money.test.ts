@@ -4,6 +4,7 @@ import {
   compararCentimos,
   eCentimos,
   formatarCentimos,
+  formatarPreco,
   lerPrecoEmCentimos,
   PRECO_MAXIMO_CENTIMOS,
   somarCentimos,
@@ -112,6 +113,33 @@ describe('formatarCentimos', () => {
 
   it('recusa valores que não são cêntimos inteiros', () => {
     expect(() => formatarCentimos(3.5)).toThrow(RangeError);
+  });
+});
+
+describe('formatarPreco', () => {
+  it('em euros, igual a formatarCentimos', () => {
+    for (const centimos of [0, 1, 5, 199, 350, 99_999]) {
+      expect(formatarPreco(centimos, 'EUR')).toBe(formatarCentimos(centimos));
+    }
+  });
+
+  it.each([
+    [650, 'GBP', '6,50 £'],
+    [4500, 'NOK', '45,00 NOK'],
+    [12_900, 'CZK', '129,00 CZK'],
+    [199_000, 'HUF', '1990,00 HUF'],
+    [5, 'DKK', '0,05 DKK'],
+  ])('formata %i unidades mínimas em %s como "%s"', (centimos, moeda, esperado) => {
+    expect(comEspacosNormais(formatarPreco(centimos, moeda))).toBe(esperado);
+  });
+
+  it('recusa valores que não são unidades inteiras', () => {
+    expect(() => formatarPreco(3.5, 'GBP')).toThrow(RangeError);
+  });
+
+  it('recusa códigos de moeda mal formados', () => {
+    expect(() => formatarPreco(350, 'eur')).toThrow(RangeError);
+    expect(() => formatarPreco(350, 'EURO')).toThrow(RangeError);
   });
 });
 

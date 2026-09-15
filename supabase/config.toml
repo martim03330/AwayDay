@@ -461,6 +461,13 @@ verify_jwt = false
 import_map = "./functions/check-in/deno.json"
 entrypoint = "./functions/check-in/index.ts"
 
+[functions.walking-route]
+enabled = true
+# Called by the app, with or without a session; rate limited inside the function.
+verify_jwt = false
+import_map = "./functions/walking-route/deno.json"
+entrypoint = "./functions/walking-route/index.ts"
+
 [functions.sync-fixtures]
 enabled = true
 # Called only by pg_cron with the x-cron-secret header, checked inside the function.

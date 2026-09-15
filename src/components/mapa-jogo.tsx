@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import MapView, { MapMarker, type MapPressEvent, type Region } from 'react-native-maps';
+import MapView, { Circle, MapMarker, type MapPressEvent, type Region } from 'react-native-maps';
 import Animated, { FadeInDown, FadeOutDown, useReducedMotion, ZoomIn } from 'react-native-reanimated';
 
+import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -181,7 +182,10 @@ function ConteudoLocal({ local, onVerLocal }: { local: Local; onVerLocal: () => 
   );
 }
 
-export function MapaJogo({ venue }: { venue: Venue }) {
+/** An area to avoid, drawn as a red circle (derbies only). */
+export type ZonaMapa = { id: string; titulo: string; centro: Coordenadas; raioM: number };
+
+export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly ZonaMapa[] }) {
   const router = useRouter();
   const theme = useTheme();
   const reduzirMovimento = useReducedMotion();
@@ -274,6 +278,17 @@ export function MapaJogo({ venue }: { venue: Venue }) {
             </View>
           </MapMarker>
 
+          {zonas.map((zona) => (
+            <Circle
+              key={zona.id}
+              center={zona.centro}
+              radius={zona.raioM}
+              strokeColor={COR_ZONA_A_EVITAR}
+              strokeWidth={2}
+              fillColor="rgba(201, 42, 42, 0.18)"
+            />
+          ))}
+
           {modo === 'estadio'
             ? pontos.slice(0, pontosVisiveis).map((ponto) =>
                 ponto.tipo === 'local' ? (
@@ -364,6 +379,12 @@ export function MapaJogo({ venue }: { venue: Venue }) {
           <View style={[styles.pontoLegenda, styles.pontoLegendaWc, { backgroundColor: theme.info }]} />
           <ThemedText style={styles.legendaTexto}>WC</ThemedText>
         </View>
+        {zonas.length > 0 ? (
+          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
+            <View style={[styles.pontoLegenda, { backgroundColor: COR_ZONA_A_EVITAR }]} />
+            <ThemedText style={styles.legendaTexto}>Zona a evitar</ThemedText>
+          </View>
+        ) : null}
       </View>
 
       <ThemedText themeColor="textSecondary" style={styles.dica}>

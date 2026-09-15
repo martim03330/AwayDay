@@ -57,6 +57,9 @@ function toDish(row: DishRow): Prato {
     temperatura: row.temperature === 'hot' ? 'quente' : row.temperature === 'cold' ? 'fria' : null,
     especialidade: row.is_specialty,
     recomendacoes: row.recommendations_count,
+    moeda: row.currency,
+    fonte:
+      row.source_url && row.checked_on ? { url: row.source_url, verificadoEm: row.checked_on } : null,
   };
 }
 

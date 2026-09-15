@@ -47,7 +47,7 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
       client
         .from('dish')
         .select(
-          'id, place_id, name, price_cents, prep_minutes, temperature, is_specialty, recommendations_count'
+          'id, place_id, name, price_cents, prep_minutes, temperature, is_specialty, recommendations_count, currency, source_url, checked_on'
         )
         .eq('status', 'approved')
         .order('id')

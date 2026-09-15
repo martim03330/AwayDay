@@ -5,22 +5,26 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
 import { BarulhometroCard } from '@/components/barulhometro-card';
 import { ComoChegar } from '@/components/como-chegar';
+import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
 import { EstadioCard } from '@/components/estadio-card';
 import { MapaJogo } from '@/components/mapa-jogo';
+import { MapaPontoEncontro } from '@/components/mapa-ponto-encontro';
 import { MeteorologiaCard } from '@/components/meteorologia-card';
 import { PontoEncontroCard } from '@/components/ponto-encontro-card';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { GoingButton } from '@/features/activity/components/GoingButton';
+import { useSafetyNotes } from '@/features/safety/hooks/useSafetyNotes';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { notaDoEstadio } from '@/lib/avaliacoes';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
+import { eClassico, notasParaVisitante } from '@/lib/classicos';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { plural } from '@/lib/formatos';
@@ -60,6 +64,9 @@ export default function JogoScreen() {
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
+  // Derbies between Benfica, FC Porto and Sporting get safety notes for the visiting fans.
+  const classico = jogo ? eClassico(jogo) : false;
+  const notasSeguranca = useSafetyNotes(jogo?.estadioId ?? null, classico);
 
   if (loading) {
     return (
@@ -91,6 +98,12 @@ export default function JogoScreen() {
   const relogioSobreposto = relogioVisivel && estado !== 'a-decorrer';
   const aviso = estado === 'terminado' ? null : avisoDeChuva(jogo.meteorologia, estadio);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
+  const notasVisitante = classico ? notasParaVisitante(notasSeguranca.data ?? [], fora.id) : [];
+  const zonas = notasVisitante.flatMap((nota) =>
+    nota.kind === 'zona_a_evitar' && nota.point && nota.radiusM
+      ? [{ id: nota.id, titulo: nota.title, centro: nota.point, raioM: nota.radiusM }]
+      : []
+  );
 
   const inicio = new Date(jogo.inicio);
   const dia = formatarDia(inicio, agora);
@@ -210,6 +223,13 @@ export default function JogoScreen() {
           <>
             <SectionHeader title="Ponto de encontro oficial" />
             <PontoEncontroCard ponto={jogo.pontoEncontro} />
+            {jogo.pontoEncontro?.coordenadas ? (
+              <MapaPontoEncontro
+                nome={jogo.pontoEncontro.nome}
+                coordenadas={jogo.pontoEncontro.coordenadas}
+                estadio={estadio}
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -224,8 +244,15 @@ export default function JogoScreen() {
           </>
         ) : null}
 
+        {notasVisitante.length > 0 ? (
+          <>
+            <SectionHeader title="Cuidados para adeptos visitantes" />
+            <CuidadosVisitantes notas={notasVisitante} visitante={fora} />
+          </>
+        ) : null}
+
         <SectionHeader title="Mapa" />
-        <MapaJogo venue={estadio} />
+        <MapaJogo venue={estadio} zonas={zonas} />
 
         {jogo.meteorologia ? (
           <>

@@ -96,6 +96,8 @@ export type PontoEncontro = {
   transporte: string;
   nota: string | null;
   origem: OrigemPontoEncontro;
+  /** Centre of the gathering spot, for the map and the walking route; `null` when not known. */
+  coordenadas: Coordenadas | null;
   publicadoPor: string;
   fonte: {
     titulo: string;
@@ -135,8 +137,12 @@ export type TipoLocal =
 export type Prato = {
   id: string;
   nome: string;
-  /** Integer cents (see src/lib/money.ts); `null` while nobody confirmed the price. */
+  /** Integer minor units of `moeda` (see src/lib/money.ts); `null` while nobody confirmed the price. */
   precoCentimos: number | null;
+  /** ISO 4217 code: "EUR" in Portugal, the local currency abroad. */
+  moeda: string;
+  /** Where the price was checked (the place's own menu), when it came from there. */
+  fonte: { url: string; verificadoEm: string } | null;
   minutosPreparacao: number | null;
   temperatura: 'quente' | 'fria' | null;
   /** Especialidade da casa. */

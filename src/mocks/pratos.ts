@@ -68,6 +68,8 @@ export function gerarPratos(local: Pick<Local, 'id' | 'tipo' | 'especialidade' |
           temperatura: ESPECIALIDADE_FRIA.test(nomeEspecialidade) ? 'fria' : 'quente',
           especialidade: true,
           recomendacoes: 40 + (hash(local.id) % 40),
+          moeda: 'EUR',
+          fonte: null,
         },
       ]
     : [];
@@ -77,6 +79,8 @@ export function gerarPratos(local: Pick<Local, 'id' | 'tipo' | 'especialidade' |
     id: `${local.id}-prato-${indice}`,
     especialidade: false,
     recomendacoes: 3 + (hash(`${local.id}-${indice}`) % 45),
+    moeda: 'EUR',
+    fonte: null,
   }));
 
   return [...especialidade, ...outros];

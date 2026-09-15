@@ -346,6 +346,8 @@ export default function LocalScreen() {
         recomendados={pratosRecomendados}
         jaContados={recomendacoesJaContadas}
         lembrete={lembrete}
+        pais={estadio.pais}
+        tipo={local.tipo}
       />
 
       {/* Restroom data is illustrative: only in demo mode until there are real restrooms. */}

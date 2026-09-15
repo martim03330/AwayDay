@@ -52,3 +52,20 @@ export function lerPrecoEmCentimos(texto: string): number | null {
 export function formatarCentimos(centimos: number) {
   return formatoEuros.format(exigirCentimos(centimos) / 100);
 }
+
+const formatosPorMoeda = new Map<string, Intl.NumberFormat>([['EUR', formatoEuros]]);
+
+/**
+ * A price in any currency: "3,50 €", "6,50 £", "45,00 NOK". Abroad, dishes are priced in the local currency and
+ * `centimos` is in its minor units (pence, øre, fillér), always 2 decimals for the currencies the app uses. Display
+ * only, like formatarCentimos. Throws for a malformed currency code.
+ */
+export function formatarPreco(centimos: number, moeda: string) {
+  if (!/^[A-Z]{3}$/.test(moeda)) throw new RangeError(`Moeda inválida: ${moeda}.`);
+  let formato = formatosPorMoeda.get(moeda);
+  if (!formato) {
+    formato = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: moeda });
+    formatosPorMoeda.set(moeda, formato);
+  }
+  return formato.format(exigirCentimos(centimos) / 100);
+}

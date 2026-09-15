@@ -3,11 +3,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Colors, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
+import { formatarPreco } from '@/lib/money';
 import { destaquesDoMenu, type PratoComContagem } from '@/lib/pratos';
-import type { Prato } from '@/mocks/tipos';
+import { pratosTipicos } from '@/lib/pratos-tipicos';
+import type { Prato, TipoLocal } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
-import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -20,6 +20,9 @@ type DestaquesMenuProps = {
   jaContados?: ReadonlySet<string>;
   /** Lembrete da meteorologia, mostrado por baixo dos destaques. */
   lembrete: Lembrete | null;
+  /** Country and kind of place, for "Costuma haver" when there are no dishes yet. */
+  pais: string;
+  tipo: TipoLocal;
 };
 
 type Tom = { fundo: string; tinta: string };
@@ -45,21 +48,35 @@ function tempoDePreparacao(prato: Prato) {
 function preco(prato: Prato) {
   return prato.precoCentimos === null
     ? 'preço por confirmar'
-    : formatarCentimos(prato.precoCentimos);
+    : formatarPreco(prato.precoCentimos, prato.moeda);
 }
 
-export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: DestaquesMenuProps) {
+export function DestaquesMenu({
+  pratos,
+  recomendados,
+  jaContados,
+  lembrete,
+  pais,
+  tipo,
+}: DestaquesMenuProps) {
   const theme = useTheme();
   const destaques = destaquesDoMenu(pratos, recomendados, jaContados);
 
   if (!destaques) {
+    // Nothing from this place's menu yet: what this kind of place usually has, clearly as a hint.
+    const tipicos = pratosTipicos(pais, tipo);
     return (
-      <Card>
-        <EmptyState
-          icon={icons.especialidade}
-          title="Menu por descobrir"
-          message="Ainda ninguém recomendou nada aqui. Estreia-te tu."
-        />
+      <Card style={styles.tipicos}>
+        <View style={[styles.azulejo, { backgroundColor: TONS.amarelo.fundo }]}>
+          <Icon name={icons.especialidade} size={18} color={TONS.amarelo.tinta} />
+        </View>
+        <ThemedText type="eyebrow" style={{ color: TONS.amarelo.tinta }}>
+          Costuma haver
+        </ThemedText>
+        <ThemedText style={styles.nome}>{tipicos.join(' · ')}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {`O que este tipo de sítio costuma ter${pais === 'Portugal' ? '' : ` em ${pais}`}, não o menu da casa. Se provares, sugere o prato para os próximos adeptos.`}
+        </ThemedText>
       </Card>
     );
   }
@@ -151,6 +168,9 @@ export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: De
 
 const styles = StyleSheet.create({
   lista: {
+    gap: Spacing.two,
+  },
+  tipicos: {
     gap: Spacing.two,
   },
   scroll: {

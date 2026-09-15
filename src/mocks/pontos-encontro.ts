@@ -13,6 +13,7 @@ export const pontoEncontroRomaPorto: PontoEncontro = {
     'Autocarros levam os adeptos diretamente para o estádio. No fim, autocarros até à zona da Piazza dei Cinquecento.',
   nota: 'Segue as orientações das autoridades italianas.',
   origem: 'clube',
+  coordenadas: null,
   publicadoPor: 'FC Porto',
   fonte: {
     titulo: 'Notícia no site do FC Porto',
@@ -31,6 +32,7 @@ export const pontoEncontroJuventusBenfica: PontoEncontro = {
     'Autocarros gratuitos no ponto de encontro. Alternativa: autocarro da linha 72 a partir de Bertola Cap, com paragem no Juventus Stadium.',
   nota: null,
   origem: 'clube',
+  coordenadas: null,
   publicadoPor: 'SL Benfica',
   fonte: {
     titulo: 'Notícia no site do SL Benfica',
@@ -48,6 +50,7 @@ export const pontoEncontroSalzburgoPorto: PontoEncontro = {
     'Autocarros gratuitos para adeptos do FC Porto; depois do jogo fazem a viagem de regresso à Rudolfskai 16.',
   nota: null,
   origem: 'clube',
+  coordenadas: null,
   publicadoPor: 'FC Porto',
   fonte: {
     titulo: 'Notícia no site do FC Porto',

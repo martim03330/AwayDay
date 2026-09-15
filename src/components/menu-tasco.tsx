@@ -2,8 +2,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { formatarData } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
+import { formatarPreco } from '@/lib/money';
 import { contagemDoPrato } from '@/lib/pratos';
 import type { Prato } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
@@ -48,10 +49,13 @@ export function MenuTasco({
                 partes={[
                   prato.precoCentimos === null
                     ? 'preço por confirmar'
-                    : formatarCentimos(prato.precoCentimos),
+                    : formatarPreco(prato.precoCentimos, prato.moeda),
                   prato.minutosPreparacao === null
                     ? null
                     : `pronto em ${prato.minutosPreparacao} min`,
+                  prato.fonte
+                    ? `preço do menu online, ${formatarData(new Date(prato.fonte.verificadoEm))}`
+                    : null,
                   plural(total, 'recomendação', 'recomendações'),
                 ]}
               />

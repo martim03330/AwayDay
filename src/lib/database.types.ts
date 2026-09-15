@@ -302,7 +302,9 @@ export type Database = {
       }
       dish: {
         Row: {
+          checked_on: string | null
           created_at: string
+          currency: string
           id: string
           is_specialty: boolean
           name: string
@@ -310,13 +312,16 @@ export type Database = {
           prep_minutes: number | null
           price_cents: number | null
           recommendations_count: number
+          source_url: string | null
           status: string
           submitted_by: string | null
           temperature: string | null
           updated_at: string
         }
         Insert: {
+          checked_on?: string | null
           created_at?: string
+          currency?: string
           id?: string
           is_specialty?: boolean
           name: string
@@ -324,13 +329,16 @@ export type Database = {
           prep_minutes?: number | null
           price_cents?: number | null
           recommendations_count?: number
+          source_url?: string | null
           status?: string
           submitted_by?: string | null
           temperature?: string | null
           updated_at?: string
         }
         Update: {
+          checked_on?: string | null
           created_at?: string
+          currency?: string
           id?: string
           is_specialty?: boolean
           name?: string
@@ -338,6 +346,7 @@ export type Database = {
           prep_minutes?: number | null
           price_cents?: number | null
           recommendations_count?: number
+          source_url?: string | null
           status?: string
           submitted_by?: string | null
           temperature?: string | null
@@ -515,6 +524,8 @@ export type Database = {
           address: string
           created_at: string
           fixture_id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           note: string | null
           origin: string
@@ -530,6 +541,8 @@ export type Database = {
           address: string
           created_at?: string
           fixture_id: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           note?: string | null
           origin: string
@@ -545,6 +558,8 @@ export type Database = {
           address?: string
           created_at?: string
           fixture_id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           note?: string | null
           origin?: string
@@ -1384,6 +1399,69 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_safety_note: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          latitude: number | null
+          longitude: number | null
+          radius_m: number | null
+          reference_date: string
+          sources: Json
+          title: string
+          updated_at: string
+          venue_id: string
+          visiting_club_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id: string
+          kind: string
+          latitude?: number | null
+          longitude?: number | null
+          radius_m?: number | null
+          reference_date: string
+          sources: Json
+          title: string
+          updated_at?: string
+          venue_id: string
+          visiting_club_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          latitude?: number | null
+          longitude?: number | null
+          radius_m?: number | null
+          reference_date?: string
+          sources?: Json
+          title?: string
+          updated_at?: string
+          venue_id?: string
+          visiting_club_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_safety_note_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_safety_note_visiting_club_id_fkey"
+            columns: ["visiting_club_id"]
+            isOneToOne: false
+            referencedRelation: "club"
             referencedColumns: ["id"]
           },
         ]

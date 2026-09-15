@@ -40,6 +40,10 @@ function toMeetingPoint(row: MeetingPointRow): PontoEncontro | null {
     transporte: row.transport,
     nota: row.note,
     origem: origin,
+    coordenadas:
+      row.latitude !== null && row.longitude !== null
+        ? { latitude: row.latitude, longitude: row.longitude }
+        : null,
     publicadoPor: row.published_by,
     fonte: {
       titulo: row.source_title,

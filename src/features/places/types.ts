@@ -32,6 +32,9 @@ export type DishRow = Pick<
   | 'temperature'
   | 'is_specialty'
   | 'recommendations_count'
+  | 'currency'
+  | 'source_url'
+  | 'checked_on'
 >;
 
 /** Fans' averages from place_scores_all: only places rated by at least 5 people. */

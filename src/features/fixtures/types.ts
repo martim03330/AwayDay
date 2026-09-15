@@ -51,6 +51,8 @@ export type MeetingPointRow = Pick<
   | 'source_title'
   | 'source_url'
   | 'published_on'
+  | 'latitude'
+  | 'longitude'
 >;
 
 export type FixtureCatalogRows = {

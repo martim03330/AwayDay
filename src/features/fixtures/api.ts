@@ -24,7 +24,7 @@ export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
     supabase
       .from('fixture_meeting_point')
       .select(
-        'fixture_id, name, address, schedule, transport, note, origin, published_by, source_title, source_url, published_on'
+        'fixture_id, name, address, schedule, transport, note, origin, published_by, source_title, source_url, published_on, latitude, longitude'
       ),
   ]);
 

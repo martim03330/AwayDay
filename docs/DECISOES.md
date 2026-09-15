@@ -2,6 +2,37 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Cuidados nos clássicos, caminho até ao ponto de encontro e pratos para todos os tascos
+
+**Cuidados para adeptos visitantes (Benfica, Porto e Sporting entre si).**
+- **Tabela `venue_safety_note`:** pública e só de leitura, preenchida à mão com `supabase/seed/10_seguranca_classicos.sql`, depois de a lista ser revista e aprovada a 2026-09-15.
+- **Tipos de nota:**
+  - «indicação oficial»: como a PSP organizou os visitantes nos últimos clássicos;
+  - «zona a evitar»: centro e raio.
+- **Regras do conteúdo:**
+  - só zonas (ruas, praças, estações), nunca estabelecimentos nem pessoas;
+  - linguagem neutra, com fontes e datas;
+  - ficam de fora incidentes com mais de 5 épocas, dentro do estádio, longe do estádio ou sem fonte de referência.
+- **Na app:** a ficha do clássico mostra o cartão e desenha as zonas a vermelho no mapa (o laranja já marca os locais de adeptos da casa). O aviso final é «Segue sempre as indicações da PSP no dia do jogo».
+
+**Caminho até ao ponto de encontro dentro da app.**
+- **Coordenadas:** o ponto de encontro passou a ter latitude e longitude.
+- **O percurso:** «Levar-me até lá» lê a posição uma vez e pede o percurso à Edge Function `walking-route`, que o pede ao serviço público de rotas a pé do OpenStreetMap (OSRM da FOSSGIS, sem chave e com uso moderado).
+- **Na app:** o mapa mostra a linha, a tua posição, a distância, o tempo e as indicações em português.
+- **Exceção à regra da cache:** a regra 3 manda guardar em cache as respostas de APIs externas, mas uma rota depende da posição de cada pessoa e guardá-la seria guardar localizações. Por isso nada fica guardado: nem a posição, nem o percurso, nem os registos.
+- **Limites de uso:**
+  - com conta: 60 pedidos por hora, por conta;
+  - sem conta: 20 por hora, por endereço de rede, só em memória.
+- **Se o serviço grátis não aguentar:** passa-se ao OpenRouteService, grátis até 2000 pedidos por dia.
+
+**Pratos: menu real quando existe, «Costuma haver» nos restantes.**
+- **Pesquisa:** foi feita nos sites oficiais dos 222 locais com site no OpenStreetMap.
+- **Resultado:** encontraram-se preços em 56 locais; ficaram 44 depois de tirar os preços não confirmados, os menus que podiam ser de outro sítio ou só da cadeia, os pratos acima de um limite barato e as fontes sem https.
+- **Onde estão:** `supabase/seed/11_pratos_menus_online.sql`, aprovados, com fonte, data e moeda.
+- **Moeda local:** `dish.currency`; `price_cents` passa a estar em unidades mínimas dessa moeda. `formatarPreco` em `money.ts` tem testes.
+- **Os outros tascos:** mostram «Costuma haver» (`src/lib/pratos-tipicos.ts`), com pratos típicos do tipo de sítio e do país, sempre apresentados como sugestão e não como o menu da casa.
+- **Sem menus inteiros:** não se copiam menus inteiros, por direitos de autor e porque ficam desatualizados.
+
 ## 2026-09-15 — Deslizar entre tascos
 
 Na ficha de um tasco, deslizar o cabeçalho para os lados (ou tocar nas setas) passa ao tasco anterior

@@ -3,7 +3,8 @@
 -- Lillestrøm x Torreense (2026-09-17): nothing published by the club yet (checked 2026-09-15).
 
 insert into public.fixture_meeting_point (
-  fixture_id, name, address, schedule, transport, note, origin, published_by, source_title, source_url, published_on
+  fixture_id, name, address, schedule, transport, note, origin, published_by, source_title, source_url, published_on,
+  latitude, longitude
 )
 values (
   'milan-benfica-liga-europa-2026-27',
@@ -16,7 +17,10 @@ values (
   'SL Benfica',
   'AC Milan-Benfica: informações para os adeptos',
   'https://www.slbenfica.pt/pt-pt/agora/noticias/2026/09/15/futebol-benfica-informacoes-adeptos-jogo-ac-milan-1-jornada-fase-de-liga-da-liga-europa',
-  '2026-09-15'
+  '2026-09-15',
+  -- Centre of the square (Wikipedia, "Piazza del Duomo, Milan").
+  45.46417,
+  9.19000
 )
 on conflict (fixture_id) do update set
   name = excluded.name,
@@ -28,4 +32,6 @@ on conflict (fixture_id) do update set
   published_by = excluded.published_by,
   source_title = excluded.source_title,
   source_url = excluded.source_url,
-  published_on = excluded.published_on;
+  published_on = excluded.published_on,
+  latitude = excluded.latitude,
+  longitude = excluded.longitude;
