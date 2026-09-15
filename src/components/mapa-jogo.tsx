@@ -11,6 +11,7 @@ import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
 import { casasDeBanho } from '@/mocks/casas-de-banho';
+import { useAppState } from '@/state/app-state';
 import { obterClube } from '@/mocks/clubes';
 import { locaisDoEstadio, nomesTipoLocal } from '@/mocks/locais';
 import type { Coordenadas, Local, Restroom, Venue } from '@/mocks/tipos';
@@ -192,7 +193,9 @@ export function MapaJogo({ venue }: { venue: Venue }) {
 
   const clube = obterClube(venue.clubeId);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(venue.id));
-  const wcsPerto: WcPerto[] = casasDeBanhoPerto(venue.coordenadas, casasDeBanho);
+  // Restroom data is illustrative: no markers outside demo mode.
+  const { modoDemo } = useAppState();
+  const wcsPerto: WcPerto[] = casasDeBanhoPerto(venue.coordenadas, modoDemo ? casasDeBanho : []);
   // Primeiro os tascos, depois os WC: todos entram escalonados pela mesma ordem.
   const pontos: Ponto[] = [
     ...perto.map((local) => ({ tipo: 'local' as const, local })),

@@ -204,6 +204,7 @@ function atividadeDemo(): AtividadeLocal {
     avaliacoes: [...avaliacoesIniciais],
     visitas: [...visitasIniciais],
     notasTascos: { ...NOTAS_TASCOS_DEMO },
+    notasCervejaPetisco: {},
     fotos: [...fotosIniciais],
     medicoes: [],
   };
@@ -288,9 +289,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   /** With an account: recommendation taps made in this session, on top of what the account says. */
   const [recomendacoesTocadas, setRecomendacoesTocadas] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [votosDemo, setVotosDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
-  const [notasCervejaPetiscoLocais, setNotasCervejaPetiscoLocais] = useState<
-    Readonly<Partial<Record<string, NotasCervejaPetisco>>>
-  >({});
   /** Photos taken with an account that are still uploading (or samples, which never upload). */
   const [fotosPendentes, setFotosPendentes] = useState<readonly FotoMissao[]>([]);
 
@@ -366,6 +364,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           ]
         : [];
     }),
+    // With an account these come from their own query (see notasCervejaPetisco below).
+    notasCervejaPetisco: {},
   };
 
   const atividade = fonte === 'demo' ? demo : fonte === 'conta' ? daConta : atividadeLocal;
@@ -650,6 +650,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ),
       ...local.visitas.map((visita) => () => recordPlaceVisit(id, visita.localId, visita.origem, visita.data)),
       ...Object.entries(local.notasTascos).map(([localId, nota]) => () => savePlaceRating(id, localId, nota)),
+      // After the overall scores: beer and food scores only update an existing rating.
+      ...Object.entries(local.notasCervejaPetisco).map(([localId, notas]) => () =>
+        savePlaceSubScores(id, localId, { beerScore: notas.cerveja, foodScore: notas.petisco })
+      ),
       ...local.fotos.flatMap((foto) => {
         const uri = foto.uri;
         return uri && !foto.exemplo
@@ -725,7 +729,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             { cerveja: notaOuNada(notas.beerScore), petisco: notaOuNada(notas.foodScore) },
           ])
         )
-      : notasCervejaPetiscoLocais;
+      : atividade.notasCervejaPetisco;
 
   function darNotaCervejaPetisco(localId: string, notas: Partial<NotasCervejaPetisco>) {
     const atuais = notasCervejaPetisco[localId] ?? { cerveja: null, petisco: null };
@@ -740,7 +744,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       naConta((id) => savePlaceSubScores(id, localId, paraConta), refreshActivity);
       return;
     }
-    setNotasCervejaPetiscoLocais((todas) => ({ ...todas, [localId]: proximas }));
+    mudarAtividade((anterior) => ({
+      ...anterior,
+      notasCervejaPetisco: { ...anterior.notasCervejaPetisco, [localId]: proximas },
+    }));
   }
 
   const votosTascos: Readonly<Partial<Record<string, boolean>>> =

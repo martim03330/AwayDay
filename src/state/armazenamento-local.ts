@@ -28,10 +28,14 @@ export type PreferenciasLocais = {
   contasPerguntadas: string[];
 };
 
+/** Beer (cervejómetro) and food (petiscómetro) scores for one tasco. */
+export type NotasCervejaPetiscoGuardadas = { cerveja: Nota | null; petisco: Nota | null };
+
 export type AtividadeLocal = {
   avaliacoes: AvaliacaoVisita[];
   visitas: VisitaLocal[];
   notasTascos: Record<string, Nota>;
+  notasCervejaPetisco: Record<string, NotasCervejaPetiscoGuardadas>;
   fotos: FotoMissao[];
   medicoes: MedicaoBarulho[];
 };
@@ -52,6 +56,7 @@ export const ATIVIDADE_VAZIA: AtividadeLocal = {
   avaliacoes: [],
   visitas: [],
   notasTascos: {},
+  notasCervejaPetisco: {},
   fotos: [],
   medicoes: [],
 };
@@ -197,11 +202,20 @@ export async function lerAtividadeLocal(): Promise<AtividadeLocal> {
   const valor = await ler(CHAVE_ATIVIDADE);
   if (!eRegisto(valor)) return ATIVIDADE_VAZIA;
   const notas = eRegisto(valor.notasTascos) ? valor.notasTascos : {};
+  const subNotas = eRegisto(valor.notasCervejaPetisco) ? valor.notasCervejaPetisco : {};
   return {
     avaliacoes: lista(valor.avaliacoes, avaliacao),
     visitas: lista(valor.visitas, visita),
     notasTascos: Object.fromEntries(
       Object.entries(notas).filter((entrada): entrada is [string, Nota] => eNota(entrada[1]))
+    ),
+    notasCervejaPetisco: Object.fromEntries(
+      Object.entries(subNotas).flatMap(([localId, notasDoTasco]) => {
+        if (!eRegisto(notasDoTasco)) return [];
+        const cerveja = eNota(notasDoTasco.cerveja) ? notasDoTasco.cerveja : null;
+        const petisco = eNota(notasDoTasco.petisco) ? notasDoTasco.petisco : null;
+        return cerveja === null && petisco === null ? [] : [[localId, { cerveja, petisco }]];
+      })
     ),
     fotos: lista(valor.fotos, foto),
     medicoes: lista(valor.medicoes, medicao),
@@ -217,6 +231,7 @@ export function temAtividade(atividade: AtividadeLocal) {
     atividade.avaliacoes.length > 0 ||
     atividade.visitas.length > 0 ||
     Object.keys(atividade.notasTascos).length > 0 ||
+    Object.keys(atividade.notasCervejaPetisco).length > 0 ||
     atividade.fotos.length > 0 ||
     atividade.medicoes.length > 0
   );

@@ -141,6 +141,7 @@ export default function LocalScreen() {
     darNotaCervejaPetisco,
     notasTascos,
     darNotaTasco,
+    modoDemo,
   } = useAppState();
   const { tocarCheckIn } = useSons();
 
@@ -302,8 +303,13 @@ export default function LocalScreen() {
         lembrete={lembrete}
       />
 
-      <SectionHeader title="WC mais próximo" />
-      <WcMaisProximo origem={local.coordenadas} />
+      {/* Restroom data is illustrative: only in demo mode until there are real restrooms. */}
+      {modoDemo ? (
+        <>
+          <SectionHeader title="WC mais próximo" />
+          <WcMaisProximo origem={local.coordenadas} />
+        </>
+      ) : null}
 
       <SectionHeader title="A tua nota" />
       <Card>

@@ -53,7 +53,7 @@ export default function JogoScreen() {
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
-  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho } = useAppState();
+  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho, modoDemo } = useAppState();
 
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -121,7 +121,10 @@ export default function JogoScreen() {
       <View>
         <Stack.Screen options={{ title: `${casa.nomeCurto} x ${fora.nomeCurto}` }} />
         {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
-        <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
+        <View
+          style={[styles.relvadoAcima, { backgroundColor: theme.accent }]}
+          pointerEvents="none"
+        />
 
         <View
           style={[
@@ -210,8 +213,13 @@ export default function JogoScreen() {
         <SectionHeader title="Estádio" />
         <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
 
-        <SectionHeader title="WC mais próximo" />
-        <WcMaisProximo origem={estadio.coordenadas} />
+        {/* Restroom data is illustrative: only in demo mode until there are real restrooms. */}
+        {modoDemo ? (
+          <>
+            <SectionHeader title="WC mais próximo" />
+            <WcMaisProximo origem={estadio.coordenadas} />
+          </>
+        ) : null}
 
         <SectionHeader title="Mapa" />
         <MapaJogo venue={estadio} />
