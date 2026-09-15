@@ -472,3 +472,45 @@ export async function fetchReputation(profileId: string): Promise<RideReputation
     bannedUntil: row?.banned_until ?? null,
   };
 }
+
+export type RideAlert = {
+  kind: 'pedidos' | 'aceite' | 'recusado' | 'sem_resposta' | 'cancelada';
+  rideId: string;
+  fixtureId: string;
+  /** Requests waiting for an answer (only for 'pedidos'). */
+  pending: number;
+  requestsCloseAt: string;
+  departureAt: string;
+  driverName: string | null;
+};
+
+function isAlertKind(value: string): value is RideAlert['kind'] {
+  return (
+    value === 'pedidos' ||
+    value === 'aceite' ||
+    value === 'recusado' ||
+    value === 'sem_resposta' ||
+    value === 'cancelada'
+  );
+}
+
+/** What needs the fan's attention about rides, most urgent first. */
+export async function fetchMyRideAlerts(): Promise<RideAlert[]> {
+  const { data, error } = await client().rpc('my_ride_alerts');
+  if (error) throw error;
+  return data.flatMap((row) =>
+    isAlertKind(row.kind)
+      ? [
+          {
+            kind: row.kind,
+            rideId: row.ride_id,
+            fixtureId: row.fixture_id,
+            pending: row.pending,
+            requestsCloseAt: row.requests_close_at,
+            departureAt: row.departure_at,
+            driverName: row.driver_name,
+          },
+        ]
+      : []
+  );
+}

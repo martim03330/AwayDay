@@ -87,3 +87,18 @@ export async function unregisterThisDevice() {
   await supabase.from('device_token').delete().eq('token', registeredToken);
   registeredToken = null;
 }
+
+/**
+ * Asks for notification permission (once) and registers this phone, for rides: a driver must hear about seat
+ * requests and a passenger about answers the moment they happen. Resolves with the permission.
+ */
+export async function ativarNotificacoesDeBoleias(): Promise<PushPermission> {
+  if (!canUsePush()) return 'unavailable';
+  const atual = await Notifications.getPermissionsAsync();
+  const final =
+    atual.status === Notifications.PermissionStatus.GRANTED
+      ? atual
+      : await Notifications.requestPermissionsAsync();
+  if (final.status === Notifications.PermissionStatus.GRANTED) await registerThisDevice();
+  return toPermission(final.status);
+}

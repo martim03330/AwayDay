@@ -54,6 +54,7 @@ describe('podeReportarImprevisto', () => {
 describe('avisosDasBoleias', () => {
   const boleia = {
     id: 'r1',
+    jogoId: 'porto-benfica',
     partida,
     origem: 'Estação de Coimbra-B',
     papel: 'passageiro' as const,

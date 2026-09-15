@@ -25,6 +25,7 @@ import { formatarData, formatarDiaEHora } from '@/lib/datas';
 import { formatarDistancia } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { CRIAR_HORAS_ANTES, podeCriarBoleia } from '@/lib/regras-boleia';
+import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -338,6 +339,8 @@ export default function OferecerBoleiaScreen() {
 
   async function criar() {
     if (!partida || consumoCl === null || precoMilesimas === null || !escolhida || !jogo) return;
+    // The driver must hear about seat requests the moment they arrive.
+    void ativarNotificacoesDeBoleias().catch(() => undefined);
     setACarregar(true);
     try {
       const id = await createRide({

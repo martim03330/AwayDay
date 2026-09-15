@@ -24,7 +24,7 @@ async function reagendar(avisos: ReturnType<typeof avisosDasBoleias>) {
       content: {
         title: aviso.titulo,
         body: aviso.corpo,
-        data: { type: 'boleia', rideId: aviso.id.split(':')[0] },
+        data: { type: 'boleia', rideId: aviso.id.split(':')[0], fixtureId: aviso.jogoId },
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: aviso.quando },
     });
@@ -55,6 +55,7 @@ export function AvisosBoleias() {
         .filter((boleia) => boleia.status === 'open')
         .map((boleia) => ({
           id: boleia.id,
+          jogoId: boleia.fixtureId,
           partida: new Date(boleia.departureAt),
           origem: boleia.originName,
           papel: boleia.role === 'driver' ? ('condutor' as const) : ('passageiro' as const),

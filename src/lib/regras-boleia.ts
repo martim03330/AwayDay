@@ -69,12 +69,20 @@ export function podeReportarImprevisto(partida: Date, agora: number) {
 
 export type BoleiaParaAvisos = {
   id: string;
+  /** The game, so tapping a reminder opens the ride. */
+  jogoId: string;
   partida: Date;
   origem: string;
   papel: 'condutor' | 'passageiro';
 };
 
-export type AvisoBoleia = { id: string; quando: Date; titulo: string; corpo: string };
+export type AvisoBoleia = {
+  id: string;
+  jogoId: string;
+  quando: Date;
+  titulo: string;
+  corpo: string;
+};
 
 /**
  * Reminders for rides the fan drives or has a seat in: the day before, 3 h before (with the no-show warning) and,
@@ -91,6 +99,7 @@ export function avisosDasBoleias(
       return [
         {
           id: `${boleia.id}:24h`,
+          jogoId: boleia.jogoId,
           quando: new Date(saida - 24 * HORA_MS),
           titulo: 'Boleia amanhã',
           corpo:
@@ -100,12 +109,14 @@ export function avisosDasBoleias(
         },
         {
           id: `${boleia.id}:3h`,
+          jogoId: boleia.jogoId,
           quando: new Date(saida - 3 * HORA_MS),
           titulo: 'Boleia daqui a 3 horas',
           corpo: `${quem} a malta a partir de ${boleia.origem}. Faltar sem avisar mancha a tua reputação.`,
         },
         {
           id: `${boleia.id}:confirmar`,
+          jogoId: boleia.jogoId,
           quando: new Date(saida + 4 * HORA_MS),
           titulo: 'Quem apareceu?',
           corpo: 'Confirma quem foi na boleia. Ajuda a malta a saber em quem confiar.',

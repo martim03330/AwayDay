@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JogoCard } from '@/components/jogo-card';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { CoachBanner } from '@/features/coach/components/CoachBanner';
+import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
 import { NewsTicker } from '@/features/nudges/components/NewsTicker';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
@@ -80,7 +81,15 @@ function agruparPorDia(lista: Jogo[]) {
 }
 
 /** Day heading: display font on the left, game count on the right. Muted for finished games. */
-function CabecalhoDia({ titulo, total, apagado = false }: { titulo: string; total: number; apagado?: boolean }) {
+function CabecalhoDia({
+  titulo,
+  total,
+  apagado = false,
+}: {
+  titulo: string;
+  total: number;
+  apagado?: boolean;
+}) {
   return (
     <View style={styles.cabecalhoDia} accessibilityRole="header">
       <ThemedText
@@ -214,7 +223,9 @@ export default function JogosScreen() {
               title="Jornada de descanso"
               message={`${quemNaoJoga(meusClubes)}${emCompeticao} nos próximos dias.`}
               action={
-                competicao === 'todas' ? undefined : { label: 'Limpar filtros', onPress: limparFiltros }
+                competicao === 'todas'
+                  ? undefined
+                  : { label: 'Limpar filtros', onPress: limparFiltros }
               }
             />
             <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
@@ -255,7 +266,9 @@ export default function JogosScreen() {
             {terminados.map(renderJogo)}
           </View>
         ) : null}
-        {verConcorrencia ? null : <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />}
+        {verConcorrencia ? null : (
+          <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
+        )}
       </>
     );
   }
@@ -323,10 +336,14 @@ export default function JogosScreen() {
         </View>
 
         <View style={styles.conteudo}>
+          <AlertasBoleias />
           {oMeuProximoJogo ? (
             <Card
               onPress={() =>
-                router.push({ pathname: '/jogos/o-meu-jogo', params: { jogoId: oMeuProximoJogo.id } })
+                router.push({
+                  pathname: '/jogos/o-meu-jogo',
+                  params: { jogoId: oMeuProximoJogo.id },
+                })
               }
               accessibilityLabel={`O teu próximo jogo: ${obterClube(oMeuProximoJogo.casaId)?.nomeCurto ?? ''} contra ${obterClube(oMeuProximoJogo.foraId)?.nomeCurto ?? ''}, ${formatarDia(new Date(oMeuProximoJogo.inicio), agora)}. Toca para preparar o dia.`}>
               <ListRow

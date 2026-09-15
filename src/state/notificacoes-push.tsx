@@ -9,8 +9,9 @@ import { obterJogo } from '@/mocks/jogos';
 
 /**
  * Liga as notificações push à conta. Não desenha nada.
- * - Com sessão e sugestões ligadas, regista este telemóvel (sem pedir permissão: isso só acontece
- *   quando a pessoa liga as sugestões em Notificações).
+ * - Com sessão, regista este telemóvel (sem pedir permissão: isso só acontece quando a pessoa liga as
+ *   sugestões ou oferece e pede boleias). As sugestões continuam a ir só a quem as ligou (servidor);
+ *   os avisos das boleias precisam do telemóvel registado para toda a gente.
  * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem as Novidades. O aviso da retrospetiva abre a retrospetiva.
  */
 export function NotificacoesPush() {
@@ -18,19 +19,19 @@ export function NotificacoesPush() {
   const userId = useUserId();
   const perfil = useMyProfile(userId);
   const registadoPara = useRef<string | null>(null);
-  const querSugestoes = perfil.data?.nudgesEnabled ?? false;
+  const perfilCarregado = perfil.data !== undefined;
 
   useEffect(() => {
     if (!userId) {
       registadoPara.current = null;
       return;
     }
-    if (!querSugestoes || registadoPara.current === userId) return;
+    if (!perfilCarregado || registadoPara.current === userId) return;
     registadoPara.current = userId;
     registerThisDevice().catch((erro: unknown) => {
       if (__DEV__) console.warn('Não foi possível registar o telemóvel para notificações:', erro);
     });
-  }, [userId, querSugestoes]);
+  }, [userId, perfilCarregado]);
 
   useEffect(() => {
     const subscricao = Notifications.addNotificationResponseReceivedListener((resposta) => {
@@ -48,6 +49,11 @@ export function NotificacoesPush() {
       }
       if (tipo === 'recap') router.push('/perfil/retrospetiva');
       if (tipo === 'meeting-point-draft') router.push('/perfil/pontos-de-encontro');
+      const rideId =
+        typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'rideId') : null;
+      if (tipo === 'boleia' && typeof rideId === 'string' && typeof jogoId === 'string') {
+        router.push({ pathname: '/jogos/boleia', params: { rideId, jogoId } });
+      }
       if (tipo === 'o-meu-jogo' && typeof jogoId === 'string' && obterJogo(jogoId)) {
         router.push({ pathname: '/jogos/o-meu-jogo', params: { jogoId } });
       }

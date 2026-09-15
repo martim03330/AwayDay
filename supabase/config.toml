@@ -468,6 +468,13 @@ verify_jwt = false
 import_map = "./functions/walking-route/deno.json"
 entrypoint = "./functions/walking-route/index.ts"
 
+[functions.ride-notify]
+enabled = true
+# Called by database triggers with the cron secret (x-cron-secret); sends ride push notifications.
+verify_jwt = false
+import_map = "./functions/ride-notify/deno.json"
+entrypoint = "./functions/ride-notify/index.ts"
+
 [functions.rides]
 enabled = true
 # Called by the app with a session: route quotes and new rides; checks the caller and rate limits inside.

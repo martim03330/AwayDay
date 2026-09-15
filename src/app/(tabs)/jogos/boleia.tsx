@@ -30,6 +30,7 @@ import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regras-boleia';
+import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -581,6 +582,8 @@ export default function BoleiaScreen() {
         onFechar={() => setCompromisso(false)}
         onAceitar={() => {
           setCompromisso(false);
+          // The passenger must hear the driver's answer the moment it comes.
+          void ativarNotificacoesDeBoleias().catch(() => undefined);
           void executar(() => requestSeat(boleia.id));
         }}
       />

@@ -2238,6 +2238,18 @@ export type Database = {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
       }
+      my_ride_alerts: {
+        Args: never
+        Returns: {
+          departure_at: string
+          driver_name: string
+          fixture_id: string
+          kind: string
+          pending: number
+          requests_close_at: string
+          ride_id: string
+        }[]
+      }
       my_ride_attendance: {
         Args: { p_ride_id: string }
         Returns: {

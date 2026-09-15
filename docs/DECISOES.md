@@ -2,6 +2,34 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Avisos das boleias: notificações e destaque ao abrir a app
+
+**Porquê.** No teste com duas contas, o pedido de lugar só aparecia a quem abrisse a boleia. Um
+pedido sem resposta caduca 2 h antes da saída, por isso o condutor tem de saber logo.
+
+**Notificações** (`ride-notify`, chamada por gatilhos em `ride_passenger` e `ride` com o segredo do
+cron, pelo `pg_net`):
+- pedido de lugar: vai para o condutor, com a hora-limite para responder;
+- aceite: vai para o passageiro, com o ponto de encontro e a hora;
+- recusado ou sem resposta: vai para o passageiro;
+- passageiro saiu: vai para o condutor;
+- boleia cancelada: vai para quem tinha lugar ou tinha pedido.
+
+Tocar na notificação abre a boleia. Se o envio falhar, o pedido ou o cancelamento não são afetados (o
+gatilho engole o erro).
+
+**Telemóvel registado para toda a gente com conta.** Antes só se registava com as sugestões do
+treinador ligadas. As sugestões continuam a ir só a quem as ligou, porque o filtro está no servidor.
+A permissão para notificações é pedida ao publicar uma boleia e ao pedir lugar.
+
+**Destaque ao abrir a app** (`my_ride_alerts`, topo dos Jogos, atualiza de minuto a minuto):
+- pedidos por responder, com a hora-limite;
+- «Tens lugar», até à saída;
+- pedido recusado ou sem resposta, e boleia cancelada, durante 24 h.
+
+**Correção.** Depois de publicar, atualizar as consultas das boleias tentava correr as que estavam
+desligadas (`skipToken`) e dava erro. A atualização passou a ignorá-las.
+
 ## 2026-09-16 — Estacionamento limpo, adeptos da casa para visitantes e fotos dos adeptos
 
 **Estacionamento mais limpo e ligado às boleias.**
