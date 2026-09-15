@@ -1,19 +1,31 @@
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import MapView, { Circle, MapMarker, type MapPressEvent, type Region } from 'react-native-maps';
-import Animated, { FadeInDown, FadeOutDown, useReducedMotion, ZoomIn } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeOutDown,
+  useReducedMotion,
+  ZoomIn,
+} from 'react-native-reanimated';
 
 import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
 import { CarrosselLocais } from '@/components/carrossel-locais';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
+import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
+import { getCurrentPosition } from '@/features/presence/location';
+import { fetchHomeFanZones, HomeFanReportRefused, reportHomeFans } from '@/features/safety/api';
 import { useRestroomsNear } from '@/features/restrooms/hooks/useRestrooms';
+import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
+import { abrirDirecoes } from '@/lib/direcoes';
 import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
 import { plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
 import { casasDeBanho } from '@/mocks/casas-de-banho';
+import { useUserId } from '@/lib/session';
 import { useAppState } from '@/state/app-state';
 import { obterClube } from '@/mocks/clubes';
 import { locaisDoEstadio } from '@/mocks/locais';
@@ -32,13 +44,23 @@ const ATRASO_PRIMEIRO_PONTO_MS = 150;
 const DELTA_CIDADE = 0.12;
 const DELTA_ESTADIO = 0.02;
 const COR_ADEPTOS_DA_CASA = '#E8590C';
-
+/** Blue square with a P, like road signs for car parks. */
+const COR_ESTACIONAMENTO = '#1F5BB5';
 
 type WcPerto = { wc: Restroom; metros: number; minutos: number };
 
-type Ponto = { tipo: 'local'; local: Local } | ({ tipo: 'wc' } & WcPerto);
+type ParquePerto = { parque: ParkingSpot; coordenadas: Coordenadas };
 
-type Selecao = { tipo: 'local' | 'wc'; id: string };
+type Ponto =
+  { tipo: 'local'; local: Local } | ({ tipo: 'wc' } & WcPerto) | ({ tipo: 'parque' } & ParquePerto);
+
+type Selecao = { tipo: 'local' | 'wc' | 'parque'; id: string };
+
+const HORA_MS = 60 * 60 * 1000;
+const DETOUR_FACTOR = 1.3;
+const METROS_POR_MINUTO = 80;
+/** Radius drawn for a cell flagged by fans (the cells are ~150 m). */
+const RAIO_ZONA_ADEPTOS_M = 110;
 
 function regiao(coordenadas: Coordenadas, delta: number): Region {
   return { ...coordenadas, latitudeDelta: delta, longitudeDelta: delta };
@@ -132,18 +154,21 @@ function CartaoMapa({
   );
 }
 
-/** An area to avoid, drawn as a red circle (derbies only). */
+/** An area to avoid, drawn as a red circle. */
 export type ZonaMapa = { id: string; titulo: string; centro: Coordenadas; raioM: number };
 
 export function MapaJogo({
   venue,
   zonas = [],
   inicio = 'cidade',
+  jogo,
 }: {
   venue: Venue;
   zonas?: readonly ZonaMapa[];
   /** 'estadio': open already zoomed on the stadium with the tascos and WC showing (Locais tab). */
   inicio?: 'cidade' | 'estadio';
+  /** The game this map is for: shows and lets fans flag where home fans are, around kick-off. */
+  jogo?: { id: string; inicio: string };
 }) {
   const router = useRouter();
   const theme = useTheme();
@@ -163,16 +188,48 @@ export function MapaJogo({
     venue.coordenadas,
     modoDemo ? casasDeBanho : (wcsReais.data ?? [])
   );
-  // Primeiro os tascos, depois os WC: todos entram escalonados pela mesma ordem.
+  const userId = useUserId();
+  const parquesDados = useQuery({
+    queryKey: ['parking', venue.id],
+    queryFn: modoDemo ? skipToken : () => fetchStadiumParking(venue.id),
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+  const parquesNoMapa: ParquePerto[] = (parquesDados.data?.spots ?? []).flatMap((parque) =>
+    parque.location ? [{ parque, coordenadas: parque.location }] : []
+  );
+  const inicioDoJogo = jogo ? Date.parse(jogo.inicio) : null;
+  const agoraMs = useNow(60 * 1000);
+  // Fans can flag home fans from 6 h before kick-off until 3 h after; flags show until 6 h after.
+  const podeAssinalar =
+    inicioDoJogo !== null &&
+    agoraMs >= inicioDoJogo - 6 * HORA_MS &&
+    agoraMs <= inicioDoJogo + 3 * HORA_MS;
+  const zonasAdeptos = useQuery({
+    queryKey: ['home-fans', jogo?.id ?? null],
+    queryFn:
+      jogo && inicioDoJogo !== null && agoraMs >= inicioDoJogo - 6 * HORA_MS && !modoDemo
+        ? () => fetchHomeFanZones(jogo.id)
+        : skipToken,
+    refetchInterval: 60 * 1000,
+    meta: { persist: false },
+  });
+  const [aAssinalar, setAAssinalar] = useState(false);
+
+  // Primeiro os tascos, depois os WC e os parques: todos entram escalonados pela mesma ordem.
   const pontos: Ponto[] = [
     ...perto.map((local) => ({ tipo: 'local' as const, local })),
     ...wcsPerto.map((wcPerto) => ({ tipo: 'wc' as const, ...wcPerto })),
+    ...parquesNoMapa.map((parquePerto) => ({ tipo: 'parque' as const, ...parquePerto })),
   ];
   const totalPontos = pontos.length;
   const localSelecionado =
     selecao?.tipo === 'local' ? perto.find((local) => local.id === selecao.id) : undefined;
   const wcSelecionado =
     selecao?.tipo === 'wc' ? wcsPerto.find(({ wc }) => wc.id === selecao.id) : undefined;
+  const parqueSelecionado =
+    selecao?.tipo === 'parque'
+      ? parquesNoMapa.find(({ parque }) => parque.id === selecao.id)
+      : undefined;
   const aRedesenharEscudo = useRedesenhoTemporario(venue.id);
   const animar = !reduzirMovimento;
 
@@ -189,7 +246,10 @@ export function MapaJogo({
   }, [modo, totalPontos, animar]);
 
   function aproximarDoEstadio() {
-    mapa.current?.animateToRegion(regiao(venue.coordenadas, DELTA_ESTADIO), animar ? DURACAO_MS : 0);
+    mapa.current?.animateToRegion(
+      regiao(venue.coordenadas, DELTA_ESTADIO),
+      animar ? DURACAO_MS : 0
+    );
     if (modo === 'estadio') return;
     setPontosVisiveis(animar ? 0 : totalPontos);
     setModo('estadio');
@@ -227,6 +287,52 @@ export function MapaJogo({
     setSelecao(null);
   }
 
+  function assinalarAdeptos() {
+    if (!jogo) return;
+    Alert.alert(
+      'Assinalar adeptos da casa aqui?',
+      'Usamos a tua localização só para marcar a zona à tua volta (cerca de 150 m). Ninguém sabe quem assinalou, e a zona só aparece quando pelo menos 3 adeptos a assinalam. Desaparece depois do jogo.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Assinalar',
+          onPress: () => {
+            setAAssinalar(true);
+            void getCurrentPosition()
+              .then(async (resultado) => {
+                if (resultado.status !== 'ok') {
+                  Alert.alert(
+                    'Sem localização',
+                    'Precisamos da tua localização para marcar a zona onde estás.'
+                  );
+                  return;
+                }
+                await reportHomeFans(jogo.id, resultado.position);
+                await zonasAdeptos.refetch();
+                Alert.alert(
+                  'Obrigado',
+                  'A zona aparece no mapa quando mais adeptos confirmarem. Tem cuidado e afasta-te se for preciso.'
+                );
+              })
+              .catch((erro: unknown) => {
+                Alert.alert(
+                  'Não foi possível',
+                  erro instanceof HomeFanReportRefused && erro.reason === 'too_far'
+                    ? 'Só dá para assinalar zonas perto deste estádio.'
+                    : erro instanceof HomeFanReportRefused && erro.reason === 'rate_limited'
+                      ? 'Já assinalaste várias zonas na última hora.'
+                      : erro instanceof HomeFanReportRefused && erro.reason === 'outside_window'
+                        ? 'Só dá para assinalar perto da hora do jogo.'
+                        : 'Verifica a ligação e tenta outra vez.'
+                );
+              })
+              .finally(() => setAAssinalar(false));
+          },
+        },
+      ]
+    );
+  }
+
   const dica =
     modo === 'cidade'
       ? 'Toca no escudo para veres os tascos e os WC à volta do estádio.'
@@ -240,7 +346,10 @@ export function MapaJogo({
         <MapView
           ref={mapa}
           style={StyleSheet.absoluteFill}
-          initialRegion={regiao(venue.coordenadas, inicio === 'estadio' ? DELTA_ESTADIO : DELTA_CIDADE)}
+          initialRegion={regiao(
+            venue.coordenadas,
+            inicio === 'estadio' ? DELTA_ESTADIO : DELTA_CIDADE
+          )}
           onPress={tocarNoMapa}
           pitchEnabled={false}
           rotateEnabled={false}
@@ -259,6 +368,17 @@ export function MapaJogo({
               {clube ? <Escudo clube={clube} size={34} /> : <Icon name={icons.estadio} size={28} />}
             </View>
           </MapMarker>
+
+          {(zonasAdeptos.data ?? []).map((zona) => (
+            <Circle
+              key={`${zona.latitude},${zona.longitude}`}
+              center={{ latitude: zona.latitude, longitude: zona.longitude }}
+              radius={RAIO_ZONA_ADEPTOS_M}
+              strokeColor={COR_ADEPTOS_DA_CASA}
+              strokeWidth={2}
+              fillColor="rgba(232, 89, 12, 0.22)"
+            />
+          ))}
 
           {zonas.map((zona) => (
             <Circle
@@ -298,6 +418,32 @@ export function MapaJogo({
                       />
                     )}
                   </PontoMapa>
+                ) : ponto.tipo === 'parque' ? (
+                  <PontoMapa
+                    key={ponto.parque.id}
+                    id={ponto.parque.id}
+                    coordenadas={ponto.coordenadas}
+                    selecionado={selecao?.tipo === 'parque' && selecao.id === ponto.parque.id}
+                    animar={animar}
+                    onPress={() => setSelecao({ tipo: 'parque', id: ponto.parque.id })}
+                    accessibilityLabel={`Estacionamento: ${ponto.parque.name}`}>
+                    {(tamanho) => (
+                      <View
+                        style={[
+                          styles.ponto,
+                          styles.pontoParque,
+                          {
+                            width: tamanho + 6,
+                            height: tamanho + 6,
+                            backgroundColor: COR_ESTACIONAMENTO,
+                          },
+                        ]}>
+                        <ThemedText style={[styles.letraParque, { fontSize: tamanho * 0.62 }]}>
+                          P
+                        </ThemedText>
+                      </View>
+                    )}
+                  </PontoMapa>
                 ) : (
                   <PontoMapa
                     key={ponto.wc.id}
@@ -334,12 +480,47 @@ export function MapaJogo({
                   label="Ver local"
                   icon={icons.seguinte}
                   onPress={() =>
-                    router.navigate({ pathname: '/locais/[localId]', params: { localId: local.id } })
+                    router.navigate({
+                      pathname: '/locais/[localId]',
+                      params: { localId: local.id },
+                    })
                   }
                 />
               </View>
             )}
           />
+        ) : null}
+
+        {parqueSelecionado ? (
+          <CartaoMapa
+            key={parqueSelecionado.parque.id}
+            animar={animar}
+            onFechar={() => setSelecao(null)}>
+            <View style={styles.cartaoTexto}>
+              <ThemedText style={styles.cartaoNome} numberOfLines={2}>
+                {parqueSelecionado.parque.name}
+              </ThemedText>
+              <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
+                {parqueSelecionado.parque.distanceM !== null
+                  ? `Estacionamento · ${Math.round((parqueSelecionado.parque.distanceM * DETOUR_FACTOR) / METROS_POR_MINUTO)} min a pé do estádio`
+                  : 'Estacionamento'}
+              </ThemedText>
+              {parqueSelecionado.parque.openOnMatchdays === false ? (
+                <ThemedText style={[styles.metaTexto, { color: COR_ZONA_A_EVITAR }]}>
+                  Fechado em dias de jogo
+                </ThemedText>
+              ) : parqueSelecionado.parque.priceNote ? (
+                <ThemedText style={styles.metaTexto} numberOfLines={3}>
+                  {parqueSelecionado.parque.priceNote}
+                </ThemedText>
+              ) : null}
+            </View>
+            <Button
+              label="Como chegar de carro"
+              icon={icons.carro}
+              onPress={() => abrirDirecoes(parqueSelecionado.coordenadas, 'carro')}
+            />
+          </CartaoMapa>
         ) : null}
 
         {wcSelecionado ? (
@@ -363,9 +544,29 @@ export function MapaJogo({
           <ThemedText style={styles.legendaTexto}>Adeptos da casa</ThemedText>
         </View>
         <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-          <View style={[styles.pontoLegenda, styles.pontoLegendaWc, { backgroundColor: theme.info }]} />
+          <View
+            style={[styles.pontoLegenda, styles.pontoLegendaWc, { backgroundColor: theme.info }]}
+          />
           <ThemedText style={styles.legendaTexto}>WC</ThemedText>
         </View>
+        {parquesNoMapa.length > 0 ? (
+          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
+            <View
+              style={[
+                styles.pontoLegenda,
+                styles.pontoLegendaWc,
+                { backgroundColor: COR_ESTACIONAMENTO },
+              ]}
+            />
+            <ThemedText style={styles.legendaTexto}>Estacionamento</ThemedText>
+          </View>
+        ) : null}
+        {(zonasAdeptos.data ?? []).length > 0 ? (
+          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
+            <View style={[styles.pontoLegenda, { backgroundColor: 'rgba(232, 89, 12, 0.5)' }]} />
+            <ThemedText style={styles.legendaTexto}>Adeptos da casa agora</ThemedText>
+          </View>
+        ) : null}
         {zonas.length > 0 ? (
           <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
             <View style={[styles.pontoLegenda, { backgroundColor: COR_ZONA_A_EVITAR }]} />
@@ -378,8 +579,23 @@ export function MapaJogo({
         {dica}
       </ThemedText>
 
+      {podeAssinalar && userId && !modoDemo ? (
+        <Button
+          label={aAssinalar ? 'A assinalar…' : 'Assinalar adeptos da casa aqui'}
+          variant="secondary"
+          icon={icons.aviso}
+          disabled={aAssinalar}
+          onPress={assinalarAdeptos}
+        />
+      ) : null}
+
       {modo === 'estadio' ? (
-        <Button label="Ver a cidade" variant="secondary" icon={icons.cidade} onPress={voltarACidade} />
+        <Button
+          label="Ver a cidade"
+          variant="secondary"
+          icon={icons.cidade}
+          onPress={voltarACidade}
+        />
       ) : null}
 
       <ThemedText themeColor="textMuted" style={styles.nota}>
@@ -417,6 +633,16 @@ const styles = StyleSheet.create({
   ponto: {
     borderWidth: 3,
     borderColor: '#FFFFFF',
+  },
+  pontoParque: {
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  letraParque: {
+    color: '#FFFFFF',
+    fontWeight: 900,
+    lineHeight: undefined,
   },
   pontoWc: {
     borderRadius: 7,

@@ -591,6 +591,45 @@ export type Database = {
           },
         ]
       }
+      home_fan_report: {
+        Row: {
+          cell_latitude: number
+          cell_longitude: number
+          created_at: string
+          fixture_id: string
+          reporter_id: string
+        }
+        Insert: {
+          cell_latitude: number
+          cell_longitude: number
+          created_at?: string
+          fixture_id: string
+          reporter_id: string
+        }
+        Update: {
+          cell_latitude?: number
+          cell_longitude?: number
+          created_at?: string
+          fixture_id?: string
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_fan_report_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_fan_report_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_point_draft: {
         Row: {
           club_id: string
@@ -2166,11 +2205,20 @@ export type Database = {
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
+      delete_old_home_fan_reports: { Args: never; Returns: number }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
       }
       expire_ride_requests: { Args: never; Returns: number }
+      home_fan_zones: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          latitude: number
+          longitude: number
+          reporters: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       my_ride_attendance: {
@@ -2254,6 +2302,10 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
+      report_home_fans: {
+        Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
+        Returns: undefined
+      }
       report_ride_attendance: {
         Args: { p_ride_id: string; p_showed_up: boolean; p_subject_id: string }
         Returns: undefined

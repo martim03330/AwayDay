@@ -62,7 +62,8 @@
     "db:wc": "node --env-file=.env.local scripts/importar-wc-osm.mjs",
     "db:fotos": "node --env-file=.env.local scripts/fotos-estadios.mjs",
     "db:fotos-tascos": "node --env-file=.env.local scripts/fotos-tascos.mjs",
-    "db:estacionamento": "node --env-file=.env.local scripts/importar-estacionamento.mjs"
+    "db:estacionamento": "node --env-file=.env.local scripts/importar-estacionamento.mjs",
+    "db:adeptos-casa": "node scripts/importar-adeptos-casa.mjs"
   },
   "private": true
 }

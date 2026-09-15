@@ -39,7 +39,10 @@ export async function fetchSafetyNotes(venueId: string): Promise<SafetyNote[]> {
     .order('reference_date', { ascending: false });
   if (error) throw error;
   return data.flatMap((row) =>
-    row.kind === 'indicacao_oficial' || row.kind === 'zona_a_evitar'
+    row.kind === 'indicacao_oficial' ||
+    row.kind === 'zona_a_evitar' ||
+    row.kind === 'zona_adeptos_casa' ||
+    row.kind === 'percurso_visitantes'
       ? [
           {
             id: row.id,
@@ -59,4 +62,49 @@ export async function fetchSafetyNotes(venueId: string): Promise<SafetyNote[]> {
         ]
       : []
   );
+}
+
+/** A ~150 m cell that at least 3 fans flagged as having many home fans, around this game's kick-off. */
+export type HomeFanZone = { latitude: number; longitude: number; reporters: number };
+
+export async function fetchHomeFanZones(fixtureId: string): Promise<HomeFanZone[]> {
+  const { data, error } = await client().rpc('home_fan_zones', { p_fixture_id: fixtureId });
+  if (error) throw error;
+  return data.map((row) => ({
+    latitude: row.latitude,
+    longitude: row.longitude,
+    reporters: row.reporters,
+  }));
+}
+
+export type HomeFanReportRefusal = 'too_far' | 'rate_limited' | 'outside_window' | 'unknown';
+
+export class HomeFanReportRefused extends Error {
+  readonly reason: HomeFanReportRefusal;
+
+  constructor(reason: HomeFanReportRefusal) {
+    super(reason);
+    this.name = 'HomeFanReportRefused';
+    this.reason = reason;
+  }
+}
+
+/** Flags "many home fans here" around the fan's position; the server keeps only the ~150 m cell. */
+export async function reportHomeFans(
+  fixtureId: string,
+  position: { latitude: number; longitude: number }
+) {
+  const { error } = await client().rpc('report_home_fans', {
+    p_fixture_id: fixtureId,
+    p_latitude: position.latitude,
+    p_longitude: position.longitude,
+  });
+  if (!error) return;
+  const reason =
+    error.message === 'too_far' ||
+    error.message === 'rate_limited' ||
+    error.message === 'outside_window'
+      ? error.message
+      : 'unknown';
+  throw new HomeFanReportRefused(reason);
 }

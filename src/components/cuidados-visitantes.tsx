@@ -9,6 +9,9 @@ import { Card } from '@/ui/card';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
+/** Orange marks home fans' places and areas, here and on the map. */
+const COR_ADEPTOS_CASA = '#E8590C';
+
 /** Red used for the areas to avoid, here and on the map (orange already marks home fans' places). */
 export const COR_ZONA_A_EVITAR = '#C92A2A';
 
@@ -41,6 +44,10 @@ function Nota({ nota }: { nota: SafetyNote }) {
           <View style={[styles.marcaZona, { backgroundColor: COR_ZONA_A_EVITAR }]}>
             <Icon name={icons.aviso} size={16} color="#FFFFFF" />
           </View>
+        ) : nota.kind === 'zona_adeptos_casa' ? (
+          <View style={[styles.marcaZona, { backgroundColor: COR_ADEPTOS_CASA }]}>
+            <Icon name={icons.aviso} size={16} color="#FFFFFF" />
+          </View>
         ) : (
           <IconCircle name={icons.pontoEncontro} tone="sky" />
         )}
@@ -59,8 +66,13 @@ type CuidadosVisitantesProps = {
   visitante: Clube;
 };
 
-/** What visiting fans should know in a derby: how the police usually organised them, and areas with incidents. */
+/**
+ * What visiting fans should know: the official route and entrance, stands and areas home supporters hold, how the
+ * police organised visitors in derbies, and areas with incidents. Every note shows its sources.
+ */
 export function CuidadosVisitantes({ notas, visitante }: CuidadosVisitantesProps) {
+  const percursos = notas.filter((nota) => nota.kind === 'percurso_visitantes');
+  const adeptosCasa = notas.filter((nota) => nota.kind === 'zona_adeptos_casa');
   const indicacoes = notas.filter((nota) => nota.kind === 'indicacao_oficial');
   const zonas = notas.filter((nota) => nota.kind === 'zona_a_evitar');
   if (notas.length === 0) return null;
@@ -70,6 +82,28 @@ export function CuidadosVisitantes({ notas, visitante }: CuidadosVisitantesProps
       <ThemedText type="eyebrow" themeColor="accentInk">
         {`Para adeptos do ${visitante.nomeCurto}`}
       </ThemedText>
+
+      {percursos.length > 0 ? (
+        <View style={styles.grupo}>
+          <ThemedText type="smallBold">Por onde entram os visitantes</ThemedText>
+          {percursos.map((nota) => (
+            <Nota key={nota.id} nota={nota} />
+          ))}
+        </View>
+      ) : null}
+
+      {adeptosCasa.length > 0 ? (
+        <View style={styles.grupo}>
+          <ThemedText type="smallBold">Zonas e bancadas dos adeptos da casa</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Evita estas zonas com as cores do teu clube. Perto do jogo, os adeptos também podem
+            assinalar no mapa onde estão muitos adeptos da casa.
+          </ThemedText>
+          {adeptosCasa.map((nota) => (
+            <Nota key={nota.id} nota={nota} />
+          ))}
+        </View>
+      ) : null}
 
       {indicacoes.length > 0 ? (
         <View style={styles.grupo}>

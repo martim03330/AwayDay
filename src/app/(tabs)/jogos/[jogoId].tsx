@@ -67,7 +67,8 @@ export default function JogoScreen() {
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
   // Derbies between Benfica, FC Porto and Sporting get safety notes for the visiting fans.
   const classico = jogo ? eClassico(jogo) : false;
-  const notasSeguranca = useSafetyNotes(jogo?.estadioId ?? null, classico);
+  // Every game: official routes and home fans' areas for visitors; derbies add police arrangements and incidents.
+  const notasSeguranca = useSafetyNotes(jogo?.estadioId ?? null, true);
 
   if (loading) {
     return (
@@ -99,7 +100,9 @@ export default function JogoScreen() {
   const relogioSobreposto = relogioVisivel && estado !== 'a-decorrer';
   const aviso = estado === 'terminado' ? null : avisoDeChuva(jogo.meteorologia, estadio);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
-  const notasVisitante = classico ? notasParaVisitante(notasSeguranca.data ?? [], fora.id) : [];
+  const notasVisitante = notasParaVisitante(notasSeguranca.data ?? [], fora.id).filter(
+    (nota) => classico || nota.kind === 'zona_adeptos_casa' || nota.kind === 'percurso_visitantes'
+  );
   const zonas = notasVisitante.flatMap((nota) =>
     nota.kind === 'zona_a_evitar' && nota.point && nota.radiusM
       ? [{ id: nota.id, titulo: nota.title, centro: nota.point, raioM: nota.radiusM }]
@@ -248,7 +251,7 @@ export default function JogoScreen() {
         ) : null}
 
         <SectionHeader title="Mapa" />
-        <MapaJogo venue={estadio} zonas={zonas} />
+        <MapaJogo venue={estadio} zonas={zonas} jogo={{ id: jogo.id, inicio: jogo.inicio }} />
 
         {jogo.meteorologia ? (
           <>
