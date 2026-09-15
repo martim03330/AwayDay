@@ -16,6 +16,8 @@ export function filtrarPorTempoAPe(locais: readonly Local[]) {
 export function ordenarTascos(locais: readonly Local[]) {
   return [...locais].sort(
     (a, b) =>
+      // Places fans are known to go to (researched, with sources) first.
+      Number(b.referencia !== null) - Number(a.referencia !== null) ||
       Number(b.confirmacao === 'confirmado') - Number(a.confirmacao === 'confirmado') ||
       Number(b.rapidoEBarato) - Number(a.rapidoEBarato) ||
       b.pontuacaoSugestao - a.pontuacaoSugestao ||

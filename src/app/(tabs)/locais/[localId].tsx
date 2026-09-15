@@ -8,6 +8,9 @@ import { DeslizarEntreLocais } from '@/components/deslizar-locais';
 import { DestaquesMenu } from '@/components/destaques-menu';
 import { MenuTasco } from '@/components/menu-tasco';
 import { TascoPorConfirmar } from '@/components/tasco-por-confirmar';
+import { FotoTasco } from '@/components/foto-tasco';
+import { ReferenciaAdeptos } from '@/components/referencia-adeptos';
+import { WcDoTasco } from '@/components/wc-do-tasco';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -287,6 +290,8 @@ export default function LocalScreen() {
     <Pagina key={local.id} cabecalho={cabecalho}>
       <Stack.Screen options={{ title: local.nome }} />
 
+      <FotoTasco local={local} />
+      {local.referencia ? <ReferenciaAdeptos referencia={local.referencia} /> : null}
       {local.confirmacao === 'sugerido' ? <TascoPorConfirmar local={local} /> : null}
 
       <View style={styles.checkIn}>
@@ -347,8 +352,11 @@ export default function LocalScreen() {
         lembrete={lembrete}
       />
 
-      {/* Restroom data is illustrative: only in demo mode until there are real restrooms. */}
-      <SectionHeader title="WC mais próximo" />
+      <SectionHeader title="WC" />
+      <WcDoTasco local={local} />
+      <ThemedText type="eyebrow" themeColor="textMuted" style={styles.subtitulo}>
+        WC público mais próximo
+      </ThemedText>
       <WcMaisProximo origem={local.coordenadas} estadioId={local.estadioId} />
 
       <SectionHeader title="A tua nota" />
@@ -444,6 +452,9 @@ export default function LocalScreen() {
 }
 
 const styles = StyleSheet.create({
+  subtitulo: {
+    marginTop: 4,
+  },
   cabecalho: {
     overflow: 'hidden',
     gap: 14,

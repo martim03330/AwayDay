@@ -1,32 +1,31 @@
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { MapMarker } from 'react-native-maps';
 
-import { DeslizarEntreLocais } from '@/components/deslizar-locais';
+import { CarrosselLocais } from '@/components/carrossel-locais';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDistancia } from '@/lib/formatos';
-import { nomesTipoLocal } from '@/mocks/locais';
 import type { Local, Venue } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
-import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 const DELTA = 0.018;
+const COR_ADEPTOS_DA_CASA = '#E8590C';
 
 type MapaEscolherTascoProps = {
   estadio: Venue;
-  /** In the order the app suggests them (confirmed and quick and cheap first). */
+  /** In the order the app suggests them (researched and confirmed first). */
   locais: readonly Local[];
   escolhidoId: string | null;
   onEscolher: (localId: string) => void;
 };
 
 /**
- * Picking the tasco for "O meu jogo" on a map: where each place is next to the stadium, a card for the one tapped
- * (swipe it for the next) and a button to choose it.
+ * Picking the tasco for "O meu jogo" on a map: tap a point or swipe the cards along the bottom. Each card shows the
+ * fans' scores and why fans go there before choosing, with a way to open the tasco first.
  */
 export function MapaEscolherTasco({
   estadio,
@@ -34,19 +33,23 @@ export function MapaEscolherTasco({
   escolhidoId,
   onEscolher,
 }: MapaEscolherTascoProps) {
+  const router = useRouter();
   const theme = useTheme();
   const mapa = useRef<MapView>(null);
   const [emFocoId, setEmFocoId] = useState<string | null>(escolhidoId ?? locais[0]?.id ?? null);
-
-  const indice = locais.findIndex((local) => local.id === emFocoId);
-  const emFoco = indice >= 0 ? locais[indice] : undefined;
 
   function focar(localId: string) {
     const alvo = locais.find((local) => local.id === localId);
     if (!alvo) return;
     setEmFocoId(localId);
+    // The cards cover the bottom of the map, so the place is framed a little above the centre.
     mapa.current?.animateToRegion(
-      { ...alvo.coordenadas, latitudeDelta: DELTA, longitudeDelta: DELTA },
+      {
+        latitude: alvo.coordenadas.latitude - DELTA * 0.22,
+        longitude: alvo.coordenadas.longitude,
+        latitudeDelta: DELTA,
+        longitudeDelta: DELTA,
+      },
       300
     );
   }
@@ -67,13 +70,22 @@ export function MapaEscolherTasco({
         <MapView
           ref={mapa}
           style={StyleSheet.absoluteFill}
-          initialRegion={{ ...estadio.coordenadas, latitudeDelta: DELTA, longitudeDelta: DELTA }}
+          initialRegion={{
+            latitude: estadio.coordenadas.latitude - DELTA * 0.22,
+            longitude: estadio.coordenadas.longitude,
+            latitudeDelta: DELTA,
+            longitudeDelta: DELTA,
+          }}
           pitchEnabled={false}
           rotateEnabled={false}
           toolbarEnabled={false}
           showsPointsOfInterests={false}
           accessibilityLabel={`Mapa dos tascos perto do ${estadio.nome}`}>
-          <MapMarker coordinate={estadio.coordenadas} title={estadio.nome} zIndex={5}>
+          <MapMarker
+            identifier={estadio.id}
+            coordinate={estadio.coordenadas}
+            title={estadio.nome}
+            zIndex={5}>
             <View style={[styles.estadio, { backgroundColor: theme.accent }]}>
               <Icon name={icons.estadio} size={18} color={theme.accentText} />
             </View>
@@ -86,10 +98,17 @@ export function MapaEscolherTasco({
               <MapMarker
                 // The key includes the state so the custom marker is redrawn when it changes.
                 key={`${local.id}-${focado}-${escolhido}`}
+                identifier={local.id}
                 coordinate={local.coordenadas}
                 anchor={{ x: 0.5, y: 0.5 }}
                 zIndex={focado ? 10 : 1}
-                onPress={() => focar(local.id)}
+                // Without a callout, iOS hands the tap to onPress straight away.
+                tappable
+                onPress={(evento) => {
+                  evento.stopPropagation();
+                  focar(local.id);
+                }}
+                onSelect={() => focar(local.id)}
                 accessibilityLabel={`${local.nome}, ${local.minutosAPe} minutos a pé do estádio`}>
                 <View style={styles.pontoArea}>
                   <View
@@ -99,7 +118,11 @@ export function MapaEscolherTasco({
                         width: tamanho,
                         height: tamanho,
                         borderRadius: tamanho / 2,
-                        backgroundColor: escolhido ? theme.highlight : theme.accent,
+                        backgroundColor: escolhido
+                          ? theme.highlight
+                          : local.homeFanHeavy
+                            ? COR_ADEPTOS_DA_CASA
+                            : theme.accent,
                       },
                     ]}
                   />
@@ -108,42 +131,41 @@ export function MapaEscolherTasco({
             );
           })}
         </MapView>
+
+        {emFocoId ? (
+          <CarrosselLocais
+            locais={locais}
+            emFocoId={emFocoId}
+            onFocar={focar}
+            acoes={(local) => (
+              <>
+                <View style={styles.acao}>
+                  <Button
+                    label={local.id === escolhidoId ? 'Escolhido' : 'Escolher'}
+                    icon={icons.selecionado}
+                    disabled={local.id === escolhidoId}
+                    onPress={() => onEscolher(local.id)}
+                  />
+                </View>
+                <View style={styles.acao}>
+                  <Button
+                    label="Ver tasco"
+                    variant="secondary"
+                    icon={icons.seguinte}
+                    onPress={() =>
+                      router.push({ pathname: '/locais/[localId]', params: { localId: local.id } })
+                    }
+                  />
+                </View>
+              </>
+            )}
+          />
+        ) : null}
       </View>
 
-      {emFoco ? (
-        <DeslizarEntreLocais
-          anterior={indice > 0 ? locais[indice - 1] : undefined}
-          seguinte={locais[indice + 1]}
-          posicao={indice + 1}
-          total={locais.length}
-          onMudar={focar}>
-          <View style={styles.detalhe}>
-            <ThemedText style={styles.nome} numberOfLines={2}>
-              {emFoco.nome}
-            </ThemedText>
-            <ThemedText themeColor="textSecondary">
-              {`${nomesTipoLocal[emFoco.tipo]} · ${emFoco.minutosAPe} min a pé (${formatarDistancia(emFoco.distanciaMetros)})`}
-            </ThemedText>
-            <View style={styles.etiquetas}>
-              {emFoco.rapidoEBarato ? (
-                <Etiqueta icon={icons.preco} label="Rápido e barato" tone="destaque" />
-              ) : null}
-              {emFoco.confirmacao === 'sugerido' ? (
-                <Etiqueta icon={icons.porVerificar} label="Por confirmar" tone="aviso" />
-              ) : null}
-            </View>
-            <Button
-              label={emFoco.id === escolhidoId ? 'É o teu tasco' : 'Escolher este tasco'}
-              icon={icons.selecionado}
-              disabled={emFoco.id === escolhidoId}
-              onPress={() => onEscolher(emFoco.id)}
-            />
-          </View>
-        </DeslizarEntreLocais>
-      ) : null}
-
       <ThemedText type="small" themeColor="textMuted">
-        Toca num ponto para veres o tasco. A amarelo, o que escolheste.
+        Toca num ponto ou desliza os cartões. A amarelo, o que escolheste; a laranja, sítios de
+        adeptos da casa.
       </ThemedText>
     </Card>
   );
@@ -154,7 +176,8 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   mapaArea: {
-    height: 300,
+    height: 440,
+    marginHorizontal: -Spacing.two,
     borderRadius: Radius.button,
     borderCurve: 'continuous',
     overflow: 'hidden',
@@ -178,17 +201,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#FFFFFF',
   },
-  detalhe: {
-    gap: Spacing.two,
-  },
-  nome: {
-    fontSize: 18,
-    lineHeight: 23,
-    fontWeight: 800,
-  },
-  etiquetas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.one,
+  acao: {
+    flex: 1,
   },
 });

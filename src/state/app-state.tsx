@@ -20,6 +20,7 @@ import {
   savePlaceSubScores,
   unrecommendDish,
   votePlace,
+  answerPlaceToilet,
   type PlaceSubScores,
 } from '@/features/activity/api';
 import { useMyAttendance } from '@/features/activity/hooks/useAttendance';
@@ -28,12 +29,14 @@ import {
   myPlaceRatingsKey,
   myPlaceSubScoresKey,
   myPlaceVotesKey,
+  myToiletAnswersKey,
   myPlaceVisitsKey,
   myReviewsKey,
   useMyDishRecommendations,
   useMyNoiseMeasurements,
   useMyPlaceSubScores,
   useMyPlaceVotes,
+  useMyToiletAnswers,
   useMyPlaceRatings,
   useMyPlaceVisits,
   useMyReviews,
@@ -194,6 +197,9 @@ type AppState = {
   /** Your answer to "is this a good place for match day?" for suggested tascos. Needs an account (demo: memory). */
   votosTascos: Readonly<Partial<Record<string, boolean>>>;
   votarTasco: (localId: string, bom: boolean) => void;
+  /** Your answer to "does this tasco have a toilet for customers?". Needs an account (demo: memory). */
+  wcTascos: Readonly<Partial<Record<string, boolean>>>;
+  responderWcTasco: (localId: string, temWc: boolean) => void;
   /** A tua nota a cada tasco. */
   notasTascos: Readonly<Partial<Record<string, Nota>>>;
   darNotaTasco: (localId: string, nota: Nota) => void;
@@ -309,6 +315,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   /** With an account: recommendation taps made in this session, on top of what the account says. */
   const [recomendacoesTocadas, setRecomendacoesTocadas] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [votosDemo, setVotosDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
+  const [wcDemo, setWcDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
   /** Photos taken with an account that are still uploading (or samples, which never upload). */
   const [fotosPendentes, setFotosPendentes] = useState<readonly FotoMissao[]>([]);
   const [checkInEmCurso, setCheckInEmCurso] = useState<string | null>(null);
@@ -351,6 +358,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const dishRecommendations = useMyDishRecommendations(userId);
   const placeSubScores = useMyPlaceSubScores(userId);
   const placeVotes = useMyPlaceVotes(userId);
+  const toiletAnswers = useMyToiletAnswers(userId);
   const notificationPreferences = useNotificationPreferences(userId);
   const refreshActivity = useRefreshMyActivity(userId);
   const refreshPhotos = useRefreshMissionPhotos(userId);
@@ -887,6 +895,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     naConta((id) => votePlace(id, localId, bom), refreshActivity);
   }
 
+  const wcTascos: Readonly<Partial<Record<string, boolean>>> =
+    fonte === 'conta' ? (toiletAnswers.data ?? {}) : fonte === 'demo' ? wcDemo : {};
+
+  function responderWcTasco(localId: string, temWc: boolean) {
+    if (fonte === 'demo') {
+      setWcDemo((atuais) => ({ ...atuais, [localId]: temWc }));
+      return;
+    }
+    if (fonte !== 'conta') return;
+    queryClient.setQueryData<Record<string, boolean>>(myToiletAnswersKey(userId), (atuais) => ({
+      ...atuais,
+      [localId]: temWc,
+    }));
+    naConta((id) => answerPlaceToilet(id, localId, temWc), refreshActivity);
+  }
+
   const visitadosNaConta =
     fonte === 'conta'
       ? Object.entries(attendance.data ?? {}).flatMap(([fixtureId, status]) => {
@@ -946,6 +970,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     darNotaCervejaPetisco,
     votosTascos,
     votarTasco,
+    wcTascos,
+    responderWcTasco,
     notasTascos: atividade.notasTascos,
     darNotaTasco,
     fotosMissoes: atividade.fotos,

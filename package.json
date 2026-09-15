@@ -57,8 +57,11 @@
     "db:seed": "node --experimental-strip-types scripts/generate-fixtures-seed.mjs",
     "test": "vitest run",
     "db:tascos": "node --env-file=.env.local scripts/importar-tascos-osm.mjs",
+    "db:centros-comerciais": "node --env-file=.env.local scripts/tascos-centros-comerciais.mjs",
+    "db:pesquisa-tascos": "node --env-file=.env.local scripts/importar-pesquisa-tascos.mjs",
     "db:wc": "node --env-file=.env.local scripts/importar-wc-osm.mjs",
-    "db:fotos": "node --env-file=.env.local scripts/fotos-estadios.mjs"
+    "db:fotos": "node --env-file=.env.local scripts/fotos-estadios.mjs",
+    "db:fotos-tascos": "node --env-file=.env.local scripts/fotos-tascos.mjs"
   },
   "private": true
 }

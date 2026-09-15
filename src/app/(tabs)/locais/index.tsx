@@ -1,8 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LocalCard } from '@/components/local-card';
+import { MapaJogo } from '@/components/mapa-jogo';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useTheme } from '@/hooks/use-theme';
@@ -13,6 +15,7 @@ import { obterClube } from '@/mocks/clubes';
 import { estadiosNacionais, obterEstadio } from '@/mocks/estadios';
 import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
+import { Button } from '@/ui/button';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
@@ -83,6 +86,8 @@ export default function LocaisScreen() {
   const confirmados = perto.filter((local) => local.confirmacao === 'confirmado');
   const sugestoes = perto.filter((local) => local.confirmacao === 'sugerido');
   const { loading, refreshing, refresh } = useSimulatedLoading(`locais-${estadio.id}`);
+  // The map shows everything at a glance; the long list is there for whoever prefers it.
+  const [verLista, setVerLista] = useState(false);
 
   function cartao(local: (typeof perto)[number]) {
     return (
@@ -146,6 +151,22 @@ export default function LocaisScreen() {
       );
     }
 
+    return (
+      <>
+        {/* Keyed by stadium: changing club starts the map again on the new stadium. */}
+        <MapaJogo key={estadio.id} venue={estadio} inicio="estadio" />
+        <Button
+          label={verLista ? 'Esconder a lista' : `Ver em lista (${perto.length})`}
+          variant="secondary"
+          icon={verLista ? icons.fechar : icons.lista}
+          onPress={() => setVerLista((atual) => !atual)}
+        />
+        {verLista ? renderLista() : null}
+      </>
+    );
+  }
+
+  function renderLista() {
     return (
       <>
         {confirmados.length > 0 && sugestoes.length > 0 ? (

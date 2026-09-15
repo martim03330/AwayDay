@@ -6,6 +6,7 @@ import {
   fetchMyPlaceRatings,
   fetchMyPlaceSubScores,
   fetchMyPlaceVotes,
+  fetchMyToiletAnswers,
   fetchMyPlaceVisits,
   fetchMyReviews,
 } from '@/features/activity/api';
@@ -29,6 +30,8 @@ export const myPlaceSubScoresKey = (userId: string | null) =>
   [...myActivityKey(userId), 'place-sub-scores'] as const;
 export const myPlaceVotesKey = (userId: string | null) =>
   [...myActivityKey(userId), 'place-votes'] as const;
+export const myToiletAnswersKey = (userId: string | null) =>
+  [...myActivityKey(userId), 'toilet-answers'] as const;
 
 export function useMyReviews(userId: string | null) {
   return useQuery({
@@ -82,6 +85,14 @@ export function useMyPlaceVotes(userId: string | null) {
   return useQuery({
     queryKey: myPlaceVotesKey(userId),
     queryFn: userId ? () => fetchMyPlaceVotes(userId) : skipToken,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useMyToiletAnswers(userId: string | null) {
+  return useQuery({
+    queryKey: myToiletAnswersKey(userId),
+    queryFn: userId ? () => fetchMyToiletAnswers(userId) : skipToken,
     staleTime: STALE_MS,
   });
 }

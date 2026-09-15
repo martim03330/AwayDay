@@ -21,6 +21,19 @@ function toPriceLevel(value: number | null): Local['precoMedio'] {
 }
 
 
+/** The researched sources, as stored ([{ url, title, published }]); anything malformed is dropped. */
+function toSources(value: PlaceRow['matchday_sources']) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) return [];
+    const url = item.url;
+    const title = item.title;
+    return typeof url === 'string' && url.startsWith('https://')
+      ? [{ url, titulo: typeof title === 'string' && title ? title : url }]
+      : [];
+  });
+}
+
 /** A fans' average (e.g. 4.3) as a 1-5 score for the meters. */
 function toNota(average: number | null): Nota | null {
   if (average === null) return null;
@@ -62,8 +75,8 @@ function toPlace(row: PlaceRow, dishes: Prato[], score: PlaceScoreRow | undefine
     distanciaMetros: row.distance_m,
     minutosAPe: row.walking_minutes,
     coordenadas: { latitude: row.latitude, longitude: row.longitude },
-    // Not known for real places until live presence exists.
-    homeFanHeavy: false,
+    // From the research; unknown counts as not.
+    homeFanHeavy: row.home_fans_heavy === true,
     clubesAqui: [],
     pratos: dishes,
     cervejometro: toNota(score?.beer_score ?? null),
@@ -77,6 +90,20 @@ function toPlace(row: PlaceRow, dishes: Prato[], score: PlaceScoreRow | undefine
     rapidoEBarato: row.quick_and_cheap,
     pontuacaoSugestao: row.suitability,
     votos: { sim: row.votes_yes, nao: row.votes_no },
+    referencia: (() => {
+      const fontes = toSources(row.matchday_sources);
+      return row.matchday_note && fontes.length > 0 ? { nota: row.matchday_note, fontes } : null;
+    })(),
+    wcNoTasco: { sim: row.toilet_yes, nao: row.toilet_no },
+    foto:
+      row.photo_url && row.photo_license && row.photo_source_url
+        ? {
+            url: row.photo_url,
+            autor: row.photo_author,
+            licenca: row.photo_license,
+            fonte: row.photo_source_url,
+          }
+        : null,
   };
 }
 

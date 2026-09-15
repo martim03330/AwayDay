@@ -488,6 +488,9 @@ export const locaisDemo: Local[] = locaisBase.map((local) => ({
   rapidoEBarato: local.tipo === 'tasca' || local.tipo === 'roulotte' || local.tipo === 'bar',
   pontuacaoSugestao: 0,
   votos: { sim: 0, nao: 0 },
+  referencia: null,
+  wcNoTasco: { sim: 0, nao: 0 },
+  foto: null,
 }));
 registerDemoPlaces(locaisDemo);
 

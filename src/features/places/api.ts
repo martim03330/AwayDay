@@ -37,7 +37,7 @@ export async function fetchPlaceCatalogRows(): Promise<PlaceCatalogRows> {
       client
         .from('place')
         .select(
-          'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no'
+          'id, name, kind, venue_id, walking_minutes, distance_m, latitude, longitude, opening_hours, price_level, specialty, confirmation, quick_and_cheap, suitability, votes_yes, votes_no, matchday_note, matchday_sources, home_fans_heavy, toilet_yes, toilet_no, photo_url, photo_author, photo_license, photo_source_url'
         )
         .order('id')
         .range(from, to)

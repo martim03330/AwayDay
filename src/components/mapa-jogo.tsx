@@ -5,24 +5,23 @@ import MapView, { Circle, MapMarker, type MapPressEvent, type Region } from 'rea
 import Animated, { FadeInDown, FadeOutDown, useReducedMotion, ZoomIn } from 'react-native-reanimated';
 
 import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
-import { DeslizarEntreLocais } from '@/components/deslizar-locais';
+import { CarrosselLocais } from '@/components/carrossel-locais';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { useRestroomsNear } from '@/features/restrooms/hooks/useRestrooms';
 import { useTheme } from '@/hooks/use-theme';
 import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
-import { formatarDistancia, plural } from '@/lib/formatos';
+import { plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE } from '@/lib/locais';
 import { casasDeBanho } from '@/mocks/casas-de-banho';
 import { useAppState } from '@/state/app-state';
 import { obterClube } from '@/mocks/clubes';
-import { locaisDoEstadio, nomesTipoLocal } from '@/mocks/locais';
+import { locaisDoEstadio } from '@/mocks/locais';
 import type { Coordenadas, Local, Restroom, Venue } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Escudo } from '@/ui/escudo';
 import { Icon, icons } from '@/ui/icon';
-import { Medidor } from '@/ui/medidor';
 import { ThemedText } from '@/ui/themed-text';
 
 /** Duração máxima de qualquer animação da app. */
@@ -133,67 +132,25 @@ function CartaoMapa({
   );
 }
 
-function ConteudoLocal({ local, onVerLocal }: { local: Local; onVerLocal: () => void }) {
-  const theme = useTheme();
-
-  return (
-    <>
-      <View style={styles.cartaoTexto}>
-        <ThemedText style={styles.cartaoNome} numberOfLines={1}>
-          {local.nome}
-        </ThemedText>
-        <View style={styles.meta}>
-          <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]}>
-            {`${nomesTipoLocal[local.tipo]} ·`}
-          </ThemedText>
-          <Icon name={icons.aPe} size={15} color={theme.textSecondary} />
-          <ThemedText style={[styles.metaTexto, { color: theme.textSecondary }]} numberOfLines={1}>
-            {`${local.minutosAPe} min a pé (${formatarDistancia(local.distanciaMetros)})`}
-          </ThemedText>
-        </View>
-      </View>
-
-      <View style={styles.medidores}>
-        <Medidor
-          compact
-          label="Cervejómetro"
-          icon={icons.tasco}
-          tone="amarelo"
-          value={local.cervejometro}
-        />
-        <Medidor
-          compact
-          label="Petiscómetro"
-          icon={icons.especialidade}
-          tone="verde"
-          value={local.petiscometro}
-        />
-      </View>
-
-      {local.homeFanHeavy ? (
-        <View style={styles.adeptosDaCasa}>
-          <Icon name={icons.casa} size={14} color={COR_ADEPTOS_DA_CASA} />
-          <ThemedText themeColor="textSecondary" style={styles.metaTexto}>
-            Ponto habitual de adeptos da casa
-          </ThemedText>
-        </View>
-      ) : null}
-
-      <Button label="Ver local" icon={icons.seguinte} onPress={onVerLocal} />
-    </>
-  );
-}
-
 /** An area to avoid, drawn as a red circle (derbies only). */
 export type ZonaMapa = { id: string; titulo: string; centro: Coordenadas; raioM: number };
 
-export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly ZonaMapa[] }) {
+export function MapaJogo({
+  venue,
+  zonas = [],
+  inicio = 'cidade',
+}: {
+  venue: Venue;
+  zonas?: readonly ZonaMapa[];
+  /** 'estadio': open already zoomed on the stadium with the tascos and WC showing (Locais tab). */
+  inicio?: 'cidade' | 'estadio';
+}) {
   const router = useRouter();
   const theme = useTheme();
   const reduzirMovimento = useReducedMotion();
   const mapa = useRef<MapView>(null);
 
-  const [modo, setModo] = useState<'cidade' | 'estadio'>('cidade');
+  const [modo, setModo] = useState<'cidade' | 'estadio'>(inicio);
   const [pontosVisiveis, setPontosVisiveis] = useState(0);
   const [selecao, setSelecao] = useState<Selecao | null>(null);
 
@@ -245,17 +202,24 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
     setSelecao(null);
   }
 
-  // Swiping the card goes to the next tasco by distance, and the map follows it.
-  const indiceSelecionado = localSelecionado
-    ? perto.findIndex((local) => local.id === localSelecionado.id)
-    : -1;
-
+  // Tapping a point or swiping the cards selects a tasco, and the map follows it. The cards cover the bottom of the
+  // map, so the tasco is framed a little above the centre.
   function irParaLocal(localId: string) {
-    const alvo = perto.find((local) => local.id === localId);
-    if (!alvo) return;
     setSelecao({ tipo: 'local', id: localId });
-    mapa.current?.animateToRegion(regiao(alvo.coordenadas, DELTA_ESTADIO), animar ? DURACAO_MS : 0);
   }
+
+  const latitudeSelecionada = localSelecionado?.coordenadas.latitude;
+  const longitudeSelecionada = localSelecionado?.coordenadas.longitude;
+  useEffect(() => {
+    if (latitudeSelecionada === undefined || longitudeSelecionada === undefined) return;
+    mapa.current?.animateToRegion(
+      regiao(
+        { latitude: latitudeSelecionada - DELTA_ESTADIO * 0.22, longitude: longitudeSelecionada },
+        DELTA_ESTADIO
+      ),
+      animar ? DURACAO_MS : 0
+    );
+  }, [latitudeSelecionada, longitudeSelecionada, animar]);
 
   function tocarNoMapa(event: MapPressEvent) {
     // No Android, tocar num marcador também chega ao mapa.
@@ -276,7 +240,7 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
         <MapView
           ref={mapa}
           style={StyleSheet.absoluteFill}
-          initialRegion={regiao(venue.coordenadas, DELTA_CIDADE)}
+          initialRegion={regiao(venue.coordenadas, inicio === 'estadio' ? DELTA_ESTADIO : DELTA_CIDADE)}
           onPress={tocarNoMapa}
           pitchEnabled={false}
           rotateEnabled={false}
@@ -316,7 +280,7 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
                     coordenadas={ponto.local.coordenadas}
                     selecionado={selecao?.tipo === 'local' && selecao.id === ponto.local.id}
                     animar={animar}
-                    onPress={() => setSelecao({ tipo: 'local', id: ponto.local.id })}
+                    onPress={() => irParaLocal(ponto.local.id)}
                     accessibilityLabel={`${ponto.local.nome}${ponto.local.homeFanHeavy ? ', ponto habitual de adeptos da casa' : ''}`}>
                     {(tamanho) => (
                       <View
@@ -360,24 +324,22 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
         </MapView>
 
         {localSelecionado ? (
-          <CartaoMapa key="local" animar={animar} onFechar={() => setSelecao(null)}>
-            <DeslizarEntreLocais
-              anterior={indiceSelecionado > 0 ? perto[indiceSelecionado - 1] : undefined}
-              seguinte={indiceSelecionado >= 0 ? perto[indiceSelecionado + 1] : undefined}
-              posicao={indiceSelecionado + 1}
-              total={indiceSelecionado >= 0 ? perto.length : 0}
-              onMudar={irParaLocal}>
-              <ConteudoLocal
-                local={localSelecionado}
-                onVerLocal={() =>
-                  router.navigate({
-                    pathname: '/locais/[localId]',
-                    params: { localId: localSelecionado.id },
-                  })
-                }
-              />
-            </DeslizarEntreLocais>
-          </CartaoMapa>
+          <CarrosselLocais
+            locais={perto}
+            emFocoId={localSelecionado.id}
+            onFocar={irParaLocal}
+            acoes={(local) => (
+              <View style={styles.acaoCarrossel}>
+                <Button
+                  label="Ver local"
+                  icon={icons.seguinte}
+                  onPress={() =>
+                    router.navigate({ pathname: '/locais/[localId]', params: { localId: local.id } })
+                  }
+                />
+              </View>
+            )}
+          />
         ) : null}
 
         {wcSelecionado ? (
@@ -431,8 +393,11 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
   },
+  acaoCarrossel: {
+    flex: 1,
+  },
   mapaArea: {
-    height: 360,
+    height: 440,
     borderRadius: Radius.button,
     borderCurve: 'continuous',
     overflow: 'hidden',

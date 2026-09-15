@@ -282,6 +282,12 @@ export type Local = {
   pontuacaoSugestao: number;
   /** Fans' answers to "is this a good place for match day?" while it is a suggestion. */
   votos: { sim: number; nao: number };
+  /** Why fans go here, from pages we read (newspapers, fan forums, ground guides); `null` when nothing was found. */
+  referencia: { nota: string; fontes: { url: string; titulo: string }[] } | null;
+  /** Fans' answers to "does it have a toilet for customers?". */
+  wcNoTasco: { sim: number; nao: number };
+  /** A freely licensed photo (outside or inside) with the credit its licence asks for; `null` until there is one. */
+  foto: { url: string; autor: string | null; licenca: string; fonte: string } | null;
 };
 
 /** Avaliação de uma visita a um estádio: uma por jogo, várias por estádio. */

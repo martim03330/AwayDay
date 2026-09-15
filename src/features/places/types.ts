@@ -20,6 +20,15 @@ export type PlaceRow = Pick<
   | 'suitability'
   | 'votes_yes'
   | 'votes_no'
+  | 'matchday_note'
+  | 'matchday_sources'
+  | 'home_fans_heavy'
+  | 'toilet_yes'
+  | 'toilet_no'
+  | 'photo_url'
+  | 'photo_author'
+  | 'photo_license'
+  | 'photo_source_url'
 >;
 
 export type DishRow = Pick<

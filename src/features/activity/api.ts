@@ -275,6 +275,27 @@ export async function votePlace(userId: string, placeId: string, isGood: boolean
   if (error) throw error;
 }
 
+/** The user's answers to "does this tasco have a toilet for customers?", by place id. */
+export async function fetchMyToiletAnswers(userId: string): Promise<Record<string, boolean>> {
+  const { data, error } = await client()
+    .from('place_toilet_answer')
+    .select('place_id, has_toilet')
+    .eq('profile_id', userId);
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.place_id, row.has_toilet]));
+}
+
+/** Answers whether a tasco has a toilet for customers. The server keeps the counts. */
+export async function answerPlaceToilet(userId: string, placeId: string, hasToilet: boolean) {
+  const { error } = await client()
+    .from('place_toilet_answer')
+    .upsert(
+      { profile_id: userId, place_id: placeId, has_toilet: hasToilet },
+      { onConflict: 'profile_id,place_id' }
+    );
+  if (error) throw error;
+}
+
 /** The fixtures the user is going to, with the tasco picked for each (`null` when none yet). */
 export async function fetchMyPlans(userId: string): Promise<Record<string, string | null>> {
   const { data, error } = await client()

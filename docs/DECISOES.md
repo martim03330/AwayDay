@@ -2,6 +2,73 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Fotos dos tascos, mapa no separador Locais e estrelas do Google
+
+**Fotos dos tascos** (`place.photo_*`, bucket público `tasco-photos`, `npm run db:fotos-tascos`). Uma
+foto ajuda a perceber logo se um sítio é pub, café ou tasca. Só entram fotos com licença livre do
+Wikimedia Commons, e cada uma tem de cumprir três condições:
+- ter o nome do tasco;
+- estar a menos de 150 m, quando o Commons tem coordenadas;
+- ser confirmada a olho antes de ser enviada.
+
+A foto aparece no cartão do mapa (miniatura) e no topo da página do tasco, sempre com autor, licença
+e ligação à origem. O Commons só tem fotos de sítios conhecidos (por exemplo The Arkles, em Anfield).
+As tascas portuguesas quase nunca lá estão e ficam com o ícone até haver foto.
+
+**Porque não usamos já as fotos e as estrelas do Google.** As fotos e a nota do Google (Places API)
+obrigam a:
+- uma conta de faturação no Google Cloud, com cartão;
+- chamadas a partir de uma Edge Function;
+- respeitar os termos, que não deixam guardar a nota nem as fotos: têm de ser pedidas de novo, dentro
+  do limite gratuito mensal, e mostradas com a marca do Google.
+
+Isto contraria o «sem custos» desta primeira versão, e a decisão fica para o dono. Até lá, as notas
+são as dos adeptos (Cervejómetro e Petiscómetro).
+
+Duas alternativas gratuitas ficam por decidir:
+- fotos de rua do Mapillary (licença CC BY-SA), que precisam de uma chave gratuita de conta;
+- as fotos que os adeptos já podem enviar (`place_photo`), que precisam de um ecrã de moderação.
+
+**Mapa no separador Locais.** Quem só quer ver o que há à volta do estádio escolhe o clube e vê logo
+o mapa, já aproximado ao estádio, com os tascos, os WC e os cartões para deslizar. A lista longa
+continua disponível no botão «Ver em lista».
+
+## 2026-09-16 — Cartões pequenos nos mapas, WC do tasco e tascos de dia de jogo
+
+**Cartões nos mapas.** O cartão do tasco tapava quase todo o mapa. Os dois mapas (o do estádio e o de
+escolher o tasco em «O meu jogo») têm agora uma fila de cartões pequenos em baixo
+(`CarrosselLocais`). Desliza-se com o dedo, os cartões do lado espreitam e o mapa acompanha. Tocar
+num ponto leva a fila até ao cartão desse tasco. Cada cartão mostra, antes de escolher:
+- o tipo e os minutos a pé;
+- o Cervejómetro e o Petiscómetro;
+- se o tasco é referido por adeptos e se é sítio de adeptos da casa.
+
+No mapa de escolha, o cartão tem «Escolher» e «Ver tasco». As setas grandes saíram dos mapas e ficam
+só no cabeçalho da página do tasco.
+
+**WC do tasco.** O OpenStreetMap quase nunca diz se um café tem WC: nenhum dos 202 à volta da Luz o
+indica. Por isso a pergunta «Tem WC para clientes?» é respondida pelos adeptos
+(`place_toilet_answer`: uma resposta por pessoa por tasco, que se pode mudar). A contagem fica em
+`place.toilet_yes` e `place.toilet_no` e a app mostra quantos disseram o quê. Por baixo continua o
+WC público mais próximo.
+
+**Sem restaurantes de centros comerciais** (`npm run db:centros-comerciais`). As praças de
+alimentação não são sítio de dia de jogo. Os locais sugeridos dentro de um centro comercial
+(`shop=mall` no OSM) ficam rejeitados com `rejection_reason = 'shopping_centre'`: desaparecem para
+todos e uma nova importação não os traz de volta. Só contam centros com mais de 8000 m². Em Portugal
+«Centro Comercial» também dá nome a galerias antigas de rua, e os cafés virados para a rua dessas
+galerias são tascos a sério. Os WC públicos dentro dos centros comerciais ficam, porque são úteis.
+
+**Tascos de dia de jogo pesquisados.** Pesquisámos na web (jornais, fóruns e Reddit, guias de
+estádios, blogues de groundhopping) onde os adeptos vão antes do jogo, nos 38 estádios com jogos
+visíveis. Um tasco só entra com uma fonte aberta que o ligue ao dia de jogo. Fica com:
+- `matchday_note`: uma frase com a razão;
+- `matchday_sources`: as páginas, que a app mostra com ligação;
+- `home_fans_heavy`: quando as fontes dizem que é sítio de adeptos da casa.
+
+Uma restrição não deixa haver razão sem fontes. Estes tascos aparecem primeiro. Onde não se encontrou
+nada, ficam os do OpenStreetMap.
+
 ## 2026-09-16 — Pratos honestos, WC reais e fotografias dos estádios
 
 **Pratos: não inventamos.** Tirámos a sugestão «Costuma haver» (bifana, tosta mista…) por tipo de
