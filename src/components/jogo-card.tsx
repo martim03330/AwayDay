@@ -12,7 +12,7 @@ import Animated, {
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { formatarNota } from '@/lib/formatos';
 import { eCompeticaoEuropeia, fimDoJogo, notaMedia, type EstadoJogo } from '@/lib/jogos';
 import { obterClube } from '@/mocks/clubes';
@@ -130,10 +130,10 @@ export function JogoCard({ jogo, estado, avaliacao, onPress }: JogoCardProps) {
     return (
       <>
         <ThemedText type="score" style={styles.hora}>
-          {formatarHora(inicio)}
+          {jogo.horaConfirmada ? formatarHora(inicio) : '--:--'}
         </ThemedText>
         <ThemedText type="eyebrow" themeColor="accentInk">
-          Apito
+          {jogo.horaConfirmada ? 'Apito' : 'Por definir'}
         </ThemedText>
       </>
     );
@@ -145,7 +145,7 @@ export function JogoCard({ jogo, estado, avaliacao, onPress }: JogoCardProps) {
       style={styles.card}
       accessibilityLabel={[
         `${casa.nomeCurto} contra ${fora.nomeCurto}`,
-        formatarDiaEHora(inicio),
+        jogo.horaConfirmada ? formatarDiaEHora(inicio) : `${formatarDia(inicio)}, hora por definir`,
         nomesCompeticao[jogo.competicao],
         rotuloEstado,
         media ? `avaliado com ${media} de 5` : null,

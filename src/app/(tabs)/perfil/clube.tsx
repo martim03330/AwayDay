@@ -5,7 +5,7 @@ import { OpcaoClube } from '@/components/opcao-clube';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero } from '@/lib/formatos';
-import { clubesPorDivisao, nomesDivisao } from '@/mocks/clubes';
+import { clubesParaEscolher, nomesDivisao } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -22,7 +22,7 @@ export default function EscolherClubeScreen() {
         Clube que apoio
       </ThemedText>
 
-      {clubesPorDivisao.map((grupo) => (
+      {clubesParaEscolher().map((grupo) => (
         <View key={grupo.divisao} style={styles.grupo}>
           <ThemedText
             type="eyebrow"

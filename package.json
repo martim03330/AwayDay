@@ -56,7 +56,7 @@
     "lint": "expo lint",
     "db:seed": "node --experimental-strip-types scripts/generate-fixtures-seed.mjs",
     "test": "vitest run",
-    "db:tascos": "node --experimental-strip-types scripts/importar-tascos-osm.mjs"
+    "db:tascos": "node --env-file=.env.local scripts/importar-tascos-osm.mjs"
   },
   "private": true
 }

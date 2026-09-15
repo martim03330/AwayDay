@@ -34,7 +34,9 @@ export type ClubRow = Pick<
 export type FixtureRow = Pick<
   Tables<'fixture'>,
   'id' | 'competition_id' | 'stage' | 'home_club_id' | 'away_club_id' | 'venue_id' | 'kickoff_at'
->;
+> &
+  // Optional so the bundled sample fixtures need not carry it (they all have a set time).
+  Partial<Pick<Tables<'fixture'>, 'kickoff_confirmed'>>;
 
 export type FixtureCatalogRows = {
   competitions: CompetitionRow[];

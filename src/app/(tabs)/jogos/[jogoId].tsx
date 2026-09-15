@@ -98,9 +98,11 @@ export default function JogoScreen() {
       ? 'Em jogo'
       : estado === 'terminado'
         ? 'Terminado'
-        : dia === 'Hoje' || dia === 'Amanhã'
-          ? dia
-          : 'Apito';
+        : !jogo.horaConfirmada
+          ? 'Por definir'
+          : dia === 'Hoje' || dia === 'Amanhã'
+            ? dia
+            : 'Apito';
 
   const avaliacao = (
     <AvaliacaoJogo
@@ -159,7 +161,7 @@ export default function JogoScreen() {
             <Equipa clube={casa} size={66} sobreRelvado />
             <View style={[styles.apito, { backgroundColor: theme.background }]}>
               <ThemedText type="score" style={styles.hora}>
-                {formatarHora(inicio)}
+                {jogo.horaConfirmada ? formatarHora(inicio) : '--:--'}
               </ThemedText>
               <ThemedText type="eyebrow" themeColor="accentInk">
                 {rotuloApito}
@@ -169,7 +171,7 @@ export default function JogoScreen() {
           </View>
 
           <ThemedText style={[styles.centro, styles.quando, { color: theme.accentText }]}>
-            {`${formatarDiaEHora(inicio, agora)} · ${estadio.nome}`}
+            {`${jogo.horaConfirmada ? formatarDiaEHora(inicio, agora) : `${dia} · hora por definir`} · ${estadio.nome}`}
           </ThemedText>
         </View>
       </View>

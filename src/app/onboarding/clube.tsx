@@ -6,7 +6,7 @@ import { OnboardingPasso } from '@/components/onboarding-passo';
 import { OpcaoClube } from '@/components/opcao-clube';
 import { Spacing } from '@/constants/theme';
 import { formatarNumero } from '@/lib/formatos';
-import { clubesPorDivisao, nomesDivisao, obterClube } from '@/mocks/clubes';
+import { clubesParaEscolher, nomesDivisao, obterClube } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { ThemedText } from '@/ui/themed-text';
@@ -36,7 +36,7 @@ export default function OnboardingClubeScreen() {
           }}
         />
       }>
-      {clubesPorDivisao.map((grupo) => (
+      {clubesParaEscolher().map((grupo) => (
         <View key={grupo.divisao} style={styles.grupo}>
           <ThemedText
             type="eyebrow"

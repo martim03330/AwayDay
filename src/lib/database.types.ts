@@ -151,6 +151,7 @@ export type Database = {
           abbreviation: string
           country: string
           created_at: string
+          european_venue_id: string | null
           football_data_id: number | null
           home_venue_id: string | null
           id: string
@@ -165,6 +166,7 @@ export type Database = {
           abbreviation: string
           country: string
           created_at?: string
+          european_venue_id?: string | null
           football_data_id?: number | null
           home_venue_id?: string | null
           id: string
@@ -179,6 +181,7 @@ export type Database = {
           abbreviation?: string
           country?: string
           created_at?: string
+          european_venue_id?: string | null
           football_data_id?: number | null
           home_venue_id?: string | null
           id?: string
@@ -190,6 +193,13 @@ export type Database = {
           tier?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "club_european_venue_id_fkey"
+            columns: ["european_venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "club_home_venue_id_fkey"
             columns: ["home_venue_id"]

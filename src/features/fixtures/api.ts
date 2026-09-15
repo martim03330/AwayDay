@@ -19,7 +19,7 @@ export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
       ),
     supabase
       .from('fixture')
-      .select('id, competition_id, stage, home_club_id, away_club_id, venue_id, kickoff_at')
+      .select('id, competition_id, stage, home_club_id, away_club_id, venue_id, kickoff_at, kickoff_confirmed')
       .order('kickoff_at'),
   ]);
 

@@ -6,8 +6,23 @@ import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { hasCronSecret } from '../_shared/auth.ts';
 
 const API_BASE = 'https://api.football-data.org/v4';
-/** football-data.org competition code -> our competition id. The free plan covers the Primeira Liga. */
-const COMPETITIONS = [{ code: 'PPL', competitionId: 'liga' }] as const;
+/**
+ * football-data.org competition code -> our competition id. The free plan covers the Primeira Liga and the Champions
+ * League. Only fixtures between clubs we know (club.football_data_id) are kept: in the Champions League, the games of
+ * Portuguese clubs, with their opponents added by hand.
+ */
+const COMPETITIONS = [
+  { code: 'PPL', competitionId: 'liga' },
+  { code: 'CL', competitionId: 'champions' },
+] as const;
+/** Knockout stages: name shown in the app and a slug for the fixture id (legs of different rounds must not clash). */
+const STAGES: Readonly<Record<string, { name: string; slug: string }>> = {
+  PLAYOFFS: { name: 'Play-off', slug: 'playoff' },
+  LAST_16: { name: 'Oitavos de final', slug: 'oitavos' },
+  QUARTER_FINALS: { name: 'Quartos de final', slug: 'quartos' },
+  SEMI_FINALS: { name: 'Meias-finais', slug: 'meias' },
+  FINAL: { name: 'Final', slug: 'final' },
+};
 /** Fixtures without a real date: not shown until they get one. */
 const SKIPPED_STATUSES = new Set(['POSTPONED', 'CANCELLED', 'SUSPENDED', 'AWARDED']);
 /** Statuses with a kick-off time that football-data.org already confirmed. */
@@ -20,7 +35,12 @@ const CONFIRMED_STATUSES = new Set([
   'FINISHED',
 ]);
 
-type Club = { id: string; home_venue_id: string | null; football_data_id: number };
+type Club = {
+  id: string;
+  home_venue_id: string | null;
+  european_venue_id: string | null;
+  football_data_id: number;
+};
 
 type FixtureRow = {
   id: string;
@@ -54,8 +74,26 @@ function seasonIdFor(startDate: string) {
 }
 
 function stageName(stage: unknown, matchday: unknown) {
-  if (stage === 'REGULAR_SEASON' && typeof matchday === 'number') return `Jornada ${matchday}`;
-  return typeof stage === 'string' ? stage.replaceAll('_', ' ').toLowerCase() : 'Jogo';
+  const round = typeof matchday === 'number' ? `Jornada ${matchday}` : null;
+  if (stage === 'REGULAR_SEASON') return round ?? 'Jogo';
+  if (stage === 'LEAGUE_STAGE') return round ? `Fase de liga · ${round}` : 'Fase de liga';
+  return (typeof stage === 'string' ? STAGES[stage]?.name : undefined) ?? 'Jogo';
+}
+
+/**
+ * League fixtures keep the ids already in use ("casa-fora-2026-27"). Other competitions add the competition and, in
+ * the knockouts, the round, so a league game and a European game between the same clubs never share an id.
+ */
+function fixtureId(
+  competitionId: string,
+  stage: unknown,
+  home: string,
+  away: string,
+  seasonId: string
+) {
+  if (competitionId === 'liga') return `${home}-${away}-${seasonId}`;
+  const slug = typeof stage === 'string' ? STAGES[stage]?.slug : undefined;
+  return [home, away, competitionId, slug, seasonId].filter(Boolean).join('-');
 }
 
 Deno.serve(async (request) => {
@@ -73,7 +111,7 @@ Deno.serve(async (request) => {
 
   const clubsResult = await admin
     .from('club')
-    .select('id, home_venue_id, football_data_id')
+    .select('id, home_venue_id, european_venue_id, football_data_id')
     .not('football_data_id', 'is', null);
   if (clubsResult.error) return json(500, { error: 'clubs_failed' });
   const clubsByTeam = new Map<number, Club>();
@@ -128,27 +166,32 @@ Deno.serve(async (request) => {
       const awayTeam = asRecord(match.awayTeam);
       const home = typeof homeTeam?.id === 'number' ? clubsByTeam.get(homeTeam.id) : undefined;
       const away = typeof awayTeam?.id === 'number' ? clubsByTeam.get(awayTeam.id) : undefined;
+      const venueId =
+        competition.competitionId === 'liga'
+          ? home?.home_venue_id
+          : (home?.european_venue_id ?? home?.home_venue_id);
       if (
         !home ||
         !away ||
-        !home.home_venue_id ||
+        !venueId ||
         typeof match.utcDate !== 'string' ||
         typeof match.id !== 'number'
       ) {
-        if (!home && typeof homeTeam?.name === 'string')
+        // Only worth reporting when one of the clubs is ours (an opponent still missing).
+        if (!home && away && typeof homeTeam?.name === 'string')
           unmatched.add(`${homeTeam.id}:${homeTeam.name}`);
-        if (!away && typeof awayTeam?.name === 'string')
+        if (!away && home && typeof awayTeam?.name === 'string')
           unmatched.add(`${awayTeam.id}:${awayTeam.name}`);
         continue;
       }
       rows.push({
-        id: `${home.id}-${away.id}-${seasonId}`,
+        id: fixtureId(competition.competitionId, match.stage, home.id, away.id, seasonId),
         external_id: `football-data:${match.id}`,
         competition_id: competition.competitionId,
         stage: stageName(match.stage, match.matchday),
         home_club_id: home.id,
         away_club_id: away.id,
-        venue_id: home.home_venue_id,
+        venue_id: venueId,
         kickoff_at: match.utcDate,
         kickoff_confirmed: CONFIRMED_STATUSES.has(status),
         season_id: seasonId,

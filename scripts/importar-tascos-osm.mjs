@@ -1,12 +1,12 @@
-// Finds cafés, bars and restaurants near each Portuguese stadium in OpenStreetMap and writes SQL that upserts them
-// into public.place_candidate, for curation. Nothing is published here: use publish_place_candidate after curating.
+// Finds cafés, bars and restaurants near stadiums in OpenStreetMap and writes SQL that upserts them into
+// public.place_candidate. Then `select public.suggest_place_candidates();` shows them in the app as suggestions.
 //
 // Usage:
 //   npm run db:tascos -- [venue ids...] > /tmp/candidatos.sql
 //   supabase db query --linked -f /tmp/candidatos.sql
+// Without ids: every Portuguese stadium. With ids: exactly those, stadiums abroad included.
 //
 // Data © OpenStreetMap contributors (ODbL). This runs on a developer machine; the app never calls Overpass.
-import { bundledCatalogRows } from '../src/features/fixtures/snapshot.ts';
 
 const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 const USER_AGENT = 'AwayDay/0.1 (tascos near stadiums; developer import)';
@@ -19,13 +19,28 @@ const MAX_PER_VENUE = 25;
 const PAUSE_MS = 3000;
 const AMENITIES = 'restaurant|bar|pub|cafe|fast_food';
 
+// Stadiums come from the database (public, read with the publishable key from .env.local), so the ones abroad added
+// for European fixtures are there too.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('Faltam EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY (.env.local).');
+  process.exit(1);
+}
+
 const wantedIds = new Set(process.argv.slice(2));
-const venues = bundledCatalogRows.venues.filter(
+const venueResponse = await fetch(`${SUPABASE_URL}/rest/v1/venue?select=id,country,latitude,longitude`, {
+  headers: { apikey: SUPABASE_KEY },
+});
+if (!venueResponse.ok) {
+  console.error(`Não foi possível ler os estádios (${venueResponse.status}).`);
+  process.exit(1);
+}
+const venues = (await venueResponse.json()).filter(
   (venue) =>
-    venue.country === 'Portugal' &&
     venue.latitude !== null &&
     venue.longitude !== null &&
-    (wantedIds.size === 0 || wantedIds.has(venue.id))
+    (wantedIds.size === 0 ? venue.country === 'Portugal' : wantedIds.has(venue.id))
 );
 
 function sleep(ms) {

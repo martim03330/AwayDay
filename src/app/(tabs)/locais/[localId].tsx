@@ -12,7 +12,7 @@ import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/th
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora } from '@/lib/datas';
+import { formatarDia, formatarDiaEHora } from '@/lib/datas';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { proximoJogoNoEstadio } from '@/lib/jogos';
 import { lembretePelaMeteorologia } from '@/lib/pratos';
@@ -316,7 +316,7 @@ export default function LocalScreen() {
         title="O que pedir"
         trailing={
           proximoJogo
-            ? `Jogo ${formatarDiaEHora(new Date(proximoJogo.inicio)).toLowerCase()}`
+            ? `Jogo ${(proximoJogo.horaConfirmada ? formatarDiaEHora : formatarDia)(new Date(proximoJogo.inicio)).toLowerCase()}`
             : undefined
         }
       />

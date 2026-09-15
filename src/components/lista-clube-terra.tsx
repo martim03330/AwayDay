@@ -4,15 +4,16 @@ import { OpcaoClube } from '@/components/opcao-clube';
 import { Spacing } from '@/constants/theme';
 import { clubesMaisPerto } from '@/lib/clubes';
 import { formatarKm, formatarNumero } from '@/lib/formatos';
-import { clubes } from '@/mocks/clubes';
+import { clubes, eClubeParaEscolher } from '@/mocks/clubes';
 import { estadios } from '@/mocks/estadios';
 import { localizacaoUtilizador } from '@/mocks/utilizador';
 import { ThemedText } from '@/ui/themed-text';
 
-const sugestoes = clubesMaisPerto(localizacaoUtilizador.coordenadas, clubes, estadios);
+const clubesDisponiveis = clubes.filter(eClubeParaEscolher);
+const sugestoes = clubesMaisPerto(localizacaoUtilizador.coordenadas, clubesDisponiveis, estadios);
 const idsSugeridos = new Set(sugestoes.map(({ clube }) => clube.id));
-const outrosClubes = clubes
-  .filter((clube) => clube.divisao !== null && !idsSugeridos.has(clube.id))
+const outrosClubes = clubesDisponiveis
+  .filter((clube) => !idsSugeridos.has(clube.id))
   .sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto, 'pt'));
 
 /** Eyebrow above a group of clubs, with an optional note on the right. */

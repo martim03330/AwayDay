@@ -132,6 +132,7 @@ function toFixture(
     estadioId: row.venue_id,
     // Postgres returns "+00:00"; the app works with the "Z" form of ISO 8601.
     inicio: new Date(row.kickoff_at).toISOString(),
+    horaConfirmada: row.kickoff_confirmed ?? true,
     meteorologia: extra?.meteorologia ?? null,
     pontoEncontro: extra?.pontoEncontro ?? null,
   };

@@ -114,6 +114,8 @@ export type Jogo = {
   estadioId: string;
   /** Data e hora de início em ISO 8601 (UTC). */
   inicio: string;
+  /** `false` while the kick-off time is provisional (only the day is known): show "hora por definir". */
+  horaConfirmada: boolean;
   /** `null` until there is a forecast for this fixture. */
   meteorologia: Meteorologia | null;
   /** Só nos jogos europeus; `null` quando ninguém indicou um ponto de encontro. */
