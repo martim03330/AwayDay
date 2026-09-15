@@ -10,6 +10,7 @@ import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
+import { obterEstadio } from '@/mocks/estadios';
 import type { Jogo } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
@@ -93,9 +94,17 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
   }
 
   const boleias = quadro.data ?? [];
+  const jaOfereco = boleias.some((boleia) => boleia.isMine && boleia.status === 'open');
+  const foraDePortugal = obterEstadio(jogo.estadioId)?.regiao === 'estrangeiro';
 
   return (
     <Card style={styles.card}>
+      {foraDePortugal ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Jogo fora de Portugal: a maioria vai de avião. Se ficar perto, podes oferecer ou procurar
+          boleia na mesma.
+        </ThemedText>
+      ) : null}
       {quadro.isLoading ? (
         <ThemedText themeColor="textSecondary">A procurar boleias…</ThemedText>
       ) : quadro.isError ? (
@@ -123,14 +132,20 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
           ))}
         </View>
       )}
-      <Button
-        label="Oferecer boleia"
-        icon={icons.carro}
-        variant="secondary"
-        onPress={() =>
-          router.push({ pathname: '/jogos/oferecer-boleia', params: { jogoId: jogo.id } })
-        }
-      />
+      {jaOfereco ? (
+        <ThemedText type="small" themeColor="textMuted">
+          Já ofereces boleia para este jogo. Para mudar alguma coisa, cancela-a e abre outra.
+        </ThemedText>
+      ) : (
+        <Button
+          label="Oferecer boleia"
+          icon={icons.carro}
+          variant="secondary"
+          onPress={() =>
+            router.push({ pathname: '/jogos/oferecer-boleia', params: { jogoId: jogo.id } })
+          }
+        />
+      )}
     </Card>
   );
 }

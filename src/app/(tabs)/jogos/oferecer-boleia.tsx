@@ -9,10 +9,12 @@ import {
   createRide,
   quoteRide,
   RideRefused,
+  searchPlace,
+  type PlaceResult,
   type RideQuote,
   type RouteOption,
 } from '@/features/rides/api';
-import { useRefreshRides } from '@/features/rides/hooks/useRides';
+import { useRefreshRides, useRideBoard } from '@/features/rides/hooks/useRides';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { formatarDistancia } from '@/lib/formatos';
@@ -26,6 +28,7 @@ import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
+import { LinkTexto } from '@/ui/link-texto';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
@@ -82,6 +85,8 @@ function mensagemRecusa(erro: unknown) {
       return 'A hora de saída tem de ser depois de agora e antes do apito.';
     case 'fixture_started':
       return 'Este jogo já começou.';
+    case 'already_offering':
+      return 'Já ofereces boleia para este jogo.';
     default:
       return 'Não deu para concluir. Tenta outra vez.';
   }
@@ -110,23 +115,51 @@ export default function OferecerBoleiaScreen() {
   const [cotacoes, setCotacoes] = useState<RideQuote[] | null>(null);
   const [escolhida, setEscolhida] = useState<RouteOption | null>(null);
   const [aCarregar, setACarregar] = useState(false);
+  const [aquiEstou, setAquiEstou] = useState<Coordenadas | null>(null);
+  const [localizacaoNegada, setLocalizacaoNegada] = useState(false);
+  const [mapaPronto, setMapaPronto] = useState(false);
+  const [pesquisa, setPesquisa] = useState('');
+  const [resultados, setResultados] = useState<PlaceResult[] | null>(null);
+  const [aProcurar, setAProcurar] = useState(false);
+  const quadro = useRideBoard(jogo?.id ?? null, userId !== null);
+  const minhaBoleia = quadro.data?.find((boleia) => boleia.isMine && boleia.status === 'open');
 
-  // Start the map where the driver is, when they allow it; otherwise around the stadium.
+  // The ride starts near the driver, not near the stadium: find where they are, when they allow it.
   useEffect(() => {
     let ativo = true;
     void getCurrentPosition().then((resultado) => {
-      if (!ativo || resultado.status !== 'ok') return;
+      if (!ativo) return;
+      if (resultado.status !== 'ok') {
+        setLocalizacaoNegada(true);
+        return;
+      }
       const aqui = {
         latitude: resultado.position.latitude,
         longitude: resultado.position.longitude,
       };
+      setAquiEstou(aqui);
       setPartida((atual) => atual ?? aqui);
-      mapa.current?.animateToRegion({ ...aqui, latitudeDelta: DELTA, longitudeDelta: DELTA }, 300);
     });
     return () => {
       ativo = false;
     };
   }, []);
+
+  // The map only moves once it is ready; before that, a move is silently lost.
+  const latitudePartida = partida?.latitude;
+  const longitudePartida = partida?.longitude;
+  useEffect(() => {
+    if (!mapaPronto || latitudePartida === undefined || longitudePartida === undefined) return;
+    mapa.current?.animateToRegion(
+      {
+        latitude: latitudePartida,
+        longitude: longitudePartida,
+        latitudeDelta: DELTA / 2,
+        longitudeDelta: DELTA / 2,
+      },
+      300
+    );
+  }, [mapaPronto, latitudePartida, longitudePartida]);
 
   if (!userId) {
     return (
@@ -136,6 +169,26 @@ export default function OferecerBoleiaScreen() {
           title="Precisas de conta"
           message="Quem pede lugar tem de saber com quem vai: entra para oferecer boleia."
           action={{ label: 'Entrar', onPress: () => router.push('/conta/entrar') }}
+        />
+      </Screen>
+    );
+  }
+
+  if (minhaBoleia && jogo) {
+    return (
+      <Screen>
+        <EmptyState
+          icon={icons.carro}
+          title="Já ofereces boleia"
+          message="Só dá para ter uma boleia aberta por jogo. Para mudar alguma coisa, cancela-a e abre outra."
+          action={{
+            label: 'Ver a minha boleia',
+            onPress: () =>
+              router.replace({
+                pathname: '/jogos/boleia',
+                params: { rideId: minhaBoleia.id, jogoId: jogo.id },
+              }),
+          }}
         />
       </Screen>
     );
@@ -166,6 +219,31 @@ export default function OferecerBoleiaScreen() {
     // Anything that changes the cost makes the quotes stale.
     setCotacoes(null);
     setEscolhida(null);
+  }
+
+  async function procurar() {
+    const texto = pesquisa.trim();
+    if (texto.length < 3) return;
+    setAProcurar(true);
+    try {
+      setResultados(await searchPlace(texto, aquiEstou ?? partida));
+    } catch (erro) {
+      Alert.alert(
+        'Sem resultados',
+        erro instanceof RideRefused && erro.reason === 'rate_limited'
+          ? 'Fizeste muitas pesquisas numa hora. Tenta daqui a pouco.'
+          : 'Verifica a ligação e tenta outra vez.'
+      );
+    } finally {
+      setAProcurar(false);
+    }
+  }
+
+  function escolherResultado(resultado: PlaceResult) {
+    setPartida({ latitude: resultado.latitude, longitude: resultado.longitude });
+    if (!nomePartida.trim()) setNomePartida(resultado.name);
+    setResultados(null);
+    mudou();
   }
 
   async function verPercursos() {
@@ -228,11 +306,15 @@ export default function OferecerBoleiaScreen() {
           <MapView
             ref={mapa}
             style={StyleSheet.absoluteFill}
+            // Portugal until the driver's location (or a search) arrives.
             initialRegion={{
-              ...estadio.coordenadas,
-              latitudeDelta: DELTA * 4,
-              longitudeDelta: DELTA * 4,
+              latitude: 39.6,
+              longitude: -8.0,
+              latitudeDelta: 6,
+              longitudeDelta: 6,
             }}
+            onMapReady={() => setMapaPronto(true)}
+            showsUserLocation={aquiEstou !== null}
             onPress={(evento) => {
               setPartida(evento.nativeEvent.coordinate);
               mudou();
@@ -255,9 +337,78 @@ export default function OferecerBoleiaScreen() {
             ) : null}
           </MapView>
         </View>
+        <View style={styles.pesquisa}>
+          <View style={styles.flex}>
+            <Campo
+              label="Procurar rua ou sítio"
+              value={pesquisa}
+              onChangeText={setPesquisa}
+              placeholder="Ex.: Estação de Coimbra-B"
+              returnKeyType="search"
+              onSubmitEditing={() => void procurar()}
+              maxLength={120}
+            />
+          </View>
+        </View>
+        <Button
+          label={aProcurar ? 'A procurar…' : 'Procurar'}
+          variant="secondary"
+          icon={icons.rota}
+          disabled={aProcurar || pesquisa.trim().length < 3}
+          onPress={() => void procurar()}
+        />
+        {resultados ? (
+          resultados.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Não encontrámos nada com esse nome. Experimenta a rua e a cidade.
+            </ThemedText>
+          ) : (
+            <View style={styles.resultados}>
+              {resultados.map((resultado) => (
+                <Pressable
+                  key={`${resultado.latitude},${resultado.longitude}`}
+                  onPress={() => escolherResultado(resultado)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${resultado.name}, ${resultado.detail}`}
+                  style={({ pressed }) => [
+                    styles.resultado,
+                    { borderColor: theme.border },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText style={styles.rotulo} numberOfLines={1}>
+                    {resultado.name}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                    {[
+                      resultado.detail,
+                      resultado.distanceM !== null
+                        ? `a ${formatarDistancia(resultado.distanceM)}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </ThemedText>
+                </Pressable>
+              ))}
+            </View>
+          )
+        ) : null}
+        {aquiEstou ? (
+          <LinkTexto
+            label="Usar a minha localização"
+            onPress={() => {
+              setPartida(aquiEstou);
+              mudou();
+            }}
+          />
+        ) : localizacaoNegada ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Sem acesso à localização: procura a rua ou toca no mapa.
+          </ThemedText>
+        ) : null}
         <ThemedText type="small" themeColor="textMuted">
-          Toca no mapa ou arrasta o pino. Escolhe um sítio público (uma estação, uma bomba de
-          gasolina), nunca a tua casa.
+          Toca no mapa ou arrasta o pino para acertar. Escolhe um sítio público (uma estação, uma
+          bomba de gasolina), nunca a tua casa.
         </ThemedText>
         <Campo
           label="Nome do ponto de encontro"
@@ -468,6 +619,24 @@ const styles = StyleSheet.create({
   },
   centro: {
     textAlign: 'center',
+  },
+  pesquisa: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  resultados: {
+    gap: Spacing.one,
+  },
+  resultado: {
+    gap: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+  },
+  pressed: {
+    opacity: 0.7,
   },
   opcao: {
     gap: 4,

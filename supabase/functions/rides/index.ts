@@ -1,7 +1,9 @@
 // Rides to a game (slice 3), for signed-in fans:
 // - action "quote": the car routes from a meeting point to the stadium (fastest, balanced, without tolls) with what
 //   each costs in fuel and tolls and the price per person as seats fill up;
-// - action "create": opens a ride on one of those routes. The cost is computed here again, never taken from the app.
+// - action "create": opens a ride on one of those routes. The cost is computed here again, never taken from the app;
+// - action "search": streets and places for the meeting point (OpenStreetMap Nominatim), when the driver searches.
+// A driver has at most one open ride per game.
 // Routes come from the public Valhalla router of the FOSSGIS / OpenStreetMap community (no key, fair use), so the
 // app never calls it. The meeting point is a public place the driver picks; it is not logged.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
@@ -15,9 +17,12 @@ import {
 } from '../_shared/ride-cost.ts';
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
+const GEOCODER = 'https://nominatim.openstreetmap.org/search';
 const USER_AGENT = 'AwayDay/1.0 (match-day app for football fans)';
 const QUOTE_LIMIT = { bucket: 'ride-quote', limit: 30, window: '1 hour' } as const;
 const CREATE_LIMIT = { bucket: 'ride-create', limit: 10, window: '1 day' } as const;
+/** Searches only when the driver presses "Procurar" (Nominatim does not allow search-as-you-type). */
+const SEARCH_LIMIT = { bucket: 'ride-place-search', limit: 30, window: '1 hour' } as const;
 /** A car trip to a game, not a road trip across the continent. */
 const MAX_STRAIGHT_LINE_M = 2_500_000;
 const MAX_PEOPLE = 8;
@@ -133,6 +138,49 @@ async function route(from: Point, to: Point, useTolls: number): Promise<Route | 
   }
 }
 
+/** Streets and places matching the driver's words, closest to `near` first. Names are shortened to their first parts. */
+async function searchPlaces(query: string, near: Point | null) {
+  const params = new URLSearchParams({
+    q: query,
+    format: 'jsonv2',
+    limit: '6',
+    'accept-language': 'pt-PT',
+  });
+  if (near) {
+    const delta = 0.5;
+    params.set(
+      'viewbox',
+      `${near.longitude - delta},${near.latitude + delta},${near.longitude + delta},${near.latitude - delta}`
+    );
+  }
+  try {
+    const response = await fetch(`${GEOCODER}?${params}`, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return [];
+    const results: unknown = await response.json();
+    return (Array.isArray(results) ? results : []).flatMap((item) => {
+      const result = asRecord(item);
+      const point = toPoint({ latitude: Number(result?.lat), longitude: Number(result?.lon) });
+      const label = typeof result?.display_name === 'string' ? result.display_name : '';
+      if (!point || !label) return [];
+      const parts = label.split(',').map((part) => part.trim());
+      return [
+        {
+          name: parts.slice(0, 2).join(', ').slice(0, 80),
+          detail: parts.slice(2, 4).join(', '),
+          latitude: point.latitude,
+          longitude: point.longitude,
+          distance_m: near ? Math.round(straightLineM(near, point)) : null,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
 async function tollRates(admin: SupabaseClient): Promise<TollRate[] | null> {
   const { data, error } = await admin
     .from('toll_rate')
@@ -175,6 +223,16 @@ Deno.serve(async (request) => {
 
   const body = asRecord(await request.json().catch(() => null));
   const action = body?.action;
+
+  if (action === 'search') {
+    const query = typeof body?.query === 'string' ? body.query.trim() : '';
+    const near = toPoint(body?.near);
+    if (query.length < 3 || query.length > 120) return json(400, { error: 'bad_request' });
+    const limited = await takeLimit(admin, caller.user.id, SEARCH_LIMIT);
+    if (limited === 'failed') return json(500, { error: 'rate_limit_failed' });
+    if (limited === 'limited') return json(429, { error: 'rate_limited' });
+    return json(200, { results: await searchPlaces(query, near) });
+  }
   const fixtureId = typeof body?.fixtureId === 'string' ? body.fixtureId : null;
   const origin = toPoint(body?.origin);
   const consumption = wholeBetween(body?.consumptionClPer100Km, 200, 2500);
@@ -202,6 +260,19 @@ Deno.serve(async (request) => {
   const kickoff = Date.parse(String(fixture.data.kickoff_at));
   if (!(kickoff > Date.now())) return json(422, { error: 'fixture_started' });
   if (straightLineM(origin, stadium) > MAX_STRAIGHT_LINE_M) return json(422, { error: 'too_far' });
+
+  // One open ride per driver per game (also enforced by a unique index).
+  const existing = await admin
+    .from('ride')
+    .select('id')
+    .eq('fixture_id', fixtureId)
+    .eq('driver_id', caller.user.id)
+    .eq('status', 'open')
+    .limit(1);
+  if (existing.error) return json(500, { error: 'lookup_failed' });
+  if (existing.data.length > 0) {
+    return json(409, { error: 'already_offering', id: existing.data[0].id });
+  }
 
   const rates = await tollRates(admin);
   if (!rates) return json(500, { error: 'toll_rates_failed' });
@@ -314,6 +385,7 @@ Deno.serve(async (request) => {
     })
     .select('id')
     .single();
+  if (inserted.error?.code === '23505') return json(409, { error: 'already_offering' });
   if (inserted.error) return json(500, { error: 'create_failed' });
   return json(200, { id: inserted.data.id });
 });
