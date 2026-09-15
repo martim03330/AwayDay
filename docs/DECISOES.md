@@ -2,6 +2,42 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Estacionamento em dia de jogo
+
+**O quê.** A ficha do jogo tem a secção «Estacionamento» com:
+- os avisos de dia de jogo (estradas cortadas, parques fechados, reboques, conselho para ir de metro);
+- um resumo por estádio;
+- os parques, cada um com o tipo, se abre em dias de jogo, preço quando publicado, notas, morada e
+  fontes.
+
+Quando há localização, tem «Como chegar de carro».
+
+**Lugares livres em tempo real: não há, de graça** (pesquisa de 2026-09-16).
+- **Lisboa:** a EMEL não publica ocupação.
+- **Porto:** os dados abertos listam os parques mas não os lugares livres.
+- **Guimarães:** é a exceção, com o Parque Central Estádio a cada 5 minutos, mas os ficheiros
+  pararam em agosto e a licença não permite uso comercial.
+- **Operadores e outros:** os operadores (Saba, Telpark, Placegar) não têm API pública e o Google
+  não dá ocupação.
+- **Pago:** a única fonte com dados em tempo real é a Parkopedia, sem preço publicado.
+
+Por isso esta versão mostra o que se sabe com fontes. Mais tarde pode vir um sinal dos próprios
+adeptos («está cheio»), com o mínimo de 5 pessoas.
+
+**Pesquisa e importação** (`parking_spot`, `venue_parking`, `npm run db:estacionamento`). Cobre os
+18 estádios com jogos da Liga: sites dos clubes, câmaras, PSP, operadores e jornais. Só entram parques
+com confiança alta ou média. Muitos guias do adepto da Liga parecem escritos com IA (um diz «Os
+conteúdos gerados por IA podem estar incorretos») e nunca foram a única base de um parque. Um parque
+só tem pino no mapa quando o Nominatim encontra o próprio parque ou o edifício; quando só encontra a
+rua, fica sem pino e com a morada. Na primeira importação ficaram:
+- 32 parques, 3 deles com pino;
+- 25 avisos;
+- informação em 17 estádios (nada verificável no do Moreirense);
+- 14 parques de fora por confiança baixa.
+
+**Por confirmar à mão.** Um edital de Famalicão (153/2025) fecharia o parque junto ao estádio de 24 h
+antes a 3 h depois de cada jogo, mas a página já não abre e não foi usado.
+
 ## 2026-09-16 — Boleias: uma por jogo e pesquisa de ruas; fotos do Mapillary postas de parte
 
 **Uma boleia aberta por pessoa por jogo.** Duas ofertas da mesma pessoa não fazem sentido e dividiam
