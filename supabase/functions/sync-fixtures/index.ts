@@ -37,6 +37,7 @@ const CONFIRMED_STATUSES = new Set([
 
 type Club = {
   id: string;
+  country: string;
   home_venue_id: string | null;
   european_venue_id: string | null;
   football_data_id: number;
@@ -111,7 +112,7 @@ Deno.serve(async (request) => {
 
   const clubsResult = await admin
     .from('club')
-    .select('id, home_venue_id, european_venue_id, football_data_id')
+    .select('id, country, home_venue_id, european_venue_id, football_data_id')
     .not('football_data_id', 'is', null);
   if (clubsResult.error) return json(500, { error: 'clubs_failed' });
   const clubsByTeam = new Map<number, Club>();
@@ -166,6 +167,8 @@ Deno.serve(async (request) => {
       const awayTeam = asRecord(match.awayTeam);
       const home = typeof homeTeam?.id === 'number' ? clubsByTeam.get(homeTeam.id) : undefined;
       const away = typeof awayTeam?.id === 'number' ? clubsByTeam.get(awayTeam.id) : undefined;
+      // Only games of Portuguese clubs: two known foreign opponents playing each other are left out.
+      if (home?.country !== 'Portugal' && away?.country !== 'Portugal') continue;
       const venueId =
         competition.competitionId === 'liga'
           ? home?.home_venue_id
@@ -177,7 +180,7 @@ Deno.serve(async (request) => {
         typeof match.utcDate !== 'string' ||
         typeof match.id !== 'number'
       ) {
-        // Only worth reporting when one of the clubs is ours (an opponent still missing).
+        // One of the clubs is Portuguese here: the other is an opponent still missing.
         if (!home && away && typeof homeTeam?.name === 'string')
           unmatched.add(`${homeTeam.id}:${homeTeam.name}`);
         if (!away && home && typeof awayTeam?.name === 'string')

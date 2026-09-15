@@ -87,7 +87,7 @@ export default function PerfilScreen() {
   const rankingDaConta = useVerifiedPlacesRanking(fonte === 'conta' ? userId : null);
 
   const clube = obterClube(clubeFavoritoId);
-  const estadioDoClube = clube ? obterEstadio(clube.estadioId) : undefined;
+  const estadioDoClube = clube?.estadioId ? obterEstadio(clube.estadioId) : undefined;
   const clubeDaTerra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
   const tascosVerificados = contarTascosVerificados(visitasLocais);
   const eu = { id: ID_UTILIZADOR, nome: 'Tu', clubeId: clubeFavoritoId, tascosVerificados };

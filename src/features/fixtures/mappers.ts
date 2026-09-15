@@ -93,7 +93,10 @@ function toClub(
   extras: CatalogExtras['clubs']
 ): Clube | null {
   const division = toDivision(row.tier);
-  if (division === undefined || !row.home_venue_id || !venueIds.has(row.home_venue_id)) return null;
+  if (division === undefined) return null;
+  // Portuguese clubs need their stadium. Foreign clubs that only visit Portugal may have none.
+  const hasVenue = row.home_venue_id !== null && venueIds.has(row.home_venue_id);
+  if (!hasVenue && (row.country === 'Portugal' || row.home_venue_id !== null)) return null;
   return {
     id: row.id,
     nome: row.name,
@@ -103,7 +106,7 @@ function toClub(
     cores: { primaria: row.primary_color, secundaria: row.secondary_color },
     divisao: division,
     adeptosNaApp: extras[row.id]?.adeptosNaApp ?? 0,
-    estadioId: row.home_venue_id,
+    estadioId: hasVenue ? row.home_venue_id : null,
   };
 }
 

@@ -2,6 +2,53 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Primeira versão: Liga Portugal e jogos europeus, sem custos
+
+**Âmbito.** A primeira versão tem só os jogos da Liga Portugal e os jogos europeus dos clubes
+portugueses, para não pagar APIs. Na escolha do clube (o que apoias e o clube da terra) só aparecem os
+clubes da Liga Portugal (`DIVISOES_NA_ESCOLHA` em `src/mocks/clubes.ts`). Os clubes da Liga 2 e da
+Liga 3 continuam na base de dados, e os tascos dos estádios deles continuam visíveis.
+
+**De onde vêm os jogos.**
+- **Liga Portugal e Liga dos Campeões:** sincronização automática com a football-data.org (plano
+  grátis). Só entram jogos entre clubes com `club.football_data_id`, ou seja, os do Porto e do
+  Sporting e os adversários que acrescentámos.
+  - Os ids dos jogos europeus levam a competição e, nas eliminatórias, a ronda. Assim não colidem com
+    os jogos da Liga entre os mesmos clubes.
+  - Na Europa usa-se `club.european_venue_id` quando existe.
+- **Liga Europa e Liga Conferência:** não vêm na API grátis, por isso estão à mão em
+  `supabase/seed/08_europa_2026_27.sql`, com o estádio de cada jogo. São os jogos do Benfica e do
+  Torreense na Liga Europa e do Braga na Liga Conferência.
+  - Fontes: uefa.com, Record, RTP e sites dos clubes, consultados a 2026-09-15.
+  - Para atualizar (eliminatórias, mudanças de hora), edita o ficheiro e aplica-o com
+    `supabase db query --linked -f`. É um upsert.
+- **Liga 2, Liga 3 e taças:** a API-Football tem-nas, mas só num plano pago.
+
+**Estádios e clubes estrangeiros.**
+- Há 18 estádios novos, com coordenadas e capacidade da Wikidata, só onde joga um clube português.
+  Casos especiais desta época:
+  - Betis em La Cartuja, enquanto o Villamarín está em obras.
+  - Shakhtar em Stamford Bridge (aprovação da UEFA por confirmar).
+  - Torreense em casa em Leiria.
+- Os clubes que só vêm jogar a Portugal não têm estádio (`home_venue_id` nulo). A app aceita-os
+  (`Clube.estadioId` pode ser `null`), para não inventar estádios nem coordenadas.
+- As cores dos clubes estrangeiros são aproximadas (cores do equipamento). As do Ararat-Armenia são
+  neutras.
+
+**Hora por definir.** Os jogos com hora provisória (`fixture.kickoff_confirmed = false`) mostram
+«--:--» e «Por definir» no cartão, e «hora por definir» na ficha do jogo.
+
+**Tascos no estrangeiro.** O `npm run db:tascos` passou a ler os estádios da base de dados. Sem ids
+importa os portugueses; com ids importa exatamente esses, incluindo os estrangeiros. Os locais
+entram como sugestões «Por confirmar» e os adeptos votam, como em Portugal.
+
+### Limitações conhecidas
+
+- Os jogos da Liga Europa e da Liga Conferência não se atualizam sozinhos. Mudanças de hora e
+  eliminatórias têm de ser acrescentadas à mão.
+- Nos jogos Plzeň–Benfica e Ferencváros–Torreense assumiu-se o estádio habitual do clube da casa.
+- O treinador e as dicas usam a hora do jogo mesmo quando é provisória.
+
 ## 2026-09-15 — Sair do modo demo, fatia 3: presença real no dia de jogo
 
 **Check-in com localização.** A app lê a posição uma vez e envia-a à Edge Function `check-in`, que

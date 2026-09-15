@@ -17,7 +17,8 @@ export type Clube = {
   divisao: Divisao | null;
   /** Número de adeptos deste clube na app (valor mock). */
   adeptosNaApp: number;
-  estadioId: string;
+  /** `null` for foreign clubs that only visit Portugal (we do not keep their stadium). */
+  estadioId: string | null;
 };
 
 export type Coordenadas = { latitude: number; longitude: number };
