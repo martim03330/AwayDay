@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Colors, Spacing } from '@/constants/theme';
 import { obterClube } from '@/mocks/clubes';
@@ -7,16 +7,39 @@ import type { Venue } from '@/mocks/tipos';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-/** Fotografia do estádio ou, sem `photoUrl`, uma capa gerada com as cores do clube da casa. */
+/**
+ * Fotografia do estádio (Wikimedia Commons, com o crédito que a licença pede) ou, sem `photoUrl`, uma capa gerada com
+ * as cores do clube da casa.
+ */
 export function FotoEstadio({ venue }: { venue: Venue }) {
   if (venue.photoUrl) {
+    const credito = venue.fotoCredito;
+    const textoCredito = credito
+      ? `Foto: ${[credito.autor, credito.licenca].filter(Boolean).join(' · ')}`
+      : null;
+
     return (
-      <Image
-        source={{ uri: venue.photoUrl }}
-        contentFit="cover"
-        accessibilityLabel={`Fotografia do ${venue.nome}`}
-        style={styles.foto}
-      />
+      <View style={styles.foto}>
+        <Image
+          source={{ uri: venue.photoUrl }}
+          contentFit="cover"
+          transition={200}
+          accessibilityLabel={`Fotografia do ${venue.nome}`}
+          style={StyleSheet.absoluteFill}
+        />
+        {credito && textoCredito ? (
+          <Pressable
+            onPress={() => Linking.openURL(credito.url)}
+            accessibilityRole="link"
+            accessibilityLabel={`${textoCredito}. Abrir a origem da fotografia`}
+            hitSlop={8}
+            style={styles.credito}>
+            <ThemedText style={styles.creditoTexto} numberOfLines={1}>
+              {textoCredito}
+            </ThemedText>
+          </Pressable>
+        ) : null}
+      </View>
     );
   }
 
@@ -25,7 +48,7 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
   return (
     <View
       accessible
-      accessibilityLabel={`Ilustração do ${venue.nome}. Fotografia indisponível na demo.`}
+      accessibilityLabel={`Ilustração do ${venue.nome}. Ainda sem fotografia.`}
       style={[
         styles.foto,
         {
@@ -39,7 +62,7 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
         <Icon name={icons.estadio} size={110} color="rgba(255,255,255,0.28)" strokeWidth={1.2} />
       </View>
       <ThemedText style={styles.legenda} numberOfLines={1}>
-        {`${venue.cidade} · fotografia indisponível na demo`}
+        {`${venue.cidade} · ainda sem fotografia`}
       </ThemedText>
     </View>
   );
@@ -65,5 +88,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontWeight: 600,
+  },
+  credito: {
+    position: 'absolute',
+    right: Spacing.two,
+    bottom: Spacing.two,
+    maxWidth: '80%',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  creditoTexto: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 10,
+    lineHeight: 14,
   },
 });

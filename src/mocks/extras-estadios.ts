@@ -7,6 +7,7 @@ import type { Venue } from '@/mocks/tipos';
 export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' | 'hasShelter' | 'transportes'>> = {
   'luz': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -17,6 +18,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'dragao': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -27,6 +29,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'alvalade': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -37,6 +40,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'municipal-braga': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -47,6 +51,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'afonso-henriques': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -57,6 +62,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   '22-de-junho': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -67,6 +73,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'cidade-de-barcelos': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: true,
     transportes: [
@@ -77,6 +84,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'comendador-almeida-freitas': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -87,6 +95,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'arcos': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -97,6 +106,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'coimbra-da-mota': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -107,6 +117,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'rio-maior': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -117,6 +128,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'municipal-arouca': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -127,6 +139,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'sao-miguel': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: true,
     transportes: [
@@ -137,6 +150,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'madeira': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -147,6 +161,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'cd-aves': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -157,6 +172,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'jose-gomes': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -167,6 +183,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'complexo-alverca': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: true,
     transportes: [
@@ -177,6 +194,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'joao-cardoso': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -187,6 +205,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'estadio-maritimo': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -197,6 +216,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'municipal-chaves': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -207,6 +227,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'estadio-do-mar': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -217,6 +238,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'fontelo': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -227,6 +249,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'magalhaes-pessoa': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -237,6 +260,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'marcolino-de-castro': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: true,
     transportes: [
@@ -247,6 +271,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'restelo': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -257,6 +282,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'cidade-de-coimbra': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -267,6 +293,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'estadio-varzim': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -277,6 +304,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'santos-pinto': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: false,
     hasShelter: false,
     transportes: [
@@ -287,6 +315,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'medideira': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -297,6 +326,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'campo-da-mata': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -307,6 +337,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'olimpico-roma': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: false,
     transportes: [
@@ -317,6 +348,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'allianz-stadium': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -327,6 +359,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'red-bull-arena': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [
@@ -337,6 +370,7 @@ export const extrasEstadios: Record<string, Pick<Venue, 'photoUrl' | 'hasShade' 
   },
   'emirates': {
     photoUrl: null,
+    fotoCredito: null,
     hasShade: true,
     hasShelter: true,
     transportes: [

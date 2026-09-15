@@ -44,6 +44,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'bilhete',
     horario: { tipo: 'dias-de-jogo', abreHorasAntes: 2 },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Fila no intervalo garantida. Vai aos 40 minutos, que o árbitro dá sempre descontos.',
   },
   {
@@ -58,6 +60,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'livre',
     horario: { tipo: 'intervalo', abre: '08:00', fecha: '22:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Custa 50 cêntimos e vale cada um deles.',
   },
   {
@@ -72,6 +76,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: false,
     acesso: 'clientes',
     horario: { tipo: 'intervalo', abre: '12:00', fecha: '00:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Pede qualquer coisa primeiro. Uma imperial conta.',
   },
   // Estádio do Dragão
@@ -87,6 +93,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'bilhete',
     horario: { tipo: 'dias-de-jogo', abreHorasAntes: 2 },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Sobe um piso e poupas 10 minutos de fila.',
   },
   {
@@ -101,6 +109,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'livre',
     horario: { tipo: 'intervalo', abre: '06:00', fecha: '01:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Grátis, que é o melhor preço que há.',
   },
   {
@@ -115,6 +125,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'clientes',
     horario: { tipo: 'intervalo', abre: '12:00', fecha: '01:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Limpo e com sabonete. Luxo.',
   },
   // Estádio José Alvalade
@@ -130,6 +142,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'bilhete',
     horario: { tipo: 'dias-de-jogo', abreHorasAntes: 2 },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Os da bancada central têm menos fila. Não digas a ninguém.',
   },
   {
@@ -144,6 +158,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: false,
     acesso: 'livre',
     horario: { tipo: 'intervalo', abre: '07:00', fecha: '21:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Fecha às 21h. Planeia a bexiga em conformidade.',
   },
   // Estádio Municipal de Braga
@@ -159,6 +175,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'bilhete',
     horario: { tipo: 'dias-de-jogo', abreHorasAntes: 2 },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'A pedreira é bonita. A fila nem por isso.',
   },
   {
@@ -173,6 +191,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: false,
     acesso: 'clientes',
     horario: { tipo: 'intervalo', abre: '11:00', fecha: '23:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'A porta é rija: empurra com convicção.',
   },
   // Estádio D. Afonso Henriques
@@ -188,6 +208,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'bilhete',
     horario: { tipo: 'dias-de-jogo', abreHorasAntes: 2 },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Sai cedo ao intervalo. O Berço é grande e a fila também.',
   },
   {
@@ -202,6 +224,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'livre',
     horario: { tipo: 'intervalo', abre: '08:00', fecha: '20:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Grátis e no centro. Fecha às 20h, o jogo não.',
   },
   // Estádio do Restelo
@@ -217,6 +241,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: false,
     acesso: 'bilhete',
     horario: { tipo: 'dias-de-jogo', abreHorasAntes: 2 },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Bancada clássica, casa de banho a condizer.',
   },
   {
@@ -231,6 +257,8 @@ export const casasDeBanho: Restroom[] = [
     acessivel: true,
     acesso: 'livre',
     horario: { tipo: 'intervalo', abre: '09:00', fecha: '20:00' },
+    horarioTexto: null,
+    fonte: 'demo',
     nota: 'Com vista para o rio, se deixares a porta aberta. Não deixes.',
   },
 ];

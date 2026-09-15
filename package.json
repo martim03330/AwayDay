@@ -56,7 +56,9 @@
     "lint": "expo lint",
     "db:seed": "node --experimental-strip-types scripts/generate-fixtures-seed.mjs",
     "test": "vitest run",
-    "db:tascos": "node --env-file=.env.local scripts/importar-tascos-osm.mjs"
+    "db:tascos": "node --env-file=.env.local scripts/importar-tascos-osm.mjs",
+    "db:wc": "node --env-file=.env.local scripts/importar-wc-osm.mjs",
+    "db:fotos": "node --env-file=.env.local scripts/fotos-estadios.mjs"
   },
   "private": true
 }

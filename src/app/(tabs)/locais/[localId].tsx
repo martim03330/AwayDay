@@ -146,7 +146,6 @@ export default function LocalScreen() {
     darNotaCervejaPetisco,
     notasTascos,
     darNotaTasco,
-    modoDemo,
     fonte,
     clubesAqui: clubesDoLocal,
     checkInEmCurso,
@@ -346,17 +345,11 @@ export default function LocalScreen() {
         recomendados={pratosRecomendados}
         jaContados={recomendacoesJaContadas}
         lembrete={lembrete}
-        pais={estadio.pais}
-        tipo={local.tipo}
       />
 
       {/* Restroom data is illustrative: only in demo mode until there are real restrooms. */}
-      {modoDemo ? (
-        <>
-          <SectionHeader title="WC mais próximo" />
-          <WcMaisProximo origem={local.coordenadas} />
-        </>
-      ) : null}
+      <SectionHeader title="WC mais próximo" />
+      <WcMaisProximo origem={local.coordenadas} estadioId={local.estadioId} />
 
       <SectionHeader title="A tua nota" />
       <Card>

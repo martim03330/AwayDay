@@ -57,6 +57,8 @@ export type Venue = {
   coordenadas: Coordenadas;
   /** Fotografia do estádio; `null` enquanto não houver fotos (a demo não usa rede). */
   photoUrl: string | null;
+  /** Credits the photo's licence requires; `null` without a photo. */
+  fotoCredito: { autor: string | null; licenca: string; url: string } | null;
   /** `null` when unknown. */
   roofCoverage: RoofCoverage | null;
   /** Há bancadas à sombra em jogos de dia. */
@@ -153,7 +155,7 @@ export type Prato = {
 
 export type TipoRestroom = 'publica' | 'tasco' | 'estadio';
 
-export type AcessoRestroom = 'livre' | 'clientes' | 'bilhete';
+export type AcessoRestroom = 'livre' | 'clientes' | 'bilhete' | 'desconhecido';
 
 export type HorarioRestroom =
   | { tipo: 'sempre' }
@@ -170,14 +172,21 @@ export type Restroom = {
   /** Tasco a que pertence, quando `tipo` é 'tasco'. */
   localId: string | null;
   coordenadas: Coordenadas;
-  gratuita: boolean;
-  /** 0 quando é gratuita. */
+  /** `null` when unknown (OpenStreetMap often does not say). */
+  gratuita: boolean | null;
+  /** 0 quando é gratuita ou o preço não se sabe. */
   precoEuros: number;
-  acessivel: boolean;
+  /** `null` when unknown. */
+  acessivel: boolean | null;
   acesso: AcessoRestroom;
-  horario: HorarioRestroom;
-  /** Nota curta com humor; a informação prática vem sempre antes. */
+  /** Structured hours (demo); `null` for real data, which only has `horarioTexto`. */
+  horario: HorarioRestroom | null;
+  /** Opening hours as OpenStreetMap writes them, in Portuguese; `null` when unknown. */
+  horarioTexto: string | null;
+  /** Nota curta com humor; a informação prática vem sempre antes. Vazia nos dados reais. */
   nota: string;
+  /** 'osm': real toilets from OpenStreetMap; 'demo': sample data. */
+  fonte: 'osm' | 'demo';
 };
 
 export type ProgressoMissao =

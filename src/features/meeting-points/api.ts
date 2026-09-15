@@ -1,10 +1,9 @@
-import { FunctionsHttpError } from '@supabase/supabase-js';
-
 import {
   DraftRefused,
   type DraftFields,
   type MeetingPointDraft,
 } from '@/features/meeting-points/types';
+import { corpoDoErroDaFuncao } from '@/lib/erros-funcoes';
 import { supabase } from '@/lib/supabase';
 
 // Meeting point drafts: only admins can read them (RLS) and decide on them (meeting-point-drafts function).
@@ -38,20 +37,10 @@ export async function fetchPendingDrafts(): Promise<MeetingPointDraft[]> {
 }
 
 async function draftError(error: unknown): Promise<Error> {
-  if (error instanceof FunctionsHttpError) {
-    const response: unknown = error.context;
-    let code: unknown = null;
-    if (response instanceof Response) {
-      try {
-        code = asRecord(await response.json())?.error;
-      } catch {
-        code = null;
-      }
-    }
-    if (code === 'invalid_fields') return new DraftRefused('invalid-fields');
-    if (code === 'already_decided') return new DraftRefused('already-decided');
-    if (code === 'not_admin') return new DraftRefused('not-admin');
-  }
+  const code = (await corpoDoErroDaFuncao(error))?.error;
+  if (code === 'invalid_fields') return new DraftRefused('invalid-fields');
+  if (code === 'already_decided') return new DraftRefused('already-decided');
+  if (code === 'not_admin') return new DraftRefused('not-admin');
   return error instanceof Error ? error : new Error('Draft decision failed.');
 }
 

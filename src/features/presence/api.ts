@@ -1,5 +1,3 @@
-import { FunctionsHttpError } from '@supabase/supabase-js';
-
 import {
   CheckInRefused,
   type CheckInRecord,
@@ -8,6 +6,7 @@ import {
   type PlacePulse,
   type RankingRow,
 } from '@/features/presence/types';
+import { corpoDoErroDaFuncao } from '@/lib/erros-funcoes';
 import { supabase } from '@/lib/supabase';
 
 // Presence on match day. The app never reads check-ins: it sends its own through the `check-in` Edge Function
@@ -53,27 +52,14 @@ export async function fetchPlacePulse(): Promise<PlacePulse[]> {
 
 /** Turns the function's error answer into CheckInRefused when it is a known refusal. */
 async function checkInError(error: unknown): Promise<Error> {
-  if (error instanceof FunctionsHttpError) {
-    const response: unknown = error.context;
-    let body: Readonly<Record<string, unknown>> | null = null;
-    if (response instanceof Response) {
-      try {
-        body = asRecord(await response.json());
-      } catch {
-        body = null;
-      }
-    }
-    const code = body?.error;
-    if (code === 'too_far') {
-      return new CheckInRefused(
-        'too-far',
-        typeof body?.distance_m === 'number' ? body.distance_m : null
-      );
-    }
-    if (code === 'low_accuracy') return new CheckInRefused('low-accuracy');
-    if (code === 'place_not_found') return new CheckInRefused('place-not-found');
-    if (code === 'rate_limited') return new CheckInRefused('rate-limited');
+  const body = await corpoDoErroDaFuncao(error);
+  const code = body?.error;
+  if (code === 'too_far') {
+    return new CheckInRefused('too-far', typeof body?.distance_m === 'number' ? body.distance_m : null);
   }
+  if (code === 'low_accuracy') return new CheckInRefused('low-accuracy');
+  if (code === 'place_not_found') return new CheckInRefused('place-not-found');
+  if (code === 'rate_limited') return new CheckInRefused('rate-limited');
   return error instanceof Error ? error : new Error('Check-in failed.');
 }
 

@@ -128,7 +128,11 @@ function toVenue(
     regiao: region,
     coordenadas: { latitude: row.latitude, longitude: row.longitude },
     // Stadiums without these details still show up; the screens hide what is unknown.
-    photoUrl: extra?.photoUrl ?? null,
+    photoUrl: row.photo_url ?? extra?.photoUrl ?? null,
+    fotoCredito:
+      row.photo_url && row.photo_license && row.photo_source_url
+        ? { autor: row.photo_author ?? null, licenca: row.photo_license, url: row.photo_source_url }
+        : null,
     roofCoverage,
     hasShade: extra?.hasShade ?? null,
     hasShelter: extra?.hasShelter ?? null,

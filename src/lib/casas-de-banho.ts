@@ -20,6 +20,7 @@ export const nomesAcesso: Record<AcessoRestroom, string> = {
   livre: 'Acesso livre',
   clientes: 'Só para clientes',
   bilhete: 'Só com bilhete',
+  desconhecido: 'Acesso por confirmar',
 };
 
 export function distanciaAPe(origem: Coordenadas, destino: Coordenadas) {
@@ -32,7 +33,8 @@ function horaEmMinutos(hora: string) {
   return horas * 60 + minutos;
 }
 
-export type EstadoAbertura = { aberta: boolean; texto: string };
+/** `aberta: null` when nobody knows (real data without hours). */
+export type EstadoAbertura = { aberta: boolean | null; texto: string };
 
 /** Se a casa de banho está aberta agora (hora de Lisboa) e o texto a mostrar. */
 export function estadoDeAbertura(
@@ -41,6 +43,10 @@ export function estadoDeAbertura(
   jogos: readonly Jogo[]
 ): EstadoAbertura {
   const { horario } = wc;
+
+  if (!horario) {
+    return { aberta: null, texto: wc.horarioTexto ? `Horário: ${wc.horarioTexto}` : 'Horário desconhecido' };
+  }
 
   if (horario.tipo === 'sempre') return { aberta: true, texto: 'Aberta 24 h' };
 

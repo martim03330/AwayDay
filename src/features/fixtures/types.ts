@@ -16,7 +16,9 @@ export type VenueRow = Pick<
   | 'longitude'
   | 'roof_coverage'
   | 'address'
->;
+> &
+  // Optional so the bundled catalogue need not carry them.
+  Partial<Pick<Tables<'venue'>, 'photo_url' | 'photo_author' | 'photo_license' | 'photo_source_url'>>;
 
 export type ClubRow = Pick<
   Tables<'club'>,

@@ -11,7 +11,7 @@ export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
     supabase.from('competition').select('id, name, kind, tier'),
     supabase
       .from('venue')
-      .select('id, name, city, country, region, capacity, latitude, longitude, roof_coverage, address'),
+      .select('id, name, city, country, region, capacity, latitude, longitude, roof_coverage, address, photo_url, photo_author, photo_license, photo_source_url'),
     supabase
       .from('club')
       .select(

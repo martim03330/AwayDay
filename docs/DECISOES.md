@@ -2,13 +2,48 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Pratos honestos, WC reais e fotografias dos estádios
+
+**Pratos: não inventamos.** Tirámos a sugestão «Costuma haver» (bifana, tosta mista…) por tipo de
+casa. Não correspondia à realidade: a H3 num centro comercial não tem nenhum desses pratos. Um tasco
+sem menu conhecido mostra agora «Ainda não sabemos o que há aqui» e pede aos adeptos que sugiram um
+prato com o preço. Só aparecem pratos de menus publicados (com fonte e data) ou sugeridos por
+adeptos.
+
+**Erros das Edge Functions.** O `supabase-js` lança um erro quando a resposta não é 2xx. No React
+Native, o `instanceof FunctionsHttpError` / `Response` nem sempre funciona, e por isso um «demasiado
+longe» aparecia como «verifica a ligação». `src/lib/erros-funcoes.ts` lê o corpo do erro sem
+`instanceof` e é usado nas funções de caminho a pé, check-in e pontos de encontro.
+
+**Escolher o tasco num mapa.** Em «O meu jogo», o tasco escolhe-se num mapa como o do estádio
+(`MapaEscolherTasco`), com o cartão a deslizar entre tascos. No mapa do jogo, o cartão do tasco
+selecionado também desliza para o seguinte e o mapa acompanha.
+
+**WC reais** (`restroom`, `npm run db:wc`). Importámos do OpenStreetMap as casas de banho públicas
+(`amenity=toilets`) a menos de 1,2 km de cada estádio, sem as privadas. Cada WC fica associado ao
+estádio mais próximo. O que o OSM não diz (preço, acesso adaptado, horário) aparece como
+«por confirmar» e nunca é adivinhado. Os WC dentro dos estádios quase nunca estão no OSM, e há
+estádios sem nenhum WC registado: nesses casos a app diz isso e lembra que os cafés costumam deixar
+usar a quem consome. O modo demo continua com os WC de exemplo.
+
+Na primeira importação (2026-09-16) ficaram 412 WC em 60 dos 80 estádios. O preço é conhecido em
+227, o acesso adaptado em 187 e o horário só em 36. Os outros 20 estádios, entre eles Anfield e
+De Kuip, não têm nenhum WC no OSM (confirmado diretamente no Overpass) e mostram o estado vazio.
+
+**Fotografias dos estádios** (`npm run db:fotos`). A imagem principal (P18) do item da Wikidata que
+é mesmo um estádio, e só com licença livre do Wikimedia Commons (CC BY, CC BY-SA, CC0 ou domínio
+público). As fotos ficam no bucket público `venue-photos` (JPEG com 1280 px, até 2 MB), para não
+dependermos do Commons em cada abertura. O autor, a licença e a ligação à origem ficam no `venue`
+(há uma restrição que não deixa haver foto sem crédito) e aparecem sobre a foto, como a licença
+exige. Os estádios sem foto livre mantêm a capa com as cores do clube.
+
 ## 2026-09-16 — Fatia 2: «O meu jogo»
 
 **O quê.** Marcar «Vou a este jogo» abre um ecrã só desse jogo (`/jogos/o-meu-jogo`). Chega-se lá pelo
 botão do jogo, pelo cartão «O teu próximo jogo» no topo da lista de Jogos ou tocando num aviso. O ecrã
 mostra:
 - a contagem decrescente, ou «hora por definir»;
-- o tasco escolhido, com os primeiros sugeridos pela mesma ordem da lista de Locais, «Ver o tasco» e
+- o tasco escolhido num mapa (pela mesma ordem da lista de Locais), com «Ver o tasco» e
   «Como chegar a pé»;
 - as horas do dia;
 - o ponto de encontro oficial, quando existe;

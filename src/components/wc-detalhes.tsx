@@ -17,12 +17,25 @@ type WcDetalhesProps = {
   minutos: number;
 };
 
+/** "Grátis", "0,50 €", "Paga" (price unknown) or "Preço desconhecido". */
+function textoPreco(wc: Restroom) {
+  if (wc.gratuita === null) return 'Preço desconhecido';
+  if (wc.gratuita) return 'Grátis';
+  return wc.precoEuros > 0 ? formatarPreco(wc.precoEuros) : 'Paga';
+}
+
+function textoAcessivel(wc: Restroom) {
+  if (wc.acessivel === null) return 'Acesso adaptado por confirmar';
+  return wc.acessivel ? 'Acessível' : 'Sem acesso adaptado';
+}
+
 /** Informação prática de uma casa de banho: onde, se está aberta, quanto custa e acesso. A piada vem no fim. */
 export function WcDetalhes({ wc, metros, minutos }: WcDetalhesProps) {
   const theme = useTheme();
   const agora = useNow();
   const abertura = estadoDeAbertura(wc, new Date(agora), jogos);
-  const preco = wc.gratuita ? 'Grátis' : formatarPreco(wc.precoEuros);
+  const preco = textoPreco(wc);
+  const acessivel = textoAcessivel(wc);
 
   return (
     <View
@@ -33,12 +46,14 @@ export function WcDetalhes({ wc, metros, minutos }: WcDetalhesProps) {
         `${minutos} minutos a pé, ${formatarDistancia(metros)}`,
         abertura.texto,
         preco,
-        wc.acessivel ? 'acessível' : 'sem acesso adaptado',
+        acessivel,
         nomesAcesso[wc.acesso],
         wc.nota,
-      ].join('. ')}>
+      ]
+        .filter(Boolean)
+        .join('. ')}>
       <View style={styles.topo}>
-        <IconCircle name={icons.wc} tone={abertura.aberta ? 'sky' : 'neutral'} />
+        <IconCircle name={icons.wc} tone={abertura.aberta === false ? 'neutral' : 'sky'} />
         <View style={styles.textos}>
           <ThemedText style={styles.nome} numberOfLines={2}>
             {wc.nome}
@@ -57,13 +72,13 @@ export function WcDetalhes({ wc, metros, minutos }: WcDetalhesProps) {
         <Etiqueta
           icon={icons.horario}
           label={abertura.texto}
-          tone={abertura.aberta ? 'positivo' : 'negativo'}
+          tone={abertura.aberta === null ? 'neutro' : abertura.aberta ? 'positivo' : 'negativo'}
         />
         <Etiqueta icon={icons.preco} label={preco} tone={wc.gratuita ? 'positivo' : 'neutro'} />
         <Etiqueta
           icon={icons.acessivel}
-          label={wc.acessivel ? 'Acessível' : 'Sem acesso adaptado'}
-          tone={wc.acessivel ? 'positivo' : 'aviso'}
+          label={acessivel}
+          tone={wc.acessivel === null ? 'neutro' : wc.acessivel ? 'positivo' : 'aviso'}
         />
         <Etiqueta
           icon={icons.acesso}
@@ -72,11 +87,13 @@ export function WcDetalhes({ wc, metros, minutos }: WcDetalhesProps) {
         />
       </View>
 
-      <View style={[styles.rodape, { borderTopColor: theme.border }]}>
-        <ThemedText themeColor="textSecondary" style={styles.nota}>
-          {wc.nota}
-        </ThemedText>
-      </View>
+      {wc.nota ? (
+        <View style={[styles.rodape, { borderTopColor: theme.border }]}>
+          <ThemedText themeColor="textSecondary" style={styles.nota}>
+            {wc.nota}
+          </ThemedText>
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -58,7 +58,7 @@ export default function JogoScreen() {
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
-  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho, modoDemo } = useAppState();
+  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho } = useAppState();
 
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -236,13 +236,8 @@ export default function JogoScreen() {
         <SectionHeader title="Estádio" />
         <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
 
-        {/* Restroom data is illustrative: only in demo mode until there are real restrooms. */}
-        {modoDemo ? (
-          <>
-            <SectionHeader title="WC mais próximo" />
-            <WcMaisProximo origem={estadio.coordenadas} />
-          </>
-        ) : null}
+        <SectionHeader title="WC mais próximo" />
+        <WcMaisProximo origem={estadio.coordenadas} estadioId={estadio.id} />
 
         {notasVisitante.length > 0 ? (
           <>

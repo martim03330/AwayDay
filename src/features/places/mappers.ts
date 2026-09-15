@@ -1,4 +1,5 @@
 import type { DishRow, PlaceCatalogRows, PlaceRow, PlaceScoreRow } from '@/features/places/types';
+import { horarioEmPortugues } from '@/lib/horario-osm';
 import type { Local, Nota, Prato, TipoLocal } from '@/mocks/tipos';
 
 const KINDS: Record<TipoLocal, true> = {
@@ -19,27 +20,6 @@ function toPriceLevel(value: number | null): Local['precoMedio'] {
   return value === 1 || value === 2 || value === 3 ? value : null;
 }
 
-const OSM_WORDS: [RegExp, string][] = [
-  [/\bMo\b/g, 'Seg'],
-  [/\bTu\b/g, 'Ter'],
-  [/\bWe\b/g, 'Qua'],
-  [/\bTh\b/g, 'Qui'],
-  [/\bFr\b/g, 'Sex'],
-  [/\bSa\b/g, 'Sáb'],
-  [/\bSu\b/g, 'Dom'],
-  [/\bPH\b/g, 'feriados'],
-  [/\boff\b/g, 'fechado'],
-];
-
-/** OpenStreetMap opening hours ("Mo-Fr 08:00-23:00; Su off") in Portuguese ("Seg-Sex 08:00-23:00; Dom fechado"). */
-export function horarioEmPortugues(openingHours: string | null) {
-  if (!openingHours) return null;
-  if (openingHours.trim() === '24/7') return 'Sempre aberto';
-  return OSM_WORDS.reduce(
-    (texto, [padrao, palavra]) => texto.replace(padrao, palavra),
-    openingHours
-  );
-}
 
 /** A fans' average (e.g. 4.3) as a 1-5 score for the meters. */
 function toNota(average: number | null): Nota | null {

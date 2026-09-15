@@ -5,8 +5,10 @@ import MapView, { Circle, MapMarker, type MapPressEvent, type Region } from 'rea
 import Animated, { FadeInDown, FadeOutDown, useReducedMotion, ZoomIn } from 'react-native-reanimated';
 
 import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
+import { DeslizarEntreLocais } from '@/components/deslizar-locais';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
+import { useRestroomsNear } from '@/features/restrooms/hooks/useRestrooms';
 import { useTheme } from '@/hooks/use-theme';
 import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
 import { formatarDistancia, plural } from '@/lib/formatos';
@@ -197,9 +199,13 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
 
   const clube = obterClube(venue.clubeId);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(venue.id));
-  // Restroom data is illustrative: no markers outside demo mode.
+  // Sample restrooms in demo mode; real ones (OpenStreetMap) otherwise.
   const { modoDemo } = useAppState();
-  const wcsPerto: WcPerto[] = casasDeBanhoPerto(venue.coordenadas, modoDemo ? casasDeBanho : []);
+  const wcsReais = useRestroomsNear(venue.id, !modoDemo);
+  const wcsPerto: WcPerto[] = casasDeBanhoPerto(
+    venue.coordenadas,
+    modoDemo ? casasDeBanho : (wcsReais.data ?? [])
+  );
   // Primeiro os tascos, depois os WC: todos entram escalonados pela mesma ordem.
   const pontos: Ponto[] = [
     ...perto.map((local) => ({ tipo: 'local' as const, local })),
@@ -237,6 +243,18 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
     setModo('cidade');
     setPontosVisiveis(0);
     setSelecao(null);
+  }
+
+  // Swiping the card goes to the next tasco by distance, and the map follows it.
+  const indiceSelecionado = localSelecionado
+    ? perto.findIndex((local) => local.id === localSelecionado.id)
+    : -1;
+
+  function irParaLocal(localId: string) {
+    const alvo = perto.find((local) => local.id === localId);
+    if (!alvo) return;
+    setSelecao({ tipo: 'local', id: localId });
+    mapa.current?.animateToRegion(regiao(alvo.coordenadas, DELTA_ESTADIO), animar ? DURACAO_MS : 0);
   }
 
   function tocarNoMapa(event: MapPressEvent) {
@@ -342,16 +360,23 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
         </MapView>
 
         {localSelecionado ? (
-          <CartaoMapa key={localSelecionado.id} animar={animar} onFechar={() => setSelecao(null)}>
-            <ConteudoLocal
-              local={localSelecionado}
-              onVerLocal={() =>
-                router.navigate({
-                  pathname: '/locais/[localId]',
-                  params: { localId: localSelecionado.id },
-                })
-              }
-            />
+          <CartaoMapa key="local" animar={animar} onFechar={() => setSelecao(null)}>
+            <DeslizarEntreLocais
+              anterior={indiceSelecionado > 0 ? perto[indiceSelecionado - 1] : undefined}
+              seguinte={indiceSelecionado >= 0 ? perto[indiceSelecionado + 1] : undefined}
+              posicao={indiceSelecionado + 1}
+              total={indiceSelecionado >= 0 ? perto.length : 0}
+              onMudar={irParaLocal}>
+              <ConteudoLocal
+                local={localSelecionado}
+                onVerLocal={() =>
+                  router.navigate({
+                    pathname: '/locais/[localId]',
+                    params: { localId: localSelecionado.id },
+                  })
+                }
+              />
+            </DeslizarEntreLocais>
           </CartaoMapa>
         ) : null}
 
@@ -396,7 +421,7 @@ export function MapaJogo({ venue, zonas = [] }: { venue: Venue; zonas?: readonly
       ) : null}
 
       <ThemedText themeColor="textMuted" style={styles.nota}>
-        O fundo do mapa precisa de internet; os pontos são da demo.
+        O fundo do mapa precisa de internet. Tascos e WC do OpenStreetMap e dos adeptos.
       </ThemedText>
     </Card>
   );

@@ -1288,6 +1288,68 @@ export type Database = {
           },
         ]
       }
+      restroom: {
+        Row: {
+          access: string
+          attribution: string
+          distance_m: number
+          fee: string
+          id: string
+          imported_at: string
+          latitude: number | null
+          location: unknown
+          longitude: number | null
+          name: string | null
+          opening_hours: string | null
+          osm_id: string
+          venue_id: string
+          walking_minutes: number
+          wheelchair: string
+        }
+        Insert: {
+          access?: string
+          attribution?: string
+          distance_m: number
+          fee?: string
+          id: string
+          imported_at?: string
+          latitude?: number | null
+          location: unknown
+          longitude?: number | null
+          name?: string | null
+          opening_hours?: string | null
+          osm_id: string
+          venue_id: string
+          walking_minutes: number
+          wheelchair?: string
+        }
+        Update: {
+          access?: string
+          attribution?: string
+          distance_m?: number
+          fee?: string
+          id?: string
+          imported_at?: string
+          latitude?: number | null
+          location?: unknown
+          longitude?: number | null
+          name?: string | null
+          opening_hours?: string | null
+          osm_id?: string
+          venue_id?: string
+          walking_minutes?: number
+          wheelchair?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restroom_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season: {
         Row: {
           created_at: string
@@ -1386,6 +1448,10 @@ export type Database = {
           longitude: number | null
           name: string
           name_article: string
+          photo_author: string | null
+          photo_license: string | null
+          photo_source_url: string | null
+          photo_url: string | null
           region: string
           roof_coverage: string | null
           short_name: string | null
@@ -1404,6 +1470,10 @@ export type Database = {
           longitude?: number | null
           name: string
           name_article?: string
+          photo_author?: string | null
+          photo_license?: string | null
+          photo_source_url?: string | null
+          photo_url?: string | null
           region: string
           roof_coverage?: string | null
           short_name?: string | null
@@ -1422,6 +1492,10 @@ export type Database = {
           longitude?: number | null
           name?: string
           name_article?: string
+          photo_author?: string | null
+          photo_license?: string | null
+          photo_source_url?: string | null
+          photo_url?: string | null
           region?: string
           roof_coverage?: string | null
           short_name?: string | null

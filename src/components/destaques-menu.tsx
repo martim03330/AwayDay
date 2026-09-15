@@ -5,8 +5,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
 import { formatarPreco } from '@/lib/money';
 import { destaquesDoMenu, type PratoComContagem } from '@/lib/pratos';
-import { pratosTipicos } from '@/lib/pratos-tipicos';
-import type { Prato, TipoLocal } from '@/mocks/tipos';
+import type { Prato } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -20,9 +19,6 @@ type DestaquesMenuProps = {
   jaContados?: ReadonlySet<string>;
   /** Lembrete da meteorologia, mostrado por baixo dos destaques. */
   lembrete: Lembrete | null;
-  /** Country and kind of place, for "Costuma haver" when there are no dishes yet. */
-  pais: string;
-  tipo: TipoLocal;
 };
 
 type Tom = { fundo: string; tinta: string };
@@ -51,31 +47,24 @@ function preco(prato: Prato) {
     : formatarPreco(prato.precoCentimos, prato.moeda);
 }
 
-export function DestaquesMenu({
-  pratos,
-  recomendados,
-  jaContados,
-  lembrete,
-  pais,
-  tipo,
-}: DestaquesMenuProps) {
+export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: DestaquesMenuProps) {
   const theme = useTheme();
   const destaques = destaquesDoMenu(pratos, recomendados, jaContados);
 
   if (!destaques) {
-    // Nothing from this place's menu yet: what this kind of place usually has, clearly as a hint.
-    const tipicos = pratosTipicos(pais, tipo);
+    // Nothing from this place's own menu yet. We say so instead of guessing what it serves.
     return (
       <Card style={styles.tipicos}>
         <View style={[styles.azulejo, { backgroundColor: TONS.amarelo.fundo }]}>
           <Icon name={icons.especialidade} size={18} color={TONS.amarelo.tinta} />
         </View>
         <ThemedText type="eyebrow" style={{ color: TONS.amarelo.tinta }}>
-          Costuma haver
+          Menu por descobrir
         </ThemedText>
-        <ThemedText style={styles.nome}>{tipicos.join(' · ')}</ThemedText>
+        <ThemedText style={styles.nome}>Ainda não sabemos o que há aqui</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {`O que este tipo de sítio costuma ter${pais === 'Portugal' ? '' : ` em ${pais}`}, não o menu da casa. Se provares, sugere o prato para os próximos adeptos.`}
+          Não encontrámos o menu desta casa e não inventamos. Se já cá comeste, sugere um prato com o preço: ajudas os
+          próximos adeptos a poupar.
         </ThemedText>
       </Card>
     );

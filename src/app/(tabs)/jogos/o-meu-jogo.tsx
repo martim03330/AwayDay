@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
+import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -22,15 +23,13 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { Icon, icons } from '@/ui/icon';
+import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
 const DIA_MS = 24 * 60 * 60 * 1000;
-/** Tascos offered when picking one. */
-const SUGESTOES = 5;
 
 function LinhaHora({
   rotulo,
@@ -103,10 +102,8 @@ export default function OMeuJogoScreen() {
   const tascoId = tascoDoPlano(jogo.id);
   const tasco = tascoId ? obterLocal(tascoId) : undefined;
   const horas = horasDoPlano(jogo, tasco ?? null);
-  const sugestoes = ordenarTascos(filtrarPorTempoAPe(locaisDoEstadio(estadio.id)).perto).slice(
-    0,
-    SUGESTOES
-  );
+  // Every tasco near the stadium, in the order the app suggests them.
+  const sugestoes = ordenarTascos(filtrarPorTempoAPe(locaisDoEstadio(estadio.id)).perto);
   const avisos = avisosLigados(jogo.id)
     ? avisosDoJogo(jogo, { casa: casa.nomeCurto, fora: fora.nomeCurto }, tasco ?? null, agora)
     : [];
@@ -172,47 +169,18 @@ export default function OMeuJogoScreen() {
       ) : null}
 
       {mostrarEscolha ? (
-        <Card style={styles.grupo}>
-          <ThemedText themeColor="textSecondary">
-            {sugestoes.length > 0
-              ? 'Escolhe onde vais antes do jogo. Os primeiros são os confirmados pelos adeptos e os rápidos e baratos.'
-              : 'Ainda não mapeámos tascos perto deste estádio.'}
-          </ThemedText>
-          {sugestoes.map((local) => (
-            <Pressable
-              key={local.id}
-              onPress={() => {
-                escolherTasco(jogo.id, local.id);
-                setAEscolher(false);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={`Escolher ${local.nome}, ${local.minutosAPe} minutos a pé do estádio`}
-              style={({ pressed }) => [
-                styles.sugestao,
-                { borderTopColor: theme.backgroundSelected },
-                pressed && styles.pressed,
-              ]}>
-              <View style={styles.flex}>
-                <ThemedText style={styles.nomeSugestao}>{local.nome}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {`${nomesTipoLocal[local.tipo]} · ${local.minutosAPe} min a pé${local.rapidoEBarato ? ' · rápido e barato' : ''}`}
-                </ThemedText>
-              </View>
-              <Icon
-                name={local.id === tascoId ? icons.selecionado : icons.seguinte}
-                size={20}
-                color={local.id === tascoId ? theme.accent : theme.textMuted}
-              />
-            </Pressable>
-          ))}
-          <LinkTexto
-            label="Ver todos os tascos perto do estádio"
-            onPress={() =>
-              router.navigate({ pathname: '/locais', params: { estadio: estadio.id } })
-            }
+        <>
+          <MapaEscolherTasco
+            estadio={estadio}
+            locais={sugestoes}
+            escolhidoId={tascoId}
+            onEscolher={(localId) => {
+              escolherTasco(jogo.id, localId);
+              setAEscolher(false);
+            }}
           />
           {tasco ? <LinkTexto label="Cancelar" onPress={() => setAEscolher(false)} /> : null}
-        </Card>
+        </>
       ) : null}
 
       <SectionHeader title="As tuas horas" />
@@ -313,21 +281,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 23,
     fontWeight: 800,
-  },
-  sugestao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-  },
-  nomeSugestao: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  pressed: {
-    opacity: 0.7,
   },
   linhaHora: {
     flexDirection: 'row',
