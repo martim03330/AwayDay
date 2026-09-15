@@ -153,7 +153,13 @@ Deno.serve(async (request) => {
     }
 
     const outcome = await sendExpoPush(
-      deviceTokens.map((to) => ({ to, title: 'AwayDay', body: written.body, data: { type: 'nudge', nudgeId } }))
+      deviceTokens.map((to) => ({
+        to,
+        title: 'AwayDay',
+        body: written.body,
+        // The fixture lets a tap open the game itself.
+        data: { type: 'nudge', nudgeId, ...(context.fixtureId ? { fixtureId: context.fixtureId } : {}) },
+      }))
     );
     if (outcome.invalidTokens.length > 0) {
       await admin.from('device_token').delete().in('token', outcome.invalidTokens);

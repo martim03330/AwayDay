@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import type { CoachMessage } from '@/features/coach/types';
@@ -12,28 +12,36 @@ type CoachBannerProps = {
   loading: boolean;
   /** Inside the green pitch header: a stronger shadow so the card lifts off the grass. */
   sobreRelvado?: boolean;
+  /** Opens what the tip is about (the tasco, the game). Without it the tip is not tappable. */
+  onPress?: () => void;
 };
 
 const ANEL_AMARELO = `0 0 0 2px ${Colors.highlight}`;
 const SOMBRA_RELVADO = '0 10px 24px rgba(8, 40, 22, 0.2)';
 
 /** "Dica do treinador" at the top of a screen. Nothing at all when there is nothing to say. */
-export function CoachBanner({ message, loading, sobreRelvado = false }: CoachBannerProps) {
+export function CoachBanner({ message, loading, sobreRelvado = false, onPress }: CoachBannerProps) {
   const theme = useTheme();
   if (!message && !loading) return null;
 
   const sombras = [message ? ANEL_AMARELO : null, sobreRelvado ? SOMBRA_RELVADO : null]
     .filter(Boolean)
     .join(', ');
+  const tocavel = Boolean(message && onPress);
 
   return (
-    <View
+    <Pressable
+      disabled={!tocavel}
+      onPress={onPress}
       accessible
+      accessibilityRole={tocavel ? 'button' : undefined}
       accessibilityLabel={message ? `Dica: ${message.body}` : 'A preparar uma dica'}
-      style={[
+      accessibilityHint={tocavel ? 'Toca para abrir' : undefined}
+      style={({ pressed }) => [
         styles.card,
         { backgroundColor: theme.backgroundElement, alignItems: message ? 'flex-start' : 'center' },
         sombras ? { boxShadow: sombras } : null,
+        tocavel && pressed && styles.pressed,
       ]}>
       {message ? (
         <>
@@ -46,6 +54,11 @@ export function CoachBanner({ message, loading, sobreRelvado = false }: CoachBan
             </ThemedText>
             <ThemedText style={styles.texto}>{message.body}</ThemedText>
           </View>
+          {tocavel ? (
+            <View style={styles.seta}>
+              <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
+            </View>
+          ) : null}
         </>
       ) : (
         <>
@@ -57,7 +70,7 @@ export function CoachBanner({ message, loading, sobreRelvado = false }: CoachBan
           </ThemedText>
         </>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -68,6 +81,9 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 18,
     borderCurve: 'continuous',
+  },
+  pressed: {
+    opacity: 0.85,
   },
   azulejo: {
     width: 42,
@@ -80,6 +96,9 @@ const styles = StyleSheet.create({
   corpo: {
     flex: 1,
     gap: 3,
+  },
+  seta: {
+    alignSelf: 'center',
   },
   texto: {
     fontSize: 15,

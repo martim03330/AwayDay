@@ -13,6 +13,7 @@ import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia, formatarDiaEHora } from '@/lib/datas';
+import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { proximoJogoNoEstadio } from '@/lib/jogos';
 import { lembretePelaMeteorologia } from '@/lib/pratos';
@@ -288,6 +289,12 @@ export default function LocalScreen() {
         <ThemedText themeColor="textSecondary" style={styles.centro}>
           {textoCheckIn()}
         </ThemedText>
+        <Button
+          label="Como chegar a pé"
+          variant="secondary"
+          icon={icons.aPe}
+          onPress={() => abrirDirecoes(local.coordenadas, 'a-pe')}
+        />
 
         {visita ? (
           <View style={styles.visita}>

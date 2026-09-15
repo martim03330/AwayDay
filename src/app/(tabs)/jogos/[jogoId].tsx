@@ -22,6 +22,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { notaDoEstadio } from '@/lib/avaliacoes';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { abrirDirecoes } from '@/lib/direcoes';
 import { plural } from '@/lib/formatos';
 import { eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
@@ -236,12 +237,14 @@ export default function JogoScreen() {
         <SectionHeader title="Distância" />
         <DistanciaCard venue={estadio} />
 
-        {estadio.transportes.length > 0 ? (
-          <>
-            <SectionHeader title="Como chegar" />
-            <ComoChegar opcoes={estadio.transportes} />
-          </>
-        ) : null}
+        <SectionHeader title="Como chegar" />
+        {estadio.transportes.length > 0 ? <ComoChegar opcoes={estadio.transportes} /> : null}
+        <Button
+          label="Abrir o caminho no mapa"
+          variant="secondary"
+          icon={icons.rota}
+          onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
+        />
 
         <Button
           label={

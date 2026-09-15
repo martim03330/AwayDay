@@ -2,6 +2,27 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-15 — Check-out automático, dica que abre o tasco e «Como chegar»
+
+**Check-out automático.** Um check-in termina quando começa um jogo no estádio desse tasco: quem lá
+estava foi para o jogo. Continua a terminar ao fim de 3 horas.
+- **No servidor:** `refresh_place_pulse`, que corre de 5 em 5 minutos, termina a presença à hora do
+  apito. O `coach_context` deixa de dar `checkin_ativo` depois do apito e passou a usar `p_now` em
+  vez de `now()`, para o relógio do modo demo dar a mesma resposta.
+- **Na app:** `checkInsAtivos` (`src/lib/presenca.ts`) aplica a mesma regra, por isso o tasco deixa
+  de mostrar «Estás aqui» depois do apito. A visita verificada fica no histórico.
+- **Testes:** correram numa transação revertida antes de aplicar a migração (jogo noutro estádio não
+  termina o check-in, jogo no estádio do tasco termina, a visita fica).
+
+**A dica do treinador abre o que interessa.** Tocar na dica abre o tasco do check-in, o jogo ou o
+passaporte. A função `coach-message` passou a devolver o `fixtureId`. As notificações push das dicas
+levam o `fixtureId` e abrem o jogo; as restantes continuam a abrir as Novidades.
+
+**«Como chegar».** O botão abre o Apple Maps (iOS) ou o Google Maps com o trajeto: a pé para o tasco,
+de carro para o estádio. Não precisa de API nem de chave (`src/lib/direcoes.ts`).
+
+**Filtros de jogos.** Na primeira versão só aparecem os filtros «Todas», «Liga Betclic» e «Europa».
+
 ## 2026-09-15 — Primeira versão: Liga Portugal e jogos europeus, sem custos
 
 **Âmbito.** A primeira versão tem só os jogos da Liga Portugal e os jogos europeus dos clubes

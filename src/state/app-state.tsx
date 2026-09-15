@@ -72,11 +72,11 @@ import type { NotificationKind, NotificationPreferences } from '@/features/profi
 import { useNow } from '@/hooks/use-now';
 import { distanciaEmLinhaRetaKm } from '@/lib/distancia';
 import { formatarDistancia } from '@/lib/formatos';
-import { checkInsDoDia } from '@/lib/presenca';
+import { checkInsAtivos } from '@/lib/presenca';
 import { currentUserId, useUserId } from '@/lib/session';
 import { fotosIniciais } from '@/mocks/album';
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
-import { obterJogo } from '@/mocks/jogos';
+import { jogos, obterJogo } from '@/mocks/jogos';
 import { obterLocal } from '@/mocks/locais';
 import { preferenciasIniciais, type TipoNotificacao } from '@/mocks/notificacoes';
 import type {
@@ -394,7 +394,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const atividade = fonte === 'demo' ? demo : fonte === 'conta' ? daConta : atividadeLocal;
   const agora = useNow();
-  const checkInsHoje = checkInsDoDia(agora, atividade.visitas);
+  // Check-ins still on: they end after 3 hours or when a game starts at the tasco's stadium.
+  const checkInsAgora = checkInsAtivos(agora, atividade.visitas, obterLocal, jogos);
   const pulsoPorLocal = new Map((pulse.data ?? []).map((linha) => [linha.placeId, linha]));
 
   /** Hora da app (a simulada, no modo demo), para os registos baterem certo com o relógio do dia de jogo. */
@@ -539,7 +540,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   async function alternarCheckIn(localId: string): Promise<boolean> {
     if (checkInEmCurso) return false;
-    const atual = checkInsHoje.find((visita) => visita.localId === localId);
+    const atual = checkInsAgora.find((visita) => visita.localId === localId);
 
     if (fonte === 'demo') {
       alternarCheckInLocal(localId, atual);
@@ -917,14 +918,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ...atividade.avaliacoes.map((avaliacao) => avaliacao.estadioId),
       ]),
     ],
-    fezCheckIn: (localId) => checkInsHoje.some((visita) => visita.localId === localId),
+    fezCheckIn: (localId) => checkInsAgora.some((visita) => visita.localId === localId),
     alternarCheckIn,
     checkInEmCurso,
     pessoasAqui: (local) => {
       if (fonte !== 'demo') return pulsoPorLocal.get(local.id)?.people ?? null;
       return local.pessoasAqui === null
         ? null
-        : local.pessoasAqui + (checkInsHoje.some((visita) => visita.localId === local.id) ? 1 : 0);
+        : local.pessoasAqui + (checkInsAgora.some((visita) => visita.localId === local.id) ? 1 : 0);
     },
     clubesAqui: (local) =>
       fonte === 'demo'

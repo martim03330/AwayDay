@@ -39,10 +39,8 @@ import { ThemedText } from '@/ui/themed-text';
 const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
   { id: 'todas', label: 'Todas', emTexto: '' },
   { id: 'liga', label: 'Liga Betclic', emTexto: ' na Liga Betclic' },
-  { id: 'liga-2', label: 'Liga 2', emTexto: ' na Liga 2' },
-  { id: 'liga-3', label: 'Liga 3', emTexto: ' na Liga 3' },
+  // First version: Liga 2, Liga 3 and the cups have no fixtures yet, so their filters stay hidden.
   { id: 'europa', label: 'Europa', emTexto: ' nas competições europeias' },
-  { id: 'tacas', label: 'Taças', emTexto: ' nas taças' },
 ];
 
 /** Today's date for the header eyebrow ("segunda-feira, 14 de setembro"), always in Lisbon. */
@@ -136,6 +134,7 @@ export default function JogosScreen() {
   const userId = useUserId();
   const { foste } = useJogosAQueFoste();
   const treinador = useAICoach();
+  const destinoDaDica = treinador.destino;
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   // Only the user's clubs by default; the rest is one (humorous) tap away.
   const [verConcorrencia, setVerConcorrencia] = useState(false);
@@ -249,7 +248,12 @@ export default function JogosScreen() {
       <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
 
       <CabecalhoRelvado title="Jogos" eyebrow={hoje}>
-        <CoachBanner message={treinador.message} loading={treinador.loading} sobreRelvado />
+        <CoachBanner
+          message={treinador.message}
+          loading={treinador.loading}
+          sobreRelvado
+          onPress={destinoDaDica ? () => router.push(destinoDaDica) : undefined}
+        />
       </CabecalhoRelvado>
 
       <View style={styles.largura}>

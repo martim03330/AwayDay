@@ -131,6 +131,9 @@ Deno.serve(async (request) => {
   if (state.error) console.error('coach-message state failed:', state.error.code);
 
   return json(200, {
-    message: message && current ? { id: message.id, body: message.body, kind: current.kind } : null,
+    message:
+      message && current
+        ? { id: message.id, body: message.body, kind: current.kind, fixtureId: current.fixtureId }
+        : null,
   });
 });

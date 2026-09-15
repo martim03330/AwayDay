@@ -99,6 +99,12 @@ export function parseCoachMessage(payload: unknown): CoachMessage | null {
     typeof message.id === 'string' &&
     typeof message.body === 'string' &&
     typeof message.kind === 'string'
-    ? { id: message.id, body: message.body, kind: message.kind }
+    ? {
+        id: message.id,
+        body: message.body,
+        kind: message.kind,
+        // Messages cached before this field existed have none.
+        fixtureId: typeof message.fixtureId === 'string' ? message.fixtureId : null,
+      }
     : null;
 }
