@@ -226,6 +226,9 @@ export type TripAccount = {
   title: string;
   /** `null` enquanto ninguém abriu as contas. */
   sessionId: string | null;
+  /** Quem vai nesta viagem: os do carro, ou os do grupo. */
+  people: number;
+  peopleNames: string[];
   expenses: number;
   totalCents: number;
   /** Positivo: tens a receber. Negativo: deves. */
@@ -241,6 +244,8 @@ export async function fetchMyTripAccounts(fixtureId: string): Promise<TripAccoun
     ownerId: row.owner_id,
     title: row.title ?? 'Contas',
     sessionId: row.session_id,
+    people: row.people ?? 1,
+    peopleNames: row.people_names ?? [],
     expenses: row.expenses ?? 0,
     totalCents: row.total_cents ?? 0,
     myBalanceCents: row.my_balance_cents ?? 0,
@@ -279,6 +284,37 @@ export async function fetchMyLiveTrips(): Promise<LiveTrip[]> {
             peopleNames: row.people_names ?? [],
             iDrive: row.i_drive === true,
             sessionId: row.session_id,
+            expenses: row.expenses ?? 0,
+            totalCents: row.total_cents ?? 0,
+            myBalanceCents: row.my_balance_cents ?? 0,
+          },
+        ]
+      : []
+  );
+}
+
+/** Um jogo já passado: com quem foste e o que se gastou. */
+export type TripHistoryEntry = {
+  fixtureId: string;
+  kickoffAt: string;
+  companions: number;
+  companionNames: string[];
+  expenses: number;
+  totalCents: number;
+  myBalanceCents: number;
+};
+
+export async function fetchMyTripHistory(): Promise<TripHistoryEntry[]> {
+  const { data, error } = await client().rpc('my_trip_history');
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.fixture_id && row.kickoff_at
+      ? [
+          {
+            fixtureId: row.fixture_id,
+            kickoffAt: row.kickoff_at,
+            companions: row.companions ?? 0,
+            companionNames: row.companion_names ?? [],
             expenses: row.expenses ?? 0,
             totalCents: row.total_cents ?? 0,
             myBalanceCents: row.my_balance_cents ?? 0,

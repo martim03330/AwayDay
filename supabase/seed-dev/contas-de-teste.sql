@@ -14,7 +14,12 @@
 -- Correr:   supabase db query --linked -f supabase/seed-dev/contas-de-teste.sql
 -- Repetir:  correr outra vez não duplica nada.
 --
+-- Há também uma **boleia a decorrer** (a conta principal ao volante, o Zé e a Rita atrás), para ver a viagem no topo
+-- da lista de jogos e as contas de uma boleia — que não criam grupo nenhum. Essa fica por abrir de propósito: o
+-- botão «Abrir as contas da viagem» é para ser carregado à mão.
+--
 -- Apagar tudo no fim:
+--   delete from public.ride where id = 'dddddddd-0000-4000-8000-000000000001';
 --   delete from public.fan_group where id = 'c0c0c0c0-0000-4000-8000-000000000001';
 --   delete from auth.users where id::text like 'b0000000-0000-4000-8000-00000000000%';
 
@@ -48,6 +53,42 @@ values
   ('c0c0c0c0-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'member'),
   ('c0c0c0c0-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'member')
 on conflict (group_id, profile_id) do nothing;
+
+-- Uma boleia a decorrer: sai agora, para o mesmo jogo. Números de uma viagem Viseu–Viseu curta, para o custo da
+-- boleia não ser absurdo; o que se testa aqui são as contas, não o cálculo da boleia.
+insert into public.ride (
+  id, fixture_id, driver_id, origin_name, origin_city, origin, departure_at, seats_offered,
+  route_option, round_trip, distance_m, duration_s, toll_m, consumption_cl_per_100km,
+  fuel_price_milli_per_litre, fuel_cents, toll_cents, total_cents, note
+)
+values (
+  'dddddddd-0000-4000-8000-000000000001',
+  'teste-carimbo-agora',
+  '027d9f21-4ebd-433a-8a4e-4cc035b0163e',
+  'Viseu',
+  'Viseu',
+  extensions.st_setsrid(extensions.st_makepoint(-7.9122, 40.6566), 4326)::extensions.geography,
+  now(),
+  3,
+  'equilibrio',
+  true,
+  12000,
+  900,
+  0,
+  600,
+  1800,
+  130,
+  0,
+  130,
+  'Boleia de teste.'
+)
+on conflict (id) do update set departure_at = now();
+
+insert into public.ride_passenger (ride_id, profile_id, status)
+values
+  ('dddddddd-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'accepted'),
+  ('dddddddd-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'accepted')
+on conflict (ride_id, profile_id) do nothing;
 
 do $$
 declare

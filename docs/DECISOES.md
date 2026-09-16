@@ -2,6 +2,32 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — A viagem a decorrer, e o que fica dela
+
+Três mudanças que vêm da mesma ideia: as contas de uma viagem fazem-se **durante** a viagem, não no fim.
+
+**As contas podem nascer de uma boleia, sem criar grupo nenhum.** Um grupo é malta que anda junta de jogo para
+jogo; uma boleia é um dia. Se cada viagem criasse um grupo, ao fim de uma época havia trinta grupos mortos. Por isso
+`trip_session` passa a ter um dono e só um: ou um grupo (e um jogo), ou uma boleia. Quem entra nas contas deixa de
+ser «quem é do grupo» e passa a ser `trip_session_people` — os do grupo, ou os do carro (condutor e quem foi aceite;
+quem só pediu lugar não conta). Todas as funções das contas passaram a perguntar por aí.
+
+**A viagem aparece no topo da lista de jogos enquanto acontece** (`my_live_trips`): quem vai, a que horas saiu, o
+que já está lançado e como está o teu saldo. A janela vai de **uma hora antes de sair até ao dia seguinte ao jogo** —
+tempo para a estrada, o jogo e a volta. É aqui que se lança a rodada quando ela acontece, em vez de à noite, quando
+já ninguém sabe quem pagou o quê.
+
+**O histórico deixa de ser só uma nota.** «Os meus jogos» passa a abrir um **resumo da viagem**: com quem foste, o
+que se gastou (com botão para as contas, que continuam abertas) e o que achaste, com as três notas e o comentário em
+vez de um número solto. Na lista, cada jogo ganha uma linha — «Foste com o Zé e a Rita · 127,41 € em contas» —, toda
+ela de uma consulta só (`my_trip_history`), porque uma lista não pode perguntar jogo a jogo.
+
+O resumo é privado: ninguém vê com quem foste nem o que gastaste.
+
+Verificado com testes em transação revertida: quem só pediu lugar não abre as contas, não as vê e não pode entrar
+numa despesa; abrir duas vezes devolve a mesma sessão; não se cria grupo nenhum; a viagem só aparece «a decorrer» a
+quem vai nela; e o histórico só conta a viagem a quem foi.
+
 ## 2026-09-16 — As contas da viagem: quem pagou o quê e quem paga a quem
 
 A viagem acaba sempre da mesma maneira: um pagou o jantar, outro as portagens, outro a casa, e no

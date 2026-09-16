@@ -3020,8 +3020,22 @@ export type Database = {
           kind: string
           my_balance_cents: number
           owner_id: string
+          people: number
+          people_names: string[]
           session_id: string
           title: string
+          total_cents: number
+        }[]
+      }
+      my_trip_history: {
+        Args: never
+        Returns: {
+          companion_names: string[]
+          companions: number
+          expenses: number
+          fixture_id: string
+          kickoff_at: string
+          my_balance_cents: number
           total_cents: number
         }[]
       }

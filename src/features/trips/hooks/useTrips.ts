@@ -3,6 +3,7 @@ import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchMyLiveTrips,
   fetchMyTripAccounts,
+  fetchMyTripHistory,
   fetchRideTripSession,
   fetchTripBalances,
   fetchTripExpenses,
@@ -23,6 +24,7 @@ export const rideSessionKey = (rideId: string | null) => [TRIPS_KEY, 'ride', rid
 export const tripPeopleKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'people', sessionId] as const;
 export const liveTripsKey = () => [TRIPS_KEY, 'live'] as const;
+export const tripHistoryKey = () => [TRIPS_KEY, 'history'] as const;
 export const tripBalancesKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'balances', sessionId] as const;
 
@@ -97,6 +99,16 @@ export function useMyLiveTrips(signedIn: boolean) {
     queryFn: signedIn ? fetchMyLiveTrips : skipToken,
     staleTime: STALE_MS,
     refetchInterval: 60 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** Os jogos a que já foste acompanhado: com quem foste e o que se gastou. */
+export function useMyTripHistory(signedIn: boolean) {
+  return useQuery({
+    queryKey: tripHistoryKey(),
+    queryFn: signedIn ? fetchMyTripHistory : skipToken,
+    staleTime: 5 * 60 * 1000,
     meta: { persist: false },
   });
 }
