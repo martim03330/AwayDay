@@ -390,21 +390,25 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
   }
 
   return (
-    <Card style={styles.card}>
-      <ThemedText themeColor="textSecondary">
-        {`Jogo ${estadio.regiao === 'estrangeiro' ? 'fora do país' : 'numa ilha'}: quem vai dorme em ${estadio.cidade}. Quem encontrar uma casa propõe-na aqui, e a malta junta-se — quantos mais entram, menos cada um paga.`}
-      </ThemedText>
-
-      {lista.length > 0 ? (
-        <ThemedText style={styles.destaque}>
-          {[
-            `${plural(lista.length, 'casa proposta', 'casas propostas')}`,
-            lugaresLivres > 0 ? `${plural(lugaresLivres, 'lugar livre', 'lugares livres')}` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
+    <>
+      <Card style={styles.card}>
+        <ThemedText themeColor="textSecondary">
+          {`Jogo ${estadio.regiao === 'estrangeiro' ? 'fora do país' : 'numa ilha'}: quem vai dorme em ${estadio.cidade}. Quem encontrar uma casa propõe-na aqui, e a malta junta-se — quantos mais entram, menos cada um paga.`}
         </ThemedText>
-      ) : null}
+
+        {lista.length > 0 ? (
+          <ThemedText style={styles.destaque}>
+            {[
+              `${plural(lista.length, 'casa proposta', 'casas propostas')}`,
+              lugaresLivres > 0
+                ? `${plural(lugaresLivres, 'lugar livre', 'lugares livres')}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </ThemedText>
+        ) : null}
+      </Card>
 
       {lista.map((casa) => (
         <CasaProposta
@@ -430,8 +434,8 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
         message="A app não trata de dinheiro nem reserva nada. Paga sempre pelo Airbnb e nunca faças transferências a quem não conheces antes de a reserva existir e de veres a confirmação."
       />
 
-      {/* Propor uma casa. */}
-      <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
+      {/* Propor uma casa: cartão próprio, para não ser mais uma secção de uma parede. */}
+      <Card style={styles.card}>
         <ThemedText type="eyebrow" themeColor="accentInk">
           Viste uma casa?
         </ThemedText>
@@ -592,10 +596,10 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
         {erro && !aberto ? (
           <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText>
         ) : null}
-      </View>
+      </Card>
 
       {/* Procurar casa: as noites e as pessoas são só para esta pesquisa. */}
-      <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
+      <Card style={styles.card}>
         <ThemedText type="eyebrow" themeColor="accentInk">
           Procurar casa
         </ThemedText>
@@ -633,8 +637,8 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
           Abre a pesquisa com a cidade e as datas já preenchidas. Encontraste uma boa? Volta aqui e
           propõe-na à malta.
         </ThemedText>
-      </View>
-    </Card>
+      </Card>
+    </>
   );
 }
 
@@ -645,15 +649,10 @@ const styles = StyleSheet.create({
   destaque: {
     fontWeight: 800,
   },
-  bloco: {
-    gap: Spacing.two,
-    paddingTop: Spacing.two,
-    borderTopWidth: 1,
-  },
   casa: {
-    gap: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    gap: Spacing.two,
+    paddingVertical: Spacing.twoAndHalf,
+    paddingHorizontal: Spacing.twoAndHalf,
     borderWidth: 1.5,
     borderRadius: 14,
     borderCurve: 'continuous',
@@ -694,7 +693,7 @@ const styles = StyleSheet.create({
   etiquetas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   nome: {
     flex: 1,

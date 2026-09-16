@@ -2,6 +2,31 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — A app a respirar: espaçamento e hierarquia
+
+A app estava amontoada, e não era por falta de margens: era por **todas as distâncias serem iguais**.
+Um título de secção estava tão perto do bloco de cima como do seu próprio cartão, e dentro dos
+cartões o texto andava a 8 px de tudo. Sem distâncias diferentes não há agrupamento, e sem
+agrupamento o olho não sabe o que pertence a quê.
+
+**A escala ganhou os dois degraus que lhe faltavam** (`Spacing`): 12 («ar entre linhas dentro de um
+cartão») e 20 («ar entre blocos de um ecrã»). Os nomes antigos não mudaram, por isso nenhum ecrã
+teve de ser reescrito.
+
+**As três mudanças que valem por todas as outras**, porque estão nos componentes base:
+- **Ecrã**: 20 px entre blocos, em vez de 16;
+- **Cartão**: 20 px de margem interior e 12 px entre linhas, em vez de 16 e 8;
+- **Título de secção**: 32 px acima e 12 abaixo (era 32 e 16). É a distância que diz «este cartão é
+  deste título».
+
+Depois disso, o detalhe: as linhas com moldura (uma casa, uma boleia, um parque, um carro de volta)
+passaram a ter 12 px de margem interior e 8 entre linhas, as filas de etiquetas deixaram de estar
+coladas, e os blocos separados por um fio ganharam mais ar por cima.
+
+**O cartão da dormida deixou de ser uma parede**: era um cartão único com quatro secções lá dentro;
+passou a ser um cartão por assunto — o resumo, cada casa, o aviso, propor uma casa e procurar no
+Airbnb. O mesmo assunto, mas cada coisa no seu sítio.
+
 ## 2026-09-16 — Primeiro entre a malta, depois para toda a gente
 
 Uma boleia ou uma casa criadas dentro de um grupo começam **privadas**: só as vê quem é do grupo.

@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   etiquetas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   linha: {
     flexDirection: 'row',

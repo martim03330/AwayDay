@@ -284,9 +284,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   carro: {
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    gap: Spacing.two,
+    paddingVertical: Spacing.twoAndHalf,
+    paddingHorizontal: Spacing.twoAndHalf,
     borderWidth: 1,
     borderRadius: 14,
     borderCurve: 'continuous',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   etiquetas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   acoes: {
     flexDirection: 'row',

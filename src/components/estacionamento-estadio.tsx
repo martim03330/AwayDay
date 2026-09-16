@@ -307,12 +307,12 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   parque: {
-    gap: 6,
+    gap: Spacing.two,
   },
   etiquetas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   topo: {
     flexDirection: 'row',
@@ -361,8 +361,8 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   bloco: {
-    gap: Spacing.two,
-    paddingTop: Spacing.two,
+    gap: Spacing.twoAndHalf,
+    paddingTop: Spacing.threeAndHalf,
     borderTopWidth: 1,
   },
   aviso: {

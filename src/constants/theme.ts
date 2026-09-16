@@ -112,7 +112,11 @@ export const Spacing = {
   half: 2,
   one: 4,
   two: 8,
+  /** 12: ar entre linhas dentro de um cartão — texto, etiquetas e botões deixam de se tocar. */
+  twoAndHalf: 12,
   three: 16,
+  /** 20: ar entre blocos de um ecrã e dentro dos cartões. */
+  threeAndHalf: 20,
   four: 24,
   five: 32,
   six: 64,

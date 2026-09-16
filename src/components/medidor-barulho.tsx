@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     aspectRatio: 320 / 184,
   },
   bloco: {
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
   },
   escuta: {
     gap: Spacing.one,

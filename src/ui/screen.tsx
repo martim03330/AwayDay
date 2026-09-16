@@ -41,7 +41,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
-    gap: Spacing.three,
+    // Blocos de um ecrã: longe uns dos outros, para se lerem como blocos e não como uma parede.
+    gap: Spacing.threeAndHalf,
     padding: Spacing.three,
     paddingBottom: Spacing.six,
   },

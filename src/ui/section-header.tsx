@@ -29,7 +29,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     gap: Spacing.two,
-    marginTop: Spacing.three,
+    // Longe do que vem antes e perto do que vem a seguir: é a distância que diz o que pertence a quê.
+    marginTop: Spacing.twoAndHalf,
+    marginBottom: -Spacing.two,
   },
   title: {
     // O título fica numa linha; é o texto da direita que encolhe e parte linha.

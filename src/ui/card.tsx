@@ -36,8 +36,8 @@ export function Card({ children, style, onPress, accessibilityLabel }: CardProps
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.two,
-    padding: Spacing.three,
+    gap: Spacing.twoAndHalf,
+    padding: Spacing.threeAndHalf,
     borderRadius: Radius.card,
     borderCurve: 'continuous',
     ...CardShadow,
