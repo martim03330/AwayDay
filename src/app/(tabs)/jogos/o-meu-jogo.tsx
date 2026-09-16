@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
+import { ContasDaViagem } from '@/components/contas-da-viagem';
 import { DormidaCard } from '@/components/dormida-card';
 import { GrupoDoJogo } from '@/components/grupo-do-jogo';
 import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
@@ -13,7 +14,7 @@ import { avisosDoJogo, horasDoPlano } from '@/lib/avisos-jogo';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia } from '@/lib/formatos';
-import { estadoDoJogo } from '@/lib/jogos';
+import { contasDaViagemAbertas, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe, ordenarTascos } from '@/lib/locais';
 import { formatarContagem } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
@@ -244,6 +245,13 @@ export default function OMeuJogoScreen() {
 
       <SectionHeader title="Boleias" />
       <BoleiasDoJogo jogo={jogo} />
+
+      {contasDaViagemAbertas(jogo, agora) ? (
+        <>
+          <SectionHeader title="Contas da viagem" />
+          <ContasDaViagem jogo={jogo} />
+        </>
+      ) : null}
 
       <SectionHeader title="Avisos deste jogo" />
       <Card style={styles.grupo}>

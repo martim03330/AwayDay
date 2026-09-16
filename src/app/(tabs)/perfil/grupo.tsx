@@ -357,6 +357,15 @@ export default function GrupoScreen() {
                   .filter(Boolean)
                   .join(' · ')}
               </ThemedText>
+              <LinkTexto
+                label="Contas da viagem"
+                onPress={() =>
+                  router.push({
+                    pathname: '/jogos/contas',
+                    params: { jogoId: viagem.fixtureId, grupoId: grupo.id },
+                  })
+                }
+              />
             </Card>
           );
         })
@@ -406,8 +415,8 @@ export default function GrupoScreen() {
       </Card>
 
       <ThemedText type="small" themeColor="textMuted">
-        Para já, o grupo serve para juntar a malta e ver quem é quem. A divisão de contas da viagem
-        entra a seguir.
+        O grupo serve para juntar a malta, encher os carros e as casas, e dividir as contas de cada
+        viagem. A app não move dinheiro nenhum: só diz quem paga a quem.
       </ThemedText>
     </Screen>
   );

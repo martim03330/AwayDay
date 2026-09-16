@@ -2,6 +2,47 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — As contas da viagem: quem pagou o quê e quem paga a quem
+
+A viagem acaba sempre da mesma maneira: um pagou o jantar, outro as portagens, outro a casa, e no
+fim ninguém sabe bem as contas. A app passa a fazê-las.
+
+**Uma sessão por grupo e por jogo** (`trip_session`, único em `group_id` + `fixture_id`). Abre quando
+alguém a abre — a app propõe-na a partir da véspera do jogo, que é quando a viagem começa — e nunca
+fecha: fica lá para consulta muito depois do apito. As contas são sempre de um grupo, porque é o
+grupo que sabe quem foi à viagem.
+
+**Cada despesa é dividida por igual entre quem entra nela.** Nem todos bebem, nem todos dormem na
+casa: quem lança a despesa escolhe quem entra (sem escolher ninguém, entra o grupo todo) e diz quem
+pôs o dinheiro, que pode não ser quem está a escrever. As categorias são as de um dia de jogo:
+cervejas, petiscos, refeição, bilhetes, casa, boleia, portagens, outro.
+
+**Os cêntimos que sobram têm dono.** 10,01 € por duas pessoas dá 5,01 € e 5,00 €, e o cêntimo a mais
+vai sempre para os primeiros por ordem do identificador — a mesma ordem no servidor
+(`trip_balances`) e na app (`dividirCentimos`). Assim a soma das partes é **exatamente** o que foi
+pago, e a conta não muda de um dia para o outro.
+
+**Quem divide é o servidor** (regra 6). `trip_balances` diz quanto cada um pôs e quanto lhe coube; a
+app só desenha. O que a app calcula é a lista de transferências (`src/lib/acerto.ts`), e essa tem
+testes, como manda o `CLAUDE.md`.
+
+**O «menor número de transferências» tem um limite honesto.** O mínimo absoluto é um problema sem
+solução rápida conhecida (é preciso descobrir todos os grupos de pessoas cujos saldos se anulam
+entre si). O que fazemos: primeiro fecham-se os **pares que se anulam exatamente** — duas pessoas,
+uma transferência — e só depois o maior devedor paga ao maior credor. Nunca sai mais do que uma
+transferência por pessoa menos uma, e nas contas de uma viagem sai quase sempre o mínimo mesmo.
+
+**Quem sai do grupo não leva o dinheiro com ele.** Os saldos começaram por ser feitos a partir de
+quem está no grupo *agora*; quem pagasse o jantar e saísse a seguir levava o dinheiro consigo e os
+saldos deixavam de somar zero. Passam a entrar nas contas todos os que aparecem nas despesas, mesmo
+já fora do grupo (migração `20260916440000`). Ver continua a ser só para quem é do grupo.
+
+**A app não move dinheiro nenhum.** Só diz quem paga a quem. Está escrito no ecrã.
+
+Verificado com testes em transação revertida: quem não é do grupo não abre a sessão, não vê as
+despesas nem os saldos; ninguém de fora entra numa despesa; só quem lançou ou quem pagou apaga; os
+saldos somam zero e as partes somam o que foi pago; e quem sai do grupo continua nas contas.
+
 ## 2026-09-16 — O passaporte ganha a Europa
 
 O passaporte tinha os 57 estádios nacionais e os 22 onde as equipas portuguesas já jogaram fora.

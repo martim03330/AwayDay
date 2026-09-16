@@ -2362,6 +2362,143 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_expense: {
+        Row: {
+          category: string
+          cents: number
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          payer_id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          cents: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          payer_id: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cents?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          payer_id?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_expense_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_expense_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_expense_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trip_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_expense_share: {
+        Row: {
+          expense_id: string
+          profile_id: string
+        }
+        Insert: {
+          expense_id: string
+          profile_id: string
+        }
+        Update: {
+          expense_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_expense_share_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "trip_expense"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_expense_share_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_session: {
+        Row: {
+          created_at: string
+          fixture_id: string
+          group_id: string
+          id: string
+          opened_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fixture_id: string
+          group_id: string
+          id?: string
+          opened_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fixture_id?: string
+          group_id?: string
+          id?: string
+          opened_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_session_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_session_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_session_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue: {
         Row: {
           address: string | null
@@ -2614,6 +2751,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_trip_expense: {
+        Args: {
+          p_category: string
+          p_cents: number
+          p_description: string
+          p_participants?: string[]
+          p_payer_id?: string
+          p_session_id: string
+        }
+        Returns: string
+      }
       ai_usage_since: {
         Args: { p_profile_id: string; p_since: string }
         Returns: {
@@ -2832,6 +2980,17 @@ export type Database = {
           visits: number
         }[]
       }
+      my_trip_sessions: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          expenses: number
+          group_id: string
+          group_name: string
+          my_balance_cents: number
+          session_id: string
+          total_cents: number
+        }[]
+      }
       new_invite_code: { Args: never; Returns: string }
       noise_ranking: {
         Args: { p_fixture_id: string; p_limit?: number }
@@ -2842,6 +3001,10 @@ export type Database = {
           level: number
           rank_position: number
         }[]
+      }
+      open_trip_session: {
+        Args: { p_fixture_id: string; p_group_id: string }
+        Returns: string
       }
       place_name_key: { Args: { p_name: string }; Returns: string }
       place_scores: {
@@ -2902,6 +3065,10 @@ export type Database = {
         Returns: undefined
       }
       remove_stay_plan: { Args: { p_fixture_id: string }; Returns: undefined }
+      remove_trip_expense: {
+        Args: { p_expense_id: string }
+        Returns: undefined
+      }
       rename_group: {
         Args: { p_group_id: string; p_name: string }
         Returns: undefined
@@ -3169,6 +3336,41 @@ export type Database = {
           p_window: string
         }
         Returns: boolean
+      }
+      trip_balances: {
+        Args: { p_session_id: string }
+        Returns: {
+          balance_cents: number
+          display_name: string
+          is_me: boolean
+          owed_cents: number
+          paid_cents: number
+          profile_id: string
+        }[]
+      }
+      trip_expenses: {
+        Args: { p_session_id: string }
+        Returns: {
+          category: string
+          cents: number
+          created_on: string
+          description: string
+          i_am_in: boolean
+          id: string
+          mine: boolean
+          participant_names: string[]
+          participants: number
+          payer_id: string
+          payer_name: string
+        }[]
+      }
+      trip_session_of: {
+        Args: { p_fixture_id: string; p_group_id: string }
+        Returns: {
+          expenses: number
+          id: string
+          total_cents: number
+        }[]
       }
       verified_places_ranking: {
         Args: { p_limit?: number }

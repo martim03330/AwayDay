@@ -10,6 +10,7 @@ import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
 import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
+import { ContasDaViagem } from '@/components/contas-da-viagem';
 import { CarimboEstadio } from '@/components/carimbo-estadio';
 import { DormidaCard } from '@/components/dormida-card';
 import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
@@ -33,7 +34,7 @@ import { eClassico, eJogoGrande, notasParaVisitante } from '@/lib/classicos';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { plural } from '@/lib/formatos';
-import { eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
+import { contasDaViagemAbertas, eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
 import { avisoDeChuva } from '@/lib/meteorologia';
 import { mostrarRelogio } from '@/lib/relogio';
@@ -167,6 +168,7 @@ export default function JogoScreen() {
     { id: 'distancia', titulo: 'Distância' },
     { id: 'como-chegar', titulo: estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar' },
     { id: 'boleias', titulo: 'Boleias' },
+    contasDaViagemAbertas(jogo, agora) ? { id: 'contas', titulo: 'Contas' } : null,
     estadio.regiao !== 'continente' ? { id: 'dormir', titulo: 'Onde dormir' } : null,
     { id: 'estacionamento', titulo: 'Estacionamento' },
   ].filter((seccao) => seccao !== null);
@@ -352,6 +354,13 @@ export default function JogoScreen() {
         {/* As boleias são do jogo, não do teu plano: quem abre um jogo vê o que há para ele. */}
         <SectionHeader title="Boleias" onLayout={marcar('boleias')} />
         <BoleiasDoJogo jogo={jogo} />
+
+        {contasDaViagemAbertas(jogo, agora) ? (
+          <>
+            <SectionHeader title="Contas da viagem" onLayout={marcar('contas')} />
+            <ContasDaViagem jogo={jogo} />
+          </>
+        ) : null}
 
         {estadio.regiao !== 'continente' ? (
           <>
