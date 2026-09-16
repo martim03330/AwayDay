@@ -12,6 +12,7 @@ import { getCurrentPosition } from '@/features/presence/location';
 import {
   createRide,
   fetchReputation,
+  setRideGroup,
   quoteRide,
   RideRefused,
   searchPlace,
@@ -19,6 +20,7 @@ import {
   type RideQuote,
   type RouteOption,
 } from '@/features/rides/api';
+import { fetchMyGroups } from '@/features/groups/api';
 import { useRefreshRides, useRideBoard } from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -137,6 +139,8 @@ export default function OferecerBoleiaScreen() {
   const [idaEVolta, setIdaEVolta] = useState(true);
   // A seat home for whoever is left at the stadium: only makes sense when the driver is coming back anyway.
   const [aceitaVolta, setAceitaVolta] = useState(true);
+  // Uma boleia pode ser «a boleia do grupo»: aparece lá dentro e fica no histórico do grupo.
+  const [grupoId, setGrupoId] = useState<string | null>(null);
   const [nota, setNota] = useState('');
   const [cotacoes, setCotacoes] = useState<RideQuote[] | null>(null);
   const [escolhida, setEscolhida] = useState<RouteOption | null>(null);
@@ -153,6 +157,11 @@ export default function OferecerBoleiaScreen() {
   const [parqueId, setParqueId] = useState<string | null>(null);
   const agora = useNow(60 * 1000);
   const quadro = useRideBoard(jogo?.id ?? null, userId !== null);
+  const meusGrupos = useQuery({
+    queryKey: ['groups', userId],
+    queryFn: userId ? fetchMyGroups : skipToken,
+    meta: { persist: false },
+  });
   const reputacao = useQuery({
     queryKey: ['rides', 'reputation', userId],
     queryFn: userId ? () => fetchReputation(userId) : skipToken,
@@ -409,6 +418,8 @@ export default function OferecerBoleiaScreen() {
         acceptedRules: true,
         acceptsReturnRequests: idaEVolta && aceitaVolta,
       });
+      // O grupo é uma etiqueta da boleia: se falhar, a boleia fica publicada na mesma e dá para escolher depois.
+      if (grupoId) await setRideGroup(id, grupoId).catch(() => undefined);
       await atualizar();
       router.replace({ pathname: '/jogos/boleia', params: { rideId: id, jogoId: jogo.id } });
     } catch (erro) {
@@ -630,6 +641,35 @@ export default function OferecerBoleiaScreen() {
           ))}
         </View>
       </Card>
+
+      {(meusGrupos.data ?? []).length > 0 ? (
+        <>
+          <SectionHeader title="De quem é esta boleia?" />
+          <Card style={styles.grupo}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Se for a boleia de um grupo teu, fica a aparecer lá dentro e entra no histórico de
+              viagens do grupo. Continua aberta a qualquer adepto.
+            </ThemedText>
+            <View style={styles.chips}>
+              <Chip
+                label="Só minha"
+                selected={grupoId === null}
+                emCartao
+                onPress={() => setGrupoId(null)}
+              />
+              {(meusGrupos.data ?? []).map((grupo) => (
+                <Chip
+                  key={grupo.id}
+                  label={grupo.name}
+                  selected={grupoId === grupo.id}
+                  emCartao
+                  onPress={() => setGrupoId(grupo.id)}
+                />
+              ))}
+            </View>
+          </Card>
+        </>
+      ) : null}
 
       <SectionHeader title="Onde deixamos o carro" />
       <Card style={styles.grupo}>

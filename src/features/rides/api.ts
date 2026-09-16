@@ -232,6 +232,9 @@ export type RideSummary = {
   status: 'open' | 'cancelled';
   /** The caller's place in this ride; `null` when they have not asked. */
   myStatus: 'requested' | 'accepted' | 'declined' | 'left' | 'left_late' | 'expired' | null;
+  /** The group this ride belongs to, when the driver said it is the group's car. */
+  groupId: string | null;
+  groupName: string | null;
   /** Where the car is left, when the driver chose a car park. */
   parking: {
     name: string;
@@ -281,6 +284,8 @@ export async function fetchRideBoard(fixtureId: string): Promise<RideSummary[]> 
     note: row.note,
     status: row.status === 'cancelled' ? 'cancelled' : 'open',
     myStatus: toMyStatus(row.my_status),
+    groupId: row.group_id,
+    groupName: row.group_name,
     parking: row.parking_name
       ? {
           name: row.parking_name,
@@ -637,4 +642,13 @@ export async function fetchReturnPeople(rideId: string): Promise<ReturnPerson[]>
         ]
       : []
   );
+}
+
+/** Diz de que grupo é esta boleia (ou `null` para nenhum). Só o condutor, e só grupos onde ele está. */
+export async function setRideGroup(rideId: string, groupId: string | null) {
+  const { error } = await client().rpc('set_ride_group', {
+    p_ride_id: rideId,
+    p_group_id: groupId ?? undefined,
+  });
+  if (error) throw rpcError(error);
 }

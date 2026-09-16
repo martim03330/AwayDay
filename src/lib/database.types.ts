@@ -1719,6 +1719,7 @@ export type Database = {
           fixture_id: string
           fuel_cents: number
           fuel_price_milli_per_litre: number
+          group_id: string | null
           id: string
           note: string | null
           origin: unknown
@@ -1747,6 +1748,7 @@ export type Database = {
           fixture_id: string
           fuel_cents: number
           fuel_price_milli_per_litre: number
+          group_id?: string | null
           id?: string
           note?: string | null
           origin: unknown
@@ -1775,6 +1777,7 @@ export type Database = {
           fixture_id?: string
           fuel_cents?: number
           fuel_price_milli_per_litre?: number
+          group_id?: string | null
           id?: string
           note?: string | null
           origin?: unknown
@@ -1804,6 +1807,13 @@ export type Database = {
             columns: ["fixture_id"]
             isOneToOne: false
             referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
             referencedColumns: ["id"]
           },
           {
@@ -2202,6 +2212,7 @@ export type Database = {
           commitment: string
           created_at: string
           fixture_id: string
+          group_id: string | null
           id: string
           listing_seen_on: string | null
           listing_url: string | null
@@ -2217,6 +2228,7 @@ export type Database = {
           commitment: string
           created_at?: string
           fixture_id: string
+          group_id?: string | null
           id?: string
           listing_seen_on?: string | null
           listing_url?: string | null
@@ -2232,6 +2244,7 @@ export type Database = {
           commitment?: string
           created_at?: string
           fixture_id?: string
+          group_id?: string | null
           id?: string
           listing_seen_on?: string | null
           listing_url?: string | null
@@ -2249,6 +2262,13 @@ export type Database = {
             columns: ["fixture_id"]
             isOneToOne: false
             referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stay_plan_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
             referencedColumns: ["id"]
           },
           {
@@ -2643,6 +2663,16 @@ export type Database = {
           role: string
         }[]
       }
+      group_trips: {
+        Args: { p_group_id: string }
+        Returns: {
+          fixture_id: string
+          houses: number
+          kickoff_at: string
+          rides: number
+          seats_taken: number
+        }[]
+      }
       home_fan_usual_streets: {
         Args: { p_venue_id: string }
         Returns: {
@@ -2830,6 +2860,8 @@ export type Database = {
           driver_name: string
           duration_s: number
           fuel_cents: number
+          group_id: string
+          group_name: string
           id: string
           is_mine: boolean
           my_status: string
@@ -2947,6 +2979,14 @@ export type Database = {
       season_recap_stats: {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
+      }
+      set_ride_group: {
+        Args: { p_group_id?: string; p_ride_id: string }
+        Returns: undefined
+      }
+      set_stay_group: {
+        Args: { p_group_id?: string; p_plan_id: string }
+        Returns: undefined
       }
       set_stay_plan:
         | {

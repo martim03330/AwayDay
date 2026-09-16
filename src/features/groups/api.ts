@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
 // Grupos: a malta que anda junta de jogo para jogo. Entra-se por convite (um link com um código) e não há pedidos
-// nem aprovações — quem tem o link entra. Os grupos também nascem sozinhos de uma boleia, quando a primeira pessoa
-// é aceite.
+// nem aprovações — quem tem o link entra. Nenhum grupo nasce sozinho: as boleias e as casas é que se ligam a um
+// grupo, e é assim que o grupo ganha o histórico das viagens.
 
 function client() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -151,6 +151,42 @@ export async function removeGroupMember(groupId: string, profileId: string) {
   const { error } = await client().rpc('remove_group_member', {
     p_group_id: groupId,
     p_profile_id: profileId,
+  });
+  if (error) throw refusal(error);
+}
+
+export type GroupTrip = {
+  fixtureId: string;
+  kickoffAt: string;
+  rides: number;
+  houses: number;
+  seatsTaken: number;
+};
+
+/** As viagens do grupo: os jogos em que o grupo tem boleia ou casa. */
+export async function fetchGroupTrips(groupId: string): Promise<GroupTrip[]> {
+  const { data, error } = await client().rpc('group_trips', { p_group_id: groupId });
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.fixture_id && row.kickoff_at
+      ? [
+          {
+            fixtureId: row.fixture_id,
+            kickoffAt: row.kickoff_at,
+            rides: row.rides ?? 0,
+            houses: row.houses ?? 0,
+            seatsTaken: row.seats_taken ?? 0,
+          },
+        ]
+      : []
+  );
+}
+
+/** Diz de que grupo é uma casa proposta (ou `null` para nenhum). */
+export async function setStayGroup(planId: string, groupId: string | null) {
+  const { error } = await client().rpc('set_stay_group', {
+    p_plan_id: planId,
+    p_group_id: groupId ?? undefined,
   });
   if (error) throw refusal(error);
 }

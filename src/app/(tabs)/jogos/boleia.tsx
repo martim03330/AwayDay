@@ -5,6 +5,7 @@ import * as Linking from 'expo-linking';
 import { Alert, Share, StyleSheet, View } from 'react-native';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
+import { GrupoDaBoleia } from '@/components/grupo-da-boleia';
 import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
 import { Spacing } from '@/constants/theme';
 import {
@@ -489,6 +490,13 @@ export default function BoleiaScreen() {
           ))}
         </>
       ) : null}
+
+      <SectionHeader title="Grupo" />
+      <GrupoDaBoleia
+        boleia={boleia}
+        nomeDoJogo={`${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`}
+        participante={participante}
+      />
 
       {boleia.isMine && pedidosVolta.length > 0 ? (
         <>

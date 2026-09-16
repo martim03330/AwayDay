@@ -2,6 +2,29 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Uma boleia não é um grupo: as viagens é que se ligam aos grupos
+
+**O erro.** Ao criar um grupo por cada boleia, a app produzia grupos que ninguém pediu — e, pior,
+duplicava malta: se alguém do meu grupo aparecesse por acaso numa boleia minha, nascia um segundo
+grupo com as mesmas pessoas. Um grupo é gente que anda junta e dura; uma boleia é uma viagem que
+acaba no domingo à noite.
+
+**O modelo certo.** Nenhum grupo nasce sozinho (o gatilho `group_for_ride` foi removido). Em vez
+disso:
+- uma **boleia** ou uma **casa** podem ser «de um grupo» (`ride.group_id`, `stay_plan.group_id`),
+  escolhido por quem as oferece, entre os grupos em que está. A boleia continua aberta a qualquer
+  adepto: o grupo é uma etiqueta, não uma fechadura;
+- o grupo ganha assim o **histórico das viagens** (`group_trips`): os jogos em que teve boleia ou
+  casa, com quantos lugares foram dados;
+- quem andou com gente nova cria um grupo **quando quiser**, com um toque, e recebe o link para
+  mandar a quem foi consigo.
+
+Se ligar a boleia ao grupo falhar, a boleia fica publicada na mesma e o condutor escolhe depois: uma
+etiqueta nunca deve estragar uma viagem.
+
+Regras verificadas com teste SQL revertido: só o condutor liga a sua boleia a um grupo, e só a
+grupos onde está; aceitar um passageiro já não cria grupo nenhum.
+
 ## 2026-09-16 — Grupos: a malta que anda junta
 
 **Porquê.** A app servia para encontrar desconhecidos. Faltava o contrário: ir com quem já se conhece,

@@ -7,6 +7,7 @@ import { Alert, Share, StyleSheet, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import {
   fetchGroupMembers,
+  fetchGroupTrips,
   fetchMyGroups,
   GroupRefused,
   leaveGroup,
@@ -16,8 +17,11 @@ import {
   type GroupMember,
 } from '@/features/groups/api';
 import { useTheme } from '@/hooks/use-theme';
+import { formatarData } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
+import { obterClube } from '@/mocks/clubes';
+import { obterJogo } from '@/mocks/jogos';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
@@ -70,6 +74,11 @@ export default function GrupoScreen() {
   const grupos = useQuery({
     queryKey: ['groups', userId],
     queryFn: userId ? fetchMyGroups : skipToken,
+    meta: { persist: false },
+  });
+  const viagens = useQuery({
+    queryKey: ['groups', 'trips', grupoId ?? null],
+    queryFn: grupoId ? () => fetchGroupTrips(grupoId) : skipToken,
     meta: { persist: false },
   });
   const membros = useQuery({
@@ -225,6 +234,51 @@ export default function GrupoScreen() {
           ) : null}
         </Card>
       ))}
+
+      <SectionHeader title="Viagens do grupo" />
+      {(viagens.data ?? []).length === 0 ? (
+        <Card>
+          <ThemedText themeColor="textSecondary">
+            Ainda não há viagens deste grupo. Quando alguém oferecer uma boleia ou propuser uma
+            casa, pode dizer que é deste grupo — e fica aqui.
+          </ThemedText>
+        </Card>
+      ) : (
+        (viagens.data ?? []).map((viagem) => {
+          const jogo = obterJogo(viagem.fixtureId);
+          const nome = jogo
+            ? `${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`
+            : 'Jogo';
+          return (
+            <Card
+              key={viagem.fixtureId}
+              onPress={
+                jogo
+                  ? () =>
+                      router.push({
+                        pathname: '/jogos/[jogoId]',
+                        params: { jogoId: viagem.fixtureId },
+                      })
+                  : undefined
+              }
+              accessibilityLabel={`${nome}. Toca para abrir o jogo.`}>
+              <ThemedText style={styles.nome}>{nome}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {[
+                  formatarData(new Date(viagem.kickoffAt)),
+                  viagem.rides > 0 ? plural(viagem.rides, 'boleia', 'boleias') : null,
+                  viagem.seatsTaken > 0
+                    ? `${plural(viagem.seatsTaken, 'lugar', 'lugares')} dados`
+                    : null,
+                  viagem.houses > 0 ? plural(viagem.houses, 'casa', 'casas') : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </ThemedText>
+            </Card>
+          );
+        })
+      )}
 
       {souDono ? (
         <>
