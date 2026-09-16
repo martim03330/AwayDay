@@ -23,6 +23,10 @@ export type TripRefusal =
   | 'not_in_trip'
   | 'ride_expense'
   | 'bad_settlement'
+  | 'cannot_add'
+  | 'has_money'
+  | 'last_person'
+  | 'bad_name'
   | 'rate_limited'
   | 'unknown';
 
@@ -51,6 +55,10 @@ const RECUSAS: TripRefusal[] = [
   'not_in_trip',
   'ride_expense',
   'bad_settlement',
+  'cannot_add',
+  'has_money',
+  'last_person',
+  'bad_name',
   'rate_limited',
 ];
 
@@ -232,13 +240,10 @@ export async function openRideTripSession(rideId: string): Promise<string> {
 }
 
 export type TripAccount = {
-  kind: 'grupo' | 'boleia';
-  /** O grupo ou a boleia a que estas contas pertencem. */
-  ownerId: string;
-  title: string;
-  /** `null` enquanto ninguém abriu as contas. */
-  sessionId: string | null;
-  /** Quem vai nesta viagem: os do carro, ou os do grupo. */
+  sessionId: string;
+  name: string;
+  /** De onde nasceram: de uma boleia, de um grupo, ou do nada. */
+  origin: 'boleia' | 'grupo' | 'avulso';
   people: number;
   peopleNames: string[];
   expenses: number;
@@ -247,21 +252,112 @@ export type TripAccount = {
   myBalanceCents: number;
 };
 
-/** As contas deste jogo que te dizem respeito: as dos teus grupos e as das boleias em que vais. */
+/** As contas deste jogo onde entras. São das pessoas que lá estão — não do grupo nem do carro. */
 export async function fetchMyTripAccounts(fixtureId: string): Promise<TripAccount[]> {
   const { data, error } = await client().rpc('my_trip_accounts', { p_fixture_id: fixtureId });
   if (error) throw error;
   return data.map((row) => ({
-    kind: row.kind === 'boleia' ? ('boleia' as const) : ('grupo' as const),
-    ownerId: row.owner_id,
-    title: row.title ?? 'Contas',
     sessionId: row.session_id,
+    name: row.name ?? 'Contas da viagem',
+    origin:
+      row.origin === 'boleia'
+        ? ('boleia' as const)
+        : row.origin === 'grupo'
+          ? ('grupo' as const)
+          : ('avulso' as const),
     people: row.people ?? 1,
     peopleNames: row.people_names ?? [],
     expenses: row.expenses ?? 0,
     totalCents: row.total_cents ?? 0,
     myBalanceCents: row.my_balance_cents ?? 0,
   }));
+}
+
+/** Por onde se podem começar as contas deste jogo: pela boleia em que vais, por um grupo teu, ou do zero. */
+export type TripStartOption = {
+  kind: 'boleia' | 'grupo';
+  id: string;
+  title: string;
+  people: number;
+};
+
+export async function fetchTripStartOptions(fixtureId: string): Promise<TripStartOption[]> {
+  const { data, error } = await client().rpc('trip_start_options', { p_fixture_id: fixtureId });
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.id
+      ? [
+          {
+            kind: row.kind === 'boleia' ? ('boleia' as const) : ('grupo' as const),
+            id: row.id,
+            title: row.title ?? 'Contas da viagem',
+            people: row.people ?? 1,
+          },
+        ]
+      : []
+  );
+}
+
+/** Abrir contas sem grupo nem boleia: começam só contigo, e acrescentas quem foi. */
+export async function startTripSession(fixtureId: string, name?: string): Promise<string> {
+  const { data, error } = await client().rpc('start_trip_session', {
+    p_fixture_id: fixtureId,
+    p_name: name?.trim(),
+  });
+  if (error) throw refusal(error);
+  return data;
+}
+
+export async function renameTripSession(sessionId: string, name: string) {
+  const { error } = await client().rpc('rename_trip_session', {
+    p_session_id: sessionId,
+    p_name: name.trim(),
+  });
+  if (error) throw refusal(error);
+}
+
+/** Quem pode entrar nestas contas e ainda não está: amigos, malta dos teus grupos e quem vai no carro. */
+export type TripCandidate = {
+  profileId: string;
+  displayName: string;
+  reason: 'amigo' | 'grupo' | 'boleia';
+};
+
+export async function fetchTripPeopleToAdd(sessionId: string): Promise<TripCandidate[]> {
+  const { data, error } = await client().rpc('trip_people_to_add', { p_session_id: sessionId });
+  if (error) throw error;
+  return data.map((row) => ({
+    profileId: row.profile_id,
+    displayName: row.display_name ?? 'Um adepto',
+    reason:
+      row.reason === 'amigo'
+        ? ('amigo' as const)
+        : row.reason === 'boleia'
+          ? ('boleia' as const)
+          : ('grupo' as const),
+  }));
+}
+
+export async function addTripPerson(sessionId: string, profileId: string) {
+  const { error } = await client().rpc('add_trip_person', {
+    p_session_id: sessionId,
+    p_profile_id: profileId,
+  });
+  if (error) throw refusal(error);
+}
+
+/** Apagar umas contas abertas por engano. Só enquanto não houver despesas nem pagamentos lá dentro. */
+export async function removeTripSession(sessionId: string) {
+  const { error } = await client().rpc('remove_trip_session', { p_session_id: sessionId });
+  if (error) throw refusal(error);
+}
+
+export async function removeTripPerson(sessionId: string, profileId: string) {
+  const { error } = await client().rpc('remove_trip_person', {
+    p_session_id: sessionId,
+    p_profile_id: profileId,
+  });
+  if (error) throw refusal(error);
 }
 
 /** Uma viagem a acontecer agora: a boleia em que vais, desde uma hora antes de sair até ao dia seguinte ao jogo. */

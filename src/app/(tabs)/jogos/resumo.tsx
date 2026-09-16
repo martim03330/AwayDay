@@ -76,10 +76,7 @@ export default function ResumoScreen() {
   const avaliacao = avaliacaoDoJogo(jogo.id);
   const inicio = new Date(jogo.inicio);
 
-  // Só as viagens que aconteceram mesmo: um grupo sem contas nem boleia neste jogo não é uma viagem.
-  const viagens = (contas.data ?? []).filter(
-    (conta) => conta.kind === 'boleia' || conta.sessionId !== null
-  );
+  const viagens = contas.data ?? [];
   const companheiros = companhia.data ?? [];
   const gastoTotal = viagens.reduce((total, viagem) => total + viagem.totalCents, 0);
 
@@ -159,16 +156,16 @@ export default function ResumoScreen() {
       {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
 
       <SectionHeader title="O que se gastou" />
-      {viagens.length === 0 || gastoTotal === 0 ? (
+      {gastoTotal === 0 ? (
         <Card>
           <ThemedText themeColor="textSecondary">Não há contas lançadas neste jogo.</ThemedText>
         </Card>
       ) : (
         viagens
-          .filter((viagem) => viagem.sessionId !== null)
+          .filter((viagem) => viagem.expenses > 0)
           .map((viagem) => (
-            <Card key={`${viagem.kind}-${viagem.ownerId}`} style={styles.cartao}>
-              <ThemedText style={styles.nome}>{viagem.title}</ThemedText>
+            <Card key={viagem.sessionId} style={styles.cartao}>
+              <ThemedText style={styles.nome}>{viagem.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {`${formatarCentimos(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}`}
               </ThemedText>
@@ -198,10 +195,7 @@ export default function ResumoScreen() {
                 onPress={() =>
                   router.push({
                     pathname: '/jogos/contas',
-                    params:
-                      viagem.kind === 'boleia'
-                        ? { jogoId: jogo.id, boleiaId: viagem.ownerId }
-                        : { jogoId: jogo.id, grupoId: viagem.ownerId },
+                    params: { jogoId: jogo.id, sessaoId: viagem.sessionId },
                   })
                 }
               />

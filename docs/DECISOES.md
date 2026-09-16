@@ -2,6 +2,36 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — A sessão é que manda (correção de desenho)
+
+Estava mal pensado por mim: as contas eram **do grupo** ou **da boleia**, e quem tivesse as duas coisas para o mesmo
+jogo via duas contas separadas sem saber para qual olhar. Mas quem paga o jantar não é um grupo nem um carro: é a
+malta que foi àquela viagem — alguns do grupo, alguns do carro, e às vezes um amigo que apareceu por lá.
+
+**A sessão passa a ter a sua própria lista de pessoas** (`trip_session_member`). O grupo e a boleia deixam de ser
+donos das contas e passam a ser **maneiras de começar**:
+
+- abrir a partir da boleia traz a malta do carro (e a despesa da boleia);
+- abrir a partir de um grupo traz a malta do grupo;
+- `start_trip_session` abre umas contas do zero, só contigo.
+
+A lista só é preenchida **quando as contas nascem**: reabrir não volta a meter lá quem foi tirado de propósito. Só se
+acrescenta quem já se conhece — um amigo, alguém de um grupo teu, ou alguém do carro desta viagem (`cannot_add`).
+
+**Quem tem dinheiro nas contas não se tira** (`has_money`): primeiro apagam-se as despesas dessa pessoa. E umas
+contas **sem nada lançado** podem ser apagadas por quem está nelas — é a saída para quem abriu duas por engano; a
+partir da primeira despesa, não, que apagar dinheiro de outras pessoas por atalho não é coisa que se faça.
+
+**A despesa da boleia divide-se por quem vai no carro E está nas contas**: um amigo que foi noutro carro entra no
+jantar mas não paga a gasolina desta boleia.
+
+No ecrã do jogo, «Contas da viagem» passa a mostrar as contas onde entras (normalmente umas só), e, quando não há
+nenhumas, os botões para as abrir a partir da boleia, de um grupo, ou do zero.
+
+Verificado com testes em transação revertida: as contas nascem com a malta certa; quem não foi no carro entra à mão
+mas não paga a boleia; um desconhecido não entra; quem não está nas contas não as vê; quem tem dinheiro não se tira;
+quem não tem sai; e umas contas vazias apagam-se, com despesas não.
+
 ## 2026-09-16 — A boleia entra nas contas
 
 A boleia tinha a conta dela (combustível + portagens, dividido por quem vai no carro) e as contas da viagem tinham a

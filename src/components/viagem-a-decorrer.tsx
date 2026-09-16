@@ -50,7 +50,9 @@ export function ViagemADecorrer() {
           onPress={() =>
             router.push({
               pathname: '/jogos/contas',
-              params: { jogoId: viagem.fixtureId, boleiaId: viagem.rideId },
+              params: viagem.sessionId
+                ? { jogoId: viagem.fixtureId, sessaoId: viagem.sessionId }
+                : { jogoId: viagem.fixtureId, boleiaId: viagem.rideId },
             })
           }
           accessibilityLabel={`Viagem a decorrer para ${nomeDoJogo(viagem.fixtureId)}. Toca para abrir as contas.`}>

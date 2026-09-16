@@ -3,11 +3,13 @@ import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchMyLiveTrips,
   fetchMyTripAccounts,
+  fetchTripStartOptions,
   fetchMyTripHistory,
   fetchRideTripSession,
   fetchTripBalances,
   fetchTripExpenses,
   fetchTripPeople,
+  fetchTripPeopleToAdd,
   fetchTripSettlements,
   fetchTripSession,
 } from '@/features/trips/api';
@@ -21,6 +23,10 @@ export const tripExpensesKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'expenses', sessionId] as const;
 export const tripAccountsKey = (fixtureId: string | null) =>
   [TRIPS_KEY, 'mine', fixtureId] as const;
+export const tripStartOptionsKey = (fixtureId: string | null) =>
+  [TRIPS_KEY, 'start', fixtureId] as const;
+export const tripCandidatesKey = (sessionId: string | null) =>
+  [TRIPS_KEY, 'candidates', sessionId] as const;
 export const rideSessionKey = (rideId: string | null) => [TRIPS_KEY, 'ride', rideId] as const;
 export const tripPeopleKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'people', sessionId] as const;
@@ -67,6 +73,26 @@ export function useMyTripAccounts(fixtureId: string | null, signedIn: boolean) {
   return useQuery({
     queryKey: tripAccountsKey(fixtureId),
     queryFn: fixtureId && signedIn ? () => fetchMyTripAccounts(fixtureId) : skipToken,
+    staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/** Por onde se podem começar as contas deste jogo. */
+export function useTripStartOptions(fixtureId: string | null, signedIn: boolean) {
+  return useQuery({
+    queryKey: tripStartOptionsKey(fixtureId),
+    queryFn: fixtureId && signedIn ? () => fetchTripStartOptions(fixtureId) : skipToken,
+    staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/** Quem pode entrar nestas contas e ainda não está. */
+export function useTripPeopleToAdd(sessionId: string | null) {
+  return useQuery({
+    queryKey: tripCandidatesKey(sessionId),
+    queryFn: sessionId ? () => fetchTripPeopleToAdd(sessionId) : skipToken,
     staleTime: STALE_MS,
     meta: { persist: false },
   });

@@ -7,23 +7,28 @@ import { Spacing } from '@/constants/theme';
 import { fetchMyGroups } from '@/features/groups/api';
 import {
   addTripExpense,
+  addTripPerson,
   addTripSettlement,
   CATEGORIAS,
   confirmTripSettlement,
   openRideTripSession,
   openTripSession,
   removeTripExpense,
+  removeTripPerson,
+  removeTripSession,
   removeTripSettlement,
   TripRefused,
   type CategoriaDespesa,
   type TripBalance,
 } from '@/features/trips/api';
 import {
+  useMyTripAccounts,
   useRefreshTrips,
   useRideTripSession,
   useTripBalances,
   useTripExpenses,
   useTripPeople,
+  useTripPeopleToAdd,
   useTripSession,
   useTripSettlements,
 } from '@/features/trips/hooks/useTrips';
@@ -79,6 +84,12 @@ function mensagemDeRecusa(erro: unknown) {
       return 'Um pagamento é sempre de uma pessoa para outra, com um valor.';
     case 'ride_expense':
       return 'A despesa da boleia não se apaga: ela acompanha quem vai no carro.';
+    case 'cannot_add':
+      return 'Só podes acrescentar amigos, malta dos teus grupos ou quem vai no carro.';
+    case 'has_money':
+      return 'Essa pessoa já tem despesas nestas contas. Apaga-as primeiro, se for engano.';
+    case 'last_person':
+      return 'Umas contas não ficam sem ninguém.';
     case 'rate_limited':
       return 'Já lançaste muitas despesas hoje. Continua amanhã.';
     default:
@@ -137,8 +148,11 @@ export default function ContasScreen() {
   const theme = useTheme();
   const userId = useUserId();
   const refrescar = useRefreshTrips();
-  const { jogoId, grupoId, boleiaId } = useLocalSearchParams<{
+  const { jogoId, sessaoId, grupoId, boleiaId } = useLocalSearchParams<{
     jogoId?: string;
+    /** O caminho normal: umas contas que já existem. */
+    sessaoId?: string;
+    /** Os dois caminhos antigos, que abrem (ou encontram) as contas dessa origem. */
     grupoId?: string;
     boleiaId?: string;
   }>();
@@ -152,8 +166,10 @@ export default function ContasScreen() {
   const sessaoDoGrupo = useTripSession(grupoId ?? null, jogoId ?? null, userId !== null);
   const sessaoDaBoleia = useRideTripSession(boleiaId ?? null, userId !== null);
   const sessao = boleiaId ? sessaoDaBoleia : sessaoDoGrupo;
-  const sessionId = sessao.data?.id ?? null;
+  const sessionId = sessaoId ?? sessao.data?.id ?? null;
   const pessoas = useTripPeople(sessionId);
+  const porAcrescentar = useTripPeopleToAdd(sessionId);
+  const contasDoJogo = useMyTripAccounts(jogoId ?? null, userId !== null);
   const despesas = useTripExpenses(sessionId);
   const saldos = useTripBalances(sessionId);
   const pagamentos = useTripSettlements(sessionId);
@@ -168,12 +184,13 @@ export default function ContasScreen() {
   const [erro, setErro] = useState<string | null>(null);
 
   const grupo = (grupos.data ?? []).find((candidato) => candidato.id === grupoId);
+  const estasContas = (contasDoJogo.data ?? []).find((conta) => conta.sessionId === sessionId);
   const gente = pessoas.data ?? [];
   const nomeDoJogo = jogo
     ? `${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`
     : 'Jogo';
 
-  if (!userId || !jogoId || (!grupoId && !boleiaId)) {
+  if (!userId || !jogoId || (!sessaoId && !grupoId && !boleiaId)) {
     return (
       <Screen>
         <EmptyState
@@ -251,7 +268,8 @@ export default function ContasScreen() {
       <ThemedText type="title">Contas de {nomeDoJogo}</ThemedText>
       <ThemedText themeColor="textSecondary">
         {[
-          boleiaId ? 'Boleia' : (grupo?.name ?? 'Grupo'),
+          estasContas?.name ??
+            (boleiaId ? 'Contas da viagem' : (grupo?.name ?? 'Contas da viagem')),
           gente.length > 0 ? plural(gente.length, 'pessoa', 'pessoas') : null,
         ]
           .filter(Boolean)
@@ -497,6 +515,51 @@ export default function ContasScreen() {
             ))
           )}
 
+          <SectionHeader title="Quem entra nestas contas" trailing={String(gente.length)} />
+          <Card style={styles.cartao}>
+            <ThemedText themeColor="textSecondary">
+              Estas contas são desta malta — venha ela do carro, do grupo ou de lado nenhum. Quem
+              entrar aqui passa a poder lançar despesas e a entrar nas divisões que escolherem.
+            </ThemedText>
+            {gente.map((pessoa) => (
+              <View key={pessoa.profileId} style={styles.linha}>
+                <ThemedText style={styles.flex} numberOfLines={1}>
+                  {pessoa.isMe ? `${pessoa.displayName} (tu)` : pessoa.displayName}
+                </ThemedText>
+                {gente.length > 1 && sessionId ? (
+                  <LinkTexto
+                    label="Tirar"
+                    onPress={() => void tratar(() => removeTripPerson(sessionId, pessoa.profileId))}
+                  />
+                ) : null}
+              </View>
+            ))}
+          </Card>
+
+          {(porAcrescentar.data ?? []).length > 0 && sessionId ? (
+            <Card style={styles.cartao}>
+              <ThemedText type="smallBold">Acrescentar quem também foi</ThemedText>
+              {(porAcrescentar.data ?? []).map((pessoa) => (
+                <View key={pessoa.profileId} style={styles.linha}>
+                  <View style={styles.flex}>
+                    <ThemedText numberOfLines={1}>{pessoa.displayName}</ThemedText>
+                    <ThemedText type="small" themeColor="textMuted">
+                      {pessoa.reason === 'amigo'
+                        ? 'teu amigo'
+                        : pessoa.reason === 'boleia'
+                          ? 'vai no carro'
+                          : 'de um grupo teu'}
+                    </ThemedText>
+                  </View>
+                  <LinkTexto
+                    label="Acrescentar"
+                    onPress={() => void tratar(() => addTripPerson(sessionId, pessoa.profileId))}
+                  />
+                </View>
+              ))}
+            </Card>
+          ) : null}
+
           <SectionHeader title="Lançar uma despesa" />
           <Card style={styles.cartao}>
             <Campo
@@ -581,11 +644,36 @@ export default function ContasScreen() {
         </>
       )}
 
+      {sessionId && (despesas.data ?? []).every((despesa) => despesa.source === 'boleia') ? (
+        <Card style={styles.cartao}>
+          <LinkTexto
+            label="Apagar estas contas"
+            onPress={() =>
+              Alert.alert(
+                'Apagar estas contas?',
+                'Ainda não têm nada lançado, por isso não se perde dinheiro nenhum.',
+                [
+                  { text: 'Deixa estar', style: 'cancel' },
+                  {
+                    text: 'Apagar',
+                    style: 'destructive',
+                    onPress: () =>
+                      void tratar(() => removeTripSession(sessionId)).then((feito) => {
+                        if (feito) router.back();
+                      }),
+                  },
+                ]
+              )
+            }
+          />
+        </Card>
+      ) : null}
+
       {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
 
       <ThemedText type="small" themeColor="textMuted">
-        As contas ficam aqui depois do jogo: a app não move dinheiro nenhum, só diz quem paga a
-        quem.
+        A app não move dinheiro nenhum: diz quem paga a quem e guarda o que já foi pago. As contas
+        ficam aqui muito depois do jogo.
       </ThemedText>
     </Screen>
   );

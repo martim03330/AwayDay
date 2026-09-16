@@ -2584,6 +2584,7 @@ export type Database = {
           fixture_id: string
           group_id: string | null
           id: string
+          name: string | null
           opened_by: string | null
           ride_id: string | null
           updated_at: string
@@ -2593,6 +2594,7 @@ export type Database = {
           fixture_id: string
           group_id?: string | null
           id?: string
+          name?: string | null
           opened_by?: string | null
           ride_id?: string | null
           updated_at?: string
@@ -2602,6 +2604,7 @@ export type Database = {
           fixture_id?: string
           group_id?: string | null
           id?: string
+          name?: string | null
           opened_by?: string | null
           ride_id?: string | null
           updated_at?: string
@@ -2633,6 +2636,49 @@ export type Database = {
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_session_member: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          profile_id: string
+          session_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          profile_id: string
+          session_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          profile_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_session_member_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_session_member_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_session_member_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trip_session"
             referencedColumns: ["id"]
           },
         ]
@@ -2981,6 +3027,10 @@ export type Database = {
         }
         Returns: string
       }
+      add_trip_person: {
+        Args: { p_profile_id: string; p_session_id: string }
+        Returns: undefined
+      }
       add_trip_settlement: {
         Args: {
           p_cents: number
@@ -3311,13 +3361,12 @@ export type Database = {
         Args: { p_fixture_id: string }
         Returns: {
           expenses: number
-          kind: string
           my_balance_cents: number
-          owner_id: string
+          name: string
+          origin: string
           people: number
           people_names: string[]
           session_id: string
-          title: string
           total_cents: number
         }[]
       }
@@ -3413,12 +3462,24 @@ export type Database = {
         Args: { p_expense_id: string }
         Returns: undefined
       }
+      remove_trip_person: {
+        Args: { p_profile_id: string; p_session_id: string }
+        Returns: undefined
+      }
+      remove_trip_session: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
       remove_trip_settlement: {
         Args: { p_settlement_id: string }
         Returns: undefined
       }
       rename_group: {
         Args: { p_group_id: string; p_name: string }
+        Returns: undefined
+      }
+      rename_trip_session: {
+        Args: { p_name: string; p_session_id: string }
         Returns: undefined
       }
       report_home_fans: {
@@ -3660,6 +3721,10 @@ export type Database = {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: Json
       }
+      start_trip_session: {
+        Args: { p_fixture_id: string; p_name?: string }
+        Returns: string
+      }
       stay_people_count: { Args: { p_plan_id: string }; Returns: number }
       stay_place_people: {
         Args: { p_plan_id: string }
@@ -3747,6 +3812,14 @@ export type Database = {
           profile_id: string
         }[]
       }
+      trip_people_to_add: {
+        Args: { p_session_id: string }
+        Returns: {
+          display_name: string
+          profile_id: string
+          reason: string
+        }[]
+      }
       trip_session_of: {
         Args: { p_fixture_id: string; p_group_id: string }
         Returns: {
@@ -3774,6 +3847,15 @@ export type Database = {
           mine: boolean
           to_name: string
           to_profile_id: string
+        }[]
+      }
+      trip_start_options: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          id: string
+          kind: string
+          people: number
+          title: string
         }[]
       }
       trips_together: {
