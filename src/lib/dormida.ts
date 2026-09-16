@@ -57,26 +57,12 @@ export function linkAirbnb({
   return `${AIRBNB}/${encodeURI(destino(cidade, pais))}/homes?${parametros}`;
 }
 
-/** O que cada um paga por noite, em cêntimos inteiros, arredondado para cima (ninguém paga meio cêntimo). */
-export function porPessoaPorNoite(centimosPorNoite: number, pessoas: number) {
-  const gente = Math.max(1, Math.round(pessoas));
-  return Math.ceil(centimosPorNoite / gente);
-}
-
-/** O que a estadia toda custa, em cêntimos inteiros. */
-export function totalDaEstadia(centimosPorNoite: number, noites: number) {
-  return centimosPorNoite * Math.max(1, Math.round(noites));
-}
-
 /**
- * A mediana de vários preços, em cêntimos inteiros. `null` com menos de três relatos: com um ou dois, o que há é a
- * conta de quem falou, e essa já está à vista com o nome e a data.
+ * O que cada um paga numa casa dividida: o custo total a dividir por quem lá dorme, arredondado para cima ao
+ * cêntimo — a mesma regra da boleia, por isso o dono nunca paga menos do que a sua parte. O servidor faz esta conta
+ * outra vez (`stay_share_cents`); isto é para a app poder mostrar o resultado antes de guardar.
  */
-export function medianaCentimos(valores: readonly number[]) {
-  if (valores.length < 3) return null;
-  const ordenados = [...valores].sort((a, b) => a - b);
-  const meio = Math.floor(ordenados.length / 2);
-  const mediana =
-    ordenados.length % 2 === 1 ? ordenados[meio] : (ordenados[meio - 1] + ordenados[meio]) / 2;
-  return Math.round(mediana);
+export function porPessoaNaCasa(totalCentimos: number, pessoas: number) {
+  const gente = Math.max(1, Math.round(pessoas));
+  return Math.ceil(totalCentimos / gente);
 }

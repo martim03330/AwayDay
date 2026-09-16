@@ -2,36 +2,38 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
-## 2026-09-16 — Dormir fora: quem procura casa, quem já tem, e a pesquisa no Airbnb
+## 2026-09-16 — Dormir fora: casas propostas pelos adeptos, divididas como as boleias
 
-**O que não dá.** O Airbnb não tem API pública e a de parceiros é fechada. Guardar o link de um
-anúncio seria prometer uma coisa que não controlamos: verifiquei a 2026-09-16 que um anúncio
-inventado (`/rooms/1234…`) devolve **HTTP 200** na mesma — a página só diz que não existe depois de
-carregar no browser. Não há forma honesta de saber se um anúncio ainda está disponível, e raspar a
-página viola os termos do Airbnb e parte-se ao primeiro redesenho.
+**O que não dá.** O Airbnb não tem API pública e a de parceiros é fechada. Verifiquei a 2026-09-16
+que um anúncio inventado (`/rooms/1234…`) devolve **HTTP 200** na mesma — a página só diz que não
+existe depois de carregar no browser. Não há forma honesta de a app saber se uma casa continua
+disponível, e raspar a página viola os termos do Airbnb.
 
-**Link de pesquisa, nunca de anúncio** (`src/lib/dormida.ts`): a app abre
-`airbnb.pt/s/<Cidade>--<País>/homes?checkin=…&checkout=…&adults=N`, com entrada na véspera do jogo.
-Uma pesquisa mostra sempre o que está disponível naquele momento: não pode ficar desatualizada.
+**Por isso a app não guarda disponibilidade: guarda pessoas.** Funciona como as boleias:
+- **propor uma casa**: quem encontra uma casa no Airbnb propõe-na com o **custo total**, as noites e
+  quantos lugares tem. O preço por pessoa é calculado no servidor (`stay_share_cents`, a mesma regra
+  da boleia: total a dividir por quem lá dorme, arredondado para cima ao cêntimo) e **desce a cada
+  pessoa que entra**;
+- **pedir lugar**: como na boleia, quem propôs é que aceita ou recusa (`stay_place`);
+- **convicção de quem propõe**: «reservo de qualquer maneira» ou «só reservo se encher» — é o que
+  diz aos outros se podem contar com aquilo;
+- **precisar de cama**: quem ainda não viu nada diz só isso, sem preço nenhum, para os outros saberem
+  quanta gente há;
+- **marcar como reservada** quando a casa for fechada.
 
-**O que a app guarda são intenções de pessoas, não preços de casas** (`stay_plan`). O primeiro
-desenho pedia «quanto pagaste» e estava errado — quem está a planear ainda não pagou nada, e o que
-interessa é juntar gente para dividir uma casa. Cada adepto diz uma de duas coisas:
-- **procuro casa**: até quanto paga, por pessoa e por noite, e com que convicção — «reservo de
-  qualquer maneira» ou «só se dividirmos». É essa convicção que diz aos outros se podem contar com
-  ele;
-- **já tenho casa**: quantos lugares sobram e quanto fica a cada um.
+O link do anúncio é guardado com o nome de quem o viu e a **data** em que o viu, e a app diz à frente
+que pode já não estar disponível: é de quem o propôs, não uma garantia nossa. O botão de pesquisa
+continua a abrir o Airbnb com a cidade e as datas do jogo, e esse nunca fica desatualizado.
 
-O cartão está organizado em três blocos, por esta ordem: **a tua ideia** (editável), **quem mais
-vai** (com a convicção à frente) e só depois **procurar casa**. As noites e as pessoas da pesquisa
-vivem dentro desse último bloco: no primeiro desenho estavam no topo e pareciam parte da resposta de
-cada um, o que confundia quem já tinha respondido.
+**Duas correções ao desenho anterior, vindas do teste na app:** pedia-se «quanto pagaste» (ninguém
+pagou nada ainda) e depois «até quanto pagas por pessoa e por noite» (ninguém pensa assim, e não
+havia forma de entrar na casa de alguém). As escolhas de noites e pessoas também estavam no topo,
+onde pareciam parte da resposta de cada um; agora vivem dentro do bloco da pesquisa.
 
-Um plano por pessoa e por jogo, em cêntimos inteiros, apagado um dia depois do jogo. Só aparece em
-jogos no estrangeiro e nas ilhas, e é o servidor que confirma isso (`fixture_needs_stay`).
-
-Regras verificadas com teste SQL revertido: procurar casa sem convicção é recusado, ter casa sem
-lugares é recusado, jogo do continente é recusado, e na lista quem já tem casa aparece primeiro.
+Só aparece em jogos no estrangeiro e nas ilhas, e é o servidor que confirma isso
+(`fixture_needs_stay`). Regras verificadas com teste SQL revertido: pedir lugar na própria casa é
+recusado, responder a pedidos de casa alheia é recusado, e a casa de 300 € passa de 300 € para 150 €
+por pessoa quando alguém entra — e volta a 300 € quando sai.
 
 ## 2026-09-16 — Tascos sugeridos pelos próprios adeptos (e os que ficam mais longe)
 

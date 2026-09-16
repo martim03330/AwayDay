@@ -2074,44 +2074,92 @@ export type Database = {
           },
         ]
       }
+      stay_place: {
+        Row: {
+          created_at: string
+          plan_id: string
+          profile_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          plan_id: string
+          profile_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          plan_id?: string
+          profile_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stay_place_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "stay_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stay_place_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stay_plan: {
         Row: {
-          cents_per_person: number
           commitment: string | null
           created_at: string
           fixture_id: string
           id: string
           kind: string
+          listing_seen_on: string | null
+          listing_url: string | null
           nights: number
           note: string | null
           profile_id: string
           spare_places: number | null
+          status: string
+          total_cents: number | null
           updated_at: string
         }
         Insert: {
-          cents_per_person: number
           commitment?: string | null
           created_at?: string
           fixture_id: string
           id?: string
           kind: string
+          listing_seen_on?: string | null
+          listing_url?: string | null
           nights: number
           note?: string | null
           profile_id: string
           spare_places?: number | null
+          status?: string
+          total_cents?: number | null
           updated_at?: string
         }
         Update: {
-          cents_per_person?: number
           commitment?: string | null
           created_at?: string
           fixture_id?: string
           id?: string
           kind?: string
+          listing_seen_on?: string | null
+          listing_url?: string | null
           nights?: number
           note?: string | null
           profile_id?: string
           spare_places?: number | null
+          status?: string
+          total_cents?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -2428,6 +2476,10 @@ export type Database = {
         Args: { p_accept: boolean; p_profile_id: string; p_ride_id: string }
         Returns: undefined
       }
+      answer_stay_place: {
+        Args: { p_accept: boolean; p_plan_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       club_supporter_counts: {
@@ -2465,15 +2517,23 @@ export type Database = {
       fixture_stay_plans: {
         Args: { p_fixture_id: string }
         Returns: {
-          cents_per_person: number
           commitment: string
           display_name: string
           id: string
           is_mine: boolean
           kind: string
+          listing_seen_on: string
+          listing_url: string
+          my_status: string
           nights: number
           note: string
+          pending: number
+          share_full_cents: number
+          share_now_cents: number
           spare_places: number
+          status: string
+          taken: number
+          total_cents: number
           updated_on: string
         }[]
       }
@@ -2495,6 +2555,11 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
+      leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      mark_stay_house: {
+        Args: { p_booked: boolean; p_plan_id: string }
+        Returns: undefined
+      }
       moderate_place_photo: {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
@@ -2619,6 +2684,7 @@ export type Database = {
         Args: { p_accept_rules: boolean; p_ride_id: string }
         Returns: undefined
       }
+      request_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
       ride_ban_until: { Args: { p_profile_id: string }; Returns: string }
       ride_board: {
         Args: { p_fixture_id: string }
@@ -2748,22 +2814,50 @@ export type Database = {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
       }
-      set_stay_plan: {
-        Args: {
-          p_cents_per_person: number
-          p_commitment?: string
-          p_fixture_id: string
-          p_kind: string
-          p_nights: number
-          p_note?: string
-          p_spare_places?: number
-        }
-        Returns: string
-      }
+      set_stay_plan:
+        | {
+            Args: {
+              p_cents_per_person: number
+              p_commitment?: string
+              p_fixture_id: string
+              p_kind: string
+              p_nights: number
+              p_note?: string
+              p_spare_places?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_commitment?: string
+              p_fixture_id: string
+              p_kind: string
+              p_listing_url?: string
+              p_nights: number
+              p_note?: string
+              p_spare_places?: number
+              p_total_cents?: number
+            }
+            Returns: string
+          }
       settle_rides: { Args: never; Returns: number }
       start_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: Json
+      }
+      stay_people_count: { Args: { p_plan_id: string }; Returns: number }
+      stay_place_people: {
+        Args: { p_plan_id: string }
+        Returns: {
+          display_name: string
+          is_mine: boolean
+          profile_id: string
+          status: string
+        }[]
+      }
+      stay_share_cents: {
+        Args: { p_people: number; p_total_cents: number }
+        Returns: number
       }
       suggest_place: {
         Args: {

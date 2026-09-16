@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  datasDaEstadia,
-  linkAirbnb,
-  medianaCentimos,
-  porPessoaPorNoite,
-  totalDaEstadia,
-} from '@/lib/dormida';
+import { datasDaEstadia, linkAirbnb, porPessoaNaCasa } from '@/lib/dormida';
 
 describe('datasDaEstadia', () => {
   it('enters the day before the game and leaves after the nights asked for', () => {
@@ -53,28 +47,22 @@ describe('linkAirbnb', () => {
   });
 });
 
-describe('money', () => {
-  it('splits a night between people, rounded up to the cent', () => {
-    expect(porPessoaPorNoite(12000, 4)).toBe(3000);
-    expect(porPessoaPorNoite(10000, 3)).toBe(3334);
-    expect(porPessoaPorNoite(5000, 0)).toBe(5000);
+describe('dividir a casa', () => {
+  it('divide o total por quem lá dorme, arredondando para cima ao cêntimo', () => {
+    expect(porPessoaNaCasa(24000, 1)).toBe(24000);
+    expect(porPessoaNaCasa(24000, 4)).toBe(6000);
+    // 200,01 € por três: 66,67 € cada, e os cêntimos a mais ficam para o dono.
+    expect(porPessoaNaCasa(20001, 3)).toBe(6667);
   });
 
-  it('adds up the nights', () => {
-    expect(totalDaEstadia(12000, 2)).toBe(24000);
-    expect(totalDaEstadia(12000, 0)).toBe(12000);
-  });
-});
-
-describe('medianaCentimos', () => {
-  it('needs at least three reports to say anything', () => {
-    expect(medianaCentimos([])).toBeNull();
-    expect(medianaCentimos([4000, 6000])).toBeNull();
+  it('nunca divide por menos de uma pessoa', () => {
+    expect(porPessoaNaCasa(10000, 0)).toBe(10000);
   });
 
-  it('is the middle one, in whole cents', () => {
-    expect(medianaCentimos([4000, 6000, 5000])).toBe(5000);
-    // Com um número par de relatos é a média dos dois do meio, arredondada ao cêntimo: (5001 + 6000) / 2.
-    expect(medianaCentimos([4000, 5001, 6000, 7000])).toBe(5501);
+  it('mostra o preço a descer à medida que a malta entra', () => {
+    const casa = 24000;
+    expect([1, 2, 3, 4].map((pessoas) => porPessoaNaCasa(casa, pessoas))).toEqual([
+      24000, 12000, 8000, 6000,
+    ]);
   });
 });
