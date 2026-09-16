@@ -23,7 +23,19 @@ export type MyProfile = {
 
 export type MessagePreferences = Partial<Pick<MyProfile, 'nudgesEnabled' | 'recapEnabled'>>;
 
-export type NotificationKind = 'kickoff_change' | 'weather' | 'group_movement' | 'new_stamp';
+export type NotificationKind =
+  | 'kickoff_change'
+  | 'weather'
+  | 'group_movement'
+  | 'new_stamp'
+  /** Mensagens na conversa do carro. */
+  | 'ride_message'
+  /** Convites para uma boleia ou para um grupo. */
+  | 'invites'
+  /** Pedidos de amizade e respostas. */
+  | 'friends'
+  /** Despesas e pagamentos das contas da viagem. */
+  | 'trip_money';
 
 /** Only the kinds the user changed; the others follow the app default. */
 export type NotificationPreferences = Partial<Record<NotificationKind, boolean>>;

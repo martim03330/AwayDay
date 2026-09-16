@@ -2,6 +2,35 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — As notificações do resto da app
+
+As boleias já avisavam (pedido de lugar, aceite, recusado, cancelamento). Passa a avisar tudo o que foi entrando
+depois, pela mesma estrada: trigger na base de dados → `pg_net` → a função `social-notify` → serviço de push do Expo.
+
+O que avisa e a quem:
+
+| Aconteceu | Quem recebe |
+|---|---|
+| Mensagem na conversa do carro | os outros que vão no carro |
+| Convite para uma boleia / para um grupo | quem foi convidado |
+| Pedido de amizade / aceitação | o outro lado |
+| Despesa lançada nas contas | quem entra na divisão (menos quem a lançou) |
+| Pagamento registado | o outro lado — quem tem de confirmar, ou quem fica a saber que recebeu |
+
+**Uma notificação nunca trava o que a originou.** Todos os `notify_*` apanham o erro e seguem: se o envio falhar, a
+mensagem, o convite ou a despesa ficam escritos na mesma. Está testado.
+
+**O aviso da despesa sai das partes, não da despesa.** A despesa é escrita primeiro e as pessoas que entram nela
+logo a seguir; um trigger na despesa avisaria sem saber a quem. Por isso o aviso sai de `trip_expense_share`, num
+trigger por instrução (com transition table), já com a lista toda. A despesa da boleia, que entra sozinha, não
+avisa: não é novidade para ninguém.
+
+**Cada tipo desliga-se** nas definições (`notification_preference` com quatro tipos novos), e é o servidor que
+respeita isso — não a app.
+
+**Limitação assumida, e é da plataforma:** desde o SDK 53 o **Expo Go no Android já não recebe push**; é preciso uma
+development build. No iOS continua a funcionar no Expo Go. Onde não dá, o registo do telemóvel não faz nada.
+
 ## 2026-09-16 — A conversa do carro
 
 Combinar uma boleia pela «nota» da ficha não dá: quem entra quer perguntar se o carro passa em Mangualde, a que

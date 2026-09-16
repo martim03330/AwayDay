@@ -5,8 +5,9 @@ import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
-// Push notifications through the Expo push service (free). Works in Expo Go on iOS; on Android it
-// needs a development build, so registration simply does nothing there until then.
+// Push notifications through the Expo push service (free). No SDK 53 para a frente, o Expo Go **no Android** já não
+// recebe notificações push: é preciso uma development build. No iOS continua a funcionar no Expo Go. Onde não dá,
+// o registo não faz nada — a app não fica à espera nem mostra erros.
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 

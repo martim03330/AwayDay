@@ -121,6 +121,10 @@ const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   'weather',
   'group_movement',
   'new_stamp',
+  'ride_message',
+  'invites',
+  'friends',
+  'trip_money',
 ];
 
 function isNotificationKind(value: string): value is NotificationKind {
