@@ -32,6 +32,9 @@ export default function JogosLayout() {
       <Stack.Screen name="boleia-de-volta">
         <Stack.Screen.Title>Boleia de volta</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="conversa">
+        <Stack.Screen.Title>Conversa do carro</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="resumo">
         <Stack.Screen.Title>Resumo da viagem</Stack.Screen.Title>
       </Stack.Screen>

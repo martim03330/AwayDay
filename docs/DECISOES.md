@@ -2,6 +2,27 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — A conversa do carro
+
+Combinar uma boleia pela «nota» da ficha não dá: quem entra quer perguntar se o carro passa em Mangualde, a que
+horas sai mesmo, onde é o ponto de encontro.
+
+**Uma conversa por boleia, do carro todo** — condutor e quem já foi aceite. Foi esta a escolha em vez de conversas
+separadas com o condutor: assim toda a gente lê o mesmo e o condutor não repete quatro vezes a mesma coisa.
+
+**Só entra quem já tem lugar.** Quem pediu e ainda não teve resposta não escreve — senão um condutor com o carro
+cheio ficava com mensagens de dez desconhecidos, e o pedido de lugar já leva um recado escrito. Quem ainda não foi
+aceite, ao abrir a conversa, vê porquê.
+
+**Fecha-se à escrita um dia depois do jogo** (`ride_chat_closes_at`): o que havia a combinar já foi combinado. Quem
+lá esteve continua a poder ler.
+
+**Cada um apaga o que escreveu; o condutor apaga o que for do carro dele** — é a única moderação que aqui faz
+sentido, porque o carro é dele e são cinco pessoas que se escolheram.
+
+O que está por ler conta-se em `my_ride_chats` e aparece no botão da ficha da boleia; abrir a conversa marca-a como
+lida. Sem notificações por agora: entram quando houver notificações a sério para boleias.
+
 ## 2026-09-16 — Um perfil com cara
 
 Uma pessoa era um nome e umas iniciais. Para quem vai meter-se num carro com um desconhecido, ou dividir contas com

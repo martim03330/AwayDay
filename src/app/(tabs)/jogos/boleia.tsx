@@ -10,6 +10,7 @@ import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
 import { Spacing } from '@/constants/theme';
 import { inviteFriendToRide } from '@/features/friends/api';
 import { useMyFriends } from '@/features/friends/hooks/useFriends';
+import { useMyRideChats } from '@/features/rides/hooks/useRideChat';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import type { ProfileCard } from '@/features/profile/types';
 import {
@@ -174,6 +175,7 @@ export default function BoleiaScreen() {
   const pessoas = useRidePeople(rideId ?? null, participante);
   const amigos = useMyFriends(userId !== null);
   const cartoes = useProfileCards((pessoas.data ?? []).map((pessoa) => pessoa.profileId));
+  const conversas = useMyRideChats(userId !== null);
   const [convidados, setConvidados] = useState<string[]>([]);
   // Fans left at the stadium asking for a seat home: only the driver answers, and only while the window is open.
   const pedidosDaVolta = useReturnPeople(
@@ -254,6 +256,7 @@ export default function BoleiaScreen() {
   const prazos = prazosDaBoleia(partida);
   const fase = faseDaBoleia(partida, agora);
   const livres = boleia.seatsOffered - boleia.seatsTaken;
+  const conversa = (conversas.data ?? []).find((fio) => fio.rideId === boleia.id);
   const lista = pessoas.data ?? [];
   const pedidos = lista.filter((pessoa) => pessoa.status === 'requested');
   // Amigos que ainda não vão no carro nem pediram lugar: são estes que vale a pena convidar.
@@ -548,6 +551,34 @@ export default function BoleiaScreen() {
               </View>
             </Card>
           ))}
+        </>
+      ) : null}
+
+      {participante ? (
+        <>
+          <SectionHeader title="Conversa do carro" />
+          <Card style={styles.grupo}>
+            <ThemedText themeColor="textSecondary">
+              {conversa?.lastBody
+                ? `${conversa.lastName ?? 'Alguém'}: «${conversa.lastBody}»`
+                : 'Combina aqui a hora certa, o sítio de encontro e a volta. Escrevem o condutor e quem já tem lugar.'}
+            </ThemedText>
+            <Button
+              label={
+                conversa && conversa.unread > 0
+                  ? `Abrir a conversa (${plural(conversa.unread, 'nova', 'novas')})`
+                  : 'Abrir a conversa'
+              }
+              variant={conversa && conversa.unread > 0 ? 'highlight' : 'secondary'}
+              icon={icons.megafone}
+              onPress={() =>
+                router.push({
+                  pathname: '/jogos/conversa',
+                  params: { rideId: boleia.id, jogoId: jogo.id },
+                })
+              }
+            />
+          </Card>
         </>
       ) : null}
 

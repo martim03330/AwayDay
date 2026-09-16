@@ -2122,6 +2122,78 @@ export type Database = {
           },
         ]
       }
+      ride_message: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          profile_id: string
+          ride_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          profile_id: string
+          ride_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_message_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_message_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_message_read: {
+        Row: {
+          last_read_at: string
+          profile_id: string
+          ride_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          profile_id: string
+          ride_id: string
+        }
+        Update: {
+          last_read_at?: string
+          profile_id?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_message_read_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_message_read_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ride_outcome: {
         Row: {
           created_at: string
@@ -3286,6 +3358,10 @@ export type Database = {
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      mark_ride_messages_read: {
+        Args: { p_ride_id: string }
+        Returns: undefined
+      }
       mark_stay_house: {
         Args: { p_booked: boolean; p_plan_id: string }
         Returns: undefined
@@ -3369,6 +3445,18 @@ export type Database = {
         Returns: {
           showed_up: boolean
           subject_id: string
+        }[]
+      }
+      my_ride_chats: {
+        Args: never
+        Returns: {
+          fixture_id: string
+          last_at: string
+          last_body: string
+          last_name: string
+          open: boolean
+          ride_id: string
+          unread: number
         }[]
       }
       my_ride_invites: {
@@ -3517,6 +3605,10 @@ export type Database = {
         Args: { p_group_id: string; p_profile_id: string }
         Returns: undefined
       }
+      remove_ride_message: {
+        Args: { p_message_id: string }
+        Returns: undefined
+      }
       remove_stay_plan: { Args: { p_fixture_id: string }; Returns: undefined }
       remove_trip_expense: {
         Args: { p_expense_id: string }
@@ -3624,6 +3716,7 @@ export type Database = {
           visibility: string
         }[]
       }
+      ride_chat_closes_at: { Args: { p_kickoff: string }; Returns: string }
       ride_incidents: {
         Args: { p_ride_id: string }
         Returns: {
@@ -3636,6 +3729,18 @@ export type Database = {
           profile_id: string
           reason: string
           rejects: number
+        }[]
+      }
+      ride_messages: {
+        Args: { p_limit?: number; p_ride_id: string }
+        Returns: {
+          body: string
+          can_remove: boolean
+          created_at: string
+          display_name: string
+          id: string
+          mine: boolean
+          profile_id: string
         }[]
       }
       ride_people: {
@@ -3730,6 +3835,10 @@ export type Database = {
         Returns: Json
       }
       send_friend_request: { Args: { p_profile_id: string }; Returns: string }
+      send_ride_message: {
+        Args: { p_body: string; p_ride_id: string }
+        Returns: string
+      }
       set_display_name: { Args: { p_name: string }; Returns: undefined }
       set_home_city: { Args: { p_city: string }; Returns: undefined }
       set_profile_photo: { Args: { p_path: string }; Returns: undefined }
