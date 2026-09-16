@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Colors, Spacing } from '@/constants/theme';
+import { type Paleta, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
 import { formatarPreco } from '@/lib/money';
@@ -30,11 +30,14 @@ type Destaque = PratoComContagem & {
   detalhes: string[];
 };
 
-const TONS = {
-  amarelo: { fundo: Colors.warningBackground, tinta: Colors.warning },
-  verde: { fundo: Colors.successBackground, tinta: Colors.accentInk },
-  azul: { fundo: Colors.infoBackground, tinta: Colors.infoText },
-} satisfies Record<string, Tom>;
+/** Os tons de cada destaque, na paleta em uso. */
+function tons(paleta: Paleta): Record<'amarelo' | 'verde' | 'azul', Tom> {
+  return {
+    amarelo: { fundo: paleta.warningBackground, tinta: paleta.warning },
+    verde: { fundo: paleta.successBackground, tinta: paleta.accentInk },
+    azul: { fundo: paleta.infoBackground, tinta: paleta.infoText },
+  };
+}
 
 /** "pronto em 5 min", when the time is known. */
 function tempoDePreparacao(prato: Prato) {
@@ -49,6 +52,7 @@ function preco(prato: Prato) {
 
 export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: DestaquesMenuProps) {
   const theme = useTheme();
+  const TONS = tons(theme);
   const destaques = destaquesDoMenu(pratos, recomendados, jaContados);
 
   if (!destaques) {
@@ -63,8 +67,8 @@ export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: De
         </ThemedText>
         <ThemedText style={styles.nome}>Ainda não sabemos o que há aqui</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Não encontrámos o menu desta casa e não inventamos. Se já cá comeste, sugere um prato com o preço: ajudas os
-          próximos adeptos a poupar.
+          Não encontrámos o menu desta casa e não inventamos. Se já cá comeste, sugere um prato com
+          o preço: ajudas os próximos adeptos a poupar.
         </ThemedText>
       </Card>
     );

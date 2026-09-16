@@ -1,4 +1,4 @@
-import { Colors, Spacing } from '@/constants/theme';
+import { type Paleta, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   facilidadeEstacionamento,
@@ -21,7 +21,7 @@ const TOM: Record<Facilidade, TomEtiqueta> = {
 };
 
 /** The colour for a dot or a marker. */
-export function corFacilidade(theme: typeof Colors, nivel: Facilidade) {
+export function corFacilidade(theme: Paleta, nivel: Facilidade) {
   if (nivel === 'facil') return theme.success;
   if (nivel === 'media') return theme.warning;
   if (nivel === 'dificil') return theme.danger;

@@ -24,6 +24,8 @@ export type PreferenciasLocais = {
   notificacoes: Partial<Record<TipoNotificacao, boolean>>;
   /** Demo data and simulated time instead of the user's real activity. */
   modoDemo: boolean;
+  /** 'sistema' segue o telemóvel; 'claro' e 'escuro' fixam a paleta. */
+  tema: 'sistema' | 'claro' | 'escuro';
   /** Accounts that were already asked whether to bring this phone's activity in. */
   contasPerguntadas: string[];
 };
@@ -49,6 +51,7 @@ export const PREFERENCIAS_INICIAIS: PreferenciasLocais = {
   sonsLigados: false,
   notificacoes: {},
   modoDemo: false,
+  tema: 'sistema',
   contasPerguntadas: [],
 };
 
@@ -188,6 +191,10 @@ export async function lerPreferencias(): Promise<PreferenciasLocais> {
       )
     ),
     modoDemo: booleano(valor.modoDemo, false),
+    tema:
+      valor.tema === 'claro' || valor.tema === 'escuro' || valor.tema === 'sistema'
+        ? valor.tema
+        : 'sistema',
     contasPerguntadas: Array.isArray(valor.contasPerguntadas)
       ? valor.contasPerguntadas.filter((id): id is string => typeof id === 'string')
       : [],

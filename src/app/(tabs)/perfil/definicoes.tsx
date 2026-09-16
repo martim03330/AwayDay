@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Linking, StyleSheet, Switch } from 'react-native';
+import { Alert, Linking, StyleSheet, Switch, View } from 'react-native';
 
 import { ModoDemoCard } from '@/components/modo-demo-card';
+import { Spacing } from '@/constants/theme';
 import { rankingsKey } from '@/features/presence/hooks/usePresence';
 import { useLocationPermission } from '@/features/presence/location';
 import { useMyProfile, useUpdateRankingVisibility } from '@/features/profile/hooks/useMyProfile';
@@ -11,16 +12,25 @@ import { useUserId } from '@/lib/session';
 import { TIPOS_NOTIFICACAO } from '@/mocks/notificacoes';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
 import { Card } from '@/ui/card';
+import { Chip } from '@/ui/chip';
 import { Icon, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
+import { ThemedText } from '@/ui/themed-text';
 
 function textoPermissaoDemo(estado: EstadoPermissao) {
   if (estado === 'aceite') return 'Aceite na introdução (simulado)';
   if (estado === 'recusada') return 'Continuas sem (simulado)';
   return 'Ainda não decidiste';
 }
+
+/** As três hipóteses de aspeto, por esta ordem: o telemóvel manda, a não ser que se diga o contrário. */
+const TEMAS = [
+  { valor: 'sistema' as const, rotulo: 'Como o telemóvel' },
+  { valor: 'claro' as const, rotulo: 'Claro' },
+  { valor: 'escuro' as const, rotulo: 'Escuro' },
+];
 
 export default function DefinicoesScreen() {
   const router = useRouter();
@@ -36,6 +46,8 @@ export default function DefinicoesScreen() {
     reverIntroducao,
     modoDemo,
     alternarModoDemo,
+    tema,
+    escolherTema,
     fonte,
   } = useAppState();
   const [permissaoLocalizacao] = useLocationPermission();
@@ -115,6 +127,24 @@ export default function DefinicoesScreen() {
         />
       </Card>
 
+      <SectionHeader title="Aspeto" />
+      <Card style={styles.grupo}>
+        <ThemedText themeColor="textSecondary">
+          O escuro segue o telemóvel, a não ser que escolhas um dos dois.
+        </ThemedText>
+        <View style={styles.temas}>
+          {TEMAS.map((opcao) => (
+            <Chip
+              key={opcao.valor}
+              label={opcao.rotulo}
+              selected={tema === opcao.valor}
+              emCartao
+              onPress={() => escolherTema(opcao.valor)}
+            />
+          ))}
+        </View>
+      </Card>
+
       {fonte === 'conta' ? (
         <>
           <SectionHeader title="Rankings" />
@@ -171,6 +201,11 @@ export default function DefinicoesScreen() {
 }
 
 const styles = StyleSheet.create({
+  temas: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
   grupo: {
     gap: 0,
     paddingVertical: 4,

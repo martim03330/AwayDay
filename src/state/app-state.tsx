@@ -175,6 +175,9 @@ type AppState = {
    * confirm you are at the tasco (with an account the server confirms it, and you count for the crowd).
    */
   alternarCheckIn: (localId: string) => Promise<boolean>;
+  /** A paleta que o utilizador escolheu: 'sistema', 'claro' ou 'escuro'. */
+  tema: 'sistema' | 'claro' | 'escuro';
+  escolherTema: (tema: 'sistema' | 'claro' | 'escuro') => void;
   /** The tasco whose check-in is being confirmed right now, if any. */
   checkInEmCurso: string | null;
   /** `null` while nobody is counted here (live counts only show from 5 people). */
@@ -1009,6 +1012,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     ],
     fezCheckIn: (localId) => checkInsAgora.some((visita) => visita.localId === localId),
     localDoCheckIn: checkInsAgora[0]?.localId ?? null,
+    tema: preferencias.tema,
+    escolherTema: (tema) => mudarPreferencias((atuais) => ({ ...atuais, tema })),
     alternarCheckIn,
     checkInEmCurso,
     pessoasAqui: (local) => {

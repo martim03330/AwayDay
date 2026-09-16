@@ -1,7 +1,7 @@
 import { StyleSheet, View, type ColorValue } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { Colors } from '@/constants/theme';
+import { type Paleta } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const circle = (cx: number, cy: number, r: number) =>
@@ -318,13 +318,21 @@ export function Icon({ name, size = 20, color, strokeWidth = 2 }: IconProps) {
 
 export type IconTone = 'green' | 'yellow' | 'sky' | 'neutral' | 'red';
 
-const tileTones: Record<IconTone, { background: string; ink: string }> = {
-  green: { background: Colors.successBackground, ink: Colors.accentInk },
-  yellow: { background: Colors.highlight, ink: Colors.highlightText },
-  sky: { background: Colors.infoBackground, ink: Colors.infoText },
-  neutral: { background: Colors.backgroundSelected, ink: Colors.text },
-  red: { background: Colors.dangerBackground, ink: Colors.dangerText },
-};
+/** Os tons do azulejo, lidos da paleta em uso — de dia e de noite. */
+function tomDoAzulejo(paleta: Paleta, tone: IconTone) {
+  switch (tone) {
+    case 'yellow':
+      return { background: paleta.highlight, ink: paleta.highlightText };
+    case 'sky':
+      return { background: paleta.infoBackground, ink: paleta.infoText };
+    case 'neutral':
+      return { background: paleta.backgroundSelected, ink: paleta.text };
+    case 'red':
+      return { background: paleta.dangerBackground, ink: paleta.dangerText };
+    default:
+      return { background: paleta.successBackground, ink: paleta.accentInk };
+  }
+}
 
 /** Icon on a rounded tile. The name is kept from when it was a circle. */
 export function IconCircle({
@@ -336,8 +344,9 @@ export function IconCircle({
   size?: number;
   tone?: IconTone;
 }) {
+  const theme = useTheme();
   const side = size * 2.3;
-  const colors = tileTones[tone];
+  const colors = tomDoAzulejo(theme, tone);
 
   return (
     <View

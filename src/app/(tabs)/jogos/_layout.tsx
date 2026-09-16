@@ -1,8 +1,11 @@
 import { Stack } from 'expo-router';
 
-import { Colors, fontFamily } from '@/constants/theme';
+import { fontFamily } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function JogosLayout() {
+  const theme = useTheme();
+
   return (
     <Stack>
       {/* The list draws its own green pitch header. */}
@@ -13,9 +16,9 @@ export default function JogosLayout() {
       <Stack.Screen
         name="[jogoId]"
         options={{
-          headerStyle: { backgroundColor: Colors.accent },
-          headerTintColor: Colors.accentText,
-          headerTitleStyle: { fontFamily: fontFamily('body', 700), color: Colors.accentText },
+          headerStyle: { backgroundColor: theme.accent },
+          headerTintColor: theme.accentText,
+          headerTitleStyle: { fontFamily: fontFamily('body', 700), color: theme.accentText },
           headerShadowVisible: false,
         }}>
         <Stack.Screen.Title>Jogo</Stack.Screen.Title>

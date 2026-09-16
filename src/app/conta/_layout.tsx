@@ -1,19 +1,25 @@
 import { Stack, useNavigation, useRouter } from 'expo-router';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { Colors, fontFamily } from '@/constants/theme';
+import { fontFamily } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { closeAccountFlow } from '@/features/auth/navigation';
 import { Icon, icons } from '@/ui/icon';
 
 function BotaoFechar({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
       hitSlop={12}
       accessibilityRole="button"
       accessibilityLabel="Fechar"
-      style={({ pressed }) => [styles.fechar, pressed && styles.pressed]}>
-      <Icon name={icons.fechar} size={18} />
+      style={({ pressed }) => [
+        styles.fechar,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        pressed && styles.pressed,
+      ]}>
+      <Icon name={icons.fechar} size={18} color={theme.text} />
     </Pressable>
   );
 }
@@ -21,6 +27,7 @@ function BotaoFechar({ onPress }: { onPress: () => void }) {
 /** Conta: abre em modal por cima da introdução ou das tabs. */
 export default function ContaLayout() {
   const router = useRouter();
+  const theme = useTheme();
   const raiz = useNavigation('/');
   const fechar = () => closeAccountFlow(router, raiz);
 
@@ -29,10 +36,10 @@ export default function ContaLayout() {
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false,
-        headerTintColor: Colors.text,
-        headerStyle: { backgroundColor: Colors.background },
-        headerTitleStyle: { fontFamily: fontFamily('body', 800), fontSize: 16, color: Colors.text },
-        contentStyle: { backgroundColor: Colors.background },
+        headerTintColor: theme.text,
+        headerStyle: { backgroundColor: theme.background },
+        headerTitleStyle: { fontFamily: fontFamily('body', 800), fontSize: 16, color: theme.text },
+        contentStyle: { backgroundColor: theme.background },
       }}>
       <Stack.Screen
         name="entrar"
@@ -60,9 +67,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.backgroundElement,
     borderWidth: 1.5,
-    borderColor: Colors.border,
   },
   pressed: {
     opacity: 0.6,

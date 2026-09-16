@@ -10,7 +10,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useMyNudges } from '@/features/nudges/hooks/useMyNudges';
 import type { NudgeItem } from '@/features/nudges/types';
 import { useNow } from '@/hooks/use-now';
@@ -68,6 +69,7 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
     return () => cancelAnimation(offset);
   }, [copyWidth, reduceMotion, offset]);
 
+  const theme = useTheme();
   const moving = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
 
   return (
@@ -76,9 +78,13 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
       accessibilityRole="button"
       accessibilityLabel={`Novidades: ${items.map((item) => item.body).join(' ')}`}
       accessibilityHint="Abre a lista de novidades"
-      style={({ pressed }) => [styles.strip, pressed && styles.pressed]}>
-      <View style={styles.tag}>
-        <ThemedText type="eyebrow" style={styles.tagText}>
+      style={({ pressed }) => [
+        styles.strip,
+        { backgroundColor: theme.text },
+        pressed && styles.pressed,
+      ]}>
+      <View style={[styles.tag, { backgroundColor: theme.highlight }]}>
+        <ThemedText type="eyebrow" style={[styles.tagText, { color: theme.highlightText }]}>
           Novidades
         </ThemedText>
       </View>
@@ -91,7 +97,10 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
           </ThemedText>
         </View>
       ) : (
-        <View style={styles.track} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View
+          style={styles.track}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants">
           <ScrollView
             horizontal
             scrollEnabled={false}
@@ -99,7 +108,10 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
             showsHorizontalScrollIndicator={false}
             contentInsetAdjustmentBehavior="never">
             <Animated.View style={[styles.row, moving]}>
-              <Copy items={items} onLayout={(event) => setCopyWidth(event.nativeEvent.layout.width)} />
+              <Copy
+                items={items}
+                onLayout={(event) => setCopyWidth(event.nativeEvent.layout.width)}
+              />
               <Copy items={items} />
             </Animated.View>
           </ScrollView>
@@ -109,13 +121,21 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
   );
 }
 
-function Copy({ items, onLayout }: { items: NudgeItem[]; onLayout?: (event: LayoutChangeEvent) => void }) {
+function Copy({
+  items,
+  onLayout,
+}: {
+  items: NudgeItem[];
+  onLayout?: (event: LayoutChangeEvent) => void;
+}) {
+  const theme = useTheme();
   return (
     <View style={styles.row} onLayout={onLayout}>
       {items.map((item) => (
         <View key={item.id} style={styles.item}>
-          <Icon name={icons.jogos} size={14} color={Colors.highlight} />
-          <ThemedText style={styles.text}>{item.body}</ThemedText>
+          <Icon name={icons.jogos} size={14} color={theme.highlight} />
+          {/* A faixa é sempre escura por dentro, de dia e de noite: a tinta é a do verde. */}
+          <ThemedText style={[styles.text, { color: theme.accentText }]}>{item.body}</ThemedText>
         </View>
       ))}
     </View>
@@ -130,7 +150,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: 14,
     borderCurve: 'continuous',
-    backgroundColor: Colors.text,
   },
   pressed: {
     opacity: 0.85,
@@ -138,11 +157,8 @@ const styles = StyleSheet.create({
   tag: {
     justifyContent: 'center',
     paddingHorizontal: 10,
-    backgroundColor: Colors.highlight,
   },
-  tagText: {
-    color: Colors.highlightText,
-  },
+  tagText: {},
   track: {
     flex: 1,
     justifyContent: 'center',
@@ -166,6 +182,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 600,
-    color: Colors.accentText,
   },
 });

@@ -12,13 +12,14 @@ import {
   Figtree_800ExtraBold,
 } from '@expo-google-fonts/figtree';
 import { useFonts } from 'expo-font';
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 import { LigacaoDemo } from '@/components/ligacao-demo';
-import { Colors, fontFamily } from '@/constants/theme';
+import { fontFamily } from '@/constants/theme';
+import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
 import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalogSync';
 import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatalog';
 import { PlaceCatalogSync } from '@/features/places/components/PlaceCatalogSync';
@@ -38,24 +39,41 @@ import { SonsProvider } from '@/state/sons';
 // Keep the splash screen up until the fonts are ready, so text never flashes in the system font.
 SplashScreen.preventAutoHideAsync();
 
-const navigationTheme: typeof DefaultTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: Colors.accent,
-    background: Colors.background,
-    card: Colors.background,
-    text: Colors.text,
-    border: Colors.border,
-    notification: Colors.danger,
-  },
-  fonts: {
-    regular: { fontFamily: fontFamily('body', 500), fontWeight: 'normal' },
-    medium: { fontFamily: fontFamily('body', 600), fontWeight: 'normal' },
-    bold: { fontFamily: fontFamily('body', 800), fontWeight: 'normal' },
-    heavy: { fontFamily: fontFamily('body', 800), fontWeight: 'normal' },
-  },
+const tipos: typeof DefaultTheme.fonts = {
+  regular: { fontFamily: fontFamily('body', 500), fontWeight: 'normal' },
+  medium: { fontFamily: fontFamily('body', 600), fontWeight: 'normal' },
+  bold: { fontFamily: fontFamily('body', 800), fontWeight: 'normal' },
+  heavy: { fontFamily: fontFamily('body', 800), fontWeight: 'normal' },
 };
+
+/**
+ * Dá à navegação as cores da paleta em uso. Vive **dentro** do estado da app, porque é lá que está a escolha do
+ * utilizador entre claro, escuro e o que o telemóvel disser.
+ */
+function TemaDaNavegacao({ children }: { children: ReactNode }) {
+  const paleta = useTheme();
+  const escuro = useEstaEscuro();
+  const base = escuro ? DarkTheme : DefaultTheme;
+
+  return (
+    <ThemeProvider
+      value={{
+        ...base,
+        colors: {
+          ...base.colors,
+          primary: paleta.accent,
+          background: paleta.background,
+          card: paleta.background,
+          text: paleta.text,
+          border: paleta.border,
+          notification: paleta.danger,
+        },
+        fonts: tipos,
+      }}>
+      {children}
+    </ThemeProvider>
+  );
+}
 
 /** Onboarding enquanto não estiver concluído; depois, as tabs. */
 function NavegacaoRaiz() {
@@ -112,9 +130,9 @@ export default function RootLayout() {
         <EsconderSplash />
         <FixtureCatalogSync />
         <PlaceCatalogSync />
-        <ThemeProvider value={navigationTheme}>
-          <RelogioProvider>
-            <AppStateProvider>
+        <RelogioProvider>
+          <AppStateProvider>
+            <TemaDaNavegacao>
               <PlanosJogosProvider>
                 <SonsProvider>
                   <AvisosBoleias />
@@ -128,9 +146,9 @@ export default function RootLayout() {
                   </AICoachProvider>
                 </SonsProvider>
               </PlanosJogosProvider>
-            </AppStateProvider>
-          </RelogioProvider>
-        </ThemeProvider>
+            </TemaDaNavegacao>
+          </AppStateProvider>
+        </RelogioProvider>
       </QueryProvider>
     </GestureHandlerRootView>
   );

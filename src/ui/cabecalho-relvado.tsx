@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/ui/themed-text';
 
 /** Mowing stripes: 36 px wide, every 72 px. Enough to cover the widest content. */
@@ -19,10 +20,15 @@ type CabecalhoRelvadoProps = {
 
 /** Screen header on a mowed pitch, with the centre circle drawn in chalk. */
 export function CabecalhoRelvado({ title, eyebrow, children }: CabecalhoRelvadoProps) {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.relvado, { paddingTop: insets.top + Spacing.three }]}>
+    <View
+      style={[
+        styles.relvado,
+        { backgroundColor: theme.accent, paddingTop: insets.top + Spacing.three },
+      ]}>
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         {STRIPES.map((left) => (
           <View key={left} style={[styles.risca, { left }]} />
@@ -33,22 +39,22 @@ export function CabecalhoRelvado({ title, eyebrow, children }: CabecalhoRelvadoP
         height={232}
         viewBox="0 0 232 232"
         fill="none"
-        stroke={Colors.accentText}
+        stroke={theme.accentText}
         strokeWidth={3}
         style={styles.circuloCentral}
         pointerEvents="none">
         <Circle cx={116} cy={116} r={66} />
         <Path d="M116 0V232" />
-        <Circle cx={116} cy={116} r={5} fill={Colors.accentText} />
+        <Circle cx={116} cy={116} r={5} fill={theme.accentText} />
       </Svg>
 
       <View style={styles.titulos} accessibilityRole="header">
         {eyebrow ? (
-          <ThemedText type="eyebrow" style={{ color: Colors.highlight }}>
+          <ThemedText type="eyebrow" style={{ color: theme.highlight }}>
             {eyebrow}
           </ThemedText>
         ) : null}
-        <ThemedText type="title" style={styles.titulo}>
+        <ThemedText type="title" style={[styles.titulo, { color: theme.accentText }]}>
           {title}
         </ThemedText>
       </View>
@@ -63,7 +69,7 @@ const styles = StyleSheet.create({
     gap: 18,
     paddingHorizontal: 20,
     paddingBottom: 22,
-    backgroundColor: Colors.accent,
+
     borderBottomLeftRadius: Radius.header,
     borderBottomRightRadius: Radius.header,
   },
@@ -86,6 +92,5 @@ const styles = StyleSheet.create({
   titulo: {
     fontSize: 58,
     lineHeight: 60,
-    color: Colors.accentText,
   },
 });

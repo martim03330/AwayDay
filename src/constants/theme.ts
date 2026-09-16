@@ -1,6 +1,8 @@
 /**
- * "Relvado" palette: pitch green, whitewash background, yellow-card highlights and dark green ink
- * instead of black. Light only for now (see docs/DECISOES.md, 2026-09-14).
+ * Paleta «Relvado»: verde do relvado, fundo de cal, amarelo de cartão e tinta verde-escura em vez de preto.
+ *
+ * Há duas: a de dia (`Colors`) e a de noite (`ColorsEscuro`), com as mesmas chaves. Nenhum ecrã escolhe entre elas —
+ * pede a paleta ao `useTheme()`, que sabe o que o utilizador quer e o que o telemóvel está a fazer.
  */
 
 import '@/global.css';
@@ -54,6 +56,47 @@ export const Colors = {
 } as const;
 
 export type ThemeColor = keyof typeof Colors;
+export type Paleta = Readonly<Record<ThemeColor, string>>;
+
+/**
+ * A mesma paleta, de noite. O relvado continua verde e o cartão continua amarelo — o que muda é o chão: a cal dá
+ * lugar a um verde quase preto, e a tinta clareia. O verde de fundo tem de ser mais fundo do que o dos botões,
+ * senão um cartão verde por cima do fundo desaparece.
+ */
+export const ColorsEscuro = {
+  text: '#E7EEE8',
+  textSecondary: '#A6B5AA',
+  textMuted: '#7B8A80',
+
+  background: '#0E1512',
+  backgroundElement: '#18211C',
+  backgroundSelected: '#222C26',
+  border: '#2C3830',
+  borderStrong: '#3B4A41',
+
+  accent: '#1B7C46',
+  accentPressed: '#146138',
+  accentText: '#F2F7F3',
+  accentInk: '#68CE93',
+
+  highlight: '#FFD24A',
+  highlightText: '#1A1405',
+
+  success: '#68CE93',
+  successText: '#95E2B4',
+  successBackground: '#14301F',
+  warning: '#E2B851',
+  warningText: '#F2D28C',
+  warningBackground: '#2E2612',
+  danger: '#F1705C',
+  dangerText: '#F7A292',
+  dangerBackground: '#341913',
+  info: '#6BA8F5',
+  infoText: '#A2CAFB',
+  infoBackground: '#122034',
+
+  shadow: '#000000',
+} as const satisfies Paleta;
 
 type FontWeight = 400 | 500 | 600 | 700 | 800 | 900;
 

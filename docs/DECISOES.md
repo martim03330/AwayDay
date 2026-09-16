@@ -2,6 +2,29 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Modo escuro
+
+A app era só de dia («light only», decidido a 2026-09-14). Passa a ter as duas paletas, com as mesmas chaves:
+`Colors` e `ColorsEscuro`.
+
+**Segue o telemóvel por omissão.** Quem tem o sistema em escuro abre a app em escuro; quem quiser fixar um dos dois
+fixa-o em Perfil → Definições → Aspeto, e aí o sistema deixa de mandar. A escolha guarda-se no telemóvel com as
+outras preferências. O `app.json` passou a `userInterfaceStyle: "automatic"` — sem isso o sistema nunca reportaria
+escuro.
+
+**A paleta de noite mantém o que a app é:** o relvado continua verde e o cartão continua amarelo. O que muda é o
+chão — a cal dá lugar a um verde quase preto — e a tinta, que clareia. O verde dos botões é mais fundo do que o do
+fundo, senão um cartão verde por cima do fundo desaparecia.
+
+**Como os ecrãs a usam:** ninguém escolhe entre as duas. Pede-se a paleta ao `useTheme()`, que sabe a escolha e o
+estado do telemóvel; quem precisa só de saber se está escuro (barra de estado, tema da navegação) usa
+`useEstaEscuro()`. As cores fixas que estavam em `StyleSheet.create` passaram para estilos em linha, porque uma
+folha de estilos é criada uma vez e não muda de tema.
+
+Uma simplificação assumida: os ecrãs que são **um relvado inteiro** (cabeçalho do perfil, retrospetiva, introdução)
+continuam a pintar o verde e o branco fixos. São verdes nos dois modos, e branco sobre verde lê-se bem em qualquer
+um.
+
 ## 2026-09-16 — Um jogo, uma página (fora o «o meu jogo»)
 
 Havia dois sítios para o mesmo jogo: a ficha do jogo e «o meu jogo», o plano pessoal. Depois de o ecrã do jogo

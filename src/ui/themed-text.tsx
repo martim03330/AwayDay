@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
-import { Colors, fontFamily, Fonts, type FontRole, type ThemeColor } from '@/constants/theme';
+import { fontFamily, Fonts, type FontRole, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type TextType =
@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontSize: 14,
     fontWeight: 700,
-    color: Colors.accentInk,
   },
   code: {
     fontFamily: Fonts.mono,
