@@ -183,7 +183,11 @@ export default function PerfilScreen() {
                     accessibilityLabel={`Novidades${porLer > 0 ? `: ${plural(porLer, 'dica por ler', 'dicas por ler')}` : ''}. Toca para abrir.`}
                     separador={mostrarRetrospetiva}
                     leading={
-                      <Azulejo icon={icons.notificacoes} fundo={theme.warningBackground} tinta={theme.warning} />
+                      <Azulejo
+                        icon={icons.notificacoes}
+                        fundo={theme.warningBackground}
+                        tinta={theme.warning}
+                      />
                     }
                     title="Novidades"
                     subtitle={
@@ -204,7 +208,11 @@ export default function PerfilScreen() {
                     onPress={() => router.push('/perfil/retrospetiva')}
                     accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}
                     leading={
-                      <Azulejo icon={icons.ranking} fundo={theme.successBackground} tinta={theme.accentInk} />
+                      <Azulejo
+                        icon={icons.ranking}
+                        fundo={theme.successBackground}
+                        tinta={theme.accentInk}
+                      />
                     }
                     title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
                     subtitle={retrospetiva.data.headline}
@@ -276,9 +284,33 @@ export default function PerfilScreen() {
 
         <SectionHeader
           title="Álbum de recordações"
-          trailing={fotosMissoes.length > 0 ? plural(fotosMissoes.length, 'foto', 'fotos') : undefined}
+          trailing={
+            fotosMissoes.length > 0 ? plural(fotosMissoes.length, 'foto', 'fotos') : undefined
+          }
         />
         <AlbumResumo fotos={fotosMissoes} onAbrir={() => router.push('/perfil/album')} />
+
+        {userId ? (
+          <>
+            <SectionHeader title="A tua malta" />
+            <Card style={styles.grupo}>
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/grupos')}
+                accessibilityLabel="Os teus grupos. Toca para abrir."
+                leading={
+                  <Azulejo
+                    icon={icons.perfil}
+                    fundo={theme.infoBackground}
+                    tinta={theme.infoText}
+                  />
+                }
+                title="Os teus grupos"
+                subtitle="A malta com quem vais aos jogos"
+                trailing={chevron}
+              />
+            </Card>
+          </>
+        ) : null}
 
         <SectionHeader
           title="Os teus jogos"
@@ -288,7 +320,13 @@ export default function PerfilScreen() {
           <LinhaGrupo
             onPress={() => router.push('/perfil/os-meus-jogos')}
             accessibilityLabel={`Os teus jogos: ${plural(historico.length, 'jogo', 'jogos')}. Toca para abrir.`}
-            leading={<Azulejo icon={icons.acesso} fundo={theme.successBackground} tinta={theme.accentInk} />}
+            leading={
+              <Azulejo
+                icon={icons.acesso}
+                fundo={theme.successBackground}
+                tinta={theme.accentInk}
+              />
+            }
             title={
               ultimoJogo
                 ? `${obterClube(ultimoJogo.casaId)?.nomeCurto ?? ''} x ${obterClube(ultimoJogo.foraId)?.nomeCurto ?? ''}`
@@ -380,7 +418,11 @@ function AvatarCachecol({ iniciais: letras }: { iniciais: string }) {
         <Circle cx={40} cy={40} r={40} fill="url(#riscas-avatar)" />
       </Svg>
       <View style={styles.avatarInterior}>
-        <ThemedText type="title" allowFontScaling={false} themeColor="accent" style={styles.avatarTexto}>
+        <ThemedText
+          type="title"
+          allowFontScaling={false}
+          themeColor="accent"
+          style={styles.avatarTexto}>
           {letras}
         </ThemedText>
       </View>
@@ -410,7 +452,10 @@ function CartaoClube({ clube, subtitle, onPress, accessibilityLabel, chevron }: 
     <Card style={styles.clube} onPress={onPress} accessibilityLabel={accessibilityLabel}>
       <View style={[styles.cachecol, { backgroundColor: clube.cores.secundaria }]}>
         {RISCAS_CACHECOL.map((top) => (
-          <View key={top} style={[styles.riscaCachecol, { top, backgroundColor: clube.cores.primaria }]} />
+          <View
+            key={top}
+            style={[styles.riscaCachecol, { top, backgroundColor: clube.cores.primaria }]}
+          />
         ))}
       </View>
       <View style={styles.clubeCorpo}>

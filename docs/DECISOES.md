@@ -2,6 +2,39 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Grupos: a malta que anda junta
+
+**Porquê.** A app servia para encontrar desconhecidos. Faltava o contrário: ir com quem já se conhece,
+e levar mais um ou outro que se conhece menos. Um grupo é um conjunto de pessoas que se mantém de
+jogo para jogo, e é dentro dele que vão passar a viver a boleia, a casa e (a seguir) as contas.
+
+**Como se entra.** Por convite: um link com um código, como a partilha da boleia. **Quem tem o link
+entra** — sem pedidos nem aprovações, porque um grupo de amigos não precisa de burocracia. Em troca,
+quem criou o grupo pode trocar o link (o antigo deixa de servir) e tirar alguém de lá.
+
+**Grupos que nascem sozinhos.** Quando a primeira pessoa é aceite numa boleia, fica criado o grupo
+dessa boleia com o condutor e ela, e cada pessoa aceita a seguir entra nele (gatilho
+`group_for_ride`). Se alguma coisa correr mal ao criar o grupo, o pedido de lugar segue na mesma: um
+grupo nunca estraga uma boleia.
+
+**Sair.** Quem sai, sai. Se sair quem criou o grupo, ele fica com o membro mais antigo; se sair o
+último, o grupo acaba.
+
+**O que se vê de cada um**: o mesmo que nas casas — desde quando tem conta, quantas boleias fez e
+quantas faltas tem. Sem fotos de perfil: não verificam nada.
+
+**Também se simplificou a regra das casas**: a semana de conta saiu. Travava quem acabou de instalar
+a app e não trava ninguém de má-fé (basta esperar sete dias). Fica a suspensão por faltas, que
+significa mesmo alguma coisa.
+
+Regras verificadas com testes SQL revertidos: quem não é dono não muda o nome, o link trocado deixa
+o antigo sem efeito, a saída do dono passa o grupo ao membro mais antigo, e a primeira pessoa aceite
+numa boleia cria o grupo com duas pessoas lá dentro.
+
+**A seguir:** as despesas da viagem dentro do grupo (cerveja, petiscos, casa, bilhetes e o que se
+quiser acrescentar), divididas por igual entre quem entra em cada despesa, e o acerto de contas a
+dizer quem paga a quem com o menor número de transferências.
+
 ## 2026-09-16 — Dormir fora: casas propostas pelos adeptos, divididas como as boleias
 
 **O que não dá.** O Airbnb não tem API pública e a de parceiros é fechada. Verifiquei a 2026-09-16

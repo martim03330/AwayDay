@@ -402,6 +402,90 @@ export type Database = {
           },
         ]
       }
+      fan_group: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          invite_code: string
+          name: string
+          ride_id: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invite_code: string
+          name: string
+          ride_id?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invite_code?: string
+          name?: string
+          ride_id?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fan_group_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fan_group_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fan_group_member: {
+        Row: {
+          group_id: string
+          joined_at: string
+          profile_id: string
+          role: string
+        }
+        Insert: {
+          group_id: string
+          joined_at?: string
+          profile_id: string
+          role?: string
+        }
+        Update: {
+          group_id?: string
+          joined_at?: string
+          profile_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fan_group_member_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fan_group_member_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixture: {
         Row: {
           away_club_id: string
@@ -2502,6 +2586,7 @@ export type Database = {
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
+      create_group: { Args: { p_name: string }; Returns: string }
       delete_old_home_fan_reports: { Args: never; Returns: number }
       delete_old_stay_plans: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
@@ -2537,6 +2622,27 @@ export type Database = {
           updated_on: string
         }[]
       }
+      group_by_code: {
+        Args: { p_code: string }
+        Returns: {
+          already_in: boolean
+          id: string
+          members: number
+          name: string
+        }[]
+      }
+      group_members: {
+        Args: { p_group_id: string }
+        Returns: {
+          display_name: string
+          is_mine: boolean
+          member_since: string
+          profile_id: string
+          rides_completed: number
+          rides_faults: number
+          role: string
+        }[]
+      }
       home_fan_usual_streets: {
         Args: { p_venue_id: string }
         Returns: {
@@ -2554,6 +2660,12 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
+      is_group_member: {
+        Args: { p_group_id: string; p_profile_id: string }
+        Returns: boolean
+      }
+      join_group_with_code: { Args: { p_code: string }; Returns: string }
+      leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
       mark_stay_house: {
@@ -2563,6 +2675,18 @@ export type Database = {
       moderate_place_photo: {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
+      }
+      my_groups: {
+        Args: never
+        Returns: {
+          created_on: string
+          id: string
+          invite_code: string
+          members: number
+          name: string
+          role: string
+          source: string
+        }[]
       }
       my_ride_alerts: {
         Args: never
@@ -2594,6 +2718,7 @@ export type Database = {
           status: string
         }[]
       }
+      new_invite_code: { Args: never; Returns: string }
       noise_ranking: {
         Args: { p_fixture_id: string; p_limit?: number }
         Returns: {
@@ -2658,7 +2783,15 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
+      remove_group_member: {
+        Args: { p_group_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       remove_stay_plan: { Args: { p_fixture_id: string }; Returns: undefined }
+      rename_group: {
+        Args: { p_group_id: string; p_name: string }
+        Returns: undefined
+      }
       report_home_fans: {
         Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
         Returns: undefined
@@ -2804,6 +2937,7 @@ export type Database = {
         Returns: number
       }
       roll_up_home_fan_reports: { Args: never; Returns: number }
+      rotate_group_invite: { Args: { p_group_id: string }; Returns: string }
       season_recap_candidates: {
         Args: { p_season_id: string }
         Returns: {
