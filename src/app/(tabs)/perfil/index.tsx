@@ -307,6 +307,21 @@ export default function PerfilScreen() {
                 title="Os teus grupos"
                 subtitle="A malta com quem vais aos jogos"
                 trailing={chevron}
+                separador
+              />
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/rankings')}
+                accessibilityLabel="Rankings públicos. Toca para abrir."
+                leading={
+                  <Azulejo
+                    icon={icons.ranking}
+                    fundo={theme.highlight}
+                    tinta={theme.highlightText}
+                  />
+                }
+                title="Rankings"
+                subtitle="Estádios carimbados e tascos verificados"
+                trailing={chevron}
               />
             </Card>
           </>

@@ -7,7 +7,7 @@ import { notaDoEstadio } from '@/lib/avaliacoes';
 import { formatarData } from '@/lib/datas';
 import { formatarNota } from '@/lib/formatos';
 import { DIVISOES, nomesDivisao, obterClube } from '@/mocks/clubes';
-import { estadiosNacionais } from '@/mocks/estadios';
+import { estadios, estadiosNacionais } from '@/mocks/estadios';
 import type { AvaliacaoVisita, Clube, Venue } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { Carimbo } from '@/ui/carimbo';
@@ -90,23 +90,48 @@ function corDaTinta(dono: Clube | undefined) {
 
 type PassaporteCardProps = {
   estadiosVisitados: readonly string[];
+  /** Estádios carimbados no local, em dia de jogo: os que contam para o ranking público. */
+  verificados?: readonly string[];
   avaliacoes: readonly AvaliacaoVisita[];
   /** Summary for the profile: only the most recent visited stamps, up to this many. */
   limite?: number;
 };
 
-export function PassaporteCard({ estadiosVisitados, avaliacoes, limite }: PassaporteCardProps) {
+export function PassaporteCard({
+  estadiosVisitados,
+  verificados = [],
+  avaliacoes,
+  limite,
+}: PassaporteCardProps) {
   const eNovo = useCarimbosNovos(estadiosVisitados);
 
   const visitado = (estadioId: string) => estadiosVisitados.includes(estadioId);
   const totalVisitados = estadiosNacionais.filter((estadio) => visitado(estadio.id)).length;
 
-  const grupos = DIVISOES.map((divisao) => {
-    const lista = estadiosNacionais
-      .filter((estadio) => obterClube(estadio.clubeId)?.divisao === divisao)
-      .sort((a, b) => Number(visitado(b.id)) - Number(visitado(a.id)));
-    return { divisao, lista, visitados: lista.filter((estadio) => visitado(estadio.id)).length };
-  });
+  const porVisitar = (lista: readonly Venue[]) =>
+    [...lista].sort((a, b) => Number(visitado(b.id)) - Number(visitado(a.id)));
+
+  const grupos = [
+    ...DIVISOES.map((divisao) => {
+      const lista = porVisitar(
+        estadiosNacionais.filter((estadio) => obterClube(estadio.clubeId)?.divisao === divisao)
+      );
+      return { id: divisao, titulo: nomesDivisao[divisao], lista };
+    }),
+    // Europa: os estádios onde as equipas portuguesas jogaram fora. Contam para o passaporte como os de cá.
+    {
+      id: 'europa',
+      titulo: 'Europa',
+      lista: porVisitar(estadios.filter((estadio) => estadio.regiao === 'estrangeiro')),
+    },
+  ]
+    .filter((grupo) => grupo.lista.length > 0)
+    .map((grupo) => ({
+      ...grupo,
+      visitados: grupo.lista.filter((estadio) => visitado(estadio.id)).length,
+    }));
+
+  const carimbadosNoLocal = verificados.length;
 
   const ultimaVisita = (estadioId: string) =>
     avaliacoes
@@ -148,6 +173,13 @@ export function PassaporteCard({ estadiosVisitados, avaliacoes, limite }: Passap
         progress={estadiosNacionais.length > 0 ? totalVisitados / estadiosNacionais.length : 0}
         accessibilityLabel={`${totalVisitados} de ${estadiosNacionais.length} estádios visitados`}
       />
+      {limite === undefined ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {carimbadosNoLocal > 0
+            ? `${carimbadosNoLocal} ${carimbadosNoLocal === 1 ? 'carimbo confirmado' : 'carimbos confirmados'} no local — são esses que contam para o ranking. Os restantes ficaste tu a dizer que lá estiveste.`
+            : 'Ainda não tens carimbos confirmados no local. Em dia de jogo, no estádio, a app confirma que lá estás — e esses são os que contam para o ranking.'}
+        </ThemedText>
+      ) : null}
 
       {limite !== undefined ? (
         recentes.length > 0 ? (
@@ -155,10 +187,10 @@ export function PassaporteCard({ estadiosVisitados, avaliacoes, limite }: Passap
         ) : null
       ) : (
         grupos.map((grupo) => (
-          <View key={grupo.divisao} style={styles.grupo}>
+          <View key={grupo.id} style={styles.grupo}>
             <View style={styles.cabecalhoGrupo}>
               <ThemedText type="eyebrow" themeColor="textSecondary" style={styles.flex}>
-                {nomesDivisao[grupo.divisao]}
+                {grupo.titulo}
               </ThemedText>
               <ThemedText style={styles.contagemGrupo}>
                 {grupo.visitados} de {grupo.lista.length}
@@ -240,7 +272,9 @@ function CelulaCarimbo({ estadio, visitado: foiVisitado, novo, avaliacoes }: Cel
       )}
       {novo ? (
         <View style={[styles.novo, { backgroundColor: theme.highlight }]}>
-          <ThemedText allowFontScaling={false} style={[styles.novoTexto, { color: theme.highlightText }]}>
+          <ThemedText
+            allowFontScaling={false}
+            style={[styles.novoTexto, { color: theme.highlightText }]}>
             NOVO
           </ThemedText>
         </View>

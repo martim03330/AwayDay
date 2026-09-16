@@ -2,6 +2,34 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — O jogo, o bilhete, o carimbo e o ranking
+
+**O jogo mostra tudo o que é do jogo.** As boleias só apareciam depois de abrir o bilhete à mão,
+enquanto as casas apareciam logo — uma incoerência que não se explicava a ninguém. Agora a ficha do
+jogo tem as duas coisas.
+
+**O bilhete abre-se sozinho.** Oferecer boleia, pedir lugar, propor ou entrar numa casa e pedir
+boleia de volta passam a marcar «vou» (`garantirVou`): quem faz isso já disse, por atos, que vai. O
+bilhete deixa de ser um botão a carregar e passa a ser o sítio onde estão as tuas coisas.
+
+**O carimbo do estádio passa a valer alguma coisa.** Era declarado — bastava marcar que se esteve no
+jogo. Agora, em dia de jogo e perto do estádio (das 4 h antes às 5 h depois do apito, até 1 km), a
+app lê a posição uma vez e o servidor confirma a distância (`stamp_stadium`). Fica o estádio, o jogo
+e o dia; a posição **não** é guardada. Os carimbos antigos continuam a contar no passaporte, mas
+como **declarados**, e o passaporte diz quantos são de cada tipo.
+
+**Passaporte com a Europa.** Os 22 estádios onde as equipas portuguesas jogaram fora deixaram de
+estar na base de dados sem uso: passam a ser um grupo do passaporte, ao lado das divisões nacionais.
+
+**Rankings públicos** (`stadium_ranking`, mais o de tascos que já existia): qualquer pessoa com conta
+os vê — não é preciso ser amigo de ninguém. Aparecer neles continua a ser escolha de cada um, mas a
+app pergunta de frente no primeiro carimbo, em vez de esconder a opção nas definições. **Só conta o
+que a app confirmou**: carimbos no estádio e check-ins no tasco. Um ranking onde se pontua marcando
+coisas à mão não vale nada.
+
+Regras verificadas com teste SQL revertido: carimbar do Porto um jogo em Viseu é recusado, carimbar
+um jogo de anteontem é recusado, e o carimbo marca também presença no jogo.
+
 ## 2026-09-16 — A app a respirar: espaçamento e hierarquia
 
 A app estava amontoada, e não era por falta de margens: era por **todas as distâncias serem iguais**.
