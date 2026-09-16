@@ -1,27 +1,20 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { GrupoDoJogo } from '@/components/grupo-do-jogo';
-import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { avisosDoJogo, horasDoPlano } from '@/lib/avisos-jogo';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
-import { abrirDirecoes } from '@/lib/direcoes';
-import { formatarDistancia } from '@/lib/formatos';
 import { precisaDeDormida } from '@/lib/dormida';
 import { contasDaViagemAbertas, estadoDoJogo } from '@/lib/jogos';
-import { filtrarPorTempoAPe, ordenarTascos } from '@/lib/locais';
 import { formatarContagem } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { nomesCompeticao, obterJogo } from '@/mocks/jogos';
-import { locaisDoEstadio, nomesTipoLocal, obterLocal } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
-import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
@@ -98,10 +91,8 @@ export default function OMeuJogoScreen() {
     router.push({ pathname: pathname as '/jogos/mapa', params: { jogoId } });
   const agora = useNow(30 * 1000);
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
-  const { pessoasAqui, clubeDaTerraId } = useAppState();
-  const { vou, alternarVou, tascoDoPlano, escolherTasco, avisosLigados, alternarAvisos } =
-    usePlanosJogos();
-  const [aEscolher, setAEscolher] = useState(false);
+  const { clubeDaTerraId } = useAppState();
+  const { vou, alternarVou, avisosLigados, alternarAvisos } = usePlanosJogos();
 
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -130,7 +121,7 @@ export default function OMeuJogoScreen() {
         <EmptyState
           icon={icons.acesso}
           title="Ainda não marcaste que vais"
-          message={`Marca que vais ao ${casa.nomeCurto} x ${fora.nomeCurto} e preparamos o teu dia: tasco, horas e avisos.`}
+          message={`Marca que vais ao ${casa.nomeCurto} x ${fora.nomeCurto} e preparamos o teu dia: horas, boleias e avisos.`}
           action={{ label: 'Vou a este jogo', onPress: () => void alternarVou(jogo.id) }}
         />
       </Screen>
@@ -140,16 +131,13 @@ export default function OMeuJogoScreen() {
   const inicio = new Date(jogo.inicio);
   const estado = estadoDoJogo(jogo, agora);
   const falta = inicio.getTime() - agora;
-  const tascoId = tascoDoPlano(jogo.id);
-  const tasco = tascoId ? obterLocal(tascoId) : undefined;
-  const horas = horasDoPlano(jogo, tasco ?? null);
+  // As horas contam-se até ao estádio. Onde se bebe a imperial antes escolhe-se no mapa, não aqui: um dia de jogo
+  // não se resume a um tasco, e obrigar a escolher um era fingir que sim.
+  const horas = horasDoPlano(jogo, null);
   // Every tasco near the stadium, in the order the app suggests them.
-  const sugestoes = ordenarTascos(filtrarPorTempoAPe(locaisDoEstadio(estadio.id)).perto);
   const avisos = avisosLigados(jogo.id)
-    ? avisosDoJogo(jogo, { casa: casa.nomeCurto, fora: fora.nomeCurto }, tasco ?? null, agora)
+    ? avisosDoJogo(jogo, { casa: casa.nomeCurto, fora: fora.nomeCurto }, null, agora)
     : [];
-  const pessoas = tasco ? pessoasAqui(tasco) : null;
-  const mostrarEscolha = aEscolher || !tasco;
 
   return (
     <Screen>
@@ -231,68 +219,19 @@ export default function OMeuJogoScreen() {
         />
       </Card>
 
-      <SectionHeader title="O teu tasco" />
-      {tasco && !aEscolher ? (
-        <Card style={styles.grupo}>
-          <ThemedText style={styles.nomeTasco}>{tasco.nome}</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            {`${nomesTipoLocal[tasco.tipo]} · ${formatarDistancia(tasco.distanciaMetros)} · ${tasco.minutosAPe} min a pé do estádio`}
-          </ThemedText>
-          {pessoas !== null ? (
-            <ThemedText themeColor="textSecondary">{`${pessoas} adeptos lá agora`}</ThemedText>
-          ) : null}
-          <Button
-            label="Ver o tasco"
-            icon={icons.tasco}
-            onPress={() =>
-              router.push({ pathname: '/locais/[localId]', params: { localId: tasco.id } })
-            }
-          />
-          <Button
-            label="Como chegar a pé"
-            variant="secondary"
-            icon={icons.aPe}
-            onPress={() => abrirDirecoes(tasco.coordenadas, 'a-pe')}
-          />
-          <LinkTexto label="Escolher outro tasco" onPress={() => setAEscolher(true)} />
-        </Card>
-      ) : null}
-
-      {mostrarEscolha ? (
-        <>
-          <MapaEscolherTasco
-            estadio={estadio}
-            locais={sugestoes}
-            escolhidoId={tascoId}
-            onEscolher={(localId) => {
-              escolherTasco(jogo.id, localId);
-              setAEscolher(false);
-            }}
-          />
-          {tasco ? <LinkTexto label="Cancelar" onPress={() => setAEscolher(false)} /> : null}
-        </>
-      ) : null}
-
       <SectionHeader title="As tuas horas" />
       <Card style={styles.grupo}>
         {jogo.horaConfirmada ? (
           <>
-            {horas.chegarAoTasco ? (
-              <LinhaHora
-                rotulo={`Chegar a ${tasco?.nome ?? 'o tasco'}`}
-                hora={formatarHora(horas.chegarAoTasco)}
-              />
-            ) : null}
             <LinhaHora
-              rotulo={tasco ? 'Sair do tasco para o estádio' : 'Ir para o estádio'}
+              rotulo="Ir para o estádio"
               hora={formatarHora(horas.sairParaOEstadio)}
               destaque
             />
             <LinhaHora rotulo="Apito inicial" hora={formatarHora(inicio)} />
             <ThemedText type="small" themeColor="textMuted">
-              {tasco
-                ? `Conta com ${tasco.minutosAPe} min a pé, 15 min para entrar e 10 min de folga.`
-                : 'Escolhe um tasco e acertamos as horas ao caminho a pé.'}
+              Conta com 15 min para entrar e 10 min de folga. Se fores a um tasco antes, vês o
+              caminho a pé na página desse sítio.
             </ThemedText>
           </>
         ) : (
@@ -319,7 +258,7 @@ export default function OMeuJogoScreen() {
       ) : null}
 
       {/* Desenha o seu próprio cabeçalho: sem boleia, casa nem tasco não aparece nada. */}
-      <GrupoDoJogo jogo={jogo} tascoNome={tasco?.nome ?? null} />
+      <GrupoDoJogo jogo={jogo} tascoNome={null} />
 
       <SectionHeader title="Avisos deste jogo" />
       <Card style={styles.grupo}>
@@ -343,7 +282,7 @@ export default function OMeuJogoScreen() {
           </View>
         ))}
         <ThemedText type="small" themeColor="textMuted">
-          O aviso para planear chega 3 dias antes, nunca na véspera. Os do dia acertam-se ao tasco
+          O aviso para planear chega 3 dias antes, nunca na véspera. Os do dia acertam-se ao caminho
           escolhido.
         </ThemedText>
       </Card>
@@ -353,9 +292,9 @@ export default function OMeuJogoScreen() {
 
 const styles = StyleSheet.create({
   atalhos: {
-    padding: 0,
+    // As linhas trazem o seu espaço vertical; o lado fica com o do cartão, senão o ícone cola-se à borda.
     gap: 0,
-    overflow: 'hidden',
+    paddingVertical: Spacing.one,
   },
   azulejo: {
     width: 38,

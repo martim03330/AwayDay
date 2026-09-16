@@ -363,9 +363,9 @@ export default function JogoScreen() {
 
 const styles = StyleSheet.create({
   lista: {
-    padding: 0,
+    // As linhas trazem o seu espaço vertical; o lado fica com o do cartão, senão o ícone cola-se à borda.
     gap: 0,
-    overflow: 'hidden',
+    paddingVertical: Spacing.one,
   },
   azulejo: {
     width: 38,

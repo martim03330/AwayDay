@@ -2,6 +2,16 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Fora o «teu tasco»: um dia de jogo não é um tasco
+
+«O meu jogo» obrigava a escolher **um** tasco, e a partir daí tratava o dia como se fosse só aquele sítio — as horas
+eram para lá chegar e de lá sair. Mas ninguém combina o dia assim: vai-se a um café, depois a uma tasca, depois ao
+estádio.
+
+A escolha sai do plano. Os tascos veem-se no **mapa do jogo**, abre-se o que interessa, e é lá — na página do sítio —
+que se faz check-in e se vê o caminho a pé. As horas do plano passam a contar até ao estádio: «ir para o estádio» e
+«apito», com os 15 minutos da entrada e 10 de folga.
+
 ## 2026-09-16 — O ecrã do jogo deixa de ser uma página infinita
 
 Abrir um jogo dava uma página com tudo lá dentro: barulhómetro, carimbo, estádio, WC, cuidados, mapa, meteorologia,
