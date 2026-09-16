@@ -9,6 +9,7 @@ import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
 import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
+import { CarimboEstadio } from '@/components/carimbo-estadio';
 import { DormidaCard } from '@/components/dormida-card';
 import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
 import { EstadioCard } from '@/components/estadio-card';
@@ -245,6 +246,9 @@ export default function JogoScreen() {
             ) : null}
           </>
         ) : null}
+
+        {/* Em dia de jogo e no local: a única prova de que lá estiveste. Fora disso não aparece. */}
+        <CarimboEstadio jogo={jogo} estadio={estadio} />
 
         <SectionHeader title="Estádio" />
         <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />

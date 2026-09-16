@@ -2171,6 +2171,52 @@ export type Database = {
           },
         ]
       }
+      stadium_visit: {
+        Row: {
+          created_at: string
+          fixture_id: string | null
+          profile_id: string
+          venue_id: string
+          visited_on: string
+        }
+        Insert: {
+          created_at?: string
+          fixture_id?: string | null
+          profile_id: string
+          venue_id: string
+          visited_on: string
+        }
+        Update: {
+          created_at?: string
+          fixture_id?: string | null
+          profile_id?: string
+          venue_id?: string
+          visited_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stadium_visit_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stadium_visit_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stadium_visit_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stay_place: {
         Row: {
           created_at: string
@@ -2775,6 +2821,14 @@ export type Database = {
           status: string
         }[]
       }
+      my_stadium_stamps: {
+        Args: never
+        Returns: {
+          last_visit: string
+          venue_id: string
+          visits: number
+        }[]
+      }
       new_invite_code: { Args: never; Returns: string }
       noise_ranking: {
         Args: { p_fixture_id: string; p_limit?: number }
@@ -3050,6 +3104,21 @@ export type Database = {
         Returns: undefined
       }
       settle_rides: { Args: never; Returns: number }
+      stadium_ranking: {
+        Args: { p_limit?: number }
+        Returns: {
+          display_name: string
+          is_me: boolean
+          profile_id: string
+          stadiums: number
+          visits: number
+        }[]
+      }
+      stadium_stamp_window: { Args: { p_kickoff: string }; Returns: unknown }
+      stamp_stadium: {
+        Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
+        Returns: number
+      }
       start_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: Json
