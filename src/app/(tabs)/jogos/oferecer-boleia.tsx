@@ -41,6 +41,7 @@ import {
 import { CRIAR_HORAS_ANTES } from '@/lib/regras-boleia';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
+import { usePlanosJogos } from '@/state/planos-jogos';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import type { Coordenadas } from '@/mocks/tipos';
@@ -123,6 +124,7 @@ export default function OferecerBoleiaScreen() {
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
+  const { garantirVou } = usePlanosJogos();
   const atualizar = useRefreshRides();
   const mapa = useRef<MapView>(null);
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
@@ -426,6 +428,8 @@ export default function OferecerBoleiaScreen() {
         await setRideGroup(id, grupoId).catch(() => undefined);
         if (soParaOGrupo) await setRideVisibility(id, false).catch(() => undefined);
       }
+      // Oferecer boleia é ir ao jogo: o bilhete abre-se sozinho.
+      await garantirVou(jogo.id).catch(() => undefined);
       await atualizar();
       router.replace({ pathname: '/jogos/boleia', params: { rideId: id, jogoId: jogo.id } });
     } catch (erro) {

@@ -28,6 +28,7 @@ import { datasDaEstadia, linkAirbnb, porPessoaNaCasa } from '@/lib/dormida';
 import { plural } from '@/lib/formatos';
 import { formatarCentimos, lerPrecoEmCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
+import { usePlanosJogos } from '@/state/planos-jogos';
 import type { Jogo, Venue } from '@/mocks/tipos';
 import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
@@ -289,6 +290,7 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
   const router = useRouter();
   const userId = useUserId();
   const queryClient = useQueryClient();
+  const { garantirVou } = usePlanosJogos();
 
   const casas = useQuery({
     queryKey: ['stays', jogo.id],
@@ -384,6 +386,8 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
       });
       // O grupo e a privacidade são etiquetas da casa: se falharem, a casa fica proposta na mesma.
       await setStayGroup(id, grupoId).catch(() => undefined);
+      // Propor uma casa é ir ao jogo: o bilhete abre-se sozinho.
+      await garantirVou(jogo.id).catch(() => undefined);
       await setStayVisibility(id, !(grupoId && soParaOGrupo)).catch(() => undefined);
     });
     if (guardado) setAberto(false);
@@ -416,7 +420,12 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
           casa={casa}
           podeEntrar={podePartilhar}
           aTratar={aTratar}
-          onPedir={() => void tratar(() => requestStayPlace(casa.id))}
+          onPedir={() =>
+            void tratar(async () => {
+              await requestStayPlace(casa.id);
+              await garantirVou(jogo.id).catch(() => undefined);
+            })
+          }
           onSair={() => void tratar(() => leaveStayPlace(casa.id))}
           onResponder={(profileId, aceitar) =>
             void tratar(() => answerStayPlace(casa.id, profileId, aceitar))

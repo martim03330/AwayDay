@@ -33,6 +33,11 @@ type PlanosJogos = {
   jogosAQueVou: readonly string[];
   /** Marks or unmarks "Vou"; resolves with the new value (unchanged if it failed). */
   alternarVou: (jogoId: string) => Promise<boolean>;
+  /**
+   * Marca «vou» se ainda não estiver marcado. Quem oferece boleia, pede lugar ou entra numa casa já disse, por
+   * atos, que vai — o bilhete do jogo abre-se sozinho em vez de ser mais um botão a carregar.
+   */
+  garantirVou: (jogoId: string) => Promise<void>;
   tascoDoPlano: (jogoId: string) => string | null;
   escolherTasco: (jogoId: string, localId: string | null) => void;
   avisosLigados: (jogoId: string) => boolean;
@@ -224,6 +229,10 @@ export function PlanosJogosProvider({ children }: { children: ReactNode }) {
     vou: (jogoId) => jogoId in planos,
     jogosAQueVou,
     alternarVou,
+    garantirVou: async (jogoId) => {
+      if (jogoId in planos) return;
+      await alternarVou(jogoId);
+    },
     tascoDoPlano: (jogoId) => planos[jogoId]?.localId ?? null,
     escolherTasco,
     avisosLigados: (jogoId) => !desligados.includes(jogoId),

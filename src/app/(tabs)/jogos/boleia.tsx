@@ -41,6 +41,7 @@ import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regr
 import { podeResponderVolta } from '@/lib/regras-volta';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
+import { usePlanosJogos } from '@/state/planos-jogos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -181,6 +182,7 @@ export default function BoleiaScreen() {
     queryFn: userId ? () => fetchReputation(userId) : skipToken,
     meta: { persist: false },
   });
+  const { garantirVou } = usePlanosJogos();
   const atualizar = useRefreshRides();
   const [aTratar, setATratar] = useState(false);
   const [compromisso, setCompromisso] = useState(false);
@@ -703,7 +705,11 @@ export default function BoleiaScreen() {
           setCompromisso(false);
           // The passenger must hear the driver's answer the moment it comes.
           void ativarNotificacoesDeBoleias().catch(() => undefined);
-          void executar(() => requestSeat(boleia.id));
+          void executar(async () => {
+            await requestSeat(boleia.id);
+            // Pedir lugar é ir ao jogo: o bilhete abre-se sozinho.
+            await garantirVou(jogo.id).catch(() => undefined);
+          });
         }}
       />
       <ImprevistoBoleia

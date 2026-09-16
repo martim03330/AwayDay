@@ -8,6 +8,7 @@ import { ComoChegar } from '@/components/como-chegar';
 import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
+import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
 import { DormidaCard } from '@/components/dormida-card';
 import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
 import { EstadioCard } from '@/components/estadio-card';
@@ -291,6 +292,10 @@ export default function JogoScreen() {
           icon={icons.rota}
           onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
         />
+
+        {/* As boleias são do jogo, não do teu plano: quem abre um jogo vê o que há para ele. */}
+        <SectionHeader title="Boleias" />
+        <BoleiasDoJogo jogo={jogo} />
 
         {estadio.regiao !== 'continente' ? (
           <>

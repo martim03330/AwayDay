@@ -20,6 +20,7 @@ import { formatarCentimos } from '@/lib/money';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { janelaDaVolta, podePedirVolta } from '@/lib/regras-volta';
 import { useUserId } from '@/lib/session';
+import { usePlanosJogos } from '@/state/planos-jogos';
 import { obterJogo } from '@/mocks/jogos';
 import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
@@ -150,6 +151,7 @@ export default function BoleiaDeVoltaScreen() {
   const jogo = jogoId ? obterJogo(jogoId) : undefined;
   const userId = useUserId();
   const agora = useNow(30 * 1000);
+  const { garantirVou } = usePlanosJogos();
   const atualizar = useRefreshRides();
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -203,6 +205,8 @@ export default function BoleiaDeVoltaScreen() {
         latitude: posicao.position.latitude,
         longitude: posicao.position.longitude,
       });
+      // `jogo` já foi verificado acima, mas o estreitamento não sobrevive dentro desta função.
+      if (jogo) await garantirVou(jogo.id).catch(() => undefined);
       void atualizar();
     } catch (problema) {
       setErro(mensagemDeRecusa(problema));
