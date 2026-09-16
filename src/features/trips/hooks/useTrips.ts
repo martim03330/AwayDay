@@ -8,6 +8,7 @@ import {
   fetchTripBalances,
   fetchTripExpenses,
   fetchTripPeople,
+  fetchTripSettlements,
   fetchTripSession,
 } from '@/features/trips/api';
 
@@ -25,6 +26,8 @@ export const tripPeopleKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'people', sessionId] as const;
 export const liveTripsKey = () => [TRIPS_KEY, 'live'] as const;
 export const tripHistoryKey = () => [TRIPS_KEY, 'history'] as const;
+export const tripSettlementsKey = (sessionId: string | null) =>
+  [TRIPS_KEY, 'settlements', sessionId] as const;
 export const tripBalancesKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'balances', sessionId] as const;
 
@@ -97,6 +100,17 @@ export function useMyLiveTrips(signedIn: boolean) {
   return useQuery({
     queryKey: liveTripsKey(),
     queryFn: signedIn ? fetchMyLiveTrips : skipToken,
+    staleTime: STALE_MS,
+    refetchInterval: 60 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** O dinheiro que já mudou de mãos nestas contas. */
+export function useTripSettlements(sessionId: string | null) {
+  return useQuery({
+    queryKey: tripSettlementsKey(sessionId),
+    queryFn: sessionId ? () => fetchTripSettlements(sessionId) : skipToken,
     staleTime: STALE_MS,
     refetchInterval: 60 * 1000,
     meta: { persist: false },

@@ -2509,6 +2509,81 @@ export type Database = {
           },
         ]
       }
+      trip_settlement: {
+        Row: {
+          cents: number
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          from_profile_id: string
+          id: string
+          session_id: string
+          to_profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          cents: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          from_profile_id: string
+          id?: string
+          session_id: string
+          to_profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          cents?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          from_profile_id?: string
+          id?: string
+          session_id?: string
+          to_profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_settlement_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_settlement_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_settlement_from_profile_id_fkey"
+            columns: ["from_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_settlement_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trip_session"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_settlement_to_profile_id_fkey"
+            columns: ["to_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue: {
         Row: {
           address: string | null
@@ -2772,6 +2847,15 @@ export type Database = {
         }
         Returns: string
       }
+      add_trip_settlement: {
+        Args: {
+          p_cents: number
+          p_from_profile_id?: string
+          p_session_id: string
+          p_to_profile_id: string
+        }
+        Returns: string
+      }
       ai_usage_since: {
         Args: { p_profile_id: string; p_since: string }
         Returns: {
@@ -2819,6 +2903,10 @@ export type Database = {
       }
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
+      confirm_trip_settlement: {
+        Args: { p_settlement_id: string }
+        Returns: undefined
+      }
       create_group: { Args: { p_name: string }; Returns: string }
       delete_old_home_fan_reports: { Args: never; Returns: number }
       delete_old_stay_plans: { Args: never; Returns: number }
@@ -3118,6 +3206,10 @@ export type Database = {
         Args: { p_expense_id: string }
         Returns: undefined
       }
+      remove_trip_settlement: {
+        Args: { p_settlement_id: string }
+        Returns: undefined
+      }
       rename_group: {
         Args: { p_group_id: string; p_name: string }
         Returns: undefined
@@ -3404,6 +3496,7 @@ export type Database = {
           owed_cents: number
           paid_cents: number
           profile_id: string
+          settled_cents: number
         }[]
       }
       trip_expenses: {
@@ -3442,6 +3535,21 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: {
           profile_id: string
+        }[]
+      }
+      trip_settlements: {
+        Args: { p_session_id: string }
+        Returns: {
+          cents: number
+          confirmed: boolean
+          created_on: string
+          from_name: string
+          from_profile_id: string
+          i_receive: boolean
+          id: string
+          mine: boolean
+          to_name: string
+          to_profile_id: string
         }[]
       }
       verified_places_ranking: {

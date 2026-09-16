@@ -20,6 +20,8 @@ export type TripRefusal =
   | 'no_participants'
   | 'bad_expense'
   | 'not_yours'
+  | 'not_in_trip'
+  | 'bad_settlement'
   | 'rate_limited'
   | 'unknown';
 
@@ -45,6 +47,8 @@ const RECUSAS: TripRefusal[] = [
   'no_participants',
   'bad_expense',
   'not_yours',
+  'not_in_trip',
+  'bad_settlement',
   'rate_limited',
 ];
 
@@ -97,6 +101,8 @@ export type TripBalance = {
   displayName: string;
   paidCents: number;
   owedCents: number;
+  /** Já entregue a outros menos já recebido deles. */
+  settledCents: number;
   /** Positivo: pôs mais do que lhe cabia. Negativo: deve. */
   balanceCents: number;
   isMe: boolean;
@@ -153,6 +159,7 @@ export async function fetchTripBalances(sessionId: string): Promise<TripBalance[
     displayName: row.display_name ?? 'Um adepto',
     paidCents: row.paid_cents ?? 0,
     owedCents: row.owed_cents ?? 0,
+    settledCents: row.settled_cents ?? 0,
     balanceCents: row.balance_cents ?? 0,
     isMe: row.is_me === true,
   }));
@@ -322,4 +329,69 @@ export async function fetchMyTripHistory(): Promise<TripHistoryEntry[]> {
         ]
       : []
   );
+}
+
+/** Dinheiro que já mudou de mãos dentro destas contas. */
+export type TripSettlement = {
+  id: string;
+  fromProfileId: string;
+  fromName: string;
+  toProfileId: string;
+  toName: string;
+  cents: number;
+  /** Quem recebeu já disse que recebeu. */
+  confirmed: boolean;
+  iReceive: boolean;
+  /** Se o posso apagar: estive nele ou fui eu que o lancei. */
+  mine: boolean;
+  createdOn: string;
+};
+
+export async function fetchTripSettlements(sessionId: string): Promise<TripSettlement[]> {
+  const { data, error } = await client().rpc('trip_settlements', { p_session_id: sessionId });
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    fromProfileId: row.from_profile_id,
+    fromName: row.from_name ?? 'Um adepto',
+    toProfileId: row.to_profile_id,
+    toName: row.to_name ?? 'Um adepto',
+    cents: row.cents ?? 0,
+    confirmed: row.confirmed === true,
+    iReceive: row.i_receive === true,
+    mine: row.mine === true,
+    createdOn: row.created_on ?? '',
+  }));
+}
+
+/**
+ * Registar um pagamento. Sem `fromProfileId`, fui eu que paguei — e fica por confirmar até quem recebeu dizer que
+ * recebeu. Se for eu a receber, fica confirmado logo.
+ */
+export async function addTripSettlement(
+  sessionId: string,
+  toProfileId: string,
+  cents: number,
+  fromProfileId?: string
+): Promise<string> {
+  const { data, error } = await client().rpc('add_trip_settlement', {
+    p_session_id: sessionId,
+    p_to_profile_id: toProfileId,
+    p_cents: cents,
+    p_from_profile_id: fromProfileId,
+  });
+  if (error) throw refusal(error);
+  return data;
+}
+
+export async function confirmTripSettlement(settlementId: string) {
+  const { error } = await client().rpc('confirm_trip_settlement', {
+    p_settlement_id: settlementId,
+  });
+  if (error) throw refusal(error);
+}
+
+export async function removeTripSettlement(settlementId: string) {
+  const { error } = await client().rpc('remove_trip_settlement', { p_settlement_id: settlementId });
+  if (error) throw refusal(error);
 }

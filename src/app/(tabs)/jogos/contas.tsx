@@ -7,10 +7,13 @@ import { Spacing } from '@/constants/theme';
 import { fetchMyGroups } from '@/features/groups/api';
 import {
   addTripExpense,
+  addTripSettlement,
   CATEGORIAS,
+  confirmTripSettlement,
   openRideTripSession,
   openTripSession,
   removeTripExpense,
+  removeTripSettlement,
   TripRefused,
   type CategoriaDespesa,
   type TripBalance,
@@ -22,6 +25,7 @@ import {
   useTripExpenses,
   useTripPeople,
   useTripSession,
+  useTripSettlements,
 } from '@/features/trips/hooks/useTrips';
 import { useTheme } from '@/hooks/use-theme';
 import { acertarContas, dividirCentimos, meuAcerto, parteDeCada } from '@/lib/acerto';
@@ -68,7 +72,11 @@ function mensagemDeRecusa(erro: unknown) {
     case 'no_participants':
       return 'Escolhe pelo menos uma pessoa para entrar na despesa.';
     case 'not_yours':
-      return 'Só quem lançou a despesa ou quem a pagou é que a pode apagar.';
+      return 'Isso só pode ser feito por quem esteve nessa despesa ou nesse pagamento.';
+    case 'not_in_trip':
+      return 'Essa pessoa não está nestas contas.';
+    case 'bad_settlement':
+      return 'Um pagamento é sempre de uma pessoa para outra, com um valor.';
     case 'rate_limited':
       return 'Já lançaste muitas despesas hoje. Continua amanhã.';
     default:
@@ -146,6 +154,7 @@ export default function ContasScreen() {
   const pessoas = useTripPeople(sessionId);
   const despesas = useTripExpenses(sessionId);
   const saldos = useTripBalances(sessionId);
+  const pagamentos = useTripSettlements(sessionId);
 
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
@@ -324,6 +333,24 @@ export default function ContasScreen() {
                           : `${transferencia.deNome} paga ${formatarCentimos(transferencia.centimos)} a ${transferencia.paraNome}`}
                     </ThemedText>
                   </View>
+                  {souEu && sessionId ? (
+                    <Button
+                      label={souEu === 'pagar' ? 'Já paguei' : 'Já recebi'}
+                      variant="secondary"
+                      icon={icons.selecionado}
+                      disabled={aTratar}
+                      onPress={() =>
+                        void tratar(() =>
+                          addTripSettlement(
+                            sessionId,
+                            transferencia.paraId,
+                            transferencia.centimos,
+                            transferencia.deId
+                          ).then(() => undefined)
+                        )
+                      }
+                    />
+                  ) : null}
                 </Card>
               );
             })
@@ -334,6 +361,60 @@ export default function ContasScreen() {
                 ? 'Tu estás em dia — isto é o que falta entre os outros.'
                 : `${plural(acerto.length, 'transferência', 'transferências')} e fica tudo fechado.`}
             </ThemedText>
+          ) : null}
+
+          {(pagamentos.data ?? []).length > 0 ? (
+            <>
+              <SectionHeader title="Já pago" trailing={String((pagamentos.data ?? []).length)} />
+              {(pagamentos.data ?? []).map((pagamento) => (
+                <Card key={pagamento.id} style={styles.cartao}>
+                  <View style={styles.linha}>
+                    <Icon name={icons.preco} size={20} color={theme.textSecondary} />
+                    <ThemedText style={styles.flex}>
+                      {`${pagamento.fromProfileId === userId ? 'Pagaste' : `${pagamento.fromName} pagou`} ${formatarCentimos(pagamento.cents)} a ${
+                        pagamento.toProfileId === userId ? 'ti' : pagamento.toName
+                      }`}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.etiquetas}>
+                    <Etiqueta
+                      icon={pagamento.confirmed ? icons.selecionado : icons.horario}
+                      label={pagamento.confirmed ? 'Confirmado' : 'Por confirmar'}
+                      tone={pagamento.confirmed ? 'positivo' : 'aviso'}
+                    />
+                  </View>
+                  {!pagamento.confirmed && pagamento.iReceive ? (
+                    <Button
+                      label="Recebi, sim"
+                      variant="secondary"
+                      disabled={aTratar}
+                      onPress={() => void tratar(() => confirmTripSettlement(pagamento.id))}
+                    />
+                  ) : null}
+                  {pagamento.mine ? (
+                    <LinkTexto
+                      label={
+                        pagamento.iReceive && !pagamento.confirmed ? 'Não recebi isto' : 'Apagar'
+                      }
+                      onPress={() =>
+                        Alert.alert(
+                          'Apagar este pagamento?',
+                          'Os saldos voltam ao que estavam antes dele.',
+                          [
+                            { text: 'Deixa estar', style: 'cancel' },
+                            {
+                              text: 'Apagar',
+                              style: 'destructive',
+                              onPress: () => void tratar(() => removeTripSettlement(pagamento.id)),
+                            },
+                          ]
+                        )
+                      }
+                    />
+                  ) : null}
+                </Card>
+              ))}
+            </>
           ) : null}
 
           <SectionHeader title="Quem pôs o quê" />
@@ -355,7 +436,17 @@ export default function ContasScreen() {
                 />
               </View>
               <ThemedText type="small" themeColor="textMuted">
-                {`pôs ${formatarCentimos(pessoa.paidCents)} · coube-lhe ${formatarCentimos(pessoa.owedCents)}`}
+                {[
+                  `pôs ${formatarCentimos(pessoa.paidCents)}`,
+                  `coube-lhe ${formatarCentimos(pessoa.owedCents)}`,
+                  pessoa.settledCents > 0
+                    ? `já entregou ${formatarCentimos(pessoa.settledCents)}`
+                    : pessoa.settledCents < 0
+                      ? `já recebeu ${formatarCentimos(-pessoa.settledCents)}`
+                      : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               </ThemedText>
             </Card>
           ))}
