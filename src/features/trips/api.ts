@@ -11,6 +11,8 @@ function client() {
 export type TripRefusal =
   | 'not_signed_in'
   | 'not_member'
+  | 'not_in_ride'
+  | 'ride_not_found'
   | 'session_not_found'
   | 'fixture_not_found'
   | 'payer_not_member'
@@ -34,6 +36,8 @@ export class TripRefused extends Error {
 const RECUSAS: TripRefusal[] = [
   'not_signed_in',
   'not_member',
+  'not_in_ride',
+  'ride_not_found',
   'session_not_found',
   'fixture_not_found',
   'payer_not_member',
@@ -183,10 +187,44 @@ export async function removeTripExpense(expenseId: string) {
   if (error) throw refusal(error);
 }
 
-export type MyTripSession = {
-  groupId: string;
-  groupName: string;
-  /** `null` quando o grupo ainda não tem contas abertas para este jogo. */
+export type TripPerson = {
+  profileId: string;
+  displayName: string;
+  isMe: boolean;
+};
+
+/** Quem entra nestas contas: os do grupo, ou os do carro. */
+export async function fetchTripPeople(sessionId: string): Promise<TripPerson[]> {
+  const { data, error } = await client().rpc('trip_people', { p_session_id: sessionId });
+  if (error) throw error;
+  return data.map((row) => ({
+    profileId: row.profile_id,
+    displayName: row.display_name ?? 'Um adepto',
+    isMe: row.is_me === true,
+  }));
+}
+
+/** As contas de uma boleia, se já alguém as abriu. */
+export async function fetchRideTripSession(rideId: string): Promise<TripSession | null> {
+  const { data, error } = await client().rpc('ride_trip_session', { p_ride_id: rideId });
+  if (error) throw error;
+  const row = data[0];
+  return row ? { id: row.id, expenses: row.expenses ?? 0, totalCents: row.total_cents ?? 0 } : null;
+}
+
+/** Abre as contas de uma boleia. Não cria grupo nenhum: as pessoas são as do carro. */
+export async function openRideTripSession(rideId: string): Promise<string> {
+  const { data, error } = await client().rpc('open_ride_trip_session', { p_ride_id: rideId });
+  if (error) throw refusal(error);
+  return data;
+}
+
+export type TripAccount = {
+  kind: 'grupo' | 'boleia';
+  /** O grupo ou a boleia a que estas contas pertencem. */
+  ownerId: string;
+  title: string;
+  /** `null` enquanto ninguém abriu as contas. */
   sessionId: string | null;
   expenses: number;
   totalCents: number;
@@ -194,16 +232,58 @@ export type MyTripSession = {
   myBalanceCents: number;
 };
 
-/** Os meus grupos e, em cada um, as contas deste jogo — se já existirem. */
-export async function fetchMyTripSessions(fixtureId: string): Promise<MyTripSession[]> {
-  const { data, error } = await client().rpc('my_trip_sessions', { p_fixture_id: fixtureId });
+/** As contas deste jogo que te dizem respeito: as dos teus grupos e as das boleias em que vais. */
+export async function fetchMyTripAccounts(fixtureId: string): Promise<TripAccount[]> {
+  const { data, error } = await client().rpc('my_trip_accounts', { p_fixture_id: fixtureId });
   if (error) throw error;
   return data.map((row) => ({
-    groupId: row.group_id,
-    groupName: row.group_name ?? 'Grupo',
+    kind: row.kind === 'boleia' ? ('boleia' as const) : ('grupo' as const),
+    ownerId: row.owner_id,
+    title: row.title ?? 'Contas',
     sessionId: row.session_id,
     expenses: row.expenses ?? 0,
     totalCents: row.total_cents ?? 0,
     myBalanceCents: row.my_balance_cents ?? 0,
   }));
+}
+
+/** Uma viagem a acontecer agora: a boleia em que vais, desde uma hora antes de sair até ao dia seguinte ao jogo. */
+export type LiveTrip = {
+  rideId: string;
+  fixtureId: string;
+  kickoffAt: string;
+  departureAt: string;
+  driverName: string;
+  people: number;
+  peopleNames: string[];
+  iDrive: boolean;
+  sessionId: string | null;
+  expenses: number;
+  totalCents: number;
+  myBalanceCents: number;
+};
+
+export async function fetchMyLiveTrips(): Promise<LiveTrip[]> {
+  const { data, error } = await client().rpc('my_live_trips');
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.ride_id && row.fixture_id && row.kickoff_at && row.departure_at
+      ? [
+          {
+            rideId: row.ride_id,
+            fixtureId: row.fixture_id,
+            kickoffAt: row.kickoff_at,
+            departureAt: row.departure_at,
+            driverName: row.driver_name ?? 'Um adepto',
+            people: row.people ?? 1,
+            peopleNames: row.people_names ?? [],
+            iDrive: row.i_drive === true,
+            sessionId: row.session_id,
+            expenses: row.expenses ?? 0,
+            totalCents: row.total_cents ?? 0,
+            myBalanceCents: row.my_balance_cents ?? 0,
+          },
+        ]
+      : []
+  );
 }

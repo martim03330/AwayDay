@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { useMyTripSessions } from '@/features/trips/hooks/useTrips';
+import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
 import { plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
@@ -14,27 +14,28 @@ import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 
 /**
- * As contas do dia, no ecrã do jogo: em que grupos meus há contas abertas para este jogo e como está o meu saldo em
- * cada um. As contas são sempre de um grupo — é o grupo que sabe quem foi à viagem.
+ * As contas do dia, no ecrã do jogo: onde há contas deste jogo que me digam respeito — na boleia em que vou ou num
+ * grupo meu — e como está o meu saldo em cada umas. Uma boleia não cria grupo nenhum: as pessoas das contas são as
+ * do carro.
  */
 export function ContasDaViagem({ jogo }: { jogo: Jogo }) {
   const router = useRouter();
   const userId = useUserId();
-  const sessoes = useMyTripSessions(jogo.id, userId !== null);
+  const contas = useMyTripAccounts(jogo.id, userId !== null);
 
   if (!userId) {
     return (
       <Card>
         <ThemedText themeColor="textSecondary">
-          As contas da viagem são do grupo: entra na tua conta para as ver.
+          As contas da viagem dividem-se com quem foi contigo: entra na tua conta para as ver.
         </ThemedText>
       </Card>
     );
   }
 
-  const grupos = sessoes.data ?? [];
+  const lista = contas.data ?? [];
 
-  if (sessoes.isLoading) {
+  if (contas.isLoading) {
     return (
       <Card>
         <ThemedText themeColor="textSecondary">A ver as contas…</ThemedText>
@@ -42,13 +43,13 @@ export function ContasDaViagem({ jogo }: { jogo: Jogo }) {
     );
   }
 
-  if (grupos.length === 0) {
+  if (lista.length === 0) {
     return (
       <Card style={styles.cartao}>
         <ThemedText themeColor="textSecondary">
-          As contas de um dia de jogo dividem-se dentro de um grupo: as cervejas, os petiscos, a
-          casa, as portagens. Cada despesa fica dividida por quem entrou nela, e no fim a app diz
-          quem paga a quem.
+          As contas de um dia de jogo dividem-se com quem foi contigo: numa boleia, ou num grupo. As
+          cervejas, os petiscos, a casa, as portagens — cada despesa fica dividida por quem entrou
+          nela, e no fim a app diz quem paga a quem.
         </ThemedText>
         <LinkTexto
           label="Criar ou entrar num grupo"
@@ -60,40 +61,43 @@ export function ContasDaViagem({ jogo }: { jogo: Jogo }) {
 
   return (
     <>
-      {grupos.map((grupo) => (
+      {lista.map((conta) => (
         <Card
-          key={grupo.groupId}
+          key={`${conta.kind}-${conta.ownerId}`}
           style={styles.cartao}
           onPress={() =>
             router.push({
               pathname: '/jogos/contas',
-              params: { jogoId: jogo.id, grupoId: grupo.groupId },
+              params:
+                conta.kind === 'boleia'
+                  ? { jogoId: jogo.id, boleiaId: conta.ownerId }
+                  : { jogoId: jogo.id, grupoId: conta.ownerId },
             })
           }
-          accessibilityLabel={`Contas de ${grupo.groupName}. Toca para abrir.`}>
+          accessibilityLabel={`Contas de ${conta.title}. Toca para abrir.`}>
           <ThemedText style={styles.nome} numberOfLines={1}>
-            {grupo.groupName}
+            {conta.title}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {grupo.sessionId === null
+            {conta.sessionId === null
               ? 'Ainda sem contas para este jogo. Abre-as e vai lançando o que for saindo.'
-              : `${formatarCentimos(grupo.totalCents)} em ${plural(grupo.expenses, 'despesa', 'despesas')}`}
+              : `${formatarCentimos(conta.totalCents)} em ${plural(conta.expenses, 'despesa', 'despesas')}`}
           </ThemedText>
-          {grupo.sessionId !== null ? (
+          {conta.sessionId !== null ? (
             <View style={styles.etiquetas}>
               <Etiqueta
-                icon={grupo.myBalanceCents < 0 ? icons.preco : icons.selecionado}
+                icon={conta.myBalanceCents < 0 ? icons.preco : icons.selecionado}
                 label={
-                  grupo.myBalanceCents === 0
+                  conta.myBalanceCents === 0
                     ? 'Estás em dia'
-                    : grupo.myBalanceCents > 0
-                      ? `Tens a receber ${formatarCentimos(grupo.myBalanceCents)}`
-                      : `Deves ${formatarCentimos(-grupo.myBalanceCents)}`
+                    : conta.myBalanceCents > 0
+                      ? `Tens a receber ${formatarCentimos(conta.myBalanceCents)}`
+                      : `Deves ${formatarCentimos(-conta.myBalanceCents)}`
                 }
                 tone={
-                  grupo.myBalanceCents === 0
+                  conta.myBalanceCents === 0
                     ? 'neutro'
-                    : grupo.myBalanceCents > 0
+                    : conta.myBalanceCents > 0
                       ? 'positivo'
                       : 'aviso'
                 }

@@ -2454,25 +2454,28 @@ export type Database = {
         Row: {
           created_at: string
           fixture_id: string
-          group_id: string
+          group_id: string | null
           id: string
           opened_by: string | null
+          ride_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           fixture_id: string
-          group_id: string
+          group_id?: string | null
           id?: string
           opened_by?: string | null
+          ride_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           fixture_id?: string
-          group_id?: string
+          group_id?: string | null
           id?: string
           opened_by?: string | null
+          ride_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2495,6 +2498,13 @@ export type Database = {
             columns: ["opened_by"]
             isOneToOne: false
             referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_session_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
             referencedColumns: ["id"]
           },
         ]
@@ -2920,6 +2930,10 @@ export type Database = {
         Args: { p_group_id: string; p_profile_id: string }
         Returns: boolean
       }
+      is_trip_member: {
+        Args: { p_profile_id: string; p_session_id: string }
+        Returns: boolean
+      }
       join_group_with_code: { Args: { p_code: string }; Returns: string }
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
@@ -2942,6 +2956,23 @@ export type Database = {
           name: string
           role: string
           source: string
+        }[]
+      }
+      my_live_trips: {
+        Args: never
+        Returns: {
+          departure_at: string
+          driver_name: string
+          expenses: number
+          fixture_id: string
+          i_drive: boolean
+          kickoff_at: string
+          my_balance_cents: number
+          people: number
+          people_names: string[]
+          ride_id: string
+          session_id: string
+          total_cents: number
         }[]
       }
       my_ride_alerts: {
@@ -2982,14 +3013,15 @@ export type Database = {
           visits: number
         }[]
       }
-      my_trip_sessions: {
+      my_trip_accounts: {
         Args: { p_fixture_id: string }
         Returns: {
           expenses: number
-          group_id: string
-          group_name: string
+          kind: string
           my_balance_cents: number
+          owner_id: string
           session_id: string
+          title: string
           total_cents: number
         }[]
       }
@@ -3004,6 +3036,7 @@ export type Database = {
           rank_position: number
         }[]
       }
+      open_ride_trip_session: { Args: { p_ride_id: string }; Returns: string }
       open_trip_session: {
         Args: { p_fixture_id: string; p_group_id: string }
         Returns: string
@@ -3225,6 +3258,15 @@ export type Database = {
         Args: { p_people: number; p_total_cents: number }
         Returns: number
       }
+      ride_trip_session: {
+        Args: { p_ride_id: string }
+        Returns: {
+          expenses: number
+          fixture_id: string
+          id: string
+          total_cents: number
+        }[]
+      }
       roll_up_home_fan_reports: { Args: never; Returns: number }
       rotate_group_invite: { Args: { p_group_id: string }; Returns: string }
       season_recap_candidates: {
@@ -3366,12 +3408,26 @@ export type Database = {
           payer_name: string
         }[]
       }
+      trip_people: {
+        Args: { p_session_id: string }
+        Returns: {
+          display_name: string
+          is_me: boolean
+          profile_id: string
+        }[]
+      }
       trip_session_of: {
         Args: { p_fixture_id: string; p_group_id: string }
         Returns: {
           expenses: number
           id: string
           total_cents: number
+        }[]
+      }
+      trip_session_people: {
+        Args: { p_session_id: string }
+        Returns: {
+          profile_id: string
         }[]
       }
       verified_places_ranking: {

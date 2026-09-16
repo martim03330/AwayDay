@@ -4,6 +4,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JogoCard } from '@/components/jogo-card';
+import { ViagemADecorrer } from '@/components/viagem-a-decorrer';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { CoachBanner } from '@/features/coach/components/CoachBanner';
 import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
@@ -336,6 +337,7 @@ export default function JogosScreen() {
         </View>
 
         <View style={styles.conteudo}>
+          <ViagemADecorrer />
           <AlertasBoleias />
           {oMeuProximoJogo ? (
             <Card

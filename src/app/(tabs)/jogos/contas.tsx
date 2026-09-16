@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { fetchGroupMembers, fetchMyGroups } from '@/features/groups/api';
+import { fetchMyGroups } from '@/features/groups/api';
 import {
   addTripExpense,
   CATEGORIAS,
+  openRideTripSession,
   openTripSession,
   removeTripExpense,
   TripRefused,
@@ -16,8 +17,10 @@ import {
 } from '@/features/trips/api';
 import {
   useRefreshTrips,
+  useRideTripSession,
   useTripBalances,
   useTripExpenses,
+  useTripPeople,
   useTripSession,
 } from '@/features/trips/hooks/useTrips';
 import { useTheme } from '@/hooks/use-theme';
@@ -55,12 +58,13 @@ function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof TripRefused)) return 'Não deu para fazer isso. Tenta outra vez.';
   switch (erro.reason) {
     case 'not_member':
-      return 'Já não estás neste grupo.';
+    case 'not_in_ride':
+      return 'Já não estás nesta viagem.';
     case 'bad_expense':
       return 'Falta alguma coisa: escreve o que foi e quanto custou.';
     case 'participant_not_member':
     case 'payer_not_member':
-      return 'Alguém que escolheste já não está no grupo. Atualiza e tenta outra vez.';
+      return 'Alguém que escolheste já não está na viagem. Atualiza e tenta outra vez.';
     case 'no_participants':
       return 'Escolhe pelo menos uma pessoa para entrar na despesa.';
     case 'not_yours':
@@ -78,6 +82,14 @@ function comoEstaOSaldo(centimos: number) {
   return centimos > 0
     ? `Tens a receber ${formatarCentimos(centimos)}`
     : `Deves ${formatarCentimos(-centimos)}`;
+}
+
+/** "12,50 € cada" ou "12,50 €–12,51 € cada", quando a divisão não dá certa. */
+function comoSeDivide(centimos: number, quantos: number) {
+  const { base, comMaisUmCentimo } = parteDeCada(centimos, quantos);
+  return comMaisUmCentimo === 0
+    ? `${formatarCentimos(base)} cada`
+    : `${formatarCentimos(base)}–${formatarCentimos(base + 1)} cada`;
 }
 
 /**
@@ -99,45 +111,39 @@ function fecharContas(saldos: TripBalance[]) {
   }
 }
 
-/** "12,50 € cada" ou "12,50 €–12,51 € cada", quando a divisão não dá certa. */
-function comoSeDivide(centimos: number, quantos: number) {
-  const { base, comMaisUmCentimo } = parteDeCada(centimos, quantos);
-  return comMaisUmCentimo === 0
-    ? `${formatarCentimos(base)} cada`
-    : `${formatarCentimos(base)}–${formatarCentimos(base + 1)} cada`;
-}
-
 function tomDoSaldo(centimos: number) {
   return centimos === 0 ? 'neutro' : centimos > 0 ? 'positivo' : 'aviso';
 }
 
 /**
- * As contas de uma viagem: o que o grupo gastou num jogo, quem pôs o quê, e quem paga a quem no fim.
+ * As contas de uma viagem: o que se gastou num jogo, quem pôs o quê, e quem paga a quem no fim.
  *
- * Cada despesa é dividida por igual entre as pessoas que entram nela — nem todos bebem, nem todos dormem na casa. A
- * divisão e os saldos são calculados no servidor; aqui só se mostra o que ele responde, e a lista de transferências,
- * que sai de `src/lib/acerto.ts`.
+ * As contas são de um **grupo** (`grupoId`) ou de uma **boleia** (`boleiaId`) — uma boleia não cria grupo nenhum: as
+ * pessoas das contas são as do carro. Cada despesa é dividida por igual entre quem entra nela; a divisão e os saldos
+ * são calculados no servidor, e as transferências saem de `src/lib/acerto.ts`.
  */
 export default function ContasScreen() {
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
   const refrescar = useRefreshTrips();
-  const { jogoId, grupoId } = useLocalSearchParams<{ jogoId?: string; grupoId?: string }>();
+  const { jogoId, grupoId, boleiaId } = useLocalSearchParams<{
+    jogoId?: string;
+    grupoId?: string;
+    boleiaId?: string;
+  }>();
   const jogo = jogoId ? obterJogo(jogoId) : undefined;
 
   const grupos = useQuery({
     queryKey: ['groups', userId],
-    queryFn: userId ? fetchMyGroups : skipToken,
+    queryFn: userId && grupoId ? fetchMyGroups : skipToken,
     meta: { persist: false },
   });
-  const membros = useQuery({
-    queryKey: ['groups', 'members', grupoId ?? null],
-    queryFn: grupoId ? () => fetchGroupMembers(grupoId) : skipToken,
-    meta: { persist: false },
-  });
-  const sessao = useTripSession(grupoId ?? null, jogoId ?? null, userId !== null);
+  const sessaoDoGrupo = useTripSession(grupoId ?? null, jogoId ?? null, userId !== null);
+  const sessaoDaBoleia = useRideTripSession(boleiaId ?? null, userId !== null);
+  const sessao = boleiaId ? sessaoDaBoleia : sessaoDoGrupo;
   const sessionId = sessao.data?.id ?? null;
+  const pessoas = useTripPeople(sessionId);
   const despesas = useTripExpenses(sessionId);
   const saldos = useTripBalances(sessionId);
 
@@ -145,25 +151,25 @@ export default function ContasScreen() {
   const [valor, setValor] = useState('');
   const [tipo, setTipo] = useState<CategoriaDespesa>('petiscos');
   const [quemPagou, setQuemPagou] = useState<string | null>(null);
-  // `null` até alguém mexer: até lá, entra o grupo todo.
+  // `null` até alguém mexer: até lá, entra a viagem toda.
   const [quemEntra, setQuemEntra] = useState<string[] | null>(null);
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const grupo = (grupos.data ?? []).find((candidato) => candidato.id === grupoId);
-  const gente = membros.data ?? [];
+  const gente = pessoas.data ?? [];
   const nomeDoJogo = jogo
     ? `${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`
     : 'Jogo';
 
-  if (!userId || !grupoId || !jogoId) {
+  if (!userId || !jogoId || (!grupoId && !boleiaId)) {
     return (
       <Screen>
         <EmptyState
           icon={icons.preco}
           title="Contas não encontradas"
-          message="Abre as contas a partir do jogo ou do grupo."
-          action={{ label: 'Os meus grupos', onPress: () => router.replace('/perfil/grupos') }}
+          message="Abre as contas a partir do jogo, da boleia ou do grupo."
+          action={{ label: 'Voltar aos jogos', onPress: () => router.replace('/jogos') }}
         />
       </Screen>
     );
@@ -233,15 +239,20 @@ export default function ContasScreen() {
     <Screen>
       <ThemedText type="title">Contas de {nomeDoJogo}</ThemedText>
       <ThemedText themeColor="textSecondary">
-        {grupo ? grupo.name : 'Grupo'} · {plural(gente.length, 'pessoa', 'pessoas')}
+        {[
+          boleiaId ? 'Boleia' : (grupo?.name ?? 'Grupo'),
+          gente.length > 0 ? plural(gente.length, 'pessoa', 'pessoas') : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </ThemedText>
 
       {sessionId === null ? (
         <Card style={styles.cartao}>
           <ThemedText themeColor="textSecondary">
-            Ainda não há contas deste jogo. Abre-as no dia da viagem e depois é só ir lançando o que
-            for saindo: as cervejas, os petiscos, a casa, as portagens. No fim a app diz quem paga a
-            quem.
+            {boleiaId
+              ? 'Ainda não há contas desta viagem. Abre-as e vai lançando o que for saindo — o café da estrada, as cervejas, os petiscos. No fim a app diz quem paga a quem.'
+              : 'Ainda não há contas deste jogo. Abre-as no dia da viagem e depois é só ir lançando o que for saindo: as cervejas, os petiscos, a casa, as portagens. No fim a app diz quem paga a quem.'}
           </ThemedText>
           <Button
             label="Abrir as contas da viagem"
@@ -249,7 +260,8 @@ export default function ContasScreen() {
             disabled={aTratar || sessao.isLoading}
             onPress={() =>
               void tratar(async () => {
-                await openTripSession(grupoId, jogoId);
+                if (boleiaId) await openRideTripSession(boleiaId);
+                else if (grupoId) await openTripSession(grupoId, jogoId);
               })
             }
           />
@@ -372,7 +384,7 @@ export default function ContasScreen() {
                 <ThemedText type="small" themeColor="textMuted">
                   {`pagou ${despesa.payerId === userId ? 'ti' : despesa.payerName} · ${
                     despesa.participants === gente.length
-                      ? 'o grupo todo'
+                      ? 'a viagem toda'
                       : despesa.participantNames.join(', ')
                   } · ${comoSeDivide(despesa.cents, despesa.participants)}`}
                 </ThemedText>
@@ -422,7 +434,7 @@ export default function ContasScreen() {
               {gente.map((pessoa) => (
                 <Chip
                   key={pessoa.profileId}
-                  label={pessoa.isMine ? 'Eu' : pessoa.displayName}
+                  label={pessoa.isMe ? 'Eu' : pessoa.displayName}
                   selected={(quemPagou ?? userId) === pessoa.profileId}
                   emCartao
                   onPress={() => setQuemPagou(pessoa.profileId)}
@@ -435,7 +447,7 @@ export default function ContasScreen() {
               {gente.map((pessoa) => (
                 <Chip
                   key={pessoa.profileId}
-                  label={pessoa.isMine ? 'Eu' : pessoa.displayName}
+                  label={pessoa.isMe ? 'Eu' : pessoa.displayName}
                   selected={escolhidos.includes(pessoa.profileId)}
                   emCartao
                   accessibilityLabel={`${pessoa.displayName} entra nesta despesa`}

@@ -1,9 +1,12 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  fetchMyTripSessions,
+  fetchMyLiveTrips,
+  fetchMyTripAccounts,
+  fetchRideTripSession,
   fetchTripBalances,
   fetchTripExpenses,
+  fetchTripPeople,
   fetchTripSession,
 } from '@/features/trips/api';
 
@@ -14,8 +17,12 @@ export const tripSessionKey = (groupId: string | null, fixtureId: string | null)
   [TRIPS_KEY, 'session', groupId, fixtureId] as const;
 export const tripExpensesKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'expenses', sessionId] as const;
-export const myTripSessionsKey = (fixtureId: string | null) =>
+export const tripAccountsKey = (fixtureId: string | null) =>
   [TRIPS_KEY, 'mine', fixtureId] as const;
+export const rideSessionKey = (rideId: string | null) => [TRIPS_KEY, 'ride', rideId] as const;
+export const tripPeopleKey = (sessionId: string | null) =>
+  [TRIPS_KEY, 'people', sessionId] as const;
+export const liveTripsKey = () => [TRIPS_KEY, 'live'] as const;
 export const tripBalancesKey = (sessionId: string | null) =>
   [TRIPS_KEY, 'balances', sessionId] as const;
 
@@ -50,12 +57,46 @@ export function useTripBalances(sessionId: string | null) {
   });
 }
 
-/** Em que grupos meus há contas deste jogo. É o que o ecrã do jogo mostra. */
-export function useMyTripSessions(fixtureId: string | null, signedIn: boolean) {
+/** As contas deste jogo que me dizem respeito: dos meus grupos e das boleias em que vou. */
+export function useMyTripAccounts(fixtureId: string | null, signedIn: boolean) {
   return useQuery({
-    queryKey: myTripSessionsKey(fixtureId),
-    queryFn: fixtureId && signedIn ? () => fetchMyTripSessions(fixtureId) : skipToken,
+    queryKey: tripAccountsKey(fixtureId),
+    queryFn: fixtureId && signedIn ? () => fetchMyTripAccounts(fixtureId) : skipToken,
     staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/** As contas de uma boleia, se já alguém as abriu. */
+export function useRideTripSession(rideId: string | null, signedIn: boolean) {
+  return useQuery({
+    queryKey: rideSessionKey(rideId),
+    queryFn: rideId && signedIn ? () => fetchRideTripSession(rideId) : skipToken,
+    staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/** Quem entra nestas contas: os do grupo, ou os do carro. */
+export function useTripPeople(sessionId: string | null) {
+  return useQuery({
+    queryKey: tripPeopleKey(sessionId),
+    queryFn: sessionId ? () => fetchTripPeople(sessionId) : skipToken,
+    staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/**
+ * A viagem que está a acontecer agora. Vive na primeira página enquanto durar, e é por isso que se refresca
+ * depressa: o que interessa é a malta ir lançando o que paga, não lembrar-se de tudo no fim.
+ */
+export function useMyLiveTrips(signedIn: boolean) {
+  return useQuery({
+    queryKey: liveTripsKey(),
+    queryFn: signedIn ? fetchMyLiveTrips : skipToken,
+    staleTime: STALE_MS,
+    refetchInterval: 60 * 1000,
     meta: { persist: false },
   });
 }
