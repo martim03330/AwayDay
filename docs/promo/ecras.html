@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Ecrãs da AwayDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@700;800;900&family=Big+Shoulders+Stencil+Display:wght@800&display=swap">
+
+<!--
+  Maquetas dos ecrãs da AwayDay, para material de vídeo.
+
+  Isto NÃO são fotografias da app a correr: são reconstruções em HTML com as cores, os tipos de letra e os textos
+  verdadeiros do projeto (src/constants/theme.ts e os ecrãs em src/app). Os dados são exemplos inventados de
+  propósito — nomes, horas e valores — e os escudos são os genéricos que a app desenha, nunca os oficiais dos clubes.
+
+  Gerar as imagens e o PDF:  node scripts/gerar-ecras.mjs
+-->
+
+<style>
+  :root {
+    --text: #13241B;
+    --text-secondary: #56675D;
+    --text-muted: #8A968F;
+    --background: #F8F7F2;
+    --paper: #FFFFFF;
+    --selected: #EFEDE4;
+    --border: #E2DFD3;
+    --accent: #1C8A4D;
+    --accent-pressed: #0E5530;
+    --accent-text: #FFFFFF;
+    --accent-ink: #16713F;
+    --highlight: #FFCE3A;
+    --highlight-text: #13241B;
+    --success-text: #0E5530;
+    --success-bg: #DDF2E3;
+    --warning: #7A5600;
+    --warning-bg: #FFF3C7;
+    --danger: #D9432F;
+    --danger-text: #A12A18;
+    --danger-bg: #FBE2DD;
+    --info: #2F7BEA;
+    --info-text: #1F5BB5;
+    --info-bg: #DCEAFD;
+    --shadow: 0 1px 0 rgba(19, 36, 27, 0.05), 0 8px 24px rgba(19, 36, 27, 0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #DAD7CC;
+    font-family: 'Figtree', system-ui, sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Uma página por ecrã, no PDF. */
+  .pagina {
+    width: 210mm;
+    min-height: 297mm;
+    background: #FFFFFF;
+    margin: 0 auto;
+    padding: 14mm 14mm 10mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    page-break-after: always;
+  }
+
+  .legenda-pagina {
+    width: 100%;
+    margin-bottom: 8mm;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4mm;
+  }
+
+  .numero {
+    font-family: 'Big Shoulders Display', 'Figtree', sans-serif;
+    font-weight: 900;
+    font-size: 13pt;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .legenda-pagina h2 {
+    font-family: 'Big Shoulders Display', 'Figtree', sans-serif;
+    font-weight: 800;
+    font-size: 26pt;
+    line-height: 1.05;
+    margin: 2mm 0 1mm;
+  }
+
+  .legenda-pagina p { font-size: 10.5pt; color: var(--text-secondary); max-width: 150mm; }
+
+  /* ---------- O telemóvel ---------- */
+  .tela {
+    width: 390px;
+    height: 844px;
+    background: var(--background);
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(19, 36, 27, 0.18);
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .barra-estado {
+    height: 54px;
+    padding: 16px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 15px;
+    font-weight: 700;
+    flex: none;
+  }
+
+  .barra-estado .sinais { display: flex; gap: 5px; align-items: center; }
+  .barra-estado .pilha { width: 22px; height: 11px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; opacity: 0.9; }
+  .barra-estado .pilha::after { content: ''; position: absolute; inset: 2px; right: 6px; background: currentColor; border-radius: 1px; }
+  .barra-estado .rede { display: flex; gap: 2px; align-items: flex-end; }
+  .barra-estado .rede i { width: 3px; background: currentColor; border-radius: 1px; display: block; }
+  .barra-estado .rede i:nth-child(1) { height: 5px; }
+  .barra-estado .rede i:nth-child(2) { height: 7px; }
+  .barra-estado .rede i:nth-child(3) { height: 9px; }
+  .barra-estado .rede i:nth-child(4) { height: 11px; }
+
+  .conteudo { flex: 1; overflow: hidden; padding: 0 16px 8px; display: flex; flex-direction: column; gap: 20px; }
+  /* Sem isto, o flex encolhe os cartões quando o ecrã fica cheio — e comem-se linhas de texto. */
+  .conteudo > * { flex: none; }
+  .conteudo.sem-ar { gap: 14px; }
+  .chips { flex: none; }
+
+  /* Cabeçalho relvado */
+  .relvado {
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 10px 20px 22px;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    flex: none;
+  }
+  .relvado::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 36px, transparent 36px 72px);
+  }
+  .relvado .circulo {
+    position: absolute;
+    right: -70px;
+    top: -60px;
+    width: 232px;
+    height: 232px;
+    border: 3px solid rgba(255,255,255,0.35);
+    border-radius: 50%;
+  }
+  .relvado .conteudo-topo { position: relative; }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    color: var(--highlight);
+  }
+  .relvado h1 {
+    font-family: 'Big Shoulders Display', 'Figtree', sans-serif;
+    font-size: 48px;
+    line-height: 52px;
+    font-weight: 900;
+  }
+  .barra-topo {
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 6px 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+  }
+  .barra-topo .voltar { font-size: 20px; font-weight: 700; }
+  .barra-topo .titulo { font-weight: 700; font-size: 17px; }
+
+  /* Tipografia */
+  .titulo-ecra { font-family: 'Big Shoulders Display', 'Figtree', sans-serif; font-size: 42px; line-height: 44px; font-weight: 900; }
+  .seccao { font-family: 'Big Shoulders Display', 'Figtree', sans-serif; font-size: 26px; line-height: 30px; font-weight: 800; margin-bottom: -4px; }
+  .seccao-linha { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: -4px; }
+  .seccao-linha .direita { font-size: 14px; font-weight: 700; color: var(--text-secondary); }
+  .sub { font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+  .muted { font-size: 14px; line-height: 20px; color: var(--text-muted); }
+  .forte { font-weight: 700; }
+  .score { font-family: 'Big Shoulders Stencil Display', 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 34px; line-height: 38px; }
+
+  /* Cartões */
+  .cartao {
+    background: var(--paper);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cartao.apertado { padding: 16px; gap: 8px; }
+  .linha { display: flex; align-items: center; gap: 8px; }
+  .entre { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .flex { flex: 1; min-width: 0; }
+  .etiquetas { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--selected);
+    color: var(--text-secondary);
+  }
+  .etiqueta.verde { background: var(--success-bg); color: var(--success-text); }
+  .etiqueta.amarela { background: var(--highlight); color: var(--highlight-text); }
+  .etiqueta.aviso { background: var(--warning-bg); color: var(--warning); }
+  .etiqueta.azul { background: var(--info-bg); color: var(--info-text); }
+  .etiqueta.vermelha { background: var(--danger-bg); color: var(--danger-text); }
+  .etiqueta .ponto { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .botao {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-radius: 16px;
+    padding: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .botao.secundario { background: var(--paper); color: var(--text); border: 1.5px solid var(--border); }
+  .botao.destaque { background: var(--highlight); color: var(--highlight-text); }
+  .link { color: var(--accent-ink); font-weight: 700; font-size: 15px; }
+
+  .chip { border: 1.5px solid var(--border); background: var(--paper); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .chips { display: flex; gap: 8px; overflow: hidden; }
+
+  .campo { border: 1.5px solid var(--border); background: var(--paper); border-radius: 12px; padding: 12px 14px; color: var(--text-muted); font-size: 15px; }
+  .campo-rotulo { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+
+  /* Escudo genérico: o mesmo desenho que a app usa (nunca os oficiais). */
+  .escudo { width: 34px; height: 38px; flex: none; position: relative; }
+  .escudo svg { display: block; }
+  .escudo span {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'Big Shoulders Display', sans-serif; font-weight: 900; font-size: 13px; padding-bottom: 4px;
+  }
+
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--selected); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex: none; }
+  .avatar.foto { background: linear-gradient(135deg, #2B5A45, #6FAF8C); color: #fff; }
+
+  /* Barra de separadores */
+  .tabs { flex: none; height: 78px; background: rgba(255,255,255,0.94); border-top: 1px solid var(--border); display: flex; padding: 10px 0 0; }
+  .tabs div { flex: 1; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tabs div.on { color: var(--accent); }
+  .tabs .icone { width: 24px; height: 24px; border-radius: 7px; border: 2.2px solid currentColor; }
+  .tabs .icone.redondo { border-radius: 50%; }
+
+  .mapa { position: relative; border-radius: 20px; overflow: hidden; height: 300px; background: #E8EFE6; }
+  .mapa .rua { position: absolute; background: #FFFFFF; }
+  .mapa .quarteirao { position: absolute; background: #DCE6DA; border-radius: 4px; }
+  .ponto-mapa { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+  .ponto-mapa.parque { background: var(--warning); }
+  .ponto-mapa.cheio { background: var(--danger); }
+  .ponto-mapa.livre { background: var(--accent); }
+  .ponto-mapa.wc { background: var(--info); }
+  .ponto-mapa.estadio { width: 46px; height: 50px; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .tranca { position: absolute; top: 8px; right: 8px; background: var(--paper); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow); }
+
+  .barra-medidor { height: 10px; border-radius: 999px; background: var(--selected); overflow: hidden; }
+  .barra-medidor i { display: block; height: 100%; background: var(--accent); }
+
+  .notificacao { background: rgba(255,255,255,0.92); border-radius: 18px; padding: 12px 14px; display: flex; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+  .notificacao .icone-app { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 18px; flex: none; }
+  .notificacao .t { font-weight: 700; font-size: 14px; }
+  .notificacao .c { font-size: 14px; color: var(--text-secondary); }
+
+  @page { size: A4; margin: 0; }
+  @media print { body { background: #fff; } .pagina { box-shadow: none; } }
+</style>
+</head>
+<body>
+
+<!-- ============================ CAPA ============================ -->
+<section class="pagina" style="justify-content: center;">
+  <div style="width: 100%; max-width: 150mm;">
+    <div class="numero">Material para vídeo · 2026</div>
+    <h1 style="font-family: 'Big Shoulders Display'; font-size: 54pt; line-height: 0.95; font-weight: 900; margin: 4mm 0 6mm;">Os ecrãs<br>da AwayDay</h1>
+    <p style="font-size: 12pt; color: var(--text-secondary); margin-bottom: 6mm;">
+      Dezoito ecrãs, um por página, com a mesma paleta, os mesmos tipos de letra e os mesmos textos da app.
+      Cada página tem o ecrã e uma linha a dizer o que ele mostra — para saberes o que filmar e por que ordem.
+    </p>
+    <p style="font-size: 10.5pt; color: var(--text-muted);">
+      <strong>São maquetas, não fotografias da app a correr.</strong> Os dados são exemplos inventados: nomes, horas e
+      valores. Os escudos são os genéricos que a app desenha, com as cores e a sigla do clube — nunca os oficiais.
+      Se usares estas imagens num vídeo, o que aparece nelas tem de ser possível na app a sério: nenhum número aqui
+      promete o que a app não faz.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 1. JOGOS ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 01 · a primeira página</div>
+    <h2>Os jogos, e a viagem que está a acontecer</h2>
+    <p>A lista abre no dia. Se houver uma viagem a decorrer, é a primeira coisa que aparece — com quem vai no carro e as contas a correr.</p>
+  </div>
+  <div class="tela" id="jogos">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="relvado" style="padding-top: 0;">
+      <div class="circulo"></div>
+      <div class="conteudo-topo">
+        <div class="eyebrow">Sábado, 13 de setembro</div>
+        <h1>Jogos</h1>
+        <div style="background: rgba(255,255,255,0.15); border-radius: 16px; padding: 12px 14px; margin-top: 14px; display: flex; gap: 10px; align-items: center;">
+          <div style="width: 34px; height: 34px; border-radius: 10px; background: var(--highlight); color: var(--highlight-text); display: flex; align-items: center; justify-content: center; font-weight: 800;">!</div>
+          <div style="font-size: 14px; line-height: 19px;">Hoje há jogo a 12 km de ti. Sai às 15:20 para chegares com tempo.</div>
+        </div>
+      </div>
+    </div>
+    <div class="conteudo" style="padding-top: 16px;">
+      <div class="chips">
+        <span class="chip on">Todas</span><span class="chip">Liga</span><span class="chip">Europa</span><span class="chip">Taças</span>
+      </div>
+
+      <div class="cartao" style="gap: 10px;">
+        <div class="etiquetas"><span class="etiqueta amarela"><span class="ponto"></span> Viagem a decorrer</span></div>
+        <div class="forte" style="font-size: 17px;">Estoril Praia x Famalicão</div>
+        <div class="sub">tu, o Zé e a Rita · saída às 15:20</div>
+        <div class="sub">18,40 € em 3 despesas</div>
+        <div class="etiquetas"><span class="etiqueta aviso">Deves 6,13 €</span></div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">Hoje</span><span class="direita">2 jogos</span></div>
+
+      <div class="cartao" style="flex-direction: row; gap: 0; padding: 0; overflow: hidden;">
+        <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div class="eyebrow" style="color: var(--text-secondary);">Liga Portugal Betclic · Jornada 5</div>
+          <div class="linha">
+            <div class="escudo"><svg viewBox="0 0 36 40" width="34" height="38"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#FFD200" stroke="#0B3A82" stroke-width="1.5" stroke-linejoin="round"/></svg><span style="color:#0B3A82">GDE</span></div>
+            <div class="forte">Estoril Praia</div>
+          </div>
+          <div class="linha">
+            <div class="escudo"><svg viewBox="0 0 36 40" width="34" height="38"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#1D4E9E"/></svg><span style="color:#fff">FCF</span></div>
+            <div class="forte">Famalicão</div>
+          </div>
+          <div class="muted">Estádio António Coimbra da Mota · Estoril</div>
+        </div>
+        <div style="width: 94px; border-left: 2px dashed var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+          <div class="score" style="color: var(--text);">17:00</div>
+          <div class="eyebrow" style="color: var(--accent-ink);">Apito</div>
+        </div>
+      </div>
+
+      <div class="cartao" style="flex-direction: row; gap: 0; padding: 0; overflow: hidden;">
+        <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div class="eyebrow" style="color: var(--text-secondary);">Liga Portugal Betclic · Jornada 5</div>
+          <div class="linha">
+            <div class="escudo"><svg viewBox="0 0 36 40" width="34" height="38"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#00843D"/></svg><span style="color:#fff">MFC</span></div>
+            <div class="forte">Moreirense</div>
+          </div>
+          <div class="linha">
+            <div class="escudo"><svg viewBox="0 0 36 40" width="34" height="38"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#C8102E"/></svg><span style="color:#fff">RAF</span></div>
+            <div class="forte">Rio Ave</div>
+          </div>
+          <div class="muted">Estádio Comendador Joaquim de Almeida Freitas</div>
+        </div>
+        <div style="width: 94px; border-left: 2px dashed var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+          <div class="score" style="color: var(--text);">19:30</div>
+          <div class="eyebrow" style="color: var(--accent-ink);">Apito</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="on"><span class="icone"></span>Jogos</div>
+      <div><span class="icone redondo"></span>Locais</div>
+      <div><span class="icone redondo"></span>Perfil</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. JOGO ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 02 · o jogo</div>
+    <h2>Tudo sobre um jogo, numa página só</h2>
+    <p>Abre com a barra de secções: toca numa e a página desce até lá. A contagem para o apito, o carimbo do estádio e o barulhómetro em dia de jogo.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo" style="padding-bottom: 6px;"><span class="voltar">‹</span><span class="titulo">Estoril x Famalicão</span></div>
+    <div class="relvado" style="padding-top: 4px;">
+      <div class="circulo"></div>
+      <div class="conteudo-topo">
+        <div class="linha" style="gap: 12px; margin-bottom: 12px;">
+          <div class="escudo"><svg viewBox="0 0 36 40" width="34" height="38"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#FFD200" stroke="#0B3A82" stroke-width="1.5"/></svg><span style="color:#0B3A82">GDE</span></div>
+          <div class="flex">
+            <div style="font-family: 'Big Shoulders Display'; font-size: 30px; line-height: 32px; font-weight: 800;">Estoril Praia<br>Famalicão</div>
+          </div>
+          <div class="escudo"><svg viewBox="0 0 36 40" width="34" height="38"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#1D4E9E"/></svg><span style="color:#fff">FCF</span></div>
+        </div>
+        <div class="entre" style="background: rgba(255,255,255,0.15); border-radius: 16px; padding: 10px 14px;">
+          <div>
+            <div class="eyebrow" style="color: var(--highlight);">Apito</div>
+            <div style="font-family: 'Big Shoulders Stencil Display'; font-size: 30px; font-weight: 800;">17:00</div>
+          </div>
+          <div style="text-align: right; font-size: 14px;">daqui a<br><strong style="font-size: 17px;">1 h 56 min</strong></div>
+        </div>
+      </div>
+    </div>
+    <div style="background: var(--paper); border-bottom: 1px solid var(--border); padding: 10px 16px; flex: none;">
+      <div class="chips"><span class="chip on">Estádio</span><span class="chip">Mapa</span><span class="chip">Como chegar</span><span class="chip">Boleias</span></div>
+    </div>
+    <div class="conteudo" style="padding-top: 16px;">
+      <div class="cartao">
+        <div class="entre">
+          <div class="flex">
+            <div class="forte" style="font-size: 17px;">Carimba o estádio</div>
+            <div class="sub">Só dá lá dentro, e só no dia do jogo.</div>
+          </div>
+          <div style="width: 58px; height: 58px; border-radius: 50%; border: 3px dashed var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 12px; text-align: center;">POR<br>CARIMBAR</div>
+        </div>
+        <div class="botao">Carimbar quando lá estiver</div>
+      </div>
+
+      <div class="seccao">Estádio</div>
+      <div class="cartao apertado">
+        <div class="forte" style="font-size: 17px;">António Coimbra da Mota</div>
+        <div class="sub">Estoril · 8 000 lugares · relvado natural</div>
+        <div class="etiquetas">
+          <span class="etiqueta verde">Bancada visitante: topo norte</span>
+          <span class="etiqueta azul">Comboio a 6 min a pé</span>
+        </div>
+      </div>
+
+      <div class="seccao">WC mais próximo</div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="forte">Jardim do Casino</div><span class="etiqueta verde">130 m</span></div>
+        <div class="sub">Aberto · gratuito · muda-fraldas</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 3. HORA DE SAÍDA E PARQUES ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 03 · antes de sair</div>
+    <h2>A que horas sair e onde deixar o carro</h2>
+    <p>A hora de saída conta com a distância, o trânsito de dia de jogo e a dificuldade de estacionar. Os parques têm cor conforme a probabilidade de ainda haver lugar.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Estoril x Famalicão</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="cartao" style="background: var(--highlight);">
+        <div class="eyebrow" style="color: var(--highlight-text);">Hora de saída</div>
+        <div style="font-family: 'Big Shoulders Stencil Display'; font-size: 46px; line-height: 46px; font-weight: 800;">15:20</div>
+        <div class="sub" style="color: var(--highlight-text);">De Viseu, 1 h 32 min de estrada, mais 20 min para estacionar e 15 para entrar.</div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">Estacionamento</span><span class="direita">6 parques</span></div>
+
+      <div class="cartao apertado">
+        <div class="entre">
+          <div class="flex"><div class="forte">Parque do Casino</div><div class="sub">4 min a pé · 1,20 €/h</div></div>
+          <span class="etiqueta vermelha">Costuma encher</span>
+        </div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre">
+          <div class="flex"><div class="forte">Avenida Marginal</div><div class="sub">9 min a pé · gratuito</div></div>
+          <span class="etiqueta aviso">Pode apertar</span>
+        </div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre">
+          <div class="flex"><div class="forte">Estação do Monte Estoril</div><div class="sub">14 min a pé · 0,80 €/h</div></div>
+          <span class="etiqueta verde">Costuma ter lugar</span>
+        </div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="sub">Se chegares depois das 16:15, conta com os parques cheios à volta do estádio.</div>
+        <div class="link">Ver os parques no mapa</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. MAPA ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 04 · o mapa</div>
+    <h2>Tudo à volta do estádio, num mapa</h2>
+    <p>Tascos, parques e WC à volta do estádio. O mapa nasce preso, para a página deslizar; toca-se em «Mexer no mapa» para o soltar. Ao tocar num tasco, o cartão aparece em baixo.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Estoril x Famalicão</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="seccao">Mapa</div>
+      <div class="cartao" style="padding: 12px; gap: 10px;">
+        <div class="mapa" style="height: 420px;">
+          <div class="quarteirao" style="left: 14px; top: 20px; width: 110px; height: 80px;"></div>
+          <div class="quarteirao" style="left: 150px; top: 10px; width: 90px; height: 60px;"></div>
+          <div class="quarteirao" style="left: 250px; top: 40px; width: 100px; height: 110px;"></div>
+          <div class="quarteirao" style="left: 20px; top: 180px; width: 80px; height: 120px;"></div>
+          <div class="quarteirao" style="left: 230px; top: 240px; width: 120px; height: 90px;"></div>
+          <div class="quarteirao" style="left: 40px; top: 330px; width: 140px; height: 70px;"></div>
+          <div class="rua" style="left: 0; top: 120px; right: 0; height: 16px;"></div>
+          <div class="rua" style="left: 0; top: 300px; right: 0; height: 12px;"></div>
+          <div class="rua" style="left: 130px; top: 0; bottom: 0; width: 14px;"></div>
+          <div class="ponto-mapa estadio" style="left: 150px; top: 165px;">
+            <div class="escudo" style="width: 26px; height: 29px;"><svg viewBox="0 0 36 40" width="26" height="29"><path d="M18 1.5l15.5 5v11.3C33.5 28 27 35.2 18 38.5 9 35.2 2.5 28 2.5 17.8V6.5z" fill="#FFD200" stroke="#0B3A82" stroke-width="1.5"/></svg></div>
+          </div>
+          <div class="ponto-mapa livre" style="left: 96px; top: 96px;"></div>
+          <div class="ponto-mapa livre" style="left: 214px; top: 126px;"></div>
+          <div class="ponto-mapa livre" style="left: 78px; top: 246px;"></div>
+          <div class="ponto-mapa cheio" style="left: 258px; top: 206px;"></div>
+          <div class="ponto-mapa parque" style="left: 186px; top: 316px;"></div>
+          <div class="ponto-mapa wc" style="left: 122px; top: 356px;"></div>
+          <div class="tranca">Mexer no mapa</div>
+          <div style="position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--paper); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow);">
+            <div class="entre"><div class="forte">Tasco do Zé</div><span class="muted">1/4</span></div>
+            <div class="sub">Tasca · 4 min a pé do estádio</div>
+            <div class="etiquetas" style="margin-top: 8px;">
+              <span class="etiqueta verde">já lá estão 12</span>
+              <span class="etiqueta">Cerveja 4,5/5</span>
+              <span class="etiqueta">Petiscos 4/5</span>
+            </div>
+          </div>
+        </div>
+        <div class="etiquetas">
+          <span class="etiqueta"><span class="ponto" style="background: var(--accent);"></span> Tasco</span>
+          <span class="etiqueta"><span class="ponto" style="background: var(--warning);"></span> Parque</span>
+          <span class="etiqueta"><span class="ponto" style="background: var(--info);"></span> WC</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. BOLEIAS ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 05 · boleias</div>
+    <h2>Quem leva quem, com o custo dividido</h2>
+    <p>O preço não é inventado por ninguém: sai do consumo, do preço do combustível e das portagens do percurso — e baixa à medida que entra gente. As boleias de amigos aparecem primeiro.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Estoril x Famalicão</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="seccao-linha"><span class="seccao">Boleias</span><span class="direita">4 carros</span></div>
+
+      <div class="cartao apertado" style="gap: 10px;">
+        <div class="entre">
+          <div class="flex"><div class="forte" style="font-size: 17px;">De Viseu</div></div>
+          <div class="score" style="font-size: 26px; color: var(--accent-ink);">6,10 €</div>
+        </div>
+        <div class="sub">Zé Pinto · sai hoje às 15:20</div>
+        <div class="etiquetas">
+          <span class="etiqueta verde">Amigo</span>
+          <span class="etiqueta verde">2 lugares livres</span>
+          <span class="etiqueta amarela">Cheia: 4,90 € cada</span>
+          <span class="etiqueta">12 boleias · 0 faltas</span>
+        </div>
+      </div>
+
+      <div class="cartao apertado" style="gap: 10px;">
+        <div class="entre">
+          <div class="flex"><div class="forte" style="font-size: 17px;">De Mangualde</div></div>
+          <div class="score" style="font-size: 26px; color: var(--accent-ink);">7,35 €</div>
+        </div>
+        <div class="sub">Rita Nunes · sai hoje às 14:50</div>
+        <div class="etiquetas">
+          <span class="etiqueta verde">1 lugar livre</span>
+          <span class="etiqueta">Sem portagens</span>
+          <span class="etiqueta">5 boleias · 0 faltas</span>
+        </div>
+      </div>
+
+      <div class="cartao apertado" style="gap: 10px;">
+        <div class="entre">
+          <div class="flex"><div class="forte" style="font-size: 17px;">De Tondela</div></div>
+          <div class="score" style="font-size: 26px; color: var(--text-muted);">5,80 €</div>
+        </div>
+        <div class="sub">Bruno Lima · sai hoje às 15:00</div>
+        <div class="etiquetas"><span class="etiqueta">Cheia</span><span class="etiqueta">3 boleias · 1 falta</span></div>
+      </div>
+
+      <div class="botao">Oferecer boleia</div>
+      <div class="muted" style="text-align: center;">Pedes lugar e o condutor responde até 2 h antes de sair.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 6. A BOLEIA ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 06 · a boleia</div>
+    <h2>A ficha de um carro</h2>
+    <p>O custo aberto ao cêntimo, quem já vai, onde fica o carro e a conversa do carro. Quem publica pode convidar amigos direto.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Boleia</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="titulo-ecra">De Viseu</div>
+      <div class="sub" style="margin-top: -12px;">Com o Zé Pinto · sai hoje às 15:20 para o António Coimbra da Mota</div>
+
+      <div class="cartao">
+        <div class="entre"><span class="sub">Combustível</span><span class="forte">18,40 €</span></div>
+        <div class="entre"><span class="sub">Portagens</span><span class="forte">6,00 €</span></div>
+        <div class="entre" style="border-top: 1px solid var(--border); padding-top: 10px;"><span class="forte">Agora, a dividir por 4</span><span class="score" style="font-size: 26px; color: var(--accent-ink);">6,10 €</span></div>
+        <div class="muted">185 km · 1 h 32 min · consumo 6,0 l/100 km a 1,80 €/l</div>
+      </div>
+
+      <div class="seccao">Quem vai</div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar foto">ZP</div><div class="flex"><div class="forte">Zé Pinto</div><div class="sub">Viseu · 12 boleias · 0 faltas</div></div><span class="etiqueta">Condutor</span></div>
+        <div class="linha"><div class="avatar">RN</div><div class="flex"><div class="forte">Rita Nunes</div><div class="sub">Viseu · 5 boleias</div></div><span class="etiqueta">Passageira</span></div>
+        <div class="linha"><div class="avatar foto">M</div><div class="flex"><div class="forte">Tu</div><div class="sub">Viseu · 3 boleias</div></div><span class="etiqueta verde">Tens lugar</span></div>
+      </div>
+
+      <div class="seccao">Conversa do carro</div>
+      <div class="cartao apertado">
+        <div class="sub">Zé Pinto: «Saio do Rossio às 15:20, ao pé do quiosque.»</div>
+        <div class="botao destaque">Abrir a conversa (2 novas)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 7. CONVERSA ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 07 · a conversa</div>
+    <h2>A conversa do carro</h2>
+    <p>Do carro todo — condutor e quem já tem lugar. Quem pediu lugar e ainda não teve resposta não escreve. Fecha um dia depois do jogo e fica para consulta.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:06</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Conversa do carro</span></div>
+    <div class="conteudo" style="padding-top: 18px; gap: 14px;">
+      <div class="titulo-ecra" style="font-size: 34px; line-height: 36px;">Conversa do carro</div>
+      <div class="sub" style="margin-top: -8px;">Boleia do Zé Pinto · Estoril x Famalicão</div>
+
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar foto" style="width: 32px; height: 32px; font-size: 12px;">ZP</div><div class="flex"><div class="forte" style="font-size: 14px;">Zé Pinto</div><div class="muted">hoje às 14:58</div></div></div>
+        <div>Saio do Rossio às 15:20, ao pé do quiosque.</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar" style="width: 32px; height: 32px; font-size: 12px;">RN</div><div class="flex"><div class="forte" style="font-size: 14px;">Rita Nunes</div><div class="muted">hoje às 15:01</div></div></div>
+        <div>Levo eu os cafés da estrada. Alguém quer?</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar foto" style="width: 32px; height: 32px; font-size: 12px;">M</div><div class="flex"><div class="forte" style="font-size: 14px;">Tu</div><div class="muted">hoje às 15:02</div></div></div>
+        <div>Dois! E lanço nas contas quando pagarmos.</div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="campo-rotulo">Escrever ao carro</div>
+        <div class="campo">Saio às 15:00 do Rossio</div>
+        <div class="botao">Enviar</div>
+      </div>
+      <div class="muted">Escrevem aqui o condutor e quem já tem lugar.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 8. TASCO ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 08 · o tasco</div>
+    <h2>Onde a malta se junta antes do jogo</h2>
+    <p>Cervejómetro e petiscómetro votados por quem lá foi, e o contador de quem está lá agora — só aparece a partir de cinco pessoas, e a localização de ninguém é guardada.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>15:48</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Tasco do Zé</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div style="height: 150px; border-radius: 20px; background: linear-gradient(160deg, #4A3B2A, #8A6B45); position: relative; overflow: hidden;">
+        <div style="position: absolute; left: 16px; bottom: 14px; color: #fff;">
+          <div class="eyebrow" style="color: var(--highlight);">Tasca · 4 min a pé</div>
+          <div style="font-family: 'Big Shoulders Display'; font-size: 34px; font-weight: 900;">Tasco do Zé</div>
+        </div>
+      </div>
+
+      <div class="cartao">
+        <div class="entre">
+          <div>
+            <div class="score" style="color: var(--accent-ink); font-size: 40px;">12</div>
+            <div class="sub">adeptos aqui agora</div>
+          </div>
+          <div class="etiquetas" style="justify-content: flex-end;">
+            <span class="etiqueta verde">Estoril 7</span>
+            <span class="etiqueta azul">Famalicão 5</span>
+          </div>
+        </div>
+        <div class="botao">Fazer check-in</div>
+        <div class="muted">O check-in só conta se estiveres mesmo aqui, e dura 3 horas.</div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="entre"><span class="forte">Cervejómetro</span><span class="forte">4,5/5</span></div>
+        <div class="barra-medidor"><i style="width: 90%;"></i></div>
+        <div class="entre" style="margin-top: 6px;"><span class="forte">Petiscómetro</span><span class="forte">4,0/5</span></div>
+        <div class="barra-medidor"><i style="width: 80%;"></i></div>
+        <div class="muted">47 adeptos votaram</div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="forte">Pratos recomendados</div>
+        <div class="sub">Bifana no pão · 3,50 € · 28 recomendações</div>
+        <div class="sub">Imperial · 1,20 € · 41 recomendações</div>
+        <div class="link">Sugerir um prato</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 9. DORMIDA ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 09 · dormir fora</div>
+    <h2>Jogos longe, e onde ficar</h2>
+    <p>Para jogos nas ilhas e fora do país. A app não vende nada nem inventa disponibilidade: alguém propõe uma casa que viu, com o preço total, e a malta junta-se até dar para reservar.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>21:12</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Milan x Benfica</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="seccao">Onde dormir</div>
+      <div class="cartao">
+        <div class="entre">
+          <div class="flex"><div class="forte" style="font-size: 17px;">Apartamento em Navigli</div><div class="sub">2 noites · 17 e 18 de setembro</div></div>
+          <div class="score" style="font-size: 24px; color: var(--accent-ink);">45 €</div>
+        </div>
+        <div class="sub">Proposto pelo Bruno · 360 € a casa toda, 8 camas</div>
+        <div class="barra-medidor"><i style="width: 62%;"></i></div>
+        <div class="sub">5 de 8 pessoas · faltam 3 para fechar</div>
+        <div class="etiquetas">
+          <span class="etiqueta verde">Vi este anúncio a 12/09</span>
+          <span class="etiqueta">A 20 min do estádio</span>
+        </div>
+        <div class="botao">Contar comigo</div>
+        <div class="link">Abrir o anúncio</div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="forte">Procurar casas para estas datas</div>
+        <div class="sub">Abre a pesquisa com as noites já preenchidas. Reservas fora da app, como sempre.</div>
+        <div class="botao secundario">Procurar em Milão</div>
+      </div>
+
+      <div class="muted">A AwayDay não reserva nem cobra nada. O que fica aqui é a intenção da malta e o link de quem viu o anúncio.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 10. CONTAS ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 10 · as contas</div>
+    <h2>As despesas do dia, divididas por quem entra nelas</h2>
+    <p>Cada despesa é dividida pelas pessoas que escolheres — nem todos bebem, nem todos dormem na casa. A boleia entra sozinha e divide-se só por quem vai no carro.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>19:40</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Contas da viagem</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="titulo-ecra" style="font-size: 34px; line-height: 36px;">Contas de Estoril x Famalicão</div>
+      <div class="sub" style="margin-top: -8px;">Viagem a Estoril · 4 pessoas</div>
+
+      <div class="cartao">
+        <div style="font-family: 'Big Shoulders Display'; font-size: 32px; font-weight: 800;">62,90 € no total</div>
+        <div class="sub">5 despesas lançadas</div>
+        <div class="etiquetas"><span class="etiqueta aviso">Deves 6,13 €</span></div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">Despesas</span><span class="direita">5</span></div>
+
+      <div class="cartao apertado">
+        <div class="entre"><div class="forte">Boleia do Zé</div><div class="forte">24,40 €</div></div>
+        <div class="muted">Vem da boleia: combustível e portagens, dividida só por quem vai no carro.</div>
+        <div class="muted">pagou o Zé · Zé, Rita e tu · 8,13 €–8,14 € cada</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="forte">Petiscos no Tasco do Zé</div><div class="forte">24,00 €</div></div>
+        <div class="muted">pagaste tu · a viagem toda · 6,00 € cada</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="forte">Rodada de cervejas</div><div class="forte">10,01 €</div></div>
+        <div class="muted">pagou a Rita · Rita e Bruno · 5,00 €–5,01 € cada</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="forte">Cafés da estrada</div><div class="forte">4,50 €</div></div>
+        <div class="muted">pagaste tu · a viagem toda · 1,12 €–1,13 € cada</div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="campo-rotulo">Lançar uma despesa</div>
+        <div class="campo">O que foi</div>
+        <div class="etiquetas"><span class="chip on">Cervejas</span><span class="chip">Petiscos</span><span class="chip">Bilhetes</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 11. ACERTO ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 11 · quem paga a quem</div>
+    <h2>No fim, ninguém discute contas</h2>
+    <p>A app fecha as contas com o menor número de transferências que dá para garantir, ao cêntimo. E guarda o que já foi pago — a app nunca move dinheiro nenhum.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>23:18</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Contas da viagem</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="seccao">Quem paga a quem</div>
+      <div class="cartao apertado">
+        <div class="linha"><span style="color: var(--accent); font-size: 20px; font-weight: 800;">→</span><div class="flex forte">Pagas 6,13 € ao Zé</div></div>
+        <div class="botao secundario">Já paguei</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="linha"><span style="color: var(--accent); font-size: 20px; font-weight: 800;">→</span><div class="flex forte">O Bruno paga-te 5,01 €</div></div>
+        <div class="botao secundario">Já recebi</div>
+      </div>
+      <div class="muted" style="margin-top: -8px;">2 transferências e fica tudo fechado.</div>
+
+      <div class="seccao-linha"><span class="seccao">Já pago</span><span class="direita">1</span></div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="flex">A Rita pagou-te 4,50 €</div></div>
+        <div class="etiquetas"><span class="etiqueta aviso">Por confirmar</span></div>
+        <div class="botao secundario">Recebi, sim</div>
+      </div>
+
+      <div class="seccao">Quem pôs o quê</div>
+      <div class="cartao apertado">
+        <div class="entre"><span class="forte">Tu</span><span class="etiqueta aviso">deve 6,13 €</span></div>
+        <div class="muted">pôs 28,50 € · coube-te 34,63 €</div>
+        <div class="entre" style="margin-top: 8px;"><span class="forte">Zé Pinto</span><span class="etiqueta verde">a receber 11,14 €</span></div>
+        <div class="muted">pôs 24,40 € · coube-lhe 13,26 €</div>
+      </div>
+      <div class="muted">A app não move dinheiro nenhum: diz quem paga a quem e guarda o que já foi pago.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 12. CARIMBO E PASSAPORTE ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 12 · o passaporte</div>
+    <h2>Carimbar um estádio é estar lá dentro</h2>
+    <p>O carimbo só se dá no estádio, no dia do jogo, e é a app que confirma. São 156 estádios, dos nacionais aos grandes da Europa.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>17:04</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Passaporte de estádios</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="cartao" style="align-items: center; gap: 14px;">
+        <div style="width: 130px; height: 130px; border-radius: 50%; border: 5px solid var(--accent); color: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-8deg); text-align: center;">
+          <div style="font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 22px; line-height: 20px;">COIMBRA<br>DA MOTA</div>
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-top: 4px;">13 · 09 · 2026</div>
+        </div>
+        <div class="forte" style="font-size: 17px;">Carimbado!</div>
+        <div class="sub" style="text-align: center;">Estádio 9 de 156. Já viste 6 estádios esta época.</div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">O teu passaporte</span><span class="direita">9 / 156</span></div>
+      <div class="cartao apertado">
+        <div class="barra-medidor"><i style="width: 6%;"></i></div>
+        <div class="etiquetas" style="margin-top: 10px;">
+          <span class="etiqueta verde">Fontelo</span>
+          <span class="etiqueta verde">Coimbra da Mota</span>
+          <span class="etiqueta verde">Cidade de Coimbra</span>
+          <span class="etiqueta verde">Bessa</span>
+          <span class="etiqueta">Camp Nou</span>
+          <span class="etiqueta">Wembley</span>
+          <span class="etiqueta">San Siro</span>
+          <span class="etiqueta">Signal Iduna Park</span>
+        </div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="forte">Ranking de estádios</div>
+        <div class="entre"><span class="sub">1. Adepto de Viseu</span><span class="forte">31</span></div>
+        <div class="entre"><span class="sub">2. Malta do Norte</span><span class="forte">24</span></div>
+        <div class="entre" style="background: var(--success-bg); border-radius: 10px; padding: 6px 10px;"><span class="forte">14. Tu</span><span class="forte">9</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 13. MISSÕES ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 13 · missões</div>
+    <h2>O que há para fazer além dos 90 minutos</h2>
+    <p>Missões que se cumprem no dia de jogo — provar o petisco da terra, beber um copo com um adepto rival, carimbar um estádio novo. Cada foto fica no álbum.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>16:20</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="relvado" style="padding-top: 0;">
+      <div class="circulo"></div>
+      <div class="conteudo-topo">
+        <div class="eyebrow">Época 2026/27</div>
+        <h1>Missões</h1>
+        <div class="sub" style="color: rgba(255,255,255,0.85); margin-top: 6px;">4 de 12 cumpridas</div>
+      </div>
+    </div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Petisco da terra</div><div class="sub">Prova um prato típico da cidade do jogo.</div></div><span class="etiqueta verde">Cumprida</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Copo com o rival</div><div class="sub">Uma foto com um adepto da outra equipa.</div></div><span class="etiqueta verde">Cumprida</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Estádio novo</div><div class="sub">Carimba um estádio onde nunca foste.</div></div><span class="etiqueta amarela">A caminho</span></div>
+        <div class="barra-medidor"><i style="width: 75%;"></i></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Cinco de seguida</div><div class="sub">Cinco jogos seguidos do teu clube.</div></div><span class="etiqueta">3 de 5</span></div>
+      </div>
+
+      <div class="seccao">Álbum de recordações</div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+        <div style="aspect-ratio: 1; border-radius: 14px; background: linear-gradient(140deg, #3E5C45, #7FA88A);"></div>
+        <div style="aspect-ratio: 1; border-radius: 14px; background: linear-gradient(140deg, #6B4B2A, #C79B63);"></div>
+        <div style="aspect-ratio: 1; border-radius: 14px; background: linear-gradient(140deg, #2C4470, #7089B8);"></div>
+        <div style="aspect-ratio: 1; border-radius: 14px; background: linear-gradient(140deg, #6A2E2E, #C07B6B);"></div>
+        <div style="aspect-ratio: 1; border-radius: 14px; background: var(--selected); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-weight: 700;">+8</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 14. GRUPOS E AMIGOS ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 14 · a tua malta</div>
+    <h2>Amigos e grupos</h2>
+    <p>Só se pede amizade a quem já foi contigo a um jogo, e o pedido tem de ser aceite. A partir daí convida-se direto para o carro ou para um grupo — e vê-se as viagens que já fizeram juntos.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>11:32</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Os teus amigos</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="seccao-linha"><span class="seccao">Pedidos de amizade</span><span class="direita">1</span></div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar">BL</div><div class="flex"><div class="forte">Bruno Lima</div><div class="muted">2 viagens juntos</div></div></div>
+        <div class="botao">Aceitar</div>
+        <div class="link">Agora não</div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">Amigos</span><span class="direita">3</span></div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar foto">ZP</div><div class="flex"><div class="forte">Zé Pinto</div><div class="muted">Viseu · 7 viagens juntos</div></div><span class="etiqueta verde">Amigo</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar">RN</div><div class="flex"><div class="forte">Rita Nunes</div><div class="muted">Mangualde · 4 viagens juntos</div></div><span class="etiqueta verde">Amigo</span></div>
+      </div>
+
+      <div class="seccao">Grupos</div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar">MC</div><div class="flex"><div class="forte">Malta do café</div><div class="muted">6 pessoas · 9 viagens</div></div></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar">VS</div><div class="flex"><div class="forte">Viseu Sul</div><div class="muted">4 pessoas · 3 viagens</div></div></div>
+      </div>
+      <div class="muted">Ser amigo serve para convidar direto, ver as viagens juntos, e as boleias de amigos aparecerem primeiro.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 15. RESUMO DA VIAGEM ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 15 · depois do jogo</div>
+    <h2>O que fica de cada viagem</h2>
+    <p>No histórico, cada jogo abre um resumo: com quem foste, o que se gastou, e o que achaste do estádio, do ambiente e dos acessos.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>10:05</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Resumo da viagem</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="titulo-ecra" style="font-size: 36px; line-height: 38px;">Estoril Praia x Famalicão</div>
+      <div class="sub" style="margin-top: -10px;">13/09/2026 · 17:00 · António Coimbra da Mota, Estoril</div>
+
+      <div class="seccao">Com quem foste</div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar foto">ZP</div><div class="flex"><div class="forte">Zé Pinto</div><div class="muted">7 viagens juntos</div></div><span class="etiqueta verde">Amigo</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="linha"><div class="avatar">RN</div><div class="flex"><div class="forte">Rita Nunes</div><div class="muted">primeira viagem juntos</div></div><div class="botao secundario" style="padding: 8px 12px; font-size: 14px;">Adicionar amigo</div></div>
+      </div>
+
+      <div class="seccao">O que se gastou</div>
+      <div class="cartao apertado">
+        <div class="forte">Viagem a Estoril</div>
+        <div class="sub">62,90 € em 5 despesas</div>
+        <div class="etiquetas"><span class="etiqueta verde">Estás em dia</span></div>
+        <div class="botao secundario">Ver as contas</div>
+      </div>
+
+      <div class="seccao">O que achaste</div>
+      <div class="cartao apertado">
+        <div style="font-family: 'Big Shoulders Display'; font-size: 30px; font-weight: 800;">4,3 em 5</div>
+        <div class="muted">estádio 4,0 · ambiente 5,0 · acessos 4,0</div>
+        <div class="sub">«Bancada visitante pequena mas com uma vista do mar que compensa.»</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 16. PERFIL ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 16 · o perfil</div>
+    <h2>Quem és na app</h2>
+    <p>Foto, nome, a tua terra e o teu clube. O que os outros veem é isto, mais as boleias que fizeste — nunca o email nem onde estás.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>09:41</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="relvado" style="padding-top: 0;">
+      <div class="circulo"></div>
+      <div class="conteudo-topo">
+        <div class="linha" style="gap: 14px;">
+          <div class="avatar foto" style="width: 80px; height: 80px; font-size: 26px; border: 3px solid var(--highlight);">M</div>
+          <div class="flex">
+            <div style="font-family: 'Big Shoulders Display'; font-size: 40px; line-height: 42px; font-weight: 900;">Martim</div>
+            <div class="sub" style="color: rgba(255,255,255,0.85);">Viseu · adepto do Académico</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="cartao apertado">
+        <div class="entre"><div><div class="forte">Foto, nome e terra</div><div class="muted">A tua cara nas boleias e nos grupos</div></div><span style="color: var(--text-muted);">›</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div><div class="forte">Passaporte de estádios</div><div class="muted">9 carimbados · 147 por visitar</div></div><span style="color: var(--text-muted);">›</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div><div class="forte">Os teus jogos</div><div class="muted">23 jogos · 6 esta época</div></div><span style="color: var(--text-muted);">›</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div><div class="forte">Os teus amigos</div><div class="muted">1 pedido por responder</div></div><span style="color: var(--text-muted);">›</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div><div class="forte">Tascos visitados</div><div class="muted">11 · 4 verificados por ti</div></div><span style="color: var(--text-muted);">›</span></div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div><div class="forte">Notificações</div><div class="muted">Escolhe o que queres receber</div></div><span style="color: var(--text-muted);">›</span></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div><span class="icone"></span>Jogos</div>
+      <div><span class="icone redondo"></span>Locais</div>
+      <div class="on"><span class="icone redondo"></span>Perfil</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 17. NOTIFICAÇÕES ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 17 · notificações</div>
+    <h2>A app avisa quando é preciso</h2>
+    <p>Pedidos de lugar, mensagens do carro, convites, despesas e pagamentos. Cada tipo desliga-se nas definições, e é o servidor que respeita isso.</p>
+  </div>
+  <div class="tela" style="background: linear-gradient(160deg, #0E3A24, #1C8A4D);">
+    <div class="barra-estado" style="color: #fff;">
+      <span>15:42</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div style="padding: 30px 16px 0; text-align: center; color: #fff;">
+      <div style="font-family: 'Big Shoulders Stencil Display'; font-size: 74px; font-weight: 800; line-height: 1;">15:42</div>
+      <div style="font-size: 15px; opacity: 0.85;">sábado, 13 de setembro</div>
+    </div>
+    <div style="padding: 26px 12px; display: flex; flex-direction: column; gap: 10px;">
+      <div class="notificacao">
+        <div class="icone-app">A</div>
+        <div class="flex"><div class="t">Zé Pinto escreveu na conversa do carro</div><div class="c">Saio do Rossio às 15:20, ao pé do quiosque.</div></div>
+      </div>
+      <div class="notificacao">
+        <div class="icone-app">A</div>
+        <div class="flex"><div class="t">Tens lugar na boleia do Zé Pinto</div><div class="c">Estoril x Famalicão · sai hoje às 15:20</div></div>
+      </div>
+      <div class="notificacao">
+        <div class="icone-app">A</div>
+        <div class="flex"><div class="t">A Rita lançou 10,01 € nas contas</div><div class="c">Rodada de cervejas — entras nesta divisão.</div></div>
+      </div>
+      <div class="notificacao">
+        <div class="icone-app">A</div>
+        <div class="flex"><div class="t">O Bruno diz que te pagou 5,01 €</div><div class="c">Confirma nas contas quando receberes.</div></div>
+      </div>
+      <div class="notificacao">
+        <div class="icone-app">A</div>
+        <div class="flex"><div class="t">Hoje há jogo a 12 km de ti</div><div class="c">Estoril x Famalicão às 17:00. Sai às 15:20.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 18. A VOLTA ============================ -->
+<section class="pagina">
+  <div class="legenda-pagina">
+    <div class="numero">Ecrã 18 · a volta</div>
+    <h2>Depois do apito, quem volta para onde</h2>
+    <p>Com o apito, a secção das boleias muda de cara: mostra quem volta, agrupado por destino, e quem ficou sem transporte pede lugar. Quem tem um lugar a mais abre-o a meio do jogo.</p>
+  </div>
+  <div class="tela">
+    <div class="barra-estado" style="color: #fff; background: var(--accent);">
+      <span>18:52</span>
+      <span class="sinais"><span class="rede"><i></i><i></i><i></i><i></i></span><span class="pilha"></span></span>
+    </div>
+    <div class="barra-topo"><span class="voltar">‹</span><span class="titulo">Estoril x Famalicão</span></div>
+    <div class="conteudo" style="padding-top: 18px;">
+      <div class="etiquetas"><span class="etiqueta vermelha"><span class="ponto"></span> Em jogo · 2ª parte</span></div>
+      <div class="seccao">Como voltar</div>
+      <div class="cartao apertado">
+        <div class="sub">Não tens maneira de voltar? Vê aqui quem ainda tem lugares.</div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">Para Viseu</span><span class="direita">2 carros</span></div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Zé Pinto</div><div class="sub">Parque do Casino · 2 lugares</div></div><div class="score" style="font-size: 24px; color: var(--accent-ink);">6,10 €</div></div>
+        <div class="botao">Pedir lugar na volta</div>
+      </div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Rita Nunes</div><div class="sub">Avenida Marginal · 1 lugar</div></div><div class="score" style="font-size: 24px; color: var(--accent-ink);">7,35 €</div></div>
+        <div class="botao secundario">Pedir lugar na volta</div>
+      </div>
+
+      <div class="seccao-linha"><span class="seccao">Para Mangualde</span><span class="direita">1 carro</span></div>
+      <div class="cartao apertado">
+        <div class="entre"><div class="flex"><div class="forte">Bruno Lima</div><div class="sub">Estação do Monte Estoril · 1 lugar</div></div><div class="score" style="font-size: 24px; color: var(--accent-ink);">8,20 €</div></div>
+      </div>
+
+      <div class="cartao apertado">
+        <div class="forte">Acabou o jogo e ainda tens lugar?</div>
+        <div class="sub">Abre os lugares da volta e quem ficou a pé vê o teu carro.</div>
+        <div class="botao destaque">Abrir os lugares da volta</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
