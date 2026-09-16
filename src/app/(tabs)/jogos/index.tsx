@@ -31,15 +31,12 @@ import { jogos } from '@/mocks/jogos';
 import type { Clube, Jogo } from '@/mocks/tipos';
 import { useAICoach } from '@/state/ai-coach';
 import { useAppState } from '@/state/app-state';
-import { usePlanosJogos } from '@/state/planos-jogos';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
-import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
-import { ListRow } from '@/ui/list-row';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -153,7 +150,6 @@ export default function JogosScreen() {
   const { foste } = useJogosAQueFoste();
   const treinador = useAICoach();
   const destinoDaDica = treinador.destino;
-  const { jogosAQueVou } = usePlanosJogos();
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   // Only the user's clubs by default; the rest is one (humorous) tap away.
   const [verConcorrencia, setVerConcorrencia] = useState(false);
@@ -182,9 +178,6 @@ export default function JogosScreen() {
   const grupos = agruparPorDia(resumido ? proximos.slice(0, PROXIMOS_DO_CLUBE) : proximos);
   const clubeFavorito = obterClube(clubeFavoritoId);
   // The earliest game the fan marked as going to (the catalogue is sorted by kick-off).
-  const oMeuProximoJogo = jogos.find(
-    (jogo) => jogosAQueVou.includes(jogo.id) && estadoDoJogo(jogo, agora) !== 'terminado'
-  );
   const hoje = formatoHoje.format(new Date(agora));
 
   function limparFiltros() {
@@ -341,22 +334,6 @@ export default function JogosScreen() {
           <ViagemADecorrer />
           <ConvitesDeBoleia />
           <AlertasBoleias />
-          {oMeuProximoJogo ? (
-            <Card
-              onPress={() =>
-                router.push({
-                  pathname: '/jogos/o-meu-jogo',
-                  params: { jogoId: oMeuProximoJogo.id },
-                })
-              }
-              accessibilityLabel={`O teu próximo jogo: ${obterClube(oMeuProximoJogo.casaId)?.nomeCurto ?? ''} contra ${obterClube(oMeuProximoJogo.foraId)?.nomeCurto ?? ''}, ${formatarDia(new Date(oMeuProximoJogo.inicio), agora)}. Toca para preparar o dia.`}>
-              <ListRow
-                leading={<IconCircle name={icons.acesso} tone="yellow" />}
-                title="O teu próximo jogo"
-                subtitle={`${obterClube(oMeuProximoJogo.casaId)?.nomeCurto ?? ''} x ${obterClube(oMeuProximoJogo.foraId)?.nomeCurto ?? ''} · ${formatarDia(new Date(oMeuProximoJogo.inicio), agora)} · tasco, horas e avisos`}
-              />
-            </Card>
-          ) : null}
           {renderConteudo()}
         </View>
       </View>

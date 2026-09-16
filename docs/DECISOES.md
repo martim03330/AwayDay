@@ -2,6 +2,21 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Um jogo, uma página (fora o «o meu jogo»)
+
+Havia dois sítios para o mesmo jogo: a ficha do jogo e «o meu jogo», o plano pessoal. Depois de o ecrã do jogo
+passar a átrio, a separação deixou de fazer sentido — e obrigava a escolher em qual deles se ia buscar cada coisa.
+
+**«O meu jogo» acabou.** O ecrã do jogo é o único sítio: marcas que vais (o botão continua lá, e é ele que conta
+para as estatísticas), e a partir daí aparece o teu plano — as horas e os avisos — por cima das linhas das secções.
+As notificações e o botão de «vou» passam a abrir o jogo.
+
+**As horas seguem o check-in, não uma escolha à frente.** Enquanto não há check-in, contam até ao estádio. Quando
+fazes check-in num sítio, a hora de sair passa a contar a partir de lá, com os minutos a pé desse sítio: «Sair do
+Tasco do Zé para o estádio — 16:20».
+
+Também saiu o cartão «O teu próximo jogo» da lista: o jogo já está na lista, uma linha abaixo.
+
 ## 2026-09-16 — Fora o «teu tasco»: um dia de jogo não é um tasco
 
 «O meu jogo» obrigava a escolher **um** tasco, e a partir daí tratava o dia como se fosse só aquele sítio — as horas

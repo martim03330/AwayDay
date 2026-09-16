@@ -20,9 +20,6 @@ export default function JogosLayout() {
         }}>
         <Stack.Screen.Title>Jogo</Stack.Screen.Title>
       </Stack.Screen>
-      <Stack.Screen name="o-meu-jogo">
-        <Stack.Screen.Title>O meu jogo</Stack.Screen.Title>
-      </Stack.Screen>
       <Stack.Screen name="oferecer-boleia">
         <Stack.Screen.Title>Oferecer boleia</Stack.Screen.Title>
       </Stack.Screen>

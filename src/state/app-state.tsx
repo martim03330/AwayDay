@@ -168,6 +168,8 @@ type AppState = {
   confirmarClubeDaTerra: (clubeId: string) => void;
   estadiosVisitados: readonly string[];
   fezCheckIn: (localId: string) => boolean;
+  /** O sítio onde estás agora, se fizeste check-in nalgum. É o que acerta as horas da ida para o estádio. */
+  localDoCheckIn: string | null;
   /**
    * Checks in or undoes it; resolves `true` when it went through. Outside demo mode it reads the location once to
    * confirm you are at the tasco (with an account the server confirms it, and you count for the crowd).
@@ -1006,6 +1008,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ]),
     ],
     fezCheckIn: (localId) => checkInsAgora.some((visita) => visita.localId === localId),
+    localDoCheckIn: checkInsAgora[0]?.localId ?? null,
     alternarCheckIn,
     checkInEmCurso,
     pessoasAqui: (local) => {

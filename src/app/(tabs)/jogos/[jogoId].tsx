@@ -5,6 +5,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
 import { Equipa } from '@/components/equipa';
 import { CarimboEstadio } from '@/components/carimbo-estadio';
+import { PlanoDoJogo } from '@/components/plano-do-jogo';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
@@ -30,6 +31,7 @@ import { obterEstadio } from '@/mocks/estadios';
 import { nomesCompeticao, obterJogo } from '@/mocks/jogos';
 import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
+import { usePlanosJogos } from '@/state/planos-jogos';
 import { Aviso } from '@/ui/aviso';
 import { Card } from '@/ui/card';
 import { LinhaGrupo } from '@/ui/linha-grupo';
@@ -95,6 +97,7 @@ export default function JogoScreen() {
   const { avaliacoes, avaliacaoDoJogo, medicoesBarulho, clubeDaTerraId } = useAppState();
 
   const userId = useUserId();
+  const { vou } = usePlanosJogos();
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
@@ -278,6 +281,8 @@ export default function JogoScreen() {
 
         {/* O carimbo é uma ação de um toque: fica à mão, não atrás de um botão. */}
         <CarimboEstadio jogo={jogo} estadio={estadio} />
+
+        {vou(jogo.id) && estado !== 'terminado' ? <PlanoDoJogo jogo={jogo} agora={agora} /> : null}
 
         {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
           <Card style={styles.lista}>

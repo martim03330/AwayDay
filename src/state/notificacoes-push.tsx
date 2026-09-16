@@ -55,7 +55,7 @@ export function NotificacoesPush() {
         router.push({ pathname: '/jogos/boleia', params: { rideId, jogoId } });
       }
       if (tipo === 'o-meu-jogo' && typeof jogoId === 'string' && obterJogo(jogoId)) {
-        router.push({ pathname: '/jogos/o-meu-jogo', params: { jogoId } });
+        router.push({ pathname: '/jogos/[jogoId]', params: { jogoId } });
       }
     });
     return () => subscricao.remove();

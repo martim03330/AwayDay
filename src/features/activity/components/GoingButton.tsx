@@ -1,5 +1,4 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -17,7 +16,6 @@ import { fetchGoingCount } from '@/features/activity/api';
 import { useTheme } from '@/hooks/use-theme';
 import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
-import { Button } from '@/ui/button';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -28,7 +26,6 @@ const DURACAO_MS = 300;
  * without one, on this phone. Once marked, it opens "O meu jogo".
  */
 export function GoingButton({ fixtureId }: { fixtureId: string }) {
-  const router = useRouter();
   const { vou, alternarVou } = usePlanosJogos();
   const [aGuardar, setAGuardar] = useState(false);
   const going = vou(fixtureId);
@@ -54,20 +51,10 @@ export function GoingButton({ fixtureId }: { fixtureId: string }) {
   return (
     <View style={styles.block}>
       <BilheteAlternar going={going} onPress={toggle} />
-      {going ? (
-        <Button
-          label="Abrir o meu jogo"
-          variant="secondary"
-          icon={icons.acesso}
-          onPress={() =>
-            router.push({ pathname: '/jogos/o-meu-jogo', params: { jogoId: fixtureId } })
-          }
-        />
-      ) : null}
       <ThemedText themeColor="textSecondary" style={styles.help}>
         {going
           ? 'Toca outra vez se mudares de planos.'
-          : 'Marca e preparamos o teu dia: tasco, horas e avisos.'}
+          : 'Marca e preparamos o teu dia: horas, avisos e quem vai contigo.'}
       </ThemedText>
       {modoDemo || quantos.isLoading ? null : (
         <ThemedText type="smallBold" style={styles.help}>
