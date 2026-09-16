@@ -120,6 +120,42 @@ function mensagemRecusa(erro: unknown) {
 }
 
 /** A driver offers seats for a game: meeting point, time, seats and car, then picks a route with its cost. */
+
+/**
+ * Um passo de quinze minutos na hora de saída.
+ *
+ * Não é um `Button` porque um botão a sério tem 24 de espaço de cada lado: dentro de um terço do ecrã, o «−15 min»
+ * partia-se em duas linhas e a fila ficava com ar de coluna.
+ */
+function PassoDeQuarto({
+  label,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => [
+        styles.passo,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        pressed && styles.passoPressionado,
+        disabled && styles.passoDesligado,
+      ]}>
+      <ThemedText style={styles.passoTexto} numberOfLines={1}>
+        {label}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 export default function OferecerBoleiaScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -597,28 +633,24 @@ export default function OferecerBoleiaScreen() {
         ) : (
           <>
             <View style={styles.hora}>
-              <View style={styles.flex}>
-                <Button
-                  label="−15 min"
-                  variant="secondary"
-                  disabled={saida.getTime() <= limites.maisCedo.getTime()}
-                  onPress={() => setSaidaManual(ajustarSaida(saida, -1, limites))}
-                />
-              </View>
+              <PassoDeQuarto
+                label="−15 min"
+                disabled={saida.getTime() <= limites.maisCedo.getTime()}
+                onPress={() => setSaidaManual(ajustarSaida(saida, -1, limites))}
+              />
               <View style={styles.horaCentro}>
-                <ThemedText style={styles.horaValor}>{formatarHora(saida)}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
+                <ThemedText style={styles.horaValor} numberOfLines={1}>
+                  {formatarHora(saida)}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                   {formatarDia(saida, agora)}
                 </ThemedText>
               </View>
-              <View style={styles.flex}>
-                <Button
-                  label="+15 min"
-                  variant="secondary"
-                  disabled={saida.getTime() >= limites.maisTarde.getTime()}
-                  onPress={() => setSaidaManual(ajustarSaida(saida, 1, limites))}
-                />
-              </View>
+              <PassoDeQuarto
+                label="+15 min"
+                disabled={saida.getTime() >= limites.maisTarde.getTime()}
+                onPress={() => setSaidaManual(ajustarSaida(saida, 1, limites))}
+              />
             </View>
             <ThemedText type="small" themeColor="textSecondary">
               {cotacao
@@ -901,7 +933,28 @@ const styles = StyleSheet.create({
   hora: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: Spacing.two,
+  },
+  passo: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.button,
+    borderWidth: 1.5,
+  },
+  passoPressionado: {
+    opacity: 0.8,
+  },
+  passoDesligado: {
+    opacity: 0.4,
+  },
+  passoTexto: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: 800,
   },
   horaCentro: {
     alignItems: 'center',
