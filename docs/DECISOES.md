@@ -2,6 +2,21 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Reportar um erro, de dentro da app
+
+Não havia porta nenhuma: quem encontrasse um erro tinha de o dizer a alguém ou calar-se. Passa a haver, em
+Definições → Ajudar a melhorar: duas naturezas («alguma coisa não está bem» e «tenho uma ideia»), o sítio da app
+onde aconteceu, e o texto.
+
+**Não é preciso ter conta.** Um erro não espera por um registo, por isso o `send_feedback` também aceita `anon`.
+Com conta há limite de dez por dia.
+
+**Vai o modelo do telemóvel e a versão da app**, e está escrito no ecrã. Metade dos erros são de um aparelho só e
+sem isso não se reproduzem. Não vai localização, nem nada que a pessoa não tenha escrito.
+
+Para quem administra: `feedback_inbox` e `set_feedback_status` (novo / visto / resolvido). O ecrã de administração
+ainda não existe — é a mesma dívida que ficou das fotos denunciadas, e vão as duas juntas.
+
 ## 2026-09-16 — Modo escuro
 
 A app era só de dia («light only», decidido a 2026-09-14). Passa a ter as duas paletas, com as mesmas chaves:

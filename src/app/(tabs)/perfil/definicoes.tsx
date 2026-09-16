@@ -127,6 +127,18 @@ export default function DefinicoesScreen() {
         />
       </Card>
 
+      <SectionHeader title="Ajudar a melhorar" />
+      <Card style={styles.grupo}>
+        <LinhaGrupo
+          onPress={() => router.push('/perfil/ajudar')}
+          accessibilityLabel="Reportar um erro ou sugerir uma melhoria"
+          leading={<Icon name={icons.aviso} size={20} color={theme.accentInk} />}
+          title="Reportar um erro ou dar uma ideia"
+          subtitle="Chega-nos com o modelo do telemóvel e a versão da app. Nada mais."
+          trailing={chevron}
+        />
+      </Card>
+
       <SectionHeader title="Aspeto" />
       <Card style={styles.grupo}>
         <ThemedText themeColor="textSecondary">

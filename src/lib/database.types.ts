@@ -486,6 +486,50 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          app_version: string | null
+          area: string
+          body: string
+          created_at: string
+          device: string | null
+          id: string
+          kind: string
+          profile_id: string | null
+          status: string
+        }
+        Insert: {
+          app_version?: string | null
+          area: string
+          body: string
+          created_at?: string
+          device?: string | null
+          id?: string
+          kind: string
+          profile_id?: string | null
+          status?: string
+        }
+        Update: {
+          app_version?: string | null
+          area?: string
+          body?: string
+          created_at?: string
+          device?: string | null
+          id?: string
+          kind?: string
+          profile_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixture: {
         Row: {
           away_club_id: string
@@ -3217,6 +3261,7 @@ export type Database = {
       create_group: { Args: { p_name: string }; Returns: string }
       decline_group_invite: { Args: { p_group_id: string }; Returns: undefined }
       decline_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
+      delete_cancelled_rides: { Args: never; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
       delete_old_stay_plans: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
@@ -3225,6 +3270,20 @@ export type Database = {
         Returns: boolean
       }
       expire_ride_requests: { Args: never; Returns: number }
+      feedback_inbox: {
+        Args: { p_status?: string }
+        Returns: {
+          app_version: string
+          area: string
+          body: string
+          created_at: string
+          device: string
+          from_name: string
+          id: string
+          kind: string
+          status: string
+        }[]
+      }
       fixture_going_count: { Args: { p_fixture_id: string }; Returns: number }
       fixture_needs_stay: { Args: { p_fixture_id: string }; Returns: boolean }
       fixture_stay_plans: {
@@ -3528,6 +3587,7 @@ export type Database = {
           rank_position: number
         }[]
       }
+      notify_social: { Args: { p_payload: Json }; Returns: undefined }
       open_ride_trip_session: { Args: { p_ride_id: string }; Returns: string }
       open_trip_session: {
         Args: { p_fixture_id: string; p_group_id: string }
@@ -3834,12 +3894,26 @@ export type Database = {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
       }
+      send_feedback: {
+        Args: {
+          p_app_version?: string
+          p_area: string
+          p_body: string
+          p_device?: string
+          p_kind: string
+        }
+        Returns: string
+      }
       send_friend_request: { Args: { p_profile_id: string }; Returns: string }
       send_ride_message: {
         Args: { p_body: string; p_ride_id: string }
         Returns: string
       }
       set_display_name: { Args: { p_name: string }; Returns: undefined }
+      set_feedback_status: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
       set_home_city: { Args: { p_city: string }; Returns: undefined }
       set_profile_photo: { Args: { p_path: string }; Returns: undefined }
       set_ride_group: {
