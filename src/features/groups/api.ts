@@ -161,9 +161,12 @@ export type GroupTrip = {
   rides: number;
   houses: number;
   seatsTaken: number;
+  /** Despesas já lançadas nas contas desta viagem. */
+  expenses: number;
+  totalCents: number;
 };
 
-/** As viagens do grupo: os jogos em que o grupo tem boleia ou casa. */
+/** As viagens do grupo: os jogos em que o grupo tem boleia, casa ou contas. */
 export async function fetchGroupTrips(groupId: string): Promise<GroupTrip[]> {
   const { data, error } = await client().rpc('group_trips', { p_group_id: groupId });
   if (error) throw error;
@@ -176,6 +179,8 @@ export async function fetchGroupTrips(groupId: string): Promise<GroupTrip[]> {
             rides: row.rides ?? 0,
             houses: row.houses ?? 0,
             seatsTaken: row.seats_taken ?? 0,
+            expenses: row.expenses ?? 0,
+            totalCents: row.total_cents ?? 0,
           },
         ]
       : []

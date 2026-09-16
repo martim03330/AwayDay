@@ -2890,11 +2890,13 @@ export type Database = {
       group_trips: {
         Args: { p_group_id: string }
         Returns: {
+          expenses: number
           fixture_id: string
           houses: number
           kickoff_at: string
           rides: number
           seats_taken: number
+          total_cents: number
         }[]
       }
       home_fan_usual_streets: {

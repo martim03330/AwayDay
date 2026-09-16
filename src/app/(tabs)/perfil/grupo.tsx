@@ -321,8 +321,8 @@ export default function GrupoScreen() {
       {(viagens.data ?? []).length === 0 ? (
         <Card>
           <ThemedText themeColor="textSecondary">
-            Ainda não há viagens deste grupo. Quando alguém oferecer uma boleia ou propuser uma
-            casa, pode dizer que é deste grupo — e fica aqui.
+            Ainda não há viagens deste grupo. Assim que alguém oferecer uma boleia, propuser uma
+            casa ou abrir as contas de um jogo, a viagem fica aqui — mesmo depois do jogo acabar.
           </ThemedText>
         </Card>
       ) : (
@@ -353,12 +353,13 @@ export default function GrupoScreen() {
                     ? `${plural(viagem.seatsTaken, 'lugar', 'lugares')} dados`
                     : null,
                   viagem.houses > 0 ? plural(viagem.houses, 'casa', 'casas') : null,
+                  viagem.expenses > 0 ? `${formatarCentimos(viagem.totalCents)} em contas` : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
               </ThemedText>
               <LinkTexto
-                label="Contas da viagem"
+                label={viagem.expenses > 0 ? 'Ver as contas' : 'Contas da viagem'}
                 onPress={() =>
                   router.push({
                     pathname: '/jogos/contas',
