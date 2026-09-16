@@ -1723,6 +1723,7 @@ export type Database = {
           id: string
           note: string | null
           origin: unknown
+          origin_city: string | null
           origin_name: string
           parking_spot_id: string | null
           round_trip: boolean
@@ -1753,6 +1754,7 @@ export type Database = {
           id?: string
           note?: string | null
           origin: unknown
+          origin_city?: string | null
           origin_name: string
           parking_spot_id?: string | null
           round_trip: boolean
@@ -1783,6 +1785,7 @@ export type Database = {
           id?: string
           note?: string | null
           origin?: unknown
+          origin_city?: string | null
           origin_name?: string
           parking_spot_id?: string | null
           round_trip?: boolean
@@ -2933,6 +2936,7 @@ export type Database = {
       ride_board: {
         Args: { p_fixture_id: string }
         Returns: {
+          accepts_return_requests: boolean
           departure_at: string
           distance_m: number
           driver_completed: number
@@ -2947,6 +2951,7 @@ export type Database = {
           is_mine: boolean
           my_status: string
           note: string
+          origin_city: string
           origin_latitude: number
           origin_longitude: number
           origin_name: string
@@ -3014,6 +3019,7 @@ export type Database = {
           driver_faults: number
           driver_name: string
           my_status: string
+          origin_city: string
           origin_name: string
           parking_latitude: number
           parking_longitude: number
@@ -3064,6 +3070,10 @@ export type Database = {
       }
       set_ride_group: {
         Args: { p_group_id?: string; p_ride_id: string }
+        Returns: undefined
+      }
+      set_ride_return_requests: {
+        Args: { p_accepts: boolean; p_ride_id: string }
         Returns: undefined
       }
       set_ride_visibility: {

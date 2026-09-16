@@ -210,6 +210,8 @@ export type RideSummary = {
   driverCompleted: number;
   driverFaults: number;
   originName: string;
+  /** O concelho de onde a boleia saiu — e para onde volta. `null` quando não se soube. */
+  originCity: string | null;
   origin: { latitude: number; longitude: number };
   departureAt: string;
   /** Requests close (and cancelling becomes a fault) at this time. */
@@ -218,6 +220,8 @@ export type RideSummary = {
   seatsTaken: number;
   routeOption: RouteOption;
   roundTrip: boolean;
+  /** O condutor aceita pedidos de boleia de volta. */
+  acceptsReturnRequests: boolean;
   distanceM: number;
   durationS: number;
   tollM: number;
@@ -268,6 +272,7 @@ export async function fetchRideBoard(fixtureId: string): Promise<RideSummary[]> 
     driverCompleted: row.driver_completed,
     driverFaults: row.driver_faults,
     originName: row.origin_name,
+    originCity: row.origin_city,
     origin: { latitude: row.origin_latitude, longitude: row.origin_longitude },
     departureAt: row.departure_at,
     requestsCloseAt: row.requests_close_at,
@@ -275,6 +280,7 @@ export async function fetchRideBoard(fixtureId: string): Promise<RideSummary[]> 
     seatsTaken: row.seats_taken,
     routeOption: isRouteOption(row.route_option) ? row.route_option : 'rapida',
     roundTrip: row.round_trip,
+    acceptsReturnRequests: row.accepts_return_requests === true,
     distanceM: row.distance_m,
     durationS: row.duration_s,
     tollM: row.toll_m,
@@ -556,6 +562,8 @@ export type ReturnRide = {
   parkingName: string | null;
   parking: { latitude: number; longitude: number } | null;
   originName: string;
+  /** Para onde este carro volta. */
+  originCity: string | null;
   myStatus: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled' | null;
 };
 
@@ -597,6 +605,7 @@ export async function fetchReturnBoard(fixtureId: string): Promise<ReturnRide[]>
         ? { latitude: row.parking_latitude, longitude: row.parking_longitude }
         : null,
     originName: row.origin_name,
+    originCity: row.origin_city,
     myStatus: toReturnStatus(row.my_status),
   }));
 }
@@ -661,6 +670,15 @@ export async function setRideVisibility(rideId: string, publica: boolean) {
   const { error } = await client().rpc('set_ride_visibility', {
     p_ride_id: rideId,
     p_public: publica,
+  });
+  if (error) throw rpcError(error);
+}
+
+/** Abre (ou fecha) os lugares da volta, mesmo com o jogo a decorrer. Só o condutor. */
+export async function setRideReturnRequests(rideId: string, accepts: boolean) {
+  const { error } = await client().rpc('set_ride_return_requests', {
+    p_ride_id: rideId,
+    p_accepts: accepts,
   });
   if (error) throw rpcError(error);
 }

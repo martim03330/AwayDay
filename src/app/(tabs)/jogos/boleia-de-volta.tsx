@@ -253,14 +253,29 @@ export default function BoleiaDeVoltaScreen() {
           </ThemedText>
         ) : (
           <View style={styles.lista}>
-            {lista.map((carro) => (
-              <Carro
-                key={carro.rideId}
-                carro={carro}
-                ocupado={ocupado}
-                onPedir={() => void pedir(carro.rideId)}
-                onCancelar={() => void cancelar(carro.rideId)}
-              />
+            {[
+              ...lista
+                .reduce((grupos, carro) => {
+                  const destino = carro.originCity ?? 'Sem destino indicado';
+                  grupos.set(destino, [...(grupos.get(destino) ?? []), carro]);
+                  return grupos;
+                }, new Map<string, ReturnRide[]>())
+                .entries(),
+            ].map(([destino, doDestino]) => (
+              <View key={destino} style={styles.lista}>
+                <ThemedText type="eyebrow" themeColor="accentInk">
+                  {`Para ${destino}`}
+                </ThemedText>
+                {doDestino.map((carro) => (
+                  <Carro
+                    key={carro.rideId}
+                    carro={carro}
+                    ocupado={ocupado}
+                    onPedir={() => void pedir(carro.rideId)}
+                    onCancelar={() => void cancelar(carro.rideId)}
+                  />
+                ))}
+              </View>
             ))}
           </View>
         )}

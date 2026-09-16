@@ -7,8 +7,8 @@
 const MINUTO_MS = 60 * 1000;
 const HORA_MS = 60 * MINUTO_MS;
 
-/** About half time: before that nobody has missed a bus yet. */
-export const ABRE_APOS_APITO_MINUTOS = 60;
+/** Com o apito: quem chegou ao estádio já sabe se tem maneira de voltar. */
+export const ABRE_APOS_APITO_MINUTOS = 0;
 /** About an hour after the final whistle: after that the cars are gone. */
 export const FECHA_APOS_APITO_MINUTOS = 210;
 /** The driver still has an hour after the window closes to answer whoever asked. */

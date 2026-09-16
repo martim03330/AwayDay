@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import type { RideSummary } from '@/features/rides/api';
-import { useRideBoard } from '@/features/rides/hooks/useRides';
+import { setRideReturnRequests } from '@/features/rides/api';
+import { useRefreshRides, useReturnBoard, useRideBoard } from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
@@ -96,6 +97,14 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
   const quadro = useRideBoard(jogo.id, userId !== null);
   // From about half time until an hour after the end: the time when someone finds out they have no way home.
   const voltaAberta = podePedirVolta(jogo.inicio, agora);
+  const comecou = agora >= Date.parse(jogo.inicio);
+  const boleiasDeVolta = useReturnBoard(jogo.id, userId !== null && comecou);
+  const atualizar = useRefreshRides();
+
+  async function abrirVolta(rideId: string) {
+    await setRideReturnRequests(rideId, true).catch(() => undefined);
+    await atualizar();
+  }
 
   if (!userId) {
     return (
@@ -111,6 +120,78 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
   const boleias = quadro.data ?? [];
   const jaOfereco = boleias.some((boleia) => boleia.isMine && boleia.status === 'open');
   const foraDePortugal = obterEstadio(jogo.estadioId)?.regiao === 'estrangeiro';
+
+  // Depois do apito, uma boleia de ida não serve para nada: o que interessa é quem volta e para onde.
+  if (comecou) {
+    const carros = boleiasDeVolta.data ?? [];
+    const porDestino = new Map<string, typeof carros>();
+    for (const carro of carros) {
+      const destino = carro.originCity ?? 'Sem destino indicado';
+      porDestino.set(destino, [...(porDestino.get(destino) ?? []), carro]);
+    }
+    const jaTenhoVolta = boleias.some(
+      (boleia) => boleia.roundTrip && (boleia.isMine || boleia.myStatus === 'accepted')
+    );
+    const minhaComVolta = boleias.find(
+      (boleia) => boleia.isMine && boleia.status === 'open' && boleia.roundTrip
+    );
+
+    return (
+      <Card style={styles.card}>
+        {jaTenhoVolta ? (
+          <ThemedText themeColor="textSecondary">
+            Já tens maneira de voltar. Se sobrarem lugares no teu carro, abre-os aqui para quem
+            ficou sem transporte.
+          </ThemedText>
+        ) : (
+          <ThemedText style={styles.destaque}>
+            Não tens maneira de voltar? Vê aqui quem ainda tem lugares.
+          </ThemedText>
+        )}
+
+        {carros.length === 0 ? (
+          <ThemedText themeColor="textSecondary">
+            Ainda ninguém abriu lugares na volta. Vai vendo: a malta costuma abri-los perto do fim
+            do jogo.
+          </ThemedText>
+        ) : (
+          [...porDestino.entries()].map(([destino, doDestino]) => (
+            <View key={destino} style={styles.destino}>
+              <ThemedText type="eyebrow" themeColor="accentInk">
+                {`Para ${destino}`}
+              </ThemedText>
+              {doDestino.map((carro) => (
+                <ThemedText key={carro.rideId} type="small" themeColor="textSecondary">
+                  {`${carro.driverName} · ${plural(carro.seatsLeft, 'lugar livre', 'lugares livres')} · ${formatarCentimos(carro.priceCents)} cada${carro.myStatus === 'pending' ? ' · pedido enviado' : carro.myStatus === 'accepted' ? ' · tens lugar' : ''}`}
+                </ThemedText>
+              ))}
+            </View>
+          ))
+        )}
+
+        <Button
+          label={carros.length > 0 ? 'Pedir lugar na volta' : 'Ver quem volta'}
+          icon={icons.carro}
+          variant={jaTenhoVolta ? 'secondary' : 'primary'}
+          onPress={() =>
+            router.push({ pathname: '/jogos/boleia-de-volta', params: { jogoId: jogo.id } })
+          }
+        />
+
+        {minhaComVolta && !minhaComVolta.acceptsReturnRequests ? (
+          <LinkTexto
+            label="Tenho lugares na volta: abrir a quem precisa"
+            onPress={() => void abrirVolta(minhaComVolta.id)}
+          />
+        ) : null}
+        {minhaComVolta?.acceptsReturnRequests ? (
+          <ThemedText type="small" themeColor="textMuted">
+            Estás a aceitar pedidos de boleia de volta. Quem pedir aparece na tua boleia.
+          </ThemedText>
+        ) : null}
+      </Card>
+    );
+  }
 
   return (
     <Card style={styles.card}>
@@ -175,6 +256,12 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
 }
 
 const styles = StyleSheet.create({
+  destino: {
+    gap: 4,
+  },
+  destaque: {
+    fontWeight: 800,
+  },
   card: {
     gap: Spacing.three,
   },

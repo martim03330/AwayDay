@@ -11,6 +11,7 @@ import { Spacing } from '@/constants/theme';
 import {
   answerRequest,
   answerReturnRequest,
+  setRideReturnRequests,
   cancelRide,
   fetchMyAttendance,
   fetchReputation,
@@ -499,6 +500,27 @@ export default function BoleiaScreen() {
         nomeDoJogo={`${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`}
         participante={participante}
       />
+
+      {boleia.isMine && boleia.roundTrip ? (
+        <Card style={styles.grupo}>
+          <ThemedText style={styles.destaque}>Lugares na volta</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {boleia.acceptsReturnRequests
+              ? 'Estás a aceitar quem ficou sem transporte. Os pedidos aparecem aqui em baixo.'
+              : 'Sobram lugares no regresso? Abre-os a quem ficar sem transporte — decides na hora quem entra.'}
+          </ThemedText>
+          <LinkTexto
+            label={
+              boleia.acceptsReturnRequests
+                ? 'Deixar de aceitar pedidos de volta'
+                : 'Abrir os lugares da volta'
+            }
+            onPress={() =>
+              void executar(() => setRideReturnRequests(boleia.id, !boleia.acceptsReturnRequests))
+            }
+          />
+        </Card>
+      ) : null}
 
       {boleia.isMine && pedidosVolta.length > 0 ? (
         <>

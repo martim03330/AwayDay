@@ -2,6 +2,26 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — A volta, no dia do jogo
+
+Depois do apito, uma boleia de ida não serve para nada: o que interessa é **quem volta e para onde**.
+
+- **A secção das boleias muda de cara com o apito.** Passa a mostrar quem volta com lugar, agrupado
+  **por destino** — «Para Viseu», «Para Mangualde» —, e diz de frente a quem não tem carro: «Não tens
+  maneira de voltar? Vê aqui quem ainda tem lugares.» Quem já tem lugar no regresso vê outra coisa:
+  o convite a abrir os lugares que lhe sobram.
+- **O destino é o concelho de onde a boleia saiu** (`origin_city`), escrito na criação pela função
+  `rides` com uma chamada ao Nominatim. Se não se souber, a boleia aparece em «Sem destino indicado»
+  — nunca se inventa um destino.
+- **Os pedidos de volta abrem com o apito** (abriam ao intervalo): é à chegada que se percebe quem
+  ficou sem transporte. A regra mudou no servidor e na app ao mesmo tempo.
+- **Dá para abrir lugares na volta a meio do jogo** (`set_ride_return_requests`): quem publicou uma
+  boleia de ida e volta carrega em «Abrir os lugares da volta» e passa a receber pedidos. Também dá
+  para voltar a fechar.
+
+Regras verificadas com teste SQL revertido: com os lugares fechados não aparece nada, quem não é o
+condutor não os abre, e ao abrir o carro aparece com o destino e o preço por pessoa.
+
 ## 2026-09-16 — Ecrã do jogo: índice no topo, barulhómetro coerente e aviso do carimbo
 
 **Índice no topo.** A ficha do jogo tem uma dúzia de secções e era preciso rolar para descobrir o que

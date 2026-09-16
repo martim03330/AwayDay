@@ -18,6 +18,7 @@ import {
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
+const REVERSE_GEOCODER = 'https://nominatim.openstreetmap.org/reverse';
 const USER_AGENT = 'AwayDay/1.0 (match-day app for football fans)';
 const QUOTE_LIMIT = { bucket: 'ride-quote', limit: 30, window: '1 hour' } as const;
 const CREATE_LIMIT = { bucket: 'ride-create', limit: 10, window: '1 day' } as const;
@@ -208,6 +209,28 @@ async function takeLimit(
   });
   if (allowed.error) return 'failed';
   return allowed.data === true ? 'ok' : 'limited';
+}
+
+/** O concelho de um ponto, como o Nominatim o escreve. `null` quando não se sabe: nunca inventa. */
+async function reverseCity(ponto: { latitude: number; longitude: number }): Promise<string | null> {
+  try {
+    const parametros = new URLSearchParams({
+      format: 'jsonv2',
+      lat: String(ponto.latitude),
+      lon: String(ponto.longitude),
+      zoom: '10',
+    });
+    const resposta = await fetch(`${REVERSE_GEOCODER}?${parametros}`, {
+      headers: { 'User-Agent': USER_AGENT },
+    });
+    if (!resposta.ok) return null;
+    const corpo = await resposta.json();
+    const morada = corpo?.address ?? {};
+    const nome = morada.city ?? morada.town ?? morada.municipality ?? morada.county ?? null;
+    return typeof nome === 'string' && nome.length >= 2 ? nome.slice(0, 80) : null;
+  } catch {
+    return null;
+  }
 }
 
 Deno.serve(async (request) => {
@@ -403,6 +426,10 @@ Deno.serve(async (request) => {
   if (!found) return json(404, { error: 'no_route' });
   const cost = costOf(found);
 
+  // Para onde a boleia volta: o concelho de onde saiu. É o que deixa a app mostrar «quem volta para Viseu» no fim
+  // do jogo. Se o Nominatim não responder, a boleia entra na mesma sem destino — é só uma etiqueta.
+  const originCity = await reverseCity(origin);
+
   const inserted = await admin
     .from('ride')
     .insert({
@@ -410,6 +437,7 @@ Deno.serve(async (request) => {
       driver_id: caller.user.id,
       origin_name: originName,
       origin: `SRID=4326;POINT(${origin.longitude} ${origin.latitude})`,
+      origin_city: originCity,
       departure_at: new Date(departure).toISOString(),
       seats_offered: seats,
       route_option: option,
