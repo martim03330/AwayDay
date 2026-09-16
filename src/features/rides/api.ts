@@ -241,6 +241,8 @@ export type RideSummary = {
   groupName: string | null;
   /** 'grupo': só a malta do grupo a vê. 'publica': aparece a toda a gente. */
   visibility: 'grupo' | 'publica';
+  /** Boleia de um amigo: aparece primeiro na lista. */
+  driverIsFriend: boolean;
   /** Where the car is left, when the driver chose a car park. */
   parking: {
     name: string;
@@ -295,6 +297,7 @@ export async function fetchRideBoard(fixtureId: string): Promise<RideSummary[]> 
     groupId: row.group_id,
     groupName: row.group_name,
     visibility: row.visibility === 'grupo' ? 'grupo' : 'publica',
+    driverIsFriend: row.driver_is_friend === true,
     parking: row.parking_name
       ? {
           name: row.parking_name,

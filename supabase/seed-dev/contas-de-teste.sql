@@ -18,7 +18,7 @@
 -- da lista de jogos e as contas de uma boleia — que não criam grupo nenhum. Essa fica por abrir de propósito: o
 -- botão «Abrir as contas da viagem» é para ser carregado à mão.
 --
--- Apagar tudo no fim:
+-- Apagar tudo no fim (as amizades e os convites saem com os perfis fictícios):
 --   delete from public.ride where id = 'dddddddd-0000-4000-8000-000000000001';
 --   delete from public.fan_group where id = 'c0c0c0c0-0000-4000-8000-000000000001';
 --   delete from auth.users where id::text like 'b0000000-0000-4000-8000-00000000000%';
@@ -89,6 +89,19 @@ values
   ('dddddddd-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'accepted'),
   ('dddddddd-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'accepted')
 on conflict (ride_id, profile_id) do nothing;
+
+-- Amigos: a Rita já é amiga da conta principal; o Zé deixou um pedido por responder, para se poder aceitar na app.
+insert into public.friendship (requester_id, addressee_id, status, responded_at)
+values (
+  '027d9f21-4ebd-433a-8a4e-4cc035b0163e', 'b0000000-0000-4000-8000-000000000002', 'aceite', now()
+)
+on conflict do nothing;
+
+insert into public.friendship (requester_id, addressee_id, status)
+values (
+  'b0000000-0000-4000-8000-000000000001', '027d9f21-4ebd-433a-8a4e-4cc035b0163e', 'pendente'
+)
+on conflict do nothing;
 
 do $$
 declare

@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Alert, Share, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { inviteFriendToGroup } from '@/features/friends/api';
+import { useMyFriends } from '@/features/friends/hooks/useFriends';
 import {
   fetchGroupMembers,
   fetchGroupPlans,
@@ -31,7 +33,8 @@ import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { icons } from '@/ui/icon';
+import { IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
@@ -90,12 +93,14 @@ export default function GrupoScreen() {
     queryFn: grupoId ? () => fetchGroupPlans(grupoId) : skipToken,
     meta: { persist: false },
   });
+  const amigos = useMyFriends(userId !== null);
   const membros = useQuery({
     queryKey: ['groups', 'members', grupoId ?? null],
     queryFn: grupoId ? () => fetchGroupMembers(grupoId) : skipToken,
     meta: { persist: false },
   });
 
+  const [convidados, setConvidados] = useState<string[]>([]);
   const [nome, setNome] = useState('');
   const [aMudarNome, setAMudarNome] = useState(false);
   const [aTratar, setATratar] = useState(false);
@@ -218,6 +223,46 @@ export default function GrupoScreen() {
           />
         ) : null}
       </Card>
+
+      {(amigos.data ?? []).filter(
+        (amigo) => !lista.some((pessoa) => pessoa.profileId === amigo.profileId)
+      ).length > 0 ? (
+        <>
+          <SectionHeader title="Convidar amigos" />
+          <Card style={styles.grupo}>
+            <ThemedText themeColor="textSecondary">
+              O convite fica à espera que a pessoa aceite — ninguém entra num grupo sem querer.
+            </ThemedText>
+            {(amigos.data ?? [])
+              .filter((amigo) => !lista.some((pessoa) => pessoa.profileId === amigo.profileId))
+              .map((amigo) => (
+                <LinhaGrupo
+                  key={amigo.profileId}
+                  leading={<IconCircle name={icons.perfil} tone="neutral" />}
+                  title={amigo.displayName}
+                  subtitle={
+                    amigo.tripsTogether > 0
+                      ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
+                      : 'ainda sem viagens juntos'
+                  }
+                  trailing={
+                    <LinkTexto
+                      label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
+                      onPress={() => {
+                        if (convidados.includes(amigo.profileId)) return;
+                        void tratar(() => inviteFriendToGroup(grupo.id, amigo.profileId)).then(
+                          (feito) => {
+                            if (feito) setConvidados((atuais) => [...atuais, amigo.profileId]);
+                          }
+                        );
+                      }}
+                    />
+                  }
+                />
+              ))}
+          </Card>
+        </>
+      ) : null}
 
       <SectionHeader title="Quem está no grupo" trailing={String(lista.length)} />
       {lista.map((pessoa) => (

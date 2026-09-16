@@ -675,6 +675,88 @@ export type Database = {
           },
         ]
       }
+      friendship: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          requester_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          requester_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          requester_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendship_addressee_id_fkey"
+            columns: ["addressee_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendship_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_invite: {
+        Row: {
+          created_at: string
+          group_id: string
+          invited_by: string | null
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          invited_by?: string | null
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          invited_by?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invite_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invite_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invite_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_fan_cell: {
         Row: {
           cell_latitude: number
@@ -1955,6 +2037,49 @@ export type Database = {
           },
         ]
       }
+      ride_invite: {
+        Row: {
+          created_at: string
+          invited_by: string | null
+          profile_id: string
+          ride_id: string
+        }
+        Insert: {
+          created_at?: string
+          invited_by?: string | null
+          profile_id: string
+          ride_id: string
+        }
+        Update: {
+          created_at?: string
+          invited_by?: string | null
+          profile_id?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_invite_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_invite_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_invite_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ride_outcome: {
         Row: {
           created_at: string
@@ -2836,6 +2961,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_friend_request: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
+      accept_group_invite: { Args: { p_group_id: string }; Returns: undefined }
+      accept_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
       add_trip_expense: {
         Args: {
           p_category: string
@@ -2878,6 +3009,10 @@ export type Database = {
         Args: { p_accept: boolean; p_plan_id: string; p_profile_id: string }
         Returns: undefined
       }
+      are_friends: {
+        Args: { p_one: string; p_other: string }
+        Returns: boolean
+      }
       can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
@@ -2908,6 +3043,8 @@ export type Database = {
         Returns: undefined
       }
       create_group: { Args: { p_name: string }; Returns: string }
+      decline_group_invite: { Args: { p_group_id: string }; Returns: undefined }
+      decline_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
       delete_old_stay_plans: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
@@ -2944,6 +3081,13 @@ export type Database = {
           total_cents: number
           updated_on: string
           visibility: string
+        }[]
+      }
+      friendship_states: {
+        Args: { p_profile_ids: string[] }
+        Returns: {
+          profile_id: string
+          state: string
         }[]
       }
       group_by_code: {
@@ -2997,6 +3141,10 @@ export type Database = {
           total_cents: number
         }[]
       }
+      have_crossed_paths: {
+        Args: { p_one: string; p_other: string }
+        Returns: boolean
+      }
       home_fan_usual_streets: {
         Args: { p_venue_id: string }
         Returns: {
@@ -3012,6 +3160,18 @@ export type Database = {
           longitude: number
           reporters: number
         }[]
+      }
+      in_ride: {
+        Args: { p_profile_id: string; p_ride_id: string }
+        Returns: boolean
+      }
+      invite_friend_to_group: {
+        Args: { p_group_id: string; p_profile_id: string }
+        Returns: undefined
+      }
+      invite_friend_to_ride: {
+        Args: { p_profile_id: string; p_ride_id: string }
+        Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
       is_group_member: {
@@ -3033,6 +3193,35 @@ export type Database = {
       moderate_place_photo: {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
+      }
+      my_friend_requests: {
+        Args: never
+        Returns: {
+          asked_at: string
+          direction: string
+          display_name: string
+          profile_id: string
+          trips_together: number
+        }[]
+      }
+      my_friends: {
+        Args: never
+        Returns: {
+          display_name: string
+          friends_since: string
+          profile_id: string
+          trips_together: number
+        }[]
+      }
+      my_group_invites: {
+        Args: never
+        Returns: {
+          group_id: string
+          group_name: string
+          invited_at: string
+          invited_by_name: string
+          members: number
+        }[]
       }
       my_groups: {
         Args: never
@@ -3080,6 +3269,20 @@ export type Database = {
         Returns: {
           showed_up: boolean
           subject_id: string
+        }[]
+      }
+      my_ride_invites: {
+        Args: never
+        Returns: {
+          departure_at: string
+          driver_name: string
+          fixture_id: string
+          invited_at: string
+          kickoff_at: string
+          origin_name: string
+          ride_id: string
+          seats_left: number
+          share_cents: number
         }[]
       }
       my_rides: {
@@ -3197,6 +3400,7 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
+      remove_friend: { Args: { p_profile_id: string }; Returns: undefined }
       remove_group_member: {
         Args: { p_group_id: string; p_profile_id: string }
         Returns: undefined
@@ -3250,6 +3454,7 @@ export type Database = {
           driver_completed: number
           driver_faults: number
           driver_id: string
+          driver_is_friend: boolean
           driver_name: string
           duration_s: number
           fuel_cents: number
@@ -3385,6 +3590,7 @@ export type Database = {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
       }
+      send_friend_request: { Args: { p_profile_id: string }; Returns: string }
       set_ride_group: {
         Args: { p_group_id?: string; p_ride_id: string }
         Returns: undefined
@@ -3499,6 +3705,15 @@ export type Database = {
           settled_cents: number
         }[]
       }
+      trip_companions: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          display_name: string
+          profile_id: string
+          state: string
+          trips_together: number
+        }[]
+      }
       trip_expenses: {
         Args: { p_session_id: string }
         Returns: {
@@ -3551,6 +3766,10 @@ export type Database = {
           to_name: string
           to_profile_id: string
         }[]
+      }
+      trips_together: {
+        Args: { p_one: string; p_other: string }
+        Returns: number
       }
       verified_places_ranking: {
         Args: { p_limit?: number }

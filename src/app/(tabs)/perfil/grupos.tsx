@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { acceptGroupInvite, declineGroupInvite } from '@/features/friends/api';
+import { useMyGroupInvites, useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import { createGroup, fetchMyGroups, GroupRefused } from '@/features/groups/api';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
@@ -48,6 +50,9 @@ export default function GruposScreen() {
     meta: { persist: false },
   });
 
+  const convites = useMyGroupInvites(userId !== null);
+  const refrescarAmigos = useRefreshFriends();
+
   const [nome, setNome] = useState('');
   const [aCriar, setACriar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -86,6 +91,18 @@ export default function GruposScreen() {
   }
 
   const lista = grupos.data ?? [];
+  const porResponder = convites.data ?? [];
+
+  async function responder(acao: () => Promise<void>) {
+    setErro(null);
+    try {
+      await acao();
+      void refrescarAmigos();
+      void queryClient.invalidateQueries({ queryKey: ['groups'] });
+    } catch {
+      setErro('Não deu para responder ao convite. Tenta outra vez.');
+    }
+  }
 
   return (
     <Screen>
@@ -93,6 +110,32 @@ export default function GruposScreen() {
         Um grupo é a malta com quem costumas ir aos jogos. Lá dentro combinam a boleia, a casa e as
         contas — e podes convidar quem quiseres por link.
       </ThemedText>
+
+      {porResponder.length > 0 ? (
+        <>
+          <SectionHeader title="Convites" trailing={String(porResponder.length)} />
+          {porResponder.map((convite) => (
+            <Card key={convite.groupId} style={styles.grupo}>
+              <ThemedText style={styles.nome}>{convite.groupName}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {[
+                  convite.invitedByName ? `${convite.invitedByName} convidou-te` : 'Convite',
+                  plural(convite.members, 'pessoa', 'pessoas'),
+                ].join(' · ')}
+              </ThemedText>
+              <Button
+                label="Entrar no grupo"
+                icon={icons.perfil}
+                onPress={() => void responder(() => acceptGroupInvite(convite.groupId))}
+              />
+              <LinkTexto
+                label="Agora não"
+                onPress={() => void responder(() => declineGroupInvite(convite.groupId))}
+              />
+            </Card>
+          ))}
+        </>
+      ) : null}
 
       {lista.length > 0 ? (
         <>
@@ -127,8 +170,8 @@ export default function GruposScreen() {
       ) : (
         <Card>
           <ThemedText themeColor="textSecondary">
-            Ainda não estás em nenhum grupo. Cria um para a malta do costume, ou espera: quando
-            alguém entrar na tua boleia, fica logo criado o grupo dessa viagem.
+            Ainda não estás em nenhum grupo. Cria um para a malta do costume, ou espera que te
+            convidem: quem já foi contigo a um jogo pode adicionar-te como amigo e convidar-te.
           </ThemedText>
         </Card>
       )}
@@ -163,6 +206,9 @@ export default function GruposScreen() {
 }
 
 const styles = StyleSheet.create({
+  nome: {
+    fontWeight: '600',
+  },
   grupo: {
     gap: Spacing.two,
   },

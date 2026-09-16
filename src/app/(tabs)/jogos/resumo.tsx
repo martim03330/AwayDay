@@ -1,7 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { FriendRefused, sendFriendRequest } from '@/features/friends/api';
+import { useRefreshFriends, useTripCompanions } from '@/features/friends/hooks/useFriends';
 import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarHora } from '@/lib/datas';
@@ -19,15 +22,16 @@ import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
 import { icons } from '@/ui/icon';
 import { LinhaDetalhes } from '@/ui/linha-detalhes';
+import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
-/** "a Ana, o Bruno e a Carla" fica pesado sem artigos, por isso vai só a lista de nomes. */
-function lista(nomes: string[]) {
-  if (nomes.length === 0) return '';
-  if (nomes.length === 1) return nomes[0];
-  return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
+function mensagemDeRecusa(erro: unknown) {
+  if (!(erro instanceof FriendRefused)) return 'Não deu para fazer isso. Tenta outra vez.';
+  if (erro.reason === 'never_met') return 'Só podes pedir amizade a quem foi contigo.';
+  if (erro.reason === 'rate_limited') return 'Já mandaste muitos pedidos hoje. Continua amanhã.';
+  return 'Não deu para fazer isso. Tenta outra vez.';
 }
 
 /**
@@ -45,6 +49,10 @@ export default function ResumoScreen() {
 
   const jogo = jogoId ? obterJogo(jogoId) : undefined;
   const contas = useMyTripAccounts(jogoId ?? null, userId !== null);
+  const companhia = useTripCompanions(jogoId ?? null, userId !== null);
+  const refrescarAmigos = useRefreshFriends();
+  const [aTratar, setATratar] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   if (!jogo) {
     return (
@@ -72,8 +80,21 @@ export default function ResumoScreen() {
   const viagens = (contas.data ?? []).filter(
     (conta) => conta.kind === 'boleia' || conta.sessionId !== null
   );
-  const companheiros = [...new Set(viagens.flatMap((viagem) => viagem.peopleNames))];
+  const companheiros = companhia.data ?? [];
   const gastoTotal = viagens.reduce((total, viagem) => total + viagem.totalCents, 0);
+
+  async function pedirAmizade(profileId: string) {
+    setErro(null);
+    setATratar(true);
+    try {
+      await sendFriendRequest(profileId);
+      void refrescarAmigos();
+    } catch (problema) {
+      setErro(mensagemDeRecusa(problema));
+    } finally {
+      setATratar(false);
+    }
+  }
 
   return (
     <Screen>
@@ -99,13 +120,43 @@ export default function ResumoScreen() {
           </ThemedText>
         </Card>
       ) : (
-        <Card style={styles.cartao}>
-          <ThemedText>{lista(companheiros)}</ThemedText>
-          <ThemedText type="small" themeColor="textMuted">
-            {plural(companheiros.length, 'pessoa', 'pessoas')} nesta viagem
-          </ThemedText>
-        </Card>
+        companheiros.map((pessoa) => (
+          <Card key={pessoa.profileId} style={styles.cartao}>
+            <View style={styles.linha}>
+              <ThemedText style={[styles.nome, styles.flex]} numberOfLines={1}>
+                {pessoa.displayName}
+              </ThemedText>
+              {pessoa.state === 'amigos' ? (
+                <Etiqueta icon={icons.perfil} label="Amigo" tone="positivo" />
+              ) : null}
+            </View>
+            <ThemedText type="small" themeColor="textMuted">
+              {pessoa.tripsTogether > 1
+                ? plural(pessoa.tripsTogether, 'viagem juntos', 'viagens juntos')
+                : 'primeira viagem juntos'}
+            </ThemedText>
+            {pessoa.state === 'pode_pedir' ? (
+              <Button
+                label="Adicionar amigo"
+                variant="secondary"
+                icon={icons.perfil}
+                disabled={aTratar}
+                onPress={() => void pedirAmizade(pessoa.profileId)}
+              />
+            ) : pessoa.state === 'pedido_enviado' ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Pedido de amizade enviado. Falta essa pessoa aceitar.
+              </ThemedText>
+            ) : pessoa.state === 'pedido_recebido' ? (
+              <LinkTexto
+                label="Pediu-te amizade — responder"
+                onPress={() => router.push('/perfil/amigos')}
+              />
+            ) : null}
+          </Card>
+        ))
       )}
+      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
 
       <SectionHeader title="O que se gastou" />
       {viagens.length === 0 || gastoTotal === 0 ? (
@@ -205,6 +256,14 @@ const styles = StyleSheet.create({
   },
   nome: {
     fontWeight: '600',
+  },
+  linha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  flex: {
+    flex: 1,
   },
   etiquetas: {
     flexDirection: 'row',

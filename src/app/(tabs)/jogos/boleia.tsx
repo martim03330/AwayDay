@@ -8,6 +8,8 @@ import { CompromissoBoleia } from '@/components/compromisso-boleia';
 import { GrupoDaBoleia } from '@/components/grupo-da-boleia';
 import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
 import { Spacing } from '@/constants/theme';
+import { inviteFriendToRide } from '@/features/friends/api';
+import { useMyFriends } from '@/features/friends/hooks/useFriends';
 import {
   answerRequest,
   answerReturnRequest,
@@ -51,7 +53,8 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { icons } from '@/ui/icon';
+import { IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
@@ -163,6 +166,8 @@ export default function BoleiaScreen() {
     ? boleia.isMine || boleia.myStatus === 'accepted' || boleia.myStatus === 'left_late'
     : false;
   const pessoas = useRidePeople(rideId ?? null, participante);
+  const amigos = useMyFriends(userId !== null);
+  const [convidados, setConvidados] = useState<string[]>([]);
   // Fans left at the stadium asking for a seat home: only the driver answers, and only while the window is open.
   const pedidosDaVolta = useReturnPeople(
     rideId ?? null,
@@ -244,6 +249,10 @@ export default function BoleiaScreen() {
   const livres = boleia.seatsOffered - boleia.seatsTaken;
   const lista = pessoas.data ?? [];
   const pedidos = lista.filter((pessoa) => pessoa.status === 'requested');
+  // Amigos que ainda não vão no carro nem pediram lugar: são estes que vale a pena convidar.
+  const porConvidar = (amigos.data ?? []).filter(
+    (amigo) => !lista.some((pessoa) => pessoa.profileId === amigo.profileId)
+  );
   const noCarro = lista.filter((pessoa) => pessoa.status !== 'requested');
   const volta = pedidosDaVolta.data ?? [];
   const pedidosVolta = volta.filter((pessoa) => pessoa.status === 'pending');
@@ -452,6 +461,40 @@ export default function BoleiaScreen() {
           <Card style={styles.grupo}>
             {noCarro.map((pessoa) => (
               <Pessoa key={pessoa.profileId} pessoa={pessoa} />
+            ))}
+          </Card>
+        </>
+      ) : null}
+
+      {boleia.isMine && fase === 'aberta' && livres > 0 && porConvidar.length > 0 ? (
+        <>
+          <SectionHeader title="Convidar amigos" />
+          <Card style={styles.grupo}>
+            <ThemedText themeColor="textSecondary">
+              Um amigo convidado entra sem pedir — o lugar fica dele quando aceitar.
+            </ThemedText>
+            {porConvidar.map((amigo) => (
+              <LinhaGrupo
+                key={amigo.profileId}
+                leading={<IconCircle name={icons.perfil} tone="neutral" />}
+                title={amigo.displayName}
+                subtitle={
+                  amigo.tripsTogether > 0
+                    ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
+                    : 'ainda sem viagens juntos'
+                }
+                trailing={
+                  <LinkTexto
+                    label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
+                    onPress={() => {
+                      if (convidados.includes(amigo.profileId)) return;
+                      void executar(() => inviteFriendToRide(boleia.id, amigo.profileId)).then(() =>
+                        setConvidados((atuais) => [...atuais, amigo.profileId])
+                      );
+                    }}
+                  />
+                }
+              />
             ))}
           </Card>
         </>

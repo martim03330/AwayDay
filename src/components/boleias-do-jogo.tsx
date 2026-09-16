@@ -56,6 +56,9 @@ function LinhaBoleia({ boleia, onPress }: { boleia: RideSummary; onPress: () => 
         {`${boleia.isMine ? 'A tua boleia' : boleia.driverName} · sai ${formatarDiaEHora(new Date(boleia.departureAt), agora).toLowerCase()}`}
       </ThemedText>
       <View style={styles.etiquetas}>
+        {boleia.driverIsFriend ? (
+          <Etiqueta icon={icons.perfil} label="Amigo" tone="positivo" />
+        ) : null}
         {boleia.status === 'cancelled' ? (
           <Etiqueta icon={icons.fechar} label="Cancelada" tone="negativo" />
         ) : (

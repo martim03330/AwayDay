@@ -2,6 +2,49 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Amigos, e o que a amizade serve
+
+Convidar alguém para um grupo logo a seguir a uma boleia é demasiado direto: um grupo é um compromisso, e quem deu
+boleia uma vez pode não querer entrar na malta de ninguém. Primeiro fica-se amigo.
+
+**Os dois têm de querer.** Um pedido só vale quando o outro aceita. Se os dois se pedirem ao mesmo tempo, ficam
+amigos na hora, em vez de ficarem dois pedidos pendurados.
+
+**Só se pede a quem já se cruzou contigo** (`have_crossed_paths`): mesmo grupo, mesmo carro ou mesmas contas. Sem
+isto, a app tinha uma lista de pessoas para qualquer um chatear — e ninguém precisa disso num dia de jogo. Não há
+pesquisa de pessoas, de propósito.
+
+**Serve para três coisas**, que foi o que se decidiu:
+
+1. **Convidar direto.** Para um grupo (`group_invite`) ou para o carro (`ride_invite`). Um convite nunca mete
+   ninguém em lado nenhum: fica à espera que a pessoa aceite. No carro, quem aceita entra sem pedir — o lugar já era
+   dele —, e o servidor confirma que ainda há lugar nessa altura.
+2. **Ver as viagens juntos** (`trips_together`): jogos em que foram no mesmo carro ou dividiram as mesmas contas.
+3. **Aparecer primeiro.** As boleias de amigos vêm à frente no quadro do jogo, com etiqueta.
+
+**Onde se adiciona:** no resumo da viagem, ao lado de quem foi contigo. É onde a pessoa tem contexto para decidir —
+e é por isso que o botão não está numa lista de estranhos.
+
+Verificado com testes em transação revertida: não se pede a quem nunca se cruzou contigo; um pedido não faz amizade
+sozinho; só quem recebe aceita; tirar um amigo tira dos dois lados; pedidos cruzados dão amizade; não se convida
+para o grupo nem para o carro quem não é amigo; um convite não mete ninguém no grupo antes de aceitar; não se
+convida para um carro cheio; e as boleias de amigos vêm à frente.
+
+## 2026-09-16 — O dinheiro que já mudou de mãos
+
+As contas só sabiam o que se gastou. Mas a meio da viagem há sempre quem mande um MB Way, e as contas continuavam a
+dizer que essa pessoa devia tudo.
+
+Passa a haver **pagamentos** (`trip_settlement`): quem pagou a quem, e quanto. Entram nos saldos como dinheiro que
+já se moveu — `trip_balances` ganhou `settled_cents` — e o «quem paga a quem» encolhe.
+
+**Quem recebe** regista «já recebi» e fica confirmado na hora, que quem recebe sabe bem se recebeu. **Quem paga**
+regista «já paguei» e fica **por confirmar** até o outro dizer que recebeu. Conta nos saldos nos dois casos: a
+alternativa era a app dizer a alguém que ainda deve o que já pagou. Mas vê-se quando falta a confirmação, e
+qualquer uma das duas pessoas pode apagar um pagamento que não aconteceu.
+
+A app continua a não mover dinheiro nenhum: isto é um registo do que as pessoas fizeram entre elas.
+
 ## 2026-09-16 — A viagem a decorrer, e o que fica dela
 
 Três mudanças que vêm da mesma ideia: as contas de uma viagem fazem-se **durante** a viagem, não no fim.

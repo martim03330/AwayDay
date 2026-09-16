@@ -21,6 +21,7 @@ import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData } from '@/lib/datas';
 import { formatarNumero, plural } from '@/lib/formatos';
+import { useMyFriendRequests } from '@/features/friends/hooks/useFriends';
 import { useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { contarTascosVerificados, ID_UTILIZADOR, montarRanking } from '@/lib/tascos';
@@ -80,6 +81,9 @@ export default function PerfilScreen() {
   const ultimoJogo = historico[0];
   const [toques, setToques] = useState<readonly number[]>([]);
   const userId = useUserId();
+  const pedidosDeAmizade = (useMyFriendRequests(userId !== null).data ?? []).filter(
+    (pedido) => pedido.direction === 'recebido'
+  ).length;
   const perfilDaConta = useMyProfile(userId);
   const novidades = useMyNudges(userId);
   const porLer = novidades.data?.filter((nudge) => nudge.readAt === null).length ?? 0;
@@ -294,6 +298,25 @@ export default function PerfilScreen() {
           <>
             <SectionHeader title="A tua malta" />
             <Card style={styles.grupo}>
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/amigos')}
+                accessibilityLabel="Os teus amigos. Toca para abrir."
+                leading={
+                  <Azulejo
+                    icon={icons.perfil}
+                    fundo={theme.successBackground}
+                    tinta={theme.successText}
+                  />
+                }
+                title="Os teus amigos"
+                subtitle={
+                  pedidosDeAmizade > 0
+                    ? plural(pedidosDeAmizade, 'pedido por responder', 'pedidos por responder')
+                    : 'Quem já foi contigo a um jogo'
+                }
+                trailing={chevron}
+                separador
+              />
               <LinhaGrupo
                 onPress={() => router.push('/perfil/grupos')}
                 accessibilityLabel="Os teus grupos. Toca para abrir."
