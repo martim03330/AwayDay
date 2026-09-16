@@ -21,6 +21,7 @@ export type TripRefusal =
   | 'bad_expense'
   | 'not_yours'
   | 'not_in_trip'
+  | 'ride_expense'
   | 'bad_settlement'
   | 'rate_limited'
   | 'unknown';
@@ -48,6 +49,7 @@ const RECUSAS: TripRefusal[] = [
   'bad_expense',
   'not_yours',
   'not_in_trip',
+  'ride_expense',
   'bad_settlement',
   'rate_limited',
 ];
@@ -91,8 +93,10 @@ export type TripExpense = {
   participantNames: string[];
   /** Se esta despesa também é minha. */
   iAmIn: boolean;
-  /** Se a posso apagar: escrevi-a ou fui eu que paguei. */
+  /** Se a posso apagar: escrevi-a ou fui eu que paguei. Nunca na despesa da boleia, que segue o carro. */
   mine: boolean;
+  /** 'boleia': entrou sozinha, com o custo da boleia e as pessoas do carro. */
+  source: 'manual' | 'boleia';
   createdOn: string;
 };
 
@@ -146,6 +150,7 @@ export async function fetchTripExpenses(sessionId: string): Promise<TripExpense[
     participantNames: row.participant_names ?? [],
     iAmIn: row.i_am_in === true,
     mine: row.mine === true,
+    source: row.source === 'boleia' ? ('boleia' as const) : ('manual' as const),
     createdOn: row.created_on ?? '',
   }));
 }

@@ -2497,6 +2497,7 @@ export type Database = {
           id: string
           payer_id: string
           session_id: string
+          source: string
           updated_at: string
         }
         Insert: {
@@ -2508,6 +2509,7 @@ export type Database = {
           id?: string
           payer_id: string
           session_id: string
+          source?: string
           updated_at?: string
         }
         Update: {
@@ -2519,6 +2521,7 @@ export type Database = {
           id?: string
           payer_id?: string
           session_id?: string
+          source?: string
           updated_at?: string
         }
         Relationships: [
@@ -3565,6 +3568,7 @@ export type Database = {
         Args: { p_profile_id: string; p_ride_id: string }
         Returns: string
       }
+      ride_session_id: { Args: { p_ride_id: string }; Returns: string }
       ride_share_cents: {
         Args: { p_people: number; p_total_cents: number }
         Returns: number
@@ -3684,6 +3688,10 @@ export type Database = {
         Returns: string
       }
       suggest_place_candidates: { Args: never; Returns: number }
+      sync_ride_trip_expense: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
       take_rate_limit: {
         Args: {
           p_bucket: string
@@ -3728,6 +3736,7 @@ export type Database = {
           participants: number
           payer_id: string
           payer_name: string
+          source: string
         }[]
       }
       trip_people: {

@@ -77,6 +77,8 @@ function mensagemDeRecusa(erro: unknown) {
       return 'Essa pessoa não está nestas contas.';
     case 'bad_settlement':
       return 'Um pagamento é sempre de uma pessoa para outra, com um valor.';
+    case 'ride_expense':
+      return 'A despesa da boleia não se apaga: ela acompanha quem vai no carro.';
     case 'rate_limited':
       return 'Já lançaste muitas despesas hoje. Continua amanhã.';
     default:
@@ -472,6 +474,12 @@ export default function ContasScreen() {
                   </ThemedText>
                   <ThemedText type="smallBold">{formatarCentimos(despesa.cents)}</ThemedText>
                 </View>
+                {despesa.source === 'boleia' ? (
+                  <ThemedText type="small" themeColor="textMuted">
+                    Vem da boleia: combustível e portagens, como ficou quando foi publicada. Muda
+                    sozinha quando alguém entra ou sai do carro.
+                  </ThemedText>
+                ) : null}
                 <ThemedText type="small" themeColor="textMuted">
                   {`pagou ${despesa.payerId === userId ? 'ti' : despesa.payerName} · ${
                     despesa.participants === gente.length

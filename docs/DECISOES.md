@@ -2,6 +2,24 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — A boleia entra nas contas
+
+A boleia tinha a conta dela (combustível + portagens, dividido por quem vai no carro) e as contas da viagem tinham a
+delas. Quem abria as contas via o jantar e as cervejas mas não via a viagem — e se alguém lançasse «portagens» à mão,
+ficava a pagar duas vezes.
+
+Ao abrir as contas de uma boleia, entra logo uma **despesa da boleia** com o custo que ficou definido quando a
+boleia foi publicada: paga pelo condutor, dividida por quem vai no carro. É a mesma divisão que a boleia já fazia,
+mas agora à vista ao lado de tudo o resto e a contar para o «quem paga a quem».
+
+**Segue o carro.** Não se escreve à mão nem se apaga: `sync_ride_trip_expense` refá-la sempre que o carro muda —
+alguém aceite, alguém que sai, alguém que entra por convite — e quem abre as contas traz o valor atual. As contas
+que já estavam abertas foram preenchidas de uma vez (migração `20260916550000`).
+
+Fica por decidir uma coisa que se vê no ecrã do jogo: quem tem grupo **e** boleia para o mesmo jogo vê duas contas
+separadas. São mesmo duas coisas — o grupo pode ter gente que não foi no carro —, mas convém perguntar ao
+utilizador se prefere uma só.
+
 ## 2026-09-16 — Amigos, e o que a amizade serve
 
 Convidar alguém para um grupo logo a seguir a uma boleia é demasiado direto: um grupo é um compromisso, e quem deu
