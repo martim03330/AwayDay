@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
+import { DormidaCard } from '@/components/dormida-card';
 import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -226,6 +227,14 @@ export default function OMeuJogoScreen() {
               }
             />
           </Card>
+        </>
+      ) : null}
+
+      {/* Dormir fora faz parte de planear a ida, por isso está aqui e não só na ficha do estádio. */}
+      {estadio && estadio.regiao !== 'continente' ? (
+        <>
+          <SectionHeader title="Onde dormir" />
+          <DormidaCard jogo={jogo} estadio={estadio} />
         </>
       ) : null}
 
