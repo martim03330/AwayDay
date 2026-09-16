@@ -264,6 +264,9 @@ export default function JogoScreen() {
 
         {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
 
+        {/* Antes do barulhómetro: é o carimbo que o desbloqueia, e não se manda ninguém procurar mais abaixo. */}
+        <CarimboEstadio jogo={jogo} estadio={estadio} />
+
         {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
           <>
             <SectionHeader
@@ -290,9 +293,6 @@ export default function JogoScreen() {
             ) : null}
           </>
         ) : null}
-
-        {/* Em dia de jogo e no local: a única prova de que lá estiveste. Fora disso não aparece. */}
-        <CarimboEstadio jogo={jogo} estadio={estadio} />
 
         <SectionHeader title="Estádio" onLayout={marcar('estadio')} />
         <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />

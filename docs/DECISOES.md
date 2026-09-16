@@ -2,6 +2,27 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — O passaporte ganha a Europa
+
+O passaporte tinha os 57 estádios nacionais e os 22 onde as equipas portuguesas já jogaram fora.
+Faltavam os que qualquer adepto quer visitar um dia e que não aparecem em jogo nenhum da app.
+Entraram mais **76**: Camp Nou, Wembley, Bernabéu, Signal Iduna Park, Old Trafford, Allianz Arena,
+San Mamés, Celtic Park, Ibrox…
+
+**De onde vêm:** Wikidata (nome, capacidade, país, coordenadas) e Nominatim (a cidade, em
+português). Só entram estádios **com 40 000 lugares ou mais**, que são **casa de um clube** e que
+**não foram demolidos**. Cinco recintos que passavam nesse crivo mas que ninguém visita hoje — o
+Cathkin Park é uma ruína desde 1967, o Parkstadion está desativado — estão excluídos um a um, com a
+razão escrita no script.
+
+**Entram sem clube associado.** As cores de um clube estrangeiro não se adivinham, e inventá-las
+seria pôr na app informação que não temos. O `toVenue` passa a aceitar estádios sem dono, e o
+carimbo desses fica com a cor neutra da app.
+
+Uma limitação assumida: as etiquetas em português do Wikidata ficam por vezes um nome de patrocínio
+atrás (Amsterdam ArenA, Türk Telekom Arena). É o nome que a fonte dá; corrige-se quando alguém
+reparar.
+
 ## 2026-09-16 — A volta, no dia do jogo
 
 Depois do apito, uma boleia de ida não serve para nada: o que interessa é **quem volta e para onde**.

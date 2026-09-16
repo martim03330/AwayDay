@@ -111,8 +111,9 @@ function toVenue(
   extras: CatalogExtras['venues']
 ): Venue | null {
   const region = REGIONS.get(row.region);
-  // Capacity and coordinates are required by the stadium card, the distance and the map.
-  if (!region || !homeClubId || row.capacity === null || row.latitude === null || row.longitude === null) {
+  // Capacity and coordinates are required by the stadium card, the distance and the map. A home club is not: the
+  // European stadiums of the passport are there to be visited, and nobody invents a foreign club's colours.
+  if (!region || row.capacity === null || row.latitude === null || row.longitude === null) {
     return null;
   }
   const extra = extras[row.id];
@@ -124,7 +125,7 @@ function toVenue(
     cidade: row.city,
     pais: row.country,
     capacidade: row.capacity,
-    clubeId: homeClubId,
+    clubeId: homeClubId ?? '',
     regiao: region,
     coordenadas: { latitude: row.latitude, longitude: row.longitude },
     // Stadiums without these details still show up; the screens hide what is unknown.

@@ -66,6 +66,7 @@
     "db:estacionamento": "node --env-file=.env.local scripts/importar-estacionamento.mjs",
     "db:parques-osm": "node --env-file=.env.local scripts/importar-parques-osm.mjs",
     "db:ruas": "node --env-file=.env.local scripts/importar-ruas-estadios.mjs",
+    "db:estadios-europa": "node --env-file=.env.local scripts/importar-estadios-europa.mjs",
     "db:notas-adeptos": "node --env-file=.env.local scripts/geocodificar-notas-adeptos.mjs",
     "db:adeptos-casa": "node scripts/importar-adeptos-casa.mjs"
   },

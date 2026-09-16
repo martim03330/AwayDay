@@ -198,7 +198,7 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
             <ListRow
               leading={<IconCircle name={icons.checkIn} tone="yellow" />}
               title="Primeiro, prova que estás lá"
-              subtitle="Carimba o estádio no cartão «Estás no estádio?», aqui em cima, ou faz check-in num tasco perto. É o que impede que se meça o barulho do sofá."
+              subtitle="Carimba o estádio no cartão aqui em cima, ou faz check-in num tasco perto. É o que impede que se meça o barulho do sofá."
             />
             <Button
               label="Ver tascos perto"
