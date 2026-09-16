@@ -166,7 +166,7 @@ export default function JogoScreen() {
     { id: 'mapa', titulo: 'Mapa' },
     jogo.meteorologia ? { id: 'meteorologia', titulo: 'Meteorologia' } : null,
     { id: 'distancia', titulo: 'Distância' },
-    { id: 'como-chegar', titulo: 'Como chegar' },
+    { id: 'como-chegar', titulo: estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar' },
     { id: 'boleias', titulo: 'Boleias' },
     estadio.regiao !== 'continente' ? { id: 'dormir', titulo: 'Onde dormir' } : null,
     { id: 'estacionamento', titulo: 'Estacionamento' },
@@ -309,6 +309,7 @@ export default function JogoScreen() {
 
         <SectionHeader title="Mapa" onLayout={marcar('mapa')} />
         <MapaJogo
+          inicio="estadio"
           venue={estadio}
           zonas={zonas}
           zonasCasa={zonasCasa}
@@ -335,11 +336,16 @@ export default function JogoScreen() {
         <SectionHeader title="Distância" onLayout={marcar('distancia')} />
         <DistanciaCard venue={estadio} />
 
-        <SectionHeader title="Como chegar" onLayout={marcar('como-chegar')} />
+        <SectionHeader
+          title={estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar'}
+          onLayout={marcar('como-chegar')}
+        />
         {estadio.transportes.length > 0 ? <ComoChegar opcoes={estadio.transportes} /> : null}
 
         <Button
-          label="Abrir o caminho no mapa"
+          label={
+            estado === 'a-decorrer' ? 'Abrir o caminho de volta no mapa' : 'Abrir o caminho no mapa'
+          }
           variant="secondary"
           icon={icons.rota}
           onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
