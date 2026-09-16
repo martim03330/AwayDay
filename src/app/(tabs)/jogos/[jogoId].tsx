@@ -8,6 +8,7 @@ import { ComoChegar } from '@/components/como-chegar';
 import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
+import { DormidaCard } from '@/components/dormida-card';
 import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
 import { EstadioCard } from '@/components/estadio-card';
 import { MapaJogo } from '@/components/mapa-jogo';
@@ -290,6 +291,13 @@ export default function JogoScreen() {
           icon={icons.rota}
           onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
         />
+
+        {estadio.regiao !== 'continente' ? (
+          <>
+            <SectionHeader title="Onde dormir" />
+            <DormidaCard jogo={jogo} estadio={estadio} />
+          </>
+        ) : null}
 
         <SectionHeader title="Estacionamento" />
         <EstacionamentoEstadio

@@ -2,6 +2,36 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Dormir fora: pesquisa no Airbnb e preços relatados pelos adeptos
+
+**O que não dá.** O Airbnb não tem API pública e a de parceiros é fechada. Guardar o link de um
+anúncio seria prometer uma coisa que não controlamos: verifiquei a 2026-09-16 que um anúncio
+inventado (`/rooms/1234…`) devolve **HTTP 200** na mesma — a página só diz que não existe depois de
+carregar no browser. Não há forma honesta de saber se um anúncio ainda está disponível, e raspar a
+página viola os termos do Airbnb e parte-se ao primeiro redesenho.
+
+**O que dá, e é o que fazemos.**
+- **Link de pesquisa, nunca de anúncio** (`src/lib/dormida.ts`): a app abre
+  `airbnb.pt/s/<Cidade>--<País>/homes?checkin=…&checkout=…&adults=N`, com entrada na véspera do jogo
+  e as noites e pessoas que o adepto escolher. Uma pesquisa mostra sempre o que está disponível
+  naquele momento: não pode ficar desatualizada.
+- **Preços como relatos datados** (`stay_report`): cada adepto diz o que pagou por noite, para
+  quantas pessoas e quantas noites — em cêntimos inteiros, como todo o dinheiro da app. Aparece com
+  o nome de quem disse e a data. Um preço com data é informação; sem data era uma promessa que
+  ninguém pode cumprir.
+- **Desmentido pela malta**: quem lá for e não encontrar nada parecido carrega em «já não encontro
+  assim». **Dois desmentidos escondem o relato**, e ninguém se pode desmentir a si próprio.
+- **Mediana só a partir de 3 relatos**; com um ou dois, o que há é a conta de quem falou, e essa já
+  está à vista.
+- Os relatos morrem 30 dias depois do jogo (cron diário): a essa altura já não servem para planear.
+
+**Onde aparece.** Só em jogos no estrangeiro e nas ilhas (Funchal e Ponta Delgada), que são as
+viagens onde dormir fora faz parte de ir ao jogo. O servidor confirma isso (`fixture_needs_stay`),
+não é só a app a esconder a secção.
+
+Regras verificadas com teste SQL revertido: jogo do continente recusado, preço absurdo recusado,
+desmentir-se a si próprio recusado, e com dois desmentidos o relato desaparece.
+
 ## 2026-09-16 — Tascos sugeridos pelos próprios adeptos (e os que ficam mais longe)
 
 **O buraco.** Todos os tascos vinham do OpenStreetMap ou da pesquisa. Quem conhecia um sítio que não

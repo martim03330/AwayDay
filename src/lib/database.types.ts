@@ -2074,6 +2074,90 @@ export type Database = {
           },
         ]
       }
+      stay_report: {
+        Row: {
+          cents_per_night: number
+          created_at: string
+          fixture_id: string
+          id: string
+          nights: number
+          note: string | null
+          people: number
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          cents_per_night: number
+          created_at?: string
+          fixture_id: string
+          id?: string
+          nights: number
+          note?: string | null
+          people: number
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          cents_per_night?: number
+          created_at?: string
+          fixture_id?: string
+          id?: string
+          nights?: number
+          note?: string | null
+          people?: number
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stay_report_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stay_report_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stay_report_denial: {
+        Row: {
+          created_at: string
+          profile_id: string
+          report_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          report_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stay_report_denial_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stay_report_denial_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "stay_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       toll_rate: {
         Row: {
           checked_on: string
@@ -2396,13 +2480,30 @@ export type Database = {
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
+      delete_old_stay_reports: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
+      deny_stay_report: { Args: { p_report_id: string }; Returns: undefined }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
       }
       expire_ride_requests: { Args: never; Returns: number }
       fixture_going_count: { Args: { p_fixture_id: string }; Returns: number }
+      fixture_needs_stay: { Args: { p_fixture_id: string }; Returns: boolean }
+      fixture_stays: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          cents_per_night: number
+          denied_by_me: boolean
+          display_name: string
+          id: string
+          is_mine: boolean
+          nights: number
+          note: string
+          people: number
+          reported_on: string
+        }[]
+      }
       home_fan_usual_streets: {
         Args: { p_venue_id: string }
         Returns: {
@@ -2530,6 +2631,16 @@ export type Database = {
       report_ride_incident: {
         Args: { p_note: string; p_reason: string; p_ride_id: string }
         Returns: undefined
+      }
+      report_stay: {
+        Args: {
+          p_cents_per_night: number
+          p_fixture_id: string
+          p_nights: number
+          p_note: string
+          p_people: number
+        }
+        Returns: string
       }
       request_return_seat: {
         Args: {
