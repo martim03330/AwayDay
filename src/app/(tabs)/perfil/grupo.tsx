@@ -7,6 +7,7 @@ import { Alert, Share, StyleSheet, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import {
   fetchGroupMembers,
+  fetchGroupPlans,
   fetchGroupTrips,
   fetchMyGroups,
   GroupRefused,
@@ -17,8 +18,11 @@ import {
   type GroupMember,
 } from '@/features/groups/api';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarData } from '@/lib/datas';
+import { setRideVisibility } from '@/features/rides/api';
+import { setStayVisibility } from '@/features/stays/api';
+import { formatarData, formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
+import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
@@ -79,6 +83,11 @@ export default function GrupoScreen() {
   const viagens = useQuery({
     queryKey: ['groups', 'trips', grupoId ?? null],
     queryFn: grupoId ? () => fetchGroupTrips(grupoId) : skipToken,
+    meta: { persist: false },
+  });
+  const planos = useQuery({
+    queryKey: ['groups', 'plans', grupoId ?? null],
+    queryFn: grupoId ? () => fetchGroupPlans(grupoId) : skipToken,
     meta: { persist: false },
   });
   const membros = useQuery({
@@ -234,6 +243,79 @@ export default function GrupoScreen() {
           ) : null}
         </Card>
       ))}
+
+      <SectionHeader title="O que o grupo tem em mãos" />
+      {(planos.data ?? []).length === 0 ? (
+        <Card>
+          <ThemedText themeColor="textSecondary">
+            Nada por agora. Quando alguém oferecer boleia ou propuser uma casa, pode marcá-la como
+            sendo deste grupo — e aparece aqui, para a malta encher antes de abrir a toda a gente.
+          </ThemedText>
+        </Card>
+      ) : (
+        (planos.data ?? []).map((plano) => {
+          const jogoDoPlano = obterJogo(plano.fixtureId);
+          const nomeDoJogo = jogoDoPlano
+            ? `${obterClube(jogoDoPlano.casaId)?.nomeCurto ?? ''} x ${obterClube(jogoDoPlano.foraId)?.nomeCurto ?? ''}`
+            : 'Jogo';
+          const livres = Math.max(0, plano.seatsTotal - plano.taken);
+          return (
+            <Card
+              key={`${plano.kind}-${plano.id}`}
+              style={styles.grupo}
+              onPress={() =>
+                plano.kind === 'boleia'
+                  ? router.push({
+                      pathname: '/jogos/boleia',
+                      params: { rideId: plano.id, jogoId: plano.fixtureId },
+                    })
+                  : router.push({
+                      pathname: '/jogos/[jogoId]',
+                      params: { jogoId: plano.fixtureId },
+                    })
+              }
+              accessibilityLabel={`${plano.kind === 'boleia' ? 'Boleia' : 'Casa'} de ${plano.ownerName} para ${nomeDoJogo}. Toca para abrir.`}>
+              <ThemedText style={styles.nome}>
+                {`${plano.kind === 'boleia' ? 'Boleia' : 'Casa'} de ${plano.isMine ? 'ti' : plano.ownerName} · ${nomeDoJogo}`}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {[
+                  plano.kind === 'boleia' && plano.departureAt
+                    ? `sai ${formatarDiaEHora(new Date(plano.departureAt)).toLowerCase()}`
+                    : formatarData(new Date(plano.kickoffAt)),
+                  livres > 0
+                    ? plural(livres, 'lugar por encher', 'lugares por encher')
+                    : 'sem lugares',
+                  `${formatarCentimos(plano.shareNowCents)} cada`,
+                ].join(' · ')}
+              </ThemedText>
+              <View style={styles.etiquetas}>
+                <Etiqueta
+                  icon={plano.visibility === 'grupo' ? icons.perfil : icons.partilhar}
+                  label={plano.visibility === 'grupo' ? 'Só do grupo' : 'Aberta a toda a gente'}
+                  tone={plano.visibility === 'grupo' ? 'info' : 'positivo'}
+                />
+                {plano.status === 'reservada' ? (
+                  <Etiqueta icon={icons.selecionado} label="Casa reservada" tone="positivo" />
+                ) : null}
+              </View>
+              {plano.isMine && plano.visibility === 'grupo' && livres > 0 ? (
+                <LinkTexto
+                  label="Não enche? Abrir a toda a gente"
+                  onPress={() =>
+                    void tratar(async () => {
+                      if (plano.kind === 'boleia') await setRideVisibility(plano.id, true);
+                      else await setStayVisibility(plano.id, true);
+                      void queryClient.invalidateQueries({ queryKey: ['rides'] });
+                      void queryClient.invalidateQueries({ queryKey: ['stays'] });
+                    })
+                  }
+                />
+              ) : null}
+            </Card>
+          );
+        })
+      )}
 
       <SectionHeader title="Viagens do grupo" />
       {(viagens.data ?? []).length === 0 ? (

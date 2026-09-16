@@ -25,6 +25,13 @@ nome do grupo.
 **A seguir:** a sessão da viagem (abre no dia do jogo) com as despesas — quem pagou o quê, quem entra
 em cada uma — e o acerto de contas.
 
+**O grupo mostra o que tem em mãos** (`group_plans`, 2026-09-16). De nada serve marcar uma boleia
+como sendo do grupo se depois é preciso ir à ficha de cada jogo para a encontrar. O ecrã do grupo
+passa a listar as boleias e as casas do grupo, do jogo mais próximo para a frente, com os lugares
+por encher, o que fica a cada um agora e se está fechada ao grupo ou aberta a toda a gente. Quem a
+ofereceu tem ali mesmo o «Não enche? Abrir a toda a gente» — que é a decisão que se toma a olhar
+para os lugares que faltam, não noutro ecrã qualquer.
+
 ## 2026-09-16 — Uma boleia não é um grupo: as viagens é que se ligam aos grupos
 
 **O erro.** Ao criar um grupo por cada boleia, a app produzia grupos que ninguém pediu — e, pior,

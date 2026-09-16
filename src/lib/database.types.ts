@@ -2672,6 +2672,24 @@ export type Database = {
           role: string
         }[]
       }
+      group_plans: {
+        Args: { p_group_id: string }
+        Returns: {
+          departure_at: string
+          fixture_id: string
+          id: string
+          is_mine: boolean
+          kickoff_at: string
+          kind: string
+          my_status: string
+          owner_name: string
+          seats_total: number
+          share_now_cents: number
+          status: string
+          taken: number
+          visibility: string
+        }[]
+      }
       group_trips: {
         Args: { p_group_id: string }
         Returns: {

@@ -181,3 +181,51 @@ export async function fetchGroupTrips(groupId: string): Promise<GroupTrip[]> {
       : []
   );
 }
+
+/** Uma boleia ou uma casa que o grupo tem em mãos para um jogo. */
+export type GroupPlan = {
+  kind: 'boleia' | 'casa';
+  id: string;
+  fixtureId: string;
+  kickoffAt: string;
+  ownerName: string;
+  isMine: boolean;
+  /** Só nas boleias. */
+  departureAt: string | null;
+  /** Lugares no carro, ou camas na casa, para além de quem a ofereceu. */
+  seatsTotal: number;
+  taken: number;
+  shareNowCents: number;
+  visibility: 'grupo' | 'publica';
+  /** 'open'/'cancelled' nas boleias; 'a_juntar'/'reservada' nas casas. */
+  status: string;
+  /** O teu lugar, se pediste. */
+  myStatus: string | null;
+};
+
+/** O que o grupo tem para encher: boleias e casas do grupo, do jogo mais próximo para a frente. */
+export async function fetchGroupPlans(groupId: string): Promise<GroupPlan[]> {
+  const { data, error } = await client().rpc('group_plans', { p_group_id: groupId });
+  if (error) throw error;
+  return data.flatMap((row) =>
+    row.id && row.fixture_id && row.kickoff_at
+      ? [
+          {
+            kind: row.kind === 'casa' ? ('casa' as const) : ('boleia' as const),
+            id: row.id,
+            fixtureId: row.fixture_id,
+            kickoffAt: row.kickoff_at,
+            ownerName: row.owner_name ?? 'Um adepto',
+            isMine: row.is_mine === true,
+            departureAt: row.departure_at,
+            seatsTotal: row.seats_total ?? 0,
+            taken: row.taken ?? 0,
+            shareNowCents: row.share_now_cents ?? 0,
+            visibility: row.visibility === 'grupo' ? ('grupo' as const) : ('publica' as const),
+            status: row.status ?? '',
+            myStatus: row.my_status,
+          },
+        ]
+      : []
+  );
+}
