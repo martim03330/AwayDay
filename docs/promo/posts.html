@@ -130,6 +130,45 @@
   .pe .nota { font-size: 21px; font-weight: 600; color: var(--text-secondary); }
   .post.relva .pe .nota { color: rgba(255,255,255,0.8); }
 
+
+  /* ---------- Carrossel de apresentação: capa, o que faz, o que não faz ---------- */
+  .capa { justify-content: flex-start; }
+  .capa .marca-grande { position: relative; padding: 96px 70px 0; }
+  .capa .selo-grande {
+    width: 132px; height: 132px; border-radius: 34px; background: var(--amarelo); color: var(--relva-escura);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 84px; margin-bottom: 34px;
+  }
+  .capa h2 { font-size: 136px; line-height: 0.86; letter-spacing: -2px; }
+  .capa .tagline { font-size: 34px; line-height: 1.25; margin-top: 26px; max-width: 700px; color: rgba(255,255,255,0.92); }
+  .capa .palavras { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .capa .palavras span { background: rgba(255,255,255,0.14); color: var(--amarelo); border-radius: 999px; padding: 10px 20px; font-size: 24px; font-weight: 700; }
+  .capa .tiras { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 26px; z-index: 2; }
+  .capa .tiras img { width: 300px; border-radius: 34px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+  .capa .tiras img:nth-child(1) { transform: rotate(-7deg) translateY(30px); }
+  .capa .tiras img:nth-child(2) { transform: translateY(-8px); }
+  .capa .tiras img:nth-child(3) { transform: rotate(7deg) translateY(30px); }
+
+  .lista { padding: 0; }
+  .lista .linhas { padding: 0 70px; display: flex; flex-direction: column; gap: 44px; margin-top: 62px; }
+  .lista .item { display: flex; gap: 22px; align-items: flex-start; }
+  .lista .conta {
+    width: 58px; height: 58px; border-radius: 18px; flex: none;
+    background: var(--relva); color: #fff; display: flex; align-items: center; justify-content: center;
+    font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 32px;
+  }
+  .lista .item:nth-child(even) .conta { background: var(--amarelo); color: var(--relva-escura); }
+  .lista .item h3 { font-family: 'Big Shoulders Display'; font-weight: 800; font-size: 46px; line-height: 1.02; margin-bottom: 8px; }
+  .lista .item p { font-size: 25px; line-height: 1.3; color: var(--text-secondary); }
+
+  .fecho .nao { padding: 0 70px; display: flex; flex-direction: column; gap: 30px; margin-top: 46px; }
+  .fecho .nao div {
+    background: rgba(255,255,255,0.12); border-radius: 24px; padding: 34px 36px;
+    font-size: 32px; line-height: 1.28; font-weight: 600;
+  }
+  .fecho .nao b { color: var(--amarelo); }
+  .fecho .remate { padding: 0 70px; margin-top: 62px; font-size: 36px; line-height: 1.32; font-weight: 600; }
+
   .legenda-dev { width: 1080px; color: #3A443E; font-size: 15px; }
 </style>
 </head>
@@ -505,6 +544,80 @@
   <div class="pe">
     <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
     <div class="nota">ilhas, continente e Europa</div>
+  </div>
+</section>
+
+<!-- 12 · apresentação 1 ------------------------------------------------ -->
+<section class="post relva capa" data-nome="apresentacao-capa">
+  <div class="marca-grande">
+    <div class="selo-grande">A</div>
+    <h2>AwayDay</h2>
+    <div class="tagline">A app do dia de jogo. Do «alguém vai de carro?» até às contas acertadas à noite.</div>
+    <div class="palavras">
+      <span>boleias</span><span>tascos</span><span>contas</span><span>passaporte</span><span>a volta</span>
+    </div>
+  </div>
+  <div class="tiras">
+    <img src="ecras/05-quem-leva-quem-com-o-custo-dividido.png" alt="">
+    <img src="ecras/19-a-volta-de-um-estadio-grande.png" alt="">
+    <img src="ecras/11-no-fim-ninguem-discute-contas.png" alt="">
+  </div>
+</section>
+
+<!-- 13 · apresentação 2 ------------------------------------------------ -->
+<section class="post lista" data-nome="apresentacao-o-que-faz">
+  <div class="cabeca">
+    <div class="kicker">O que faz</div>
+    <h2>Seis coisas,<br>num dia de jogo.</h2>
+  </div>
+  <div class="linhas">
+    <div class="item">
+      <div class="conta">1</div>
+      <div><h3>Boleias com o custo dividido</h3><p>Combustível e portagens do caminho, por lugar. Baixa quando entra mais gente.</p></div>
+    </div>
+    <div class="item">
+      <div class="conta">2</div>
+      <div><h3>A que horas sair, e onde parar</h3><p>A hora de saída e os parques por cor, conforme costumam encher.</p></div>
+    </div>
+    <div class="item">
+      <div class="conta">3</div>
+      <div><h3>Os tascos à volta do estádio</h3><p>Avaliados por adeptos, com o contador de quem já lá está.</p></div>
+    </div>
+    <div class="item">
+      <div class="conta">4</div>
+      <div><h3>As contas da viagem</h3><p>Cada despesa por quem entrou nela. No fim, quem paga a quem.</p></div>
+    </div>
+    <div class="item">
+      <div class="conta">5</div>
+      <div><h3>O passaporte dos estádios</h3><p>Carimbas lá dentro, no dia. 156 estádios, de Portugal à Europa.</p></div>
+    </div>
+    <div class="item">
+      <div class="conta">6</div>
+      <div><h3>E a volta, depois do apito</h3><p>Quem volta e para onde — para ninguém ficar no parque.</p></div>
+    </div>
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">o dia inteiro, não só os 90 minutos</div>
+  </div>
+</section>
+
+<!-- 14 · apresentação 3 ------------------------------------------------ -->
+<section class="post relva fecho" data-nome="apresentacao-o-que-nao-faz">
+  <div class="cabeca">
+    <div class="kicker">Para ficar claro</div>
+    <h2>O que a AwayDay<br>não faz.</h2>
+  </div>
+  <div class="nao">
+    <div><b>Não vende bilhetes</b> nem cobra comissão a ninguém.</div>
+    <div><b>Não mexe no teu dinheiro.</b> Diz quem paga a quem; o resto é entre vocês.</div>
+    <div><b>Não inventa dados.</b> Se não se sabe uma coisa, a app diz que não sabe.</div>
+    <div><b>Não mostra onde tu estás.</b> A localização serve para confirmar um check-in e é deitada fora.</div>
+  </div>
+  <div class="remate">Feita por quem anda na estrada atrás do clube.<br>Em breve, para toda a gente.</div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">segue para seres dos primeiros</div>
   </div>
 </section>
 

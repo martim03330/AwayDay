@@ -26,7 +26,7 @@ senão o vídeo promete o que a app já não cumpre.
 
 ## Posts para Instagram
 
-- **`posts/*.png`** — 11 publicações, 1080 × 1350 (o formato que o Instagram mostra maior no feed): o telemóvel ao
+- **`posts/*.png`** — 14 publicações (as três últimas são o carrossel de apresentação), 1080 × 1350 (o formato que o Instagram mostra maior no feed): o telemóvel ao
   centro e as bolas à volta a apontar o que ali se faz.
 - **`posts.html`** — a fonte. Usa as imagens de `ecras/`, por isso gera primeiro os ecrãs.
 
