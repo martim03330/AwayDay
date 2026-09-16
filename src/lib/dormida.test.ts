@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { datasDaEstadia, linkAirbnb, porPessoaNaCasa } from '@/lib/dormida';
+import { datasDaEstadia, linkAirbnb, porPessoaNaCasa, precisaDeDormida } from '@/lib/dormida';
 
 describe('datasDaEstadia', () => {
   it('enters the day before the game and leaves after the nights asked for', () => {
@@ -64,5 +64,49 @@ describe('dividir a casa', () => {
     expect([1, 2, 3, 4].map((pessoas) => porPessoaNaCasa(casa, pessoas))).toEqual([
       24000, 12000, 8000, 6000,
     ]);
+  });
+});
+
+describe('precisaDeDormida', () => {
+  const funchal = {
+    regiao: 'madeira' as const,
+    coordenadas: { latitude: 32.65, longitude: -16.91 },
+  };
+  const lisboa = {
+    regiao: 'continente' as const,
+    coordenadas: { latitude: 38.75, longitude: -9.18 },
+  };
+  const porto = {
+    regiao: 'continente' as const,
+    coordenadas: { latitude: 41.16, longitude: -8.58 },
+  };
+  const viseu = {
+    regiao: 'continente' as const,
+    coordenadas: { latitude: 40.66, longitude: -7.91 },
+  };
+  const milao = {
+    regiao: 'estrangeiro' as const,
+    coordenadas: { latitude: 45.48, longitude: 9.12 },
+  };
+
+  it('um jogo nas ilhas ou no estrangeiro pede sempre dormida', () => {
+    expect(precisaDeDormida(funchal, lisboa)).toBe(true);
+    expect(precisaDeDormida(milao, viseu)).toBe(true);
+  });
+
+  it('quem é das ilhas precisa de dormida para vir ao continente, mesmo que o estádio pareça perto', () => {
+    expect(precisaDeDormida(lisboa, funchal)).toBe(true);
+    expect(precisaDeDormida(porto, funchal)).toBe(true);
+  });
+
+  it('no continente, só quando a estrada é longa', () => {
+    expect(precisaDeDormida(lisboa, viseu)).toBe(false);
+    expect(precisaDeDormida(porto, viseu)).toBe(false);
+    expect(precisaDeDormida(lisboa, porto)).toBe(true);
+  });
+
+  it('sem terra conhecida, não se inventa uma viagem longa', () => {
+    expect(precisaDeDormida(lisboa, null)).toBe(false);
+    expect(precisaDeDormida(funchal, null)).toBe(true);
   });
 });

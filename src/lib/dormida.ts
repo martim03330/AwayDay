@@ -6,10 +6,33 @@
  * forma honesta de saber se ainda existe. Uma pesquisa mostra sempre o que está disponível naquele momento.
  */
 
+import { distanciaKm } from '@/lib/avisos-perto';
+import type { Coordenadas, Regiao } from '@/mocks/tipos';
+
 const AIRBNB = 'https://www.airbnb.pt/s';
 const DIA_MS = 24 * 60 * 60 * 1000;
 
 export type Estadia = { checkin: string; checkout: string };
+
+/** A partir daqui, ninguém vai e volta no mesmo dia sem se arrepender. */
+export const LONGE_KM = 250;
+
+/**
+ * Se faz sentido falar de dormida neste jogo, para quem é desta terra.
+ *
+ * Três casos, e o segundo é o que faltava: **quem é das ilhas precisa de dormida para vir ao continente**, por mais
+ * perto que o estádio pareça no mapa — vai de avião e não há voo de volta a seguir ao apito. O primeiro é o
+ * simétrico (ir do continente às ilhas ou ao estrangeiro), e o terceiro é a estrada longa de sempre.
+ */
+export function precisaDeDormida(
+  estadio: { regiao: Regiao; coordenadas: Coordenadas },
+  terra: { regiao: Regiao; coordenadas: Coordenadas } | null
+) {
+  if (estadio.regiao !== 'continente') return true;
+  if (!terra) return false;
+  if (terra.regiao !== 'continente') return true;
+  return distanciaKm(terra.coordenadas, estadio.coordenadas) >= LONGE_KM;
+}
 
 /** A data em Portugal continental (YYYY-MM-DD), que é o fuso em que a malta pensa as viagens. */
 function dataEmLisboa(ms: number) {

@@ -14,6 +14,7 @@ import { avisosDoJogo, horasDoPlano } from '@/lib/avisos-jogo';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia } from '@/lib/formatos';
+import { precisaDeDormida } from '@/lib/dormida';
 import { contasDaViagemAbertas, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe, ordenarTascos } from '@/lib/locais';
 import { formatarContagem } from '@/lib/relogio';
@@ -64,7 +65,7 @@ export default function OMeuJogoScreen() {
   const theme = useTheme();
   const agora = useNow(30 * 1000);
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
-  const { pessoasAqui } = useAppState();
+  const { pessoasAqui, clubeDaTerraId } = useAppState();
   const { vou, alternarVou, tascoDoPlano, escolherTasco, avisosLigados, alternarAvisos } =
     usePlanosJogos();
   const [aEscolher, setAEscolher] = useState(false);
@@ -73,6 +74,9 @@ export default function OMeuJogoScreen() {
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
+  // Quem é das ilhas dorme fora para vir ao continente: a terra do adepto conta tanto como o sítio do jogo.
+  const terra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
+  const estadioDaTerra = terra?.estadioId ? obterEstadio(terra.estadioId) : undefined;
 
   if (!jogo || !casa || !fora || !estadio) {
     return (
@@ -236,7 +240,7 @@ export default function OMeuJogoScreen() {
       <GrupoDoJogo jogo={jogo} tascoNome={tasco?.nome ?? null} />
 
       {/* Dormir fora faz parte de planear a ida, por isso está aqui e não só na ficha do estádio. */}
-      {estadio && estadio.regiao !== 'continente' ? (
+      {estadio && precisaDeDormida(estadio, estadioDaTerra ?? null) ? (
         <>
           <SectionHeader title="Onde dormir" />
           <DormidaCard jogo={jogo} estadio={estadio} />

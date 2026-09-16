@@ -35,6 +35,7 @@ import { abrirDirecoes } from '@/lib/direcoes';
 import { plural } from '@/lib/formatos';
 import { contasDaViagemAbertas, eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
+import { precisaDeDormida } from '@/lib/dormida';
 import { avisoDeChuva } from '@/lib/meteorologia';
 import { mostrarRelogio } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
@@ -63,7 +64,7 @@ export default function JogoScreen() {
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
-  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho } = useAppState();
+  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho, clubeDaTerraId } = useAppState();
 
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -139,6 +140,11 @@ export default function JogoScreen() {
       : []
   );
 
+  // Dormir fora não é só para as ilhas e o estrangeiro: quem é das ilhas também dorme fora para vir ao continente.
+  const terra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
+  const estadioDaTerra = terra?.estadioId ? obterEstadio(terra.estadioId) : undefined;
+  const dormidaFazSentido = precisaDeDormida(estadio, estadioDaTerra ?? null);
+
   const inicio = new Date(jogo.inicio);
   const dia = formatarDia(inicio, agora);
   const rotuloApito =
@@ -167,7 +173,7 @@ export default function JogoScreen() {
     { id: 'como-chegar', titulo: estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar' },
     { id: 'boleias', titulo: 'Boleias' },
     contasDaViagemAbertas(jogo, agora) ? { id: 'contas', titulo: 'Contas' } : null,
-    estadio.regiao !== 'continente' ? { id: 'dormir', titulo: 'Onde dormir' } : null,
+    dormidaFazSentido ? { id: 'dormir', titulo: 'Onde dormir' } : null,
     { id: 'estacionamento', titulo: 'Estacionamento' },
   ].filter((seccao) => seccao !== null);
 
@@ -357,7 +363,7 @@ export default function JogoScreen() {
           </>
         ) : null}
 
-        {estadio.regiao !== 'continente' ? (
+        {dormidaFazSentido ? (
           <>
             <SectionHeader title="Onde dormir" onLayout={marcar('dormir')} />
             <DormidaCard jogo={jogo} estadio={estadio} />
