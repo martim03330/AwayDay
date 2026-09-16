@@ -4,6 +4,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 
 import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
 import { DormidaCard } from '@/components/dormida-card';
+import { GrupoDoJogo } from '@/components/grupo-do-jogo';
 import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
 import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -229,6 +230,9 @@ export default function OMeuJogoScreen() {
           </Card>
         </>
       ) : null}
+
+      {/* Desenha o seu próprio cabeçalho: sem boleia, casa nem tasco não aparece nada. */}
+      <GrupoDoJogo jogo={jogo} tascoNome={tasco?.nome ?? null} />
 
       {/* Dormir fora faz parte de planear a ida, por isso está aqui e não só na ficha do estádio. */}
       {estadio && estadio.regiao !== 'continente' ? (

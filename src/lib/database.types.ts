@@ -2115,51 +2115,48 @@ export type Database = {
       }
       stay_plan: {
         Row: {
-          commitment: string | null
+          commitment: string
           created_at: string
           fixture_id: string
           id: string
-          kind: string
           listing_seen_on: string | null
           listing_url: string | null
           nights: number
           note: string | null
           profile_id: string
-          spare_places: number | null
+          spare_places: number
           status: string
-          total_cents: number | null
+          total_cents: number
           updated_at: string
         }
         Insert: {
-          commitment?: string | null
+          commitment: string
           created_at?: string
           fixture_id: string
           id?: string
-          kind: string
           listing_seen_on?: string | null
           listing_url?: string | null
           nights: number
           note?: string | null
           profile_id: string
-          spare_places?: number | null
+          spare_places: number
           status?: string
-          total_cents?: number | null
+          total_cents: number
           updated_at?: string
         }
         Update: {
-          commitment?: string | null
+          commitment?: string
           created_at?: string
           fixture_id?: string
           id?: string
-          kind?: string
           listing_seen_on?: string | null
           listing_url?: string | null
           nights?: number
           note?: string | null
           profile_id?: string
-          spare_places?: number | null
+          spare_places?: number
           status?: string
-          total_cents?: number | null
+          total_cents?: number
           updated_at?: string
         }
         Relationships: [
@@ -2480,6 +2477,7 @@ export type Database = {
         Args: { p_accept: boolean; p_plan_id: string; p_profile_id: string }
         Returns: undefined
       }
+      can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       club_supporter_counts: {
@@ -2521,13 +2519,15 @@ export type Database = {
           display_name: string
           id: string
           is_mine: boolean
-          kind: string
           listing_seen_on: string
           listing_url: string
+          member_since: string
           my_status: string
           nights: number
           note: string
           pending: number
+          rides_completed: number
+          rides_faults: number
           share_full_cents: number
           share_now_cents: number
           spare_places: number
@@ -2829,14 +2829,13 @@ export type Database = {
           }
         | {
             Args: {
-              p_commitment?: string
+              p_commitment: string
               p_fixture_id: string
-              p_kind: string
               p_listing_url?: string
               p_nights: number
               p_note?: string
-              p_spare_places?: number
-              p_total_cents?: number
+              p_spare_places: number
+              p_total_cents: number
             }
             Returns: string
           }
@@ -2851,7 +2850,10 @@ export type Database = {
         Returns: {
           display_name: string
           is_mine: boolean
+          member_since: string
           profile_id: string
+          rides_completed: number
+          rides_faults: number
           status: string
         }[]
       }

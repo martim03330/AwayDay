@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
-// Onde dormir, em jogos no estrangeiro e nas ilhas. A app não guarda disponibilidade nem preços de anúncios: guarda
-// o que as pessoas propõem. Alguém vê uma casa, propõe-na com o custo total, e a malta junta-se — o preço por pessoa
-// desce a cada um que entra, e quem propôs aceita ou recusa, como na boleia.
+// Dormir fora, em jogos no estrangeiro e nas ilhas: casas propostas pelos adeptos e divididas como as boleias.
+// A app não guarda disponibilidade nem preços de anúncios — isso vê-se no Airbnb. Guarda quem propôs o quê, quanto
+// custa a casa toda e quem já entrou; a conta por pessoa é feita no servidor.
 
 function client() {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -12,6 +12,7 @@ function client() {
 export type StayRefusal =
   | 'not_signed_in'
   | 'stay_not_needed'
+  | 'needs_history'
   | 'bad_stay'
   | 'outside_window'
   | 'rate_limited'
@@ -35,6 +36,7 @@ export class StayRefused extends Error {
 const RECUSAS: StayRefusal[] = [
   'not_signed_in',
   'stay_not_needed',
+  'needs_history',
   'bad_stay',
   'outside_window',
   'rate_limited',
@@ -49,27 +51,31 @@ function refusal(error: { message: string }) {
   return new StayRefused(RECUSAS.find((reason) => error.message === reason) ?? 'unknown');
 }
 
-/** 'tem_casa': propôs uma casa concreta. 'procura': só disse que precisa de cama. */
-export type StayKind = 'procura' | 'tem_casa';
 /** De quem propõe a casa: 'certo' reserva de qualquer maneira, 'se_houver' só se a casa encher. */
 export type StayCommitment = 'certo' | 'se_houver';
 export type StayPlaceStatus = 'pedido' | 'aceite' | 'recusado' | 'saiu';
 
-export type StayPlan = {
+/** O pouco que a app sabe mesmo sobre alguém — e que é verdade, ao contrário de uma fotografia qualquer. */
+export type TrustSigns = {
+  /** Desde quando tem conta. */
+  memberSince: string;
+  ridesCompleted: number;
+  ridesFaults: number;
+};
+
+export type StayHouse = TrustSigns & {
   id: string;
   displayName: string;
-  kind: StayKind;
-  /** Só nas casas: o que a casa custa ao todo, em cêntimos inteiros. */
-  totalCents: number | null;
+  /** O que a casa custa ao todo, em cêntimos inteiros. */
+  totalCents: number;
   nights: number;
-  commitment: StayCommitment | null;
-  /** Lugares que a casa tem para além de quem a propôs. */
-  sparePlaces: number | null;
-  /** Quantos já foram aceites. */
+  commitment: StayCommitment;
+  /** Lugares para além de quem a propôs. */
+  sparePlaces: number;
   taken: number;
   /** O que cada um paga com a gente que já entrou, e com a casa cheia. */
-  shareNowCents: number | null;
-  shareFullCents: number | null;
+  shareNowCents: number;
+  shareFullCents: number;
   /** O anúncio que a pessoa viu, e o dia em que o viu. Pode já não estar disponível: quem abre, confirma. */
   listingUrl: string | null;
   listingSeenOn: string | null;
@@ -77,25 +83,20 @@ export type StayPlan = {
   note: string | null;
   updatedOn: string;
   isMine: boolean;
-  /** O teu lugar nesta casa, se pediste. */
   myStatus: StayPlaceStatus | null;
   /** Pedidos à espera de resposta (só a quem propôs a casa). */
   pending: number;
 };
 
-export type StayPlacePerson = {
+export type StayPlacePerson = TrustSigns & {
   profileId: string;
   displayName: string;
   status: StayPlaceStatus;
   isMine: boolean;
 };
 
-function toKind(value: string | null): StayKind {
-  return value === 'tem_casa' ? 'tem_casa' : 'procura';
-}
-
-function toCommitment(value: string | null): StayCommitment | null {
-  return value === 'certo' || value === 'se_houver' ? value : null;
+function toCommitment(value: string | null): StayCommitment {
+  return value === 'certo' ? 'certo' : 'se_houver';
 }
 
 function toPlaceStatus(value: string | null): StayPlaceStatus | null {
@@ -104,26 +105,28 @@ function toPlaceStatus(value: string | null): StayPlaceStatus | null {
     : null;
 }
 
-/** Casas propostas para este jogo e quem precisa de cama. As casas primeiro, as reservadas no fim. */
-export async function fetchStayPlans(fixtureId: string): Promise<StayPlan[]> {
+/** As casas propostas para este jogo. As já reservadas ficam no fim. */
+export async function fetchStayHouses(fixtureId: string): Promise<StayHouse[]> {
   const { data, error } = await client().rpc('fixture_stay_plans', { p_fixture_id: fixtureId });
   if (error) throw error;
   // O servidor devolve colunas anuláveis; uma linha sem o essencial não se mostra a ninguém.
   return data.flatMap((row) =>
-    row.nights === null
+    row.total_cents === null || row.nights === null || row.spare_places === null
       ? []
       : [
           {
             id: row.id,
             displayName: row.display_name ?? 'Um adepto',
-            kind: toKind(row.kind),
+            memberSince: row.member_since ?? '',
+            ridesCompleted: row.rides_completed ?? 0,
+            ridesFaults: row.rides_faults ?? 0,
             totalCents: row.total_cents,
             nights: row.nights,
             commitment: toCommitment(row.commitment),
             sparePlaces: row.spare_places,
             taken: row.taken ?? 0,
-            shareNowCents: row.share_now_cents,
-            shareFullCents: row.share_full_cents,
+            shareNowCents: row.share_now_cents ?? row.total_cents,
+            shareFullCents: row.share_full_cents ?? row.total_cents,
             listingUrl: row.listing_url,
             listingSeenOn: row.listing_seen_on,
             status: row.status === 'reservada' ? ('reservada' as const) : ('a_juntar' as const),
@@ -137,34 +140,31 @@ export async function fetchStayPlans(fixtureId: string): Promise<StayPlan[]> {
   );
 }
 
-export type NewStayPlan = {
-  kind: StayKind;
+export type NewStayHouse = {
   nights: number;
-  /** Casas: o custo total, os lugares e a convicção de quem propõe. */
-  totalCents: number | null;
-  sparePlaces: number | null;
-  commitment: StayCommitment | null;
+  totalCents: number;
+  sparePlaces: number;
+  commitment: StayCommitment;
   listingUrl: string | null;
   note: string;
 };
 
-/** Propõe uma casa, ou diz que precisas de cama. Um por pessoa e por jogo; repetir corrige. */
-export async function setStayPlan(fixtureId: string, plan: NewStayPlan) {
+/** Propõe (ou corrige) a tua casa para este jogo. Uma por pessoa e por jogo. */
+export async function setStayHouse(fixtureId: string, casa: NewStayHouse) {
   const { error } = await client().rpc('set_stay_plan', {
     p_fixture_id: fixtureId,
-    p_kind: plan.kind,
-    p_nights: plan.nights,
-    p_total_cents: plan.totalCents ?? undefined,
-    p_spare_places: plan.sparePlaces ?? undefined,
-    p_commitment: plan.commitment ?? undefined,
-    p_note: plan.note.trim(),
-    p_listing_url: plan.listingUrl?.trim() || undefined,
+    p_nights: casa.nights,
+    p_total_cents: casa.totalCents,
+    p_spare_places: casa.sparePlaces,
+    p_commitment: casa.commitment,
+    p_note: casa.note.trim(),
+    p_listing_url: casa.listingUrl?.trim() || undefined,
   });
   if (error) throw refusal(error);
 }
 
-/** Desisti: sai da lista. */
-export async function removeStayPlan(fixtureId: string) {
+/** Desisti da casa que propus. */
+export async function removeStayHouse(fixtureId: string) {
   const { error } = await client().rpc('remove_stay_plan', { p_fixture_id: fixtureId });
   if (error) throw refusal(error);
 }
@@ -196,7 +196,7 @@ export async function markStayHouse(planId: string, booked: boolean) {
   if (error) throw refusal(error);
 }
 
-/** Quem pediu lugar numa casa: quem a propôs vê toda a gente, quem pediu vê-se a si próprio. */
+/** Quem está numa casa: os aceites vêem-se todos, os pedidos por responder só quem propôs a casa. */
 export async function fetchStayPlacePeople(planId: string): Promise<StayPlacePerson[]> {
   const { data, error } = await client().rpc('stay_place_people', { p_plan_id: planId });
   if (error) throw error;
@@ -207,10 +207,20 @@ export async function fetchStayPlacePeople(planId: string): Promise<StayPlacePer
           {
             profileId: row.profile_id,
             displayName: row.display_name ?? 'Um adepto',
+            memberSince: row.member_since ?? '',
+            ridesCompleted: row.rides_completed ?? 0,
+            ridesFaults: row.rides_faults ?? 0,
             status,
             isMine: row.is_mine === true,
           },
         ]
       : [];
   });
+}
+
+/** Se a app deixa esta pessoa propor ou entrar numa casa: conta com mais de uma semana ou uma boleia feita. */
+export async function canShareHouse(profileId: string): Promise<boolean> {
+  const { data, error } = await client().rpc('can_share_house', { p_profile_id: profileId });
+  if (error) throw error;
+  return data === true;
 }

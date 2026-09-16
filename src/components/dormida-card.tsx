@@ -6,17 +6,18 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import {
   answerStayPlace,
+  canShareHouse,
+  fetchStayHouses,
   fetchStayPlacePeople,
-  fetchStayPlans,
   leaveStayPlace,
   markStayHouse,
-  removeStayPlan,
+  removeStayHouse,
   requestStayPlace,
-  setStayPlan,
+  setStayHouse,
   StayRefused,
   type StayCommitment,
-  type StayKind,
-  type StayPlan,
+  type StayHouse,
+  type TrustSigns,
 } from '@/features/stays/api';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData } from '@/lib/datas';
@@ -25,6 +26,7 @@ import { plural } from '@/lib/formatos';
 import { formatarCentimos, lerPrecoEmCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import type { Jogo, Venue } from '@/mocks/tipos';
+import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
@@ -41,6 +43,8 @@ const PESSOAS_PESQUISA = [1, 2, 3, 4, 5, 6];
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof StayRefused)) return 'Não deu para guardar. Tenta outra vez daqui a pouco.';
   switch (erro.reason) {
+    case 'needs_history':
+      return 'Para propor ou entrar numa casa é preciso ter conta há mais de uma semana, ou já ter feito uma boleia com a malta.';
     case 'bad_stay':
       return 'Falta alguma coisa: o preço da casa (entre 10 € e 10 000 €), as noites e os lugares.';
     case 'outside_window':
@@ -52,7 +56,7 @@ function mensagemDeRecusa(erro: unknown) {
     case 'own_house':
       return 'A casa é tua.';
     case 'house_full':
-      return 'Esta casa já ficou cheia.';
+      return 'Esta casa já ficou cheia ou já foi reservada.';
     case 'not_owner':
       return 'Só quem propôs a casa é que responde aos pedidos.';
     default:
@@ -60,55 +64,77 @@ function mensagemDeRecusa(erro: unknown) {
   }
 }
 
-/** Os pedidos de lugar numa casa, para quem a propôs. */
-function PedidosDaCasa({
+/** "Na app desde setembro de 2026 · 3 boleias · 0 faltas": o que se sabe mesmo de alguém. */
+function sinais(pessoa: TrustSigns) {
+  const desde = pessoa.memberSince
+    ? new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(
+        new Date(pessoa.memberSince)
+      )
+    : null;
+  return [
+    desde ? `na app desde ${desde}` : null,
+    `${plural(pessoa.ridesCompleted, 'boleia', 'boleias')}`,
+    pessoa.ridesFaults > 0 ? `${plural(pessoa.ridesFaults, 'falta', 'faltas')}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+/** Quem já está na casa e quem pediu para entrar. Os aceites vêem-se todos: é com eles que se vai dormir. */
+function PessoasDaCasa({
   casa,
   aTratar,
   onResponder,
 }: {
-  casa: StayPlan;
+  casa: StayHouse;
   aTratar: boolean;
   onResponder: (profileId: string, aceitar: boolean) => void;
 }) {
   const pessoas = useQuery({
     queryKey: ['stays', 'places', casa.id],
-    queryFn: casa.isMine ? () => fetchStayPlacePeople(casa.id) : skipToken,
+    queryFn: () => fetchStayPlacePeople(casa.id),
     meta: { persist: false },
   });
 
   const lista = pessoas.data ?? [];
-  const pedidos = lista.filter((pessoa) => pessoa.status === 'pedido');
   const dentro = lista.filter((pessoa) => pessoa.status === 'aceite');
+  const pedidos = lista.filter((pessoa) => pessoa.status === 'pedido');
 
   return (
     <>
-      {dentro.length > 0 ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {`Vão contigo: ${dentro.map((pessoa) => pessoa.displayName).join(', ')}`}
+      {dentro.map((pessoa) => (
+        <ThemedText key={pessoa.profileId} type="small" themeColor="textSecondary">
+          {`${pessoa.isMine ? 'Tu' : pessoa.displayName} está dentro · ${sinais(pessoa)}`}
         </ThemedText>
-      ) : null}
-      {pedidos.map((pedido) => (
-        <View key={pedido.profileId} style={styles.pedido}>
-          <ThemedText style={styles.flex} numberOfLines={1}>
-            {`${pedido.displayName} quer entrar`}
-          </ThemedText>
-          <LinkTexto
-            label="Aceitar"
-            onPress={() => !aTratar && onResponder(pedido.profileId, true)}
-          />
-          <LinkTexto
-            label="Recusar"
-            onPress={() => !aTratar && onResponder(pedido.profileId, false)}
-          />
-        </View>
       ))}
+      {casa.isMine
+        ? pedidos.map((pedido) => (
+            <View key={pedido.profileId} style={styles.pedido}>
+              <View style={styles.flex}>
+                <ThemedText numberOfLines={1}>{`${pedido.displayName} quer entrar`}</ThemedText>
+                <ThemedText type="small" themeColor="textMuted">
+                  {sinais(pedido)}
+                </ThemedText>
+              </View>
+              <LinkTexto
+                label="Aceitar"
+                onPress={() => !aTratar && onResponder(pedido.profileId, true)}
+              />
+              <LinkTexto
+                label="Recusar"
+                onPress={() => !aTratar && onResponder(pedido.profileId, false)}
+              />
+            </View>
+          ))
+        : null}
     </>
   );
 }
 
-/** Uma casa proposta: o que custa, quanto fica a cada um agora, e como se entra. */
+/** Uma casa proposta: o que custa, quanto fica a cada um agora, quem já está dentro e como se entra. */
 function CasaProposta({
   casa,
+  podeEntrar,
   aTratar,
   onPedir,
   onSair,
@@ -117,7 +143,8 @@ function CasaProposta({
   onMudar,
   onApagar,
 }: {
-  casa: StayPlan;
+  casa: StayHouse;
+  podeEntrar: boolean;
   aTratar: boolean;
   onPedir: () => void;
   onSair: () => void;
@@ -127,7 +154,7 @@ function CasaProposta({
   onApagar: () => void;
 }) {
   const theme = useTheme();
-  const livres = (casa.sparePlaces ?? 0) - casa.taken;
+  const livres = casa.sparePlaces - casa.taken;
   const reservada = casa.status === 'reservada';
 
   return (
@@ -136,16 +163,19 @@ function CasaProposta({
         <ThemedText style={styles.nome} numberOfLines={1}>
           {casa.isMine ? 'A tua casa' : `Casa de ${casa.displayName}`}
         </ThemedText>
-        {casa.shareNowCents !== null ? (
-          <ThemedText
-            style={styles.preco}>{`${formatarCentimos(casa.shareNowCents)} cada`}</ThemedText>
-        ) : null}
+        <ThemedText
+          style={styles.preco}>{`${formatarCentimos(casa.shareNowCents)} cada`}</ThemedText>
       </View>
+      {!casa.isMine ? (
+        <ThemedText type="small" themeColor="textMuted">
+          {sinais(casa)}
+        </ThemedText>
+      ) : null}
 
       <ThemedText type="small" themeColor="textSecondary">
-        {`${formatarCentimos(casa.totalCents ?? 0)} a casa toda · ${plural(casa.nights, 'noite', 'noites')} · ${plural(1 + casa.taken, 'pessoa dentro', 'pessoas dentro')}`}
+        {`${formatarCentimos(casa.totalCents)} a casa toda · ${plural(casa.nights, 'noite', 'noites')} · ${plural(1 + casa.taken, 'pessoa dentro', 'pessoas dentro')}`}
       </ThemedText>
-      {!reservada && casa.shareFullCents !== null && livres > 0 ? (
+      {!reservada && livres > 0 ? (
         <ThemedText type="small" themeColor="textSecondary">
           {`Com a casa cheia fica ${formatarCentimos(casa.shareFullCents)} a cada um.`}
         </ThemedText>
@@ -184,18 +214,17 @@ function CasaProposta({
         </>
       ) : null}
 
+      <PessoasDaCasa casa={casa} aTratar={aTratar} onResponder={onResponder} />
+
       {casa.isMine ? (
-        <>
-          <PedidosDaCasa casa={casa} aTratar={aTratar} onResponder={onResponder} />
-          <View style={styles.acoes}>
-            <LinkTexto
-              label={reservada ? 'Voltar a juntar gente' : 'Já reservei a casa'}
-              onPress={() => onReservar(!reservada)}
-            />
-            <LinkTexto label="Mudar" onPress={onMudar} />
-            <LinkTexto label="Apagar" onPress={onApagar} />
-          </View>
-        </>
+        <View style={styles.acoes}>
+          <LinkTexto
+            label={reservada ? 'Voltar a juntar gente' : 'Já reservei a casa'}
+            onPress={() => onReservar(!reservada)}
+          />
+          <LinkTexto label="Mudar" onPress={onMudar} />
+          <LinkTexto label="Apagar" onPress={onApagar} />
+        </View>
       ) : casa.myStatus === 'aceite' ? (
         <>
           <Etiqueta icon={icons.selecionado} label="Tens lugar nesta casa" tone="positivo" />
@@ -208,7 +237,7 @@ function CasaProposta({
           </ThemedText>
           <LinkTexto label="Retirar o pedido" onPress={onSair} />
         </>
-      ) : livres > 0 && !reservada ? (
+      ) : livres > 0 && !reservada && podeEntrar ? (
         <Button
           label="Pedir lugar nesta casa"
           icon={icons.casa}
@@ -218,7 +247,11 @@ function CasaProposta({
         />
       ) : (
         <ThemedText type="small" themeColor="textMuted">
-          {reservada ? 'Esta casa já está fechada.' : 'Esta casa já não tem lugares.'}
+          {reservada
+            ? 'Esta casa já está fechada.'
+            : livres <= 0
+              ? 'Esta casa já não tem lugares.'
+              : 'Ainda não podes entrar numa casa: é preciso ter conta há mais de uma semana ou já ter feito uma boleia.'}
         </ThemedText>
       )}
     </View>
@@ -229,8 +262,9 @@ function CasaProposta({
  * Onde dormir, em jogos no estrangeiro e nas ilhas.
  *
  * Funciona como as boleias: alguém encontra uma casa, propõe-na com o custo total, e quem quiser pede lugar. O preço
- * por pessoa desce a cada um que entra e é sempre o servidor a fazer a conta. A app não guarda disponibilidade: o
- * link é de quem o viu, com a data, e a pesquisa do Airbnb mostra o que há neste momento.
+ * por pessoa desce a cada um que entra e é sempre o servidor a fazer a conta. Dormir com desconhecidos e adiantar
+ * dinheiro pede mais cuidado do que partilhar um carro: por isso só propõe ou entra quem já tem algum pé na app, o
+ * que se sabe de cada um fica à vista, e a app diz claramente que não trata de dinheiro nenhum.
  */
 export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
   const theme = useTheme();
@@ -238,22 +272,25 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
   const userId = useUserId();
   const queryClient = useQueryClient();
 
-  const planos = useQuery({
+  const casas = useQuery({
     queryKey: ['stays', jogo.id],
-    queryFn: userId ? () => fetchStayPlans(jogo.id) : skipToken,
+    queryFn: userId ? () => fetchStayHouses(jogo.id) : skipToken,
+    meta: { persist: false },
+  });
+  const permissao = useQuery({
+    queryKey: ['stays', 'can-share', userId],
+    queryFn: userId ? () => canShareHouse(userId) : skipToken,
     meta: { persist: false },
   });
 
-  const lista = planos.data ?? [];
-  const casas = lista.filter((plano) => plano.kind === 'tem_casa');
-  const precisam = lista.filter((plano) => plano.kind === 'procura');
-  const meuPlano = lista.find((plano) => plano.isMine) ?? null;
-  const lugaresLivres = casas
+  const lista = casas.data ?? [];
+  const minhaCasa = lista.find((casa) => casa.isMine) ?? null;
+  const podePartilhar = permissao.data === true;
+  const lugaresLivres = lista
     .filter((casa) => casa.status === 'a_juntar')
-    .reduce((soma, casa) => soma + Math.max(0, (casa.sparePlaces ?? 0) - casa.taken), 0);
+    .reduce((soma, casa) => soma + Math.max(0, casa.sparePlaces - casa.taken), 0);
 
   const [aberto, setAberto] = useState(false);
-  const [tipo, setTipo] = useState<StayKind>('tem_casa');
   const [valor, setValor] = useState('');
   const [noites, setNoites] = useState(2);
   const [lugares, setLugares] = useState(3);
@@ -265,8 +302,8 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
 
   const [noitesPesquisa, setNoitesPesquisa] = useState<number | null>(null);
   const [pessoasPesquisa, setPessoasPesquisa] = useState<number | null>(null);
-  const noitesUsadas = noitesPesquisa ?? meuPlano?.nights ?? 2;
-  const pessoasUsadas = pessoasPesquisa ?? Math.min(6, Math.max(2, precisam.length + 1));
+  const noitesUsadas = noitesPesquisa ?? minhaCasa?.nights ?? 2;
+  const pessoasUsadas = pessoasPesquisa ?? 4;
 
   const estadia = datasDaEstadia(jogo.inicio, noitesUsadas);
   const linkDePesquisa = linkAirbnb({
@@ -276,17 +313,14 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
     pessoas: pessoasUsadas,
   });
   const centimos = lerPrecoEmCentimos(valor);
-
-  function atualizar() {
-    void queryClient.invalidateQueries({ queryKey: ['stays'] });
-  }
+  const precoPorPessoa = centimos !== null ? porPessoaNaCasa(centimos, 1 + lugares) : null;
 
   async function tratar(acao: () => Promise<void>) {
     setErro(null);
     setATratar(true);
     try {
       await acao();
-      atualizar();
+      void queryClient.invalidateQueries({ queryKey: ['stays'] });
       return true;
     } catch (problema) {
       setErro(mensagemDeRecusa(problema));
@@ -296,38 +330,34 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
     }
   }
 
-  function abrirForm(comTipo: StayKind) {
-    setTipo(comTipo);
-    setValor(meuPlano?.totalCents ? String(Math.round(meuPlano.totalCents / 100)) : '');
-    setNoites(meuPlano?.nights ?? 2);
-    setLugares(meuPlano?.sparePlaces ?? 3);
-    setConviccao(meuPlano?.commitment ?? 'se_houver');
-    setLink(meuPlano?.listingUrl ?? '');
-    setNota(meuPlano?.note ?? '');
+  function abrirForm() {
+    setValor(minhaCasa ? String(Math.round(minhaCasa.totalCents / 100)) : '');
+    setNoites(minhaCasa?.nights ?? 2);
+    setLugares(minhaCasa?.sparePlaces ?? 3);
+    setConviccao(minhaCasa?.commitment ?? 'se_houver');
+    setLink(minhaCasa?.listingUrl ?? '');
+    setNota(minhaCasa?.note ?? '');
     setErro(null);
     setAberto(true);
   }
 
   async function guardar() {
-    if (tipo === 'tem_casa' && centimos === null) {
+    if (centimos === null) {
       setErro('Escreve quanto custa a casa ao todo, por exemplo 320.');
       return;
     }
     const guardado = await tratar(() =>
-      setStayPlan(jogo.id, {
-        kind: tipo,
+      setStayHouse(jogo.id, {
         nights: noites,
-        totalCents: tipo === 'tem_casa' ? centimos : null,
-        sparePlaces: tipo === 'tem_casa' ? lugares : null,
-        commitment: tipo === 'tem_casa' ? conviccao : null,
-        listingUrl: tipo === 'tem_casa' ? link : null,
+        totalCents: centimos,
+        sparePlaces: lugares,
+        commitment: conviccao,
+        listingUrl: link,
         note: nota,
       })
     );
     if (guardado) setAberto(false);
   }
-
-  const precoPorPessoa = centimos !== null ? porPessoaNaCasa(centimos, 1 + lugares) : null;
 
   return (
     <Card style={styles.card}>
@@ -338,21 +368,19 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
       {lista.length > 0 ? (
         <ThemedText style={styles.destaque}>
           {[
-            casas.length > 0 ? `${plural(casas.length, 'casa proposta', 'casas propostas')}` : null,
+            `${plural(lista.length, 'casa proposta', 'casas propostas')}`,
             lugaresLivres > 0 ? `${plural(lugaresLivres, 'lugar livre', 'lugares livres')}` : null,
-            precisam.length > 0
-              ? `${plural(precisam.length, 'adepto precisa', 'adeptos precisam')} de cama`
-              : null,
           ]
             .filter(Boolean)
             .join(' · ')}
         </ThemedText>
       ) : null}
 
-      {casas.map((casa) => (
+      {lista.map((casa) => (
         <CasaProposta
           key={casa.id}
           casa={casa}
+          podeEntrar={podePartilhar}
           aTratar={aTratar}
           onPedir={() => void tratar(() => requestStayPlace(casa.id))}
           onSair={() => void tratar(() => leaveStayPlace(casa.id))}
@@ -360,80 +388,61 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
             void tratar(() => answerStayPlace(casa.id, profileId, aceitar))
           }
           onReservar={(reservada) => void tratar(() => markStayHouse(casa.id, reservada))}
-          onMudar={() => abrirForm('tem_casa')}
-          onApagar={() => void tratar(() => removeStayPlan(jogo.id))}
+          onMudar={abrirForm}
+          onApagar={() => void tratar(() => removeStayHouse(jogo.id))}
         />
       ))}
 
-      {precisam.length > 0 ? (
-        <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
-          <ThemedText type="eyebrow" themeColor="accentInk">
-            Precisam de cama
-          </ThemedText>
-          {precisam.map((pessoa) => (
-            <ThemedText key={pessoa.id} type="small" themeColor="textSecondary">
-              {`${pessoa.isMine ? 'Tu' : pessoa.displayName} · ${plural(pessoa.nights, 'noite', 'noites')}${pessoa.note ? ` · ${pessoa.note}` : ''}`}
-            </ThemedText>
-          ))}
-        </View>
-      ) : null}
+      <Aviso
+        tone="aviso"
+        title="Dividir casa é entre vocês"
+        message="A app não trata de dinheiro nem reserva nada. Paga sempre pelo Airbnb e nunca faças transferências a quem não conheces antes de a reserva existir e de veres a confirmação."
+      />
 
-      {/* O que tu vais fazer. */}
+      {/* Propor uma casa. */}
       <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
         <ThemedText type="eyebrow" themeColor="accentInk">
-          A tua ideia
+          Viste uma casa?
         </ThemedText>
         {!userId ? (
           <LinkTexto
             label="Entra para propores uma casa ou pedires lugar"
             onPress={() => router.push('/conta/entrar')}
           />
+        ) : !podePartilhar ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Para propor uma casa ou entrar numa, é preciso ter conta há mais de uma semana ou já ter
+            feito uma boleia com a malta. É pouco, mas evita que uma conta criada agora ande a
+            juntar dinheiro de gente.
+          </ThemedText>
         ) : aberto ? (
           <View style={styles.form}>
-            <View style={styles.chips}>
-              <Chip
-                label="Proponho uma casa"
-                selected={tipo === 'tem_casa'}
-                emCartao
-                onPress={() => setTipo('tem_casa')}
-              />
-              <Chip
-                label="Só preciso de cama"
-                selected={tipo === 'procura'}
-                emCartao
-                onPress={() => setTipo('procura')}
-              />
-            </View>
+            <Campo
+              label="Quanto custa a casa ao todo"
+              value={valor}
+              onChangeText={setValor}
+              placeholder="Ex.: 320"
+              keyboardType="decimal-pad"
+              ajuda="O valor que o Airbnb mostra pelas noites todas, para a casa inteira."
+              erro={valor && centimos === null ? 'Escreve um valor como 320 ou 320,50' : null}
+            />
 
-            {tipo === 'tem_casa' ? (
-              <>
-                <Campo
-                  label="Quanto custa a casa ao todo"
-                  value={valor}
-                  onChangeText={setValor}
-                  placeholder="Ex.: 320"
-                  keyboardType="decimal-pad"
-                  ajuda="O valor que o Airbnb mostra pelas noites todas, para a casa inteira."
-                  erro={valor && centimos === null ? 'Escreve um valor como 320 ou 320,50' : null}
+            <ThemedText style={styles.rotulo}>Lugares para outras pessoas</ThemedText>
+            <View style={styles.chips}>
+              {LUGARES.map((numero) => (
+                <Chip
+                  key={numero}
+                  label={String(numero)}
+                  selected={numero === lugares}
+                  emCartao
+                  onPress={() => setLugares(numero)}
                 />
-                <ThemedText style={styles.rotulo}>Lugares para outras pessoas</ThemedText>
-                <View style={styles.chips}>
-                  {LUGARES.map((numero) => (
-                    <Chip
-                      key={numero}
-                      label={String(numero)}
-                      selected={numero === lugares}
-                      emCartao
-                      onPress={() => setLugares(numero)}
-                    />
-                  ))}
-                </View>
-                {precoPorPessoa !== null ? (
-                  <ThemedText style={styles.destaque}>
-                    {`Com a casa cheia ficam ${formatarCentimos(precoPorPessoa)} a cada um.`}
-                  </ThemedText>
-                ) : null}
-              </>
+              ))}
+            </View>
+            {precoPorPessoa !== null ? (
+              <ThemedText style={styles.destaque}>
+                {`Com a casa cheia ficam ${formatarCentimos(precoPorPessoa)} a cada um.`}
+              </ThemedText>
             ) : null}
 
             <ThemedText style={styles.rotulo}>Quantas noites</ThemedText>
@@ -449,43 +458,35 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
               ))}
             </View>
 
-            {tipo === 'tem_casa' ? (
-              <>
-                <ThemedText style={styles.rotulo}>E se não se juntar ninguém?</ThemedText>
-                <View style={styles.chips}>
-                  <Chip
-                    label="Reservo à mesma"
-                    selected={conviccao === 'certo'}
-                    emCartao
-                    onPress={() => setConviccao('certo')}
-                  />
-                  <Chip
-                    label="Só reservo se encher"
-                    selected={conviccao === 'se_houver'}
-                    emCartao
-                    onPress={() => setConviccao('se_houver')}
-                  />
-                </View>
-                <Campo
-                  label="Link da casa no Airbnb (opcional)"
-                  value={link}
-                  onChangeText={setLink}
-                  placeholder="https://www.airbnb.pt/rooms/…"
-                  autoCapitalize="none"
-                  maxLength={500}
-                />
-              </>
-            ) : null}
+            <ThemedText style={styles.rotulo}>E se não se juntar ninguém?</ThemedText>
+            <View style={styles.chips}>
+              <Chip
+                label="Reservo à mesma"
+                selected={conviccao === 'certo'}
+                emCartao
+                onPress={() => setConviccao('certo')}
+              />
+              <Chip
+                label="Só reservo se encher"
+                selected={conviccao === 'se_houver'}
+                emCartao
+                onPress={() => setConviccao('se_houver')}
+              />
+            </View>
 
+            <Campo
+              label="Link da casa no Airbnb (opcional)"
+              value={link}
+              onChangeText={setLink}
+              placeholder="https://www.airbnb.pt/rooms/…"
+              autoCapitalize="none"
+              maxLength={500}
+            />
             <Campo
               label="Alguma nota (opcional)"
               value={nota}
               onChangeText={setNota}
-              placeholder={
-                tipo === 'tem_casa'
-                  ? 'Ex.: a 10 min do estádio, dois quartos e sofá-cama'
-                  : 'Ex.: chego na véspera, saio no domingo'
-              }
+              placeholder="Ex.: a 10 min do estádio, dois quartos e sofá-cama"
               maxLength={200}
             />
             {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
@@ -496,41 +497,22 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
             />
             <LinkTexto label="Deixa estar" onPress={() => setAberto(false)} />
           </View>
-        ) : meuPlano && meuPlano.kind === 'procura' ? (
-          <>
-            <ThemedText>{`Disseste que precisas de cama, ${plural(meuPlano.nights, 'noite', 'noites')}.`}</ThemedText>
-            <View style={styles.acoes}>
-              <LinkTexto label="Propor uma casa" onPress={() => abrirForm('tem_casa')} />
-              <LinkTexto
-                label="Já não preciso"
-                onPress={() => void tratar(() => removeStayPlan(jogo.id))}
-              />
-            </View>
-          </>
-        ) : meuPlano ? (
+        ) : minhaCasa ? (
           <ThemedText type="small" themeColor="textSecondary">
-            A tua casa está aí em cima. Podes mudá-la ou apagá-la lá.
+            A tua casa está aí em cima. Podes mudá-la, apagá-la ou marcá-la como reservada.
           </ThemedText>
         ) : (
           <>
             <ThemedText type="small" themeColor="textSecondary">
-              Viste uma casa que serve? Propõe-na. Ainda não viste nada? Diz que precisas de cama,
-              para os outros saberem que há mais gente.
+              Propõe-na à malta: dizes quanto custa ao todo e quantos lugares tem, e a app mostra a
+              cada um quanto fica a pagar.
             </ThemedText>
-            <View style={styles.chips}>
-              <Chip
-                label="Proponho uma casa"
-                selected={false}
-                emCartao
-                onPress={() => abrirForm('tem_casa')}
-              />
-              <Chip
-                label="Só preciso de cama"
-                selected={false}
-                emCartao
-                onPress={() => abrirForm('procura')}
-              />
-            </View>
+            <Button
+              label="Propor uma casa"
+              icon={icons.casa}
+              variant="secondary"
+              onPress={abrirForm}
+            />
           </>
         )}
         {erro && !aberto ? (

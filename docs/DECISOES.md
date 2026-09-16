@@ -35,6 +35,28 @@ Só aparece em jogos no estrangeiro e nas ilhas, e é o servidor que confirma is
 recusado, responder a pedidos de casa alheia é recusado, e a casa de 300 € passa de 300 € para 150 €
 por pessoa quando alguém entra — e volta a 300 € quando sai.
 
+**Fora o «preciso de cama» (2026-09-16, depois de testar).** Dizer que se precisava de cama não
+levava a lado nenhum: quem propunha uma casa não tinha como convidar ninguém e a lista enchia-se de
+gente à espera. A dormida passou a ser só uma coisa: casas propostas, com lugares, que a malta
+divide.
+
+**Quem pode propor ou entrar numa casa** (`can_share_house`): conta com mais de uma semana **ou**
+pelo menos uma boleia terminada, e nunca quem está suspenso por faltas. Não é verificação de
+identidade — a app não faz isso e não o vai fingir. Uma foto de perfil também não verifica nada
+(qualquer um descarrega uma da internet), por isso o que se mostra é o que a app sabe mesmo: desde
+quando a pessoa tem conta, quantas boleias fez e quantas faltas tem, ao lado de cada nome e de cada
+pedido. A regra está no servidor, não só na app.
+
+**Avisos.** O cartão diz, sem rodeios, que a app não trata de dinheiro nem reserva nada: paga-se
+pelo Airbnb e não se fazem transferências a desconhecidos antes de a reserva existir e de se ver a
+confirmação. Quem já foi aceite numa casa é visível a toda a gente que a vê — é com essas pessoas
+que se vai dormir.
+
+**«O teu grupo neste jogo»** (`src/components/grupo-do-jogo.tsx`). Em vez de criar grupos com
+convites e permissões, a app junta o que já existe: a boleia em que vais (com quem), a casa que vais
+dividir (e quanto fica a cada um) e o tasco escolhido. Aparece no «O meu jogo» e desaparece sozinho
+quando não há nada combinado.
+
 ## 2026-09-16 — Tascos sugeridos pelos próprios adeptos (e os que ficam mais longe)
 
 **O buraco.** Todos os tascos vinham do OpenStreetMap ou da pesquisa. Quem conhecia um sítio que não
