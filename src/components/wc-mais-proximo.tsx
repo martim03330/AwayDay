@@ -4,10 +4,12 @@ import { WcDetalhes } from '@/components/wc-detalhes';
 import { Spacing } from '@/constants/theme';
 import { useRestroomsNear } from '@/features/restrooms/hooks/useRestrooms';
 import { useTheme } from '@/hooks/use-theme';
+import { abrirDirecoes } from '@/lib/direcoes';
 import { casasDeBanhoPerto, MAX_MINUTOS_WC } from '@/lib/casas-de-banho';
 import { casasDeBanho } from '@/mocks/casas-de-banho';
 import type { Coordenadas } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
+import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
@@ -50,12 +52,24 @@ export function WcMaisProximo({ origem, estadioId }: WcMaisProximoProps) {
   return (
     <Card style={styles.card}>
       <WcDetalhes wc={maisProximo.wc} metros={maisProximo.metros} minutos={maisProximo.minutos} />
+      <Button
+        label="Como chegar a pé"
+        variant="secondary"
+        icon={icons.aPe}
+        onPress={() => abrirDirecoes(maisProximo.wc.coordenadas, 'a-pe')}
+      />
       {livre ? (
         <View style={[styles.alternativa, { borderTopColor: theme.backgroundSelected }]}>
           <ThemedText type="eyebrow" themeColor="accentInk">
             Sem bilhete nem consumo
           </ThemedText>
           <WcDetalhes wc={livre.wc} metros={livre.metros} minutos={livre.minutos} />
+          <Button
+            label="Como chegar a este"
+            variant="secondary"
+            icon={icons.aPe}
+            onPress={() => abrirDirecoes(livre.wc.coordenadas, 'a-pe')}
+          />
         </View>
       ) : null}
       {maisProximo.wc.fonte === 'osm' ? (

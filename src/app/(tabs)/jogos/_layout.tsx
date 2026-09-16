@@ -32,6 +32,27 @@ export default function JogosLayout() {
       <Stack.Screen name="boleia-de-volta">
         <Stack.Screen.Title>Boleia de volta</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="estadio">
+        <Stack.Screen.Title>O estádio</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="mapa">
+        <Stack.Screen.Title>Mapa</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="chegar">
+        <Stack.Screen.Title>Chegar e estacionar</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="boleias">
+        <Stack.Screen.Title>Boleias</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="dormir">
+        <Stack.Screen.Title>Onde dormir</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="barulho">
+        <Stack.Screen.Title>Barulhómetro</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="contas-do-jogo">
+        <Stack.Screen.Title>Contas da viagem</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="conversa">
         <Stack.Screen.Title>Conversa do carro</Stack.Screen.Title>
       </Stack.Screen>

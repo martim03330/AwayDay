@@ -2,9 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
-import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
-import { ContasDaViagem } from '@/components/contas-da-viagem';
-import { DormidaCard } from '@/components/dormida-card';
 import { GrupoDoJogo } from '@/components/grupo-do-jogo';
 import { MapaEscolherTasco } from '@/components/mapa-escolher-tasco';
 import { Spacing } from '@/constants/theme';
@@ -28,7 +25,8 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { icons } from '@/ui/icon';
+import { Icon, icons, type IconName } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
@@ -60,9 +58,44 @@ function LinhaHora({
 }
 
 /** One place to prepare a game the fan is going to: tasco, times, meeting point and reminders. */
+
+/** Uma linha de atalho para uma página deste jogo. */
+function AtalhoDoJogo({
+  icone,
+  titulo,
+  resumo,
+  onPress,
+  separador,
+}: {
+  icone: IconName;
+  titulo: string;
+  resumo: string;
+  onPress: () => void;
+  separador?: boolean;
+}) {
+  const theme = useTheme();
+  return (
+    <LinhaGrupo
+      onPress={onPress}
+      accessibilityLabel={`${titulo}. ${resumo}. Toca para abrir.`}
+      leading={
+        <View style={[styles.azulejo, { backgroundColor: theme.successBackground }]}>
+          <Icon name={icone} size={20} color={theme.accentInk} />
+        </View>
+      }
+      title={titulo}
+      subtitle={resumo}
+      trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
+      separador={separador}
+    />
+  );
+}
+
 export default function OMeuJogoScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const abrirDoJogo = (pathname: string) =>
+    router.push({ pathname: pathname as '/jogos/mapa', params: { jogoId } });
   const agora = useNow(30 * 1000);
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { pessoasAqui, clubeDaTerraId } = useAppState();
@@ -147,6 +180,55 @@ export default function OMeuJogoScreen() {
             tone={estado === 'a-decorrer' ? 'positivo' : 'neutro'}
           />
         )}
+      </Card>
+
+      <SectionHeader title="Tudo deste jogo" />
+      <Card style={styles.atalhos}>
+        <AtalhoDoJogo
+          icone={icons.carro}
+          titulo="Boleias"
+          resumo="Quem leva quem, e a volta depois do apito"
+          onPress={() => abrirDoJogo('/jogos/boleias')}
+          separador
+        />
+        {contasDaViagemAbertas(jogo, agora) ? (
+          <AtalhoDoJogo
+            icone={icons.preco}
+            titulo="Contas da viagem"
+            resumo="As despesas do dia e quem paga a quem"
+            onPress={() => abrirDoJogo('/jogos/contas-do-jogo')}
+            separador
+          />
+        ) : null}
+        {estadio && precisaDeDormida(estadio, estadioDaTerra ?? null) ? (
+          <AtalhoDoJogo
+            icone={icons.casa}
+            titulo="Onde dormir"
+            resumo="Juntar a malta para uma casa, nos jogos longe"
+            onPress={() => abrirDoJogo('/jogos/dormir')}
+            separador
+          />
+        ) : null}
+        <AtalhoDoJogo
+          icone={icons.rota}
+          titulo="Chegar e estacionar"
+          resumo="O caminho e os parques à volta do estádio"
+          onPress={() => abrirDoJogo('/jogos/chegar')}
+          separador
+        />
+        <AtalhoDoJogo
+          icone={icons.locais}
+          titulo="Mapa e sítios"
+          resumo="Tascos, parques e WC à volta"
+          onPress={() => abrirDoJogo('/jogos/mapa')}
+          separador
+        />
+        <AtalhoDoJogo
+          icone={icons.estadio}
+          titulo="O estádio"
+          resumo="Ficha, ponto de encontro, WC e meteorologia"
+          onPress={() => abrirDoJogo('/jogos/estadio')}
+        />
       </Card>
 
       <SectionHeader title="O teu tasco" />
@@ -239,24 +321,6 @@ export default function OMeuJogoScreen() {
       {/* Desenha o seu próprio cabeçalho: sem boleia, casa nem tasco não aparece nada. */}
       <GrupoDoJogo jogo={jogo} tascoNome={tasco?.nome ?? null} />
 
-      {/* Dormir fora faz parte de planear a ida, por isso está aqui e não só na ficha do estádio. */}
-      {estadio && precisaDeDormida(estadio, estadioDaTerra ?? null) ? (
-        <>
-          <SectionHeader title="Onde dormir" />
-          <DormidaCard jogo={jogo} estadio={estadio} />
-        </>
-      ) : null}
-
-      <SectionHeader title="Boleias" />
-      <BoleiasDoJogo jogo={jogo} />
-
-      {contasDaViagemAbertas(jogo, agora) ? (
-        <>
-          <SectionHeader title="Contas da viagem" />
-          <ContasDaViagem jogo={jogo} />
-        </>
-      ) : null}
-
       <SectionHeader title="Avisos deste jogo" />
       <Card style={styles.grupo}>
         <View style={styles.linhaSwitch}>
@@ -288,6 +352,18 @@ export default function OMeuJogoScreen() {
 }
 
 const styles = StyleSheet.create({
+  atalhos: {
+    padding: 0,
+    gap: 0,
+    overflow: 'hidden',
+  },
+  azulejo: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cabecalho: {
     gap: Spacing.two,
   },

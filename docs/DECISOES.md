@@ -2,6 +2,35 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — O ecrã do jogo deixa de ser uma página infinita
+
+Abrir um jogo dava uma página com tudo lá dentro: barulhómetro, carimbo, estádio, WC, cuidados, mapa, meteorologia,
+como chegar, boleias, contas, dormida, estacionamento e avaliação. Havia uma barra de secções no topo a saltar de
+uma para a outra, mas o problema não era a navegação: era a quantidade. Quem abre um jogo quer saber a que horas é,
+e depois **escolher** o que vai ver.
+
+O ecrã do jogo passa a ser um **átrio**: o cabeçalho com o apito, as duas ações de um toque («vou a este jogo» e o
+carimbo), e uma lista de linhas — cada uma com o que lá está dentro, em números, e a seta para abrir.
+
+- *Chegar e estacionar* → `jogos/chegar`
+- *O estádio* (ficha, ponto de encontro, WC, meteorologia) → `jogos/estadio`
+- *Mapa e sítios* → `jogos/mapa`
+- *Boleias* → `jogos/boleias` — com «3 carros com lugar · desde 6,10 €» à vista
+- *Contas da viagem* → `jogos/contas-do-jogo` — com «62,90 € lançados · deves 6,13 €»
+- *Onde dormir* → `jogos/dormir`
+- *Barulhómetro* → `jogos/barulho`, e só em dia de jogo
+
+O resumo de cada linha é o que evita o toque: quem só quer saber se há boleias já sabe, sem abrir nada.
+
+«O meu jogo» ganha a mesma lista, em «Tudo deste jogo», logo a seguir ao cabeçalho — e deixa de repetir as secções
+pesadas, que agora vivem nas páginas do jogo.
+
+**As zonas de adeptos da casa passam a desenhar-se só nos clássicos.** Num jogo qualquer, marcar no mapa onde está a
+claque da casa é mais um convite do que um aviso; nos clássicos, onde há notas de segurança a sério, serve para
+evitar sarilhos.
+
+E o **WC ganhou o «como chegar a pé»**, que faltava.
+
 ## 2026-09-16 — Limpeza antes dos testes a sério
 
 Apagada toda a atividade de desenvolvimento: o jogo de teste (`teste-carimbo-agora`), os perfis fictícios, as

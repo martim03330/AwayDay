@@ -1,39 +1,26 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useRef } from 'react';
-import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
-import { BarraDeSeccoes, type Seccao } from '@/components/barra-de-seccoes';
-import { BarulhometroCard } from '@/components/barulhometro-card';
-import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { Equipa } from '@/components/equipa';
-import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
-import { ContasDaViagem } from '@/components/contas-da-viagem';
 import { CarimboEstadio } from '@/components/carimbo-estadio';
-import { DormidaCard } from '@/components/dormida-card';
-import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
-import { EstadioCard } from '@/components/estadio-card';
-import { MapaJogo } from '@/components/mapa-jogo';
-import { MapaPontoEncontro } from '@/components/mapa-ponto-encontro';
-import { MeteorologiaCard } from '@/components/meteorologia-card';
-import { PontoEncontroCard } from '@/components/ponto-encontro-card';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
-import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
+import { useRideBoard } from '@/features/rides/hooks/useRides';
 import { GoingButton } from '@/features/activity/components/GoingButton';
-import { useSafetyNotes } from '@/features/safety/hooks/useSafetyNotes';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { notaDoEstadio } from '@/lib/avaliacoes';
+import { formatarCentimos } from '@/lib/money';
+import { useUserId } from '@/lib/session';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
-import { eClassico, eJogoGrande, notasParaVisitante } from '@/lib/classicos';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
-import { abrirDirecoes } from '@/lib/direcoes';
-import { plural } from '@/lib/formatos';
-import { contasDaViagemAbertas, eCompeticaoEuropeia, estadoDoJogo } from '@/lib/jogos';
+import { formatarNota, plural } from '@/lib/formatos';
+import { contasDaViagemAbertas, estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
 import { precisaDeDormida } from '@/lib/dormida';
 import { avisoDeChuva } from '@/lib/meteorologia';
@@ -44,9 +31,10 @@ import { nomesCompeticao, obterJogo } from '@/mocks/jogos';
 import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
 import { Aviso } from '@/ui/aviso';
-import { Button } from '@/ui/button';
+import { Card } from '@/ui/card';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { EmptyState } from '@/ui/empty-state';
-import { icons } from '@/ui/icon';
+import { Icon, icons, type IconName } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
@@ -57,6 +45,46 @@ const RISCAS = Array.from({ length: 24 }, (_, index) => index * 72 + 36);
 /** How far the match-day clock card climbs into the green header. */
 const SOBREPOSICAO_RELOGIO = 78;
 
+/** Uma secção do jogo, em linha: o azulejo com o ícone, o que lá está, e a seta para abrir. */
+function LinhaSeccao({
+  icone,
+  titulo,
+  resumo,
+  onPress,
+  separador,
+  tom = 'normal',
+}: {
+  icone: IconName;
+  titulo: string;
+  resumo: string;
+  onPress: () => void;
+  separador?: boolean;
+  /** 'destaque': o que está a acontecer agora (amarelo), para saltar à vista. */
+  tom?: 'normal' | 'destaque';
+}) {
+  const theme = useTheme();
+  const cores =
+    tom === 'destaque'
+      ? { fundo: theme.highlight, tinta: theme.highlightText }
+      : { fundo: theme.successBackground, tinta: theme.accentInk };
+
+  return (
+    <LinhaGrupo
+      onPress={onPress}
+      accessibilityLabel={`${titulo}. ${resumo}. Toca para abrir.`}
+      leading={
+        <View style={[styles.azulejo, { backgroundColor: cores.fundo }]}>
+          <Icon name={icone} size={20} color={cores.tinta} />
+        </View>
+      }
+      title={titulo}
+      subtitle={resumo}
+      trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
+      separador={separador}
+    />
+  );
+}
+
 export default function JogoScreen() {
   useBarraDeEstadoClara();
   const router = useRouter();
@@ -66,33 +94,13 @@ export default function JogoScreen() {
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
   const { avaliacoes, avaliacaoDoJogo, medicoesBarulho, clubeDaTerraId } = useAppState();
 
+  const userId = useUserId();
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
-  // Derbies between Benfica, FC Porto and Sporting get safety notes for the visiting fans.
-  const classico = jogo ? eClassico(jogo) : false;
-  // Every game: official routes and home fans' areas for visitors; derbies add police arrangements and incidents.
-  const notasSeguranca = useSafetyNotes(jogo?.estadioId ?? null, true);
-
-  // O índice do ecrã: onde começa cada secção, para a barra de cima poder levar-nos lá.
-  const scrollRef = useRef<ScrollView>(null);
-  const posicoes = useRef<Record<string, number>>({});
-  const topoDoCorpo = useRef(0);
-  const marcar = useCallback(
-    (id: string) => (evento: LayoutChangeEvent) => {
-      posicoes.current[id] = evento.nativeEvent.layout.y;
-    },
-    []
-  );
-  const guardarTopo = useCallback((evento: LayoutChangeEvent) => {
-    topoDoCorpo.current = evento.nativeEvent.layout.y;
-  }, []);
-  const irPara = useCallback((id: string) => {
-    const y = posicoes.current[id];
-    if (y === undefined) return;
-    scrollRef.current?.scrollTo({ y: Math.max(0, topoDoCorpo.current + y - 12), animated: true });
-  }, []);
+  const quadroBoleias = useRideBoard(jogoId ?? null, userId !== null);
+  const contasDoJogo = useMyTripAccounts(jogoId ?? null, userId !== null);
 
   if (loading) {
     return (
@@ -124,26 +132,47 @@ export default function JogoScreen() {
   const relogioSobreposto = relogioVisivel && estado !== 'a-decorrer';
   const aviso = estado === 'terminado' ? null : avisoDeChuva(jogo.meteorologia, estadio);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
-  const notasVisitante = notasParaVisitante(notasSeguranca.data ?? [], fora.id).filter(
-    (nota) => classico || nota.kind === 'zona_adeptos_casa' || nota.kind === 'percurso_visitantes'
-  );
-  const zonas = notasVisitante.flatMap((nota) =>
-    nota.kind === 'zona_a_evitar' && nota.point && nota.radiusM
-      ? [{ id: nota.id, titulo: nota.title, centro: nota.point, raioM: nota.radiusM }]
-      : []
-  );
-  // Places the research names as home-fan ground (a club house, an avenue, a metro station), when we could put them
-  // on the map without guessing. The rest of the notes are about stands and gates, which no street map can show.
-  const zonasCasa = notasVisitante.flatMap((nota) =>
-    nota.kind === 'zona_adeptos_casa' && nota.point && nota.radiusM
-      ? [{ id: nota.id, titulo: nota.title, centro: nota.point, raioM: nota.radiusM }]
-      : []
-  );
-
   // Dormir fora não é só para as ilhas e o estrangeiro: quem é das ilhas também dorme fora para vir ao continente.
   const terra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
   const estadioDaTerra = terra?.estadioId ? obterEstadio(terra.estadioId) : undefined;
   const dormidaFazSentido = precisaDeDormida(estadio, estadioDaTerra ?? null);
+
+  const abrir = (pathname: string) =>
+    router.push({ pathname: pathname as '/jogos/mapa', params: { jogoId: jogo.id } });
+
+  const nota = notaDoEstadio(avaliacoes, estadio.id)?.media ?? null;
+  const boleias = quadroBoleias.data ?? [];
+  const comLugar = boleias.filter(
+    (boleia) => boleia.status === 'open' && boleia.seatsOffered - boleia.seatsTaken > 0
+  );
+  const maisBarata = comLugar.reduce<number | null>(
+    (menor, boleia) =>
+      menor === null ? boleia.shareNowCents : Math.min(menor, boleia.shareNowCents),
+    null
+  );
+  const resumoBoleias = !userId
+    ? 'Entra para veres quem leva quem'
+    : comLugar.length === 0
+      ? boleias.length > 0
+        ? 'Os carros que há estão cheios'
+        : 'Ainda não há boleias para este jogo'
+      : `${plural(comLugar.length, 'carro com lugar', 'carros com lugar')}${
+          maisBarata !== null ? ` · desde ${formatarCentimos(maisBarata)}` : ''
+        }`;
+
+  const minhasContas = contasDoJogo.data ?? [];
+  const saldo = minhasContas.reduce((total, conta) => total + conta.myBalanceCents, 0);
+  const gasto = minhasContas.reduce((total, conta) => total + conta.totalCents, 0);
+  const resumoContas =
+    minhasContas.length === 0
+      ? 'Divide as despesas do dia com quem foi contigo'
+      : `${formatarCentimos(gasto)} lançados${
+          saldo === 0
+            ? ' · estás em dia'
+            : saldo > 0
+              ? ` · tens a receber ${formatarCentimos(saldo)}`
+              : ` · deves ${formatarCentimos(-saldo)}`
+        }`;
 
   const inicio = new Date(jogo.inicio);
   const dia = formatarDia(inicio, agora);
@@ -158,25 +187,6 @@ export default function JogoScreen() {
             ? dia
             : 'Apito';
 
-  const seccoes: Seccao[] = [
-    mostrarBarulhometro(jogo, agora, medicoesBarulho)
-      ? { id: 'barulhometro', titulo: 'Barulhómetro' }
-      : null,
-    eCompeticaoEuropeia(jogo.competicao)
-      ? { id: 'ponto-encontro', titulo: 'Ponto de encontro' }
-      : null,
-    { id: 'estadio', titulo: 'Estádio' },
-    { id: 'wc', titulo: 'WC' },
-    notasVisitante.length > 0 ? { id: 'cuidados', titulo: 'Cuidados' } : null,
-    { id: 'mapa', titulo: 'Mapa' },
-    jogo.meteorologia ? { id: 'meteorologia', titulo: 'Meteorologia' } : null,
-    { id: 'como-chegar', titulo: estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar' },
-    { id: 'boleias', titulo: 'Boleias' },
-    contasDaViagemAbertas(jogo, agora) ? { id: 'contas', titulo: 'Contas' } : null,
-    dormidaFazSentido ? { id: 'dormir', titulo: 'Onde dormir' } : null,
-    { id: 'estacionamento', titulo: 'Estacionamento' },
-  ].filter((seccao) => seccao !== null);
-
   const avaliacao = (
     <AvaliacaoJogo
       jogo={jogo}
@@ -188,7 +198,6 @@ export default function JogoScreen() {
 
   return (
     <ScrollView
-      ref={scrollRef}
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
@@ -262,138 +271,109 @@ export default function JogoScreen() {
         </View>
       ) : null}
 
-      <View style={styles.corpo} onLayout={guardarTopo}>
-        <BarraDeSeccoes seccoes={seccoes} onIr={irPara} />
-
+      <View style={styles.corpo}>
         {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
 
         {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
 
-        {/* Antes do barulhómetro: é o carimbo que o desbloqueia, e não se manda ninguém procurar mais abaixo. */}
+        {/* O carimbo é uma ação de um toque: fica à mão, não atrás de um botão. */}
         <CarimboEstadio jogo={jogo} estadio={estadio} />
 
         {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
-          <>
-            <SectionHeader
-              title="Barulhómetro"
-              trailing={estado === 'a-decorrer' ? 'Em jogo' : undefined}
-              onLayout={marcar('barulhometro')}
+          <Card style={styles.lista}>
+            <LinhaSeccao
+              icone={icons.som}
+              tom="destaque"
+              titulo="Barulhómetro"
+              resumo={
+                estado === 'a-decorrer' ? 'Em jogo — mede agora' : 'Mede o barulho da bancada'
+              }
+              onPress={() => abrir('/jogos/barulho')}
             />
-            <BarulhometroCard jogo={jogo} agora={agora} />
-          </>
+          </Card>
         ) : null}
 
-        {estado === 'terminado' && !relogioVisivel ? avaliacao : null}
+        <SectionHeader title="Antes de ir" />
+        <Card style={styles.lista}>
+          <LinhaSeccao
+            icone={icons.rota}
+            titulo={estado === 'a-decorrer' ? 'Como voltar' : 'Chegar e estacionar'}
+            resumo="O caminho no mapa e os parques à volta do estádio"
+            onPress={() => abrir('/jogos/chegar')}
+            separador
+          />
+          <LinhaSeccao
+            icone={icons.estadio}
+            titulo="O estádio"
+            resumo={[
+              nota ? `${formatarNota(nota)} de 5` : 'Ficha do estádio',
+              'WC',
+              jogo.meteorologia ? `${Math.round(jogo.meteorologia.temperatura)}°` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            onPress={() => abrir('/jogos/estadio')}
+            separador
+          />
+          <LinhaSeccao
+            icone={icons.locais}
+            titulo="Mapa e sítios"
+            resumo={
+              perto.length > 0
+                ? `${plural(perto.length, 'tasco', 'tascos')} a menos de 20 min a pé`
+                : 'Tascos, parques e WC à volta'
+            }
+            onPress={() => abrir('/jogos/mapa')}
+          />
+        </Card>
 
-        {eCompeticaoEuropeia(jogo.competicao) ? (
-          <>
-            <SectionHeader title="Ponto de encontro oficial" onLayout={marcar('ponto-encontro')} />
-            <PontoEncontroCard ponto={jogo.pontoEncontro} />
-            {jogo.pontoEncontro?.coordenadas ? (
-              <MapaPontoEncontro
-                nome={jogo.pontoEncontro.nome}
-                coordenadas={jogo.pontoEncontro.coordenadas}
-                estadio={estadio}
-              />
-            ) : null}
-          </>
-        ) : null}
-
-        <SectionHeader title="Estádio" onLayout={marcar('estadio')} />
-        <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
-
-        <SectionHeader title="WC mais próximo" onLayout={marcar('wc')} />
-        <WcMaisProximo origem={estadio.coordenadas} estadioId={estadio.id} />
-
-        {notasVisitante.length > 0 ? (
-          <>
-            <SectionHeader title="Cuidados para adeptos visitantes" onLayout={marcar('cuidados')} />
-            <CuidadosVisitantes notas={notasVisitante} visitante={fora} />
-          </>
-        ) : null}
-
-        <SectionHeader title="Mapa" onLayout={marcar('mapa')} />
-        <MapaJogo
-          inicio="estadio"
-          venue={estadio}
-          zonas={zonas}
-          zonasCasa={zonasCasa}
-          jogo={{
-            id: jogo.id,
-            inicio: jogo.inicio,
-            casaId: jogo.casaId,
-            foraId: jogo.foraId,
-            competicao: jogo.competicao,
-          }}
-        />
-
-        {jogo.meteorologia ? (
-          <>
-            <SectionHeader
-              title="Meteorologia"
-              trailing="Previsão simulada"
-              onLayout={marcar('meteorologia')}
+        <SectionHeader title="Com quem vais" />
+        <Card style={styles.lista}>
+          <LinhaSeccao
+            icone={icons.carro}
+            titulo="Boleias"
+            resumo={resumoBoleias}
+            onPress={() => abrir('/jogos/boleias')}
+            separador={contasDaViagemAbertas(jogo, agora) || dormidaFazSentido}
+          />
+          {contasDaViagemAbertas(jogo, agora) ? (
+            <LinhaSeccao
+              icone={icons.preco}
+              titulo="Contas da viagem"
+              resumo={resumoContas}
+              onPress={() => abrir('/jogos/contas-do-jogo')}
+              separador={dormidaFazSentido}
             />
-            <MeteorologiaCard meteorologia={jogo.meteorologia} />
-          </>
-        ) : null}
+          ) : null}
+          {dormidaFazSentido ? (
+            <LinhaSeccao
+              icone={icons.casa}
+              titulo="Onde dormir"
+              resumo="Juntar a malta para uma casa, nos jogos longe"
+              onPress={() => abrir('/jogos/dormir')}
+            />
+          ) : null}
+        </Card>
 
-        <SectionHeader
-          title={estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar'}
-          onLayout={marcar('como-chegar')}
-        />
-
-        <Button
-          label={
-            estado === 'a-decorrer' ? 'Abrir o caminho de volta no mapa' : 'Abrir o caminho no mapa'
-          }
-          variant="secondary"
-          icon={icons.rota}
-          onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
-        />
-
-        {/* As boleias são do jogo, não do teu plano: quem abre um jogo vê o que há para ele. */}
-        <SectionHeader title="Boleias" onLayout={marcar('boleias')} />
-        <BoleiasDoJogo jogo={jogo} />
-
-        {contasDaViagemAbertas(jogo, agora) ? (
-          <>
-            <SectionHeader title="Contas da viagem" onLayout={marcar('contas')} />
-            <ContasDaViagem jogo={jogo} />
-          </>
-        ) : null}
-
-        {dormidaFazSentido ? (
-          <>
-            <SectionHeader title="Onde dormir" onLayout={marcar('dormir')} />
-            <DormidaCard jogo={jogo} estadio={estadio} />
-          </>
-        ) : null}
-
-        <SectionHeader title="Estacionamento" onLayout={marcar('estacionamento')} />
-        <EstacionamentoEstadio
-          estadioId={estadio.id}
-          jogoGrande={eJogoGrande(jogo)}
-          inicio={jogo.inicio}
-        />
-
-        <Button
-          label={
-            perto.length > 0
-              ? `Ver ${plural(perto.length, 'local', 'locais')} perto do estádio`
-              : 'Ver locais perto do estádio'
-          }
-          icon={icons.locais}
-          onPress={() => router.navigate({ pathname: '/locais', params: { estadio: estadio.id } })}
-        />
-
-        {estado === 'terminado' && !relogioVisivel ? null : avaliacao}
+        {avaliacao}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  lista: {
+    padding: 0,
+    gap: 0,
+    overflow: 'hidden',
+  },
+  azulejo: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   conteudo: {
     width: '100%',
     maxWidth: MaxContentWidth,
