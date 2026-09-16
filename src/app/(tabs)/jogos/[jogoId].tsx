@@ -7,7 +7,6 @@ import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
 import { BarraDeSeccoes, type Seccao } from '@/components/barra-de-seccoes';
 import { BarulhometroCard } from '@/components/barulhometro-card';
 import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
-import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
 import { BoleiasDoJogo } from '@/components/boleias-do-jogo';
 import { ContasDaViagem } from '@/components/contas-da-viagem';
@@ -165,7 +164,6 @@ export default function JogoScreen() {
     notasVisitante.length > 0 ? { id: 'cuidados', titulo: 'Cuidados' } : null,
     { id: 'mapa', titulo: 'Mapa' },
     jogo.meteorologia ? { id: 'meteorologia', titulo: 'Meteorologia' } : null,
-    { id: 'distancia', titulo: 'Distância' },
     { id: 'como-chegar', titulo: estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar' },
     { id: 'boleias', titulo: 'Boleias' },
     contasDaViagemAbertas(jogo, agora) ? { id: 'contas', titulo: 'Contas' } : null,
@@ -333,9 +331,6 @@ export default function JogoScreen() {
             <MeteorologiaCard meteorologia={jogo.meteorologia} />
           </>
         ) : null}
-
-        <SectionHeader title="Distância" onLayout={marcar('distancia')} />
-        <DistanciaCard venue={estadio} />
 
         <SectionHeader
           title={estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar'}

@@ -1,3 +1,5 @@
+-- SÓ PARA DESENVOLVIMENTO. Não corre sozinho: é preciso corrê-lo à mão.
+--
 -- SÓ PARA TESTE. Um grupo com contas já lançadas, para ver o ecrã «Contas da viagem» a funcionar.
 --
 -- Quem está no grupo:

@@ -2,6 +2,27 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Limpeza antes dos testes a sério
+
+Apagada toda a atividade de desenvolvimento: o jogo de teste (`teste-carimbo-agora`), os perfis fictícios, as
+boleias, grupos, contas de viagem, despesas, pagamentos, mensagens, amizades, convites, casas, avaliações, visitas a
+locais, presenças, fotos de missões e os contadores de limites. Também os ficheiros dessas fotos, que saem pela API
+do Storage (a base de dados recusa apagá-los diretamente, e ainda bem).
+
+Ficaram as quatro contas com o clube, as definições e a foto de perfil, e o catálogo todo: 343 jogos, 156 estádios,
+1501 locais, parques, WC, pontos de encontro e notas de segurança.
+
+O `supabase/seed-dev/contas-de-teste.sql` fica no repositório para quando for preciso montar um cenário outra vez.
+Não corre sozinho.
+
+**As boleias canceladas passam a ser apagadas** (`delete_cancelled_rides`, cron diário): dois dias depois de
+canceladas, que é o tempo de quem tinha lugar ler o aviso «o condutor cancelou». Exceção: uma boleia que chegou a
+ter contas com despesas fica — apagá-la levava as contas atrás dela, e o dinheiro de uma viagem que aconteceu não se
+apaga por arrumação.
+
+**Fora o cartão «Distância»** do ecrã do jogo: dizia o mesmo que o «Como chegar» logo abaixo, que já leva ao mapa
+com o caminho.
+
 ## 2026-09-16 — As notificações do resto da app
 
 As boleias já avisavam (pedido de lugar, aceite, recusado, cancelamento). Passa a avisar tudo o que foi entrando
