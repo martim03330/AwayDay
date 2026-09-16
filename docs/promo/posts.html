@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Posts da AwayDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+
+<!--
+  Posts para Instagram (1080 x 1350), feitos a partir das imagens dos ecrãs em docs/promo/ecras/.
+  Cada post é o telemóvel ao centro e umas bolas à volta a apontar para o que ali se faz.
+
+  Gerar:  node scripts/gerar-posts.mjs
+-->
+
+<style>
+  :root {
+    --text: #13241B;
+    --text-secondary: #56675D;
+    --paper: #F8F7F2;
+    --branco: #FFFFFF;
+    --relva: #1C8A4D;
+    --relva-escura: #0E5530;
+    --amarelo: #FFCE3A;
+    --border: #E2DFD3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #C9C6BB; font-family: 'Figtree', system-ui, sans-serif; color: var(--text); padding: 40px; display: flex; flex-direction: column; gap: 40px; align-items: center; }
+
+  .post {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    overflow: hidden;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    flex: none;
+  }
+
+  /* Fundo relvado, para os posts de tom verde. */
+  .post.relva { background: var(--relva); color: var(--branco); }
+  .post.relva::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0 70px, transparent 70px 140px);
+  }
+  .post.relva .bola { color: var(--text); }
+  .post.relva .bola.escura { color: var(--branco); }
+
+  .cabeca { position: relative; padding: 70px 70px 0; z-index: 3; }
+  .kicker {
+    font-size: 22px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--relva);
+  }
+  .post.relva .kicker { color: var(--amarelo); }
+  h2 {
+    font-family: 'Big Shoulders Display', sans-serif;
+    font-weight: 900;
+    font-size: 88px;
+    line-height: 0.92;
+    letter-spacing: -0.5px;
+    margin-top: 14px;
+    text-wrap: balance;
+  }
+  .subcabeca { font-size: 26px; line-height: 1.35; color: var(--text-secondary); margin-top: 18px; max-width: 760px; }
+  .post.relva .subcabeca { color: rgba(255,255,255,0.88); }
+
+  .palco { position: relative; flex: 1; z-index: 2; }
+
+  /* 340 de largura deixa as bolas nas margens sem taparem o ecrã, e o fundo acima do rodapé. */
+  .telemovel {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 118px;
+    width: 340px;
+    border-radius: 38px;
+    box-shadow: 0 26px 60px rgba(19, 36, 27, 0.32);
+    display: block;
+  }
+
+  .bola {
+    position: absolute;
+    background: var(--branco);
+    border-radius: 24px;
+    padding: 18px 22px;
+    width: 296px;
+    box-shadow: 0 14px 34px rgba(19, 36, 27, 0.18);
+    font-size: 23px;
+    line-height: 1.28;
+    font-weight: 600;
+    z-index: 4;
+  }
+  .bola b { display: block; font-size: 19px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--relva); margin-bottom: 5px; font-weight: 800; }
+  .bola.amarela { background: var(--amarelo); }
+  .bola.amarela b { color: var(--relva-escura); }
+  .bola.escura { background: var(--relva-escura); color: #fff; }
+  .bola.escura b { color: var(--amarelo); }
+
+  /* O traço que liga a bola ao telemóvel. */
+  .risco { position: absolute; height: 3px; background: currentColor; opacity: 0.55; z-index: 3; }
+  .risco.v { width: 3px; height: auto; }
+  .post .risco { color: var(--relva); }
+  .post.relva .risco { color: var(--amarelo); opacity: 0.8; }
+
+  .pe {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 34px 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 5;
+  }
+  .marca { display: flex; align-items: center; gap: 14px; }
+  .marca .selo {
+    width: 54px; height: 54px; border-radius: 15px; background: var(--relva); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 30px;
+  }
+  .post.relva .marca .selo { background: var(--amarelo); color: var(--relva-escura); }
+  .marca .nome { font-family: 'Big Shoulders Display'; font-weight: 900; font-size: 34px; letter-spacing: 0.5px; }
+  .pe .nota { font-size: 21px; font-weight: 600; color: var(--text-secondary); }
+  .post.relva .pe .nota { color: rgba(255,255,255,0.8); }
+
+  .legenda-dev { width: 1080px; color: #3A443E; font-size: 15px; }
+</style>
+</head>
+<body>
+
+<!-- 1 ----------------------------------------------------------------- -->
+<section class="post" data-nome="quem-leva-quem">
+  <div class="cabeca">
+    <div class="kicker">Boleias</div>
+    <h2>«Alguém vai de carro?»<br>Agora tem resposta.</h2>
+    <div class="subcabeca">E o preço não sai do achómetro: sai do consumo, do combustível e das portagens do caminho.</div>
+  </div>
+  <div class="palco">
+    <div class="bola" style="left: 36px; top: 30px;">
+      <b>Custo a sério</b>
+      6,10 € por pessoa. Baixa sozinho quando entra mais gente.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola amarela" style="right: 36px; top: 300px;">
+      <b>Folha corrida</b>
+      12 boleias, 0 faltas. Sabes com quem entras no carro.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola" style="left: 36px; bottom: 210px;">
+      <b>Amigos primeiro</b>
+      O carro de quem já foi contigo aparece à frente.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/05-quem-leva-quem-com-o-custo-dividido.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">o dia inteiro, não só os 90 minutos</div>
+  </div>
+</section>
+
+<!-- 2 ----------------------------------------------------------------- -->
+<section class="post relva" data-nome="depois-acertamos">
+  <div class="cabeca">
+    <div class="kicker">Contas da viagem</div>
+    <h2>«Depois acertamos.»<br>A frase mais cara<br>do futebol.</h2>
+    <div class="subcabeca">Passados três dias ninguém sabe quem pagou o jantar. A app sabe.</div>
+  </div>
+  <div class="palco">
+    <div class="bola" style="left: 36px; top: 30px;">
+      <b>Divide quem entra</b>
+      Nem todos beberam. Escolhes quem entra em cada despesa.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola amarela" style="right: 36px; top: 300px;">
+      <b>Ao cêntimo</b>
+      10,01 € por três dá 3,34 € e dois de 3,33 €. E tem dono.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola escura" style="left: 36px; bottom: 210px;">
+      <b>Quem paga a quem</b>
+      Duas transferências e está tudo fechado.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/11-no-fim-ninguem-discute-contas.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">a app não move dinheiro — só diz quem paga a quem</div>
+  </div>
+</section>
+
+<!-- 3 ----------------------------------------------------------------- -->
+<section class="post" data-nome="tascos">
+  <div class="cabeca">
+    <div class="kicker">Antes do jogo</div>
+    <h2>Chegar cedo tem<br>um único objetivo.</h2>
+    <div class="subcabeca">Os tascos à volta do estádio, avaliados por quem lá foi — e o contador de quem já lá está.</div>
+  </div>
+  <div class="palco">
+    <div class="bola" style="left: 36px; top: 30px;">
+      <b>Cervejómetro</b>
+      4,5 em 5, votado por 47 adeptos. Não é opinião de guia.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola amarela" style="right: 36px; top: 300px;">
+      <b>Já lá estão 12</b>
+      Só aparece a partir de 5 pessoas. A tua localização não fica guardada.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola" style="left: 36px; bottom: 210px;">
+      <b>Petiscos com nome</b>
+      Bifana a 3,50 €, 28 recomendações. Sabes ao que vais.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/08-onde-a-malta-se-junta-antes-do-jogo.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">1501 sítios à volta dos estádios</div>
+  </div>
+</section>
+
+<!-- 4 ----------------------------------------------------------------- -->
+<section class="post relva" data-nome="passaporte">
+  <div class="cabeca">
+    <div class="kicker">Passaporte de estádios</div>
+    <h2>Dizes que já foste<br>a 30 estádios.<br>Prova.</h2>
+    <div class="subcabeca">O carimbo só se dá lá dentro, no dia do jogo. É a app que confirma.</div>
+  </div>
+  <div class="palco">
+    <div class="bola" style="left: 36px; top: 30px;">
+      <b>156 estádios</b>
+      Dos 57 nacionais ao Camp Nou, Wembley e San Siro.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola amarela" style="right: 36px; top: 300px;">
+      <b>Sem batota</b>
+      Fora do estádio não carimba. No dia seguinte, também não.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola escura" style="left: 36px; bottom: 210px;">
+      <b>Ranking público</b>
+      Quem tem mais estádios na perna aparece na lista.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/12-carimbar-um-estadio-e-estar-la-dentro.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">o passaporte de quem anda na estrada</div>
+  </div>
+</section>
+
+<!-- 5 ----------------------------------------------------------------- -->
+<section class="post" data-nome="hora-de-sair">
+  <div class="cabeca">
+    <div class="kicker">Dia de jogo</div>
+    <h2>Sair «às três e tal»<br>é como não sair.</h2>
+    <div class="subcabeca">A app diz-te a hora, conta com o trânsito do jogo e com o tempo de encontrar lugar.</div>
+  </div>
+  <div class="palco">
+    <div class="bola amarela" style="left: 36px; top: 30px;">
+      <b>15:20</b>
+      Estrada, estacionamento e a fila da entrada, já contados.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola" style="right: 36px; top: 300px;">
+      <b>Parques por cor</b>
+      Verde costuma ter lugar. Vermelho, se chegares tarde, esquece.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola" style="left: 36px; bottom: 210px;">
+      <b>A pé do carro</b>
+      4, 9 ou 14 minutos até à bancada. Escolhes tu.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/03-a-que-horas-sair-e-onde-deixar-o-carro.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">chega a horas, sem dar voltas ao quarteirão</div>
+  </div>
+</section>
+
+<!-- 6 ----------------------------------------------------------------- -->
+<section class="post" data-nome="conversa-do-carro">
+  <div class="cabeca">
+    <div class="kicker">Conversa do carro</div>
+    <h2>Um grupo de<br>WhatsApp a menos.</h2>
+    <div class="subcabeca">A conversa é do carro: condutor e quem já tem lugar. Acaba um dia depois do jogo e não volta a tocar.</div>
+  </div>
+  <div class="palco">
+    <div class="bola" style="left: 36px; top: 30px;">
+      <b>Só quem vai</b>
+      Quem ainda não foi aceite não escreve. O carro não é um grupo aberto.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola amarela" style="right: 36px; top: 300px;">
+      <b>Combina-se ali</b>
+      A hora certa, o sítio, quem leva os cafés.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola" style="left: 36px; bottom: 210px;">
+      <b>E cala-se sozinha</b>
+      Um dia depois do jogo fecha. Fica lá para consulta.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/07-a-conversa-do-carro.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">o que se combina, combina-se uma vez</div>
+  </div>
+</section>
+
+<!-- 7 ----------------------------------------------------------------- -->
+<section class="post relva" data-nome="a-volta">
+  <div class="cabeca">
+    <div class="kicker">Depois do apito</div>
+    <h2>O jogo acabou.<br>E agora, quem<br>é que te leva?</h2>
+    <div class="subcabeca">Com o apito, as boleias mudam de cara: mostram quem volta e para onde.</div>
+  </div>
+  <div class="palco">
+    <div class="bola" style="left: 36px; top: 30px;">
+      <b>Por destino</b>
+      «Para Viseu», «para Mangualde». Não é uma lista de nomes soltos.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola amarela" style="right: 36px; top: 300px;">
+      <b>Sobra um lugar?</b>
+      Abre-o a meio do jogo. Alguém lá fora agradece.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola escura" style="left: 36px; bottom: 210px;">
+      <b>Sem ficar a pé</b>
+      Pedes lugar na volta e o condutor responde no telemóvel.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/18-depois-do-apito-quem-volta-para-onde.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">ninguém fica no parque à espera de um milagre</div>
+  </div>
+</section>
+
+<!-- 8 ----------------------------------------------------------------- -->
+<section class="post" data-nome="missoes">
+  <div class="cabeca">
+    <div class="kicker">Missões</div>
+    <h2>O jogo dura<br>90 minutos.<br>O dia, não.</h2>
+    <div class="subcabeca">Missões para cumprir na viagem, e um álbum que no fim da época conta a história toda.</div>
+  </div>
+  <div class="palco">
+    <div class="bola amarela" style="left: 36px; top: 30px;">
+      <b>Petisco da terra</b>
+      Provar o prato da cidade do jogo. É trabalho, mas alguém tem de o fazer.
+    </div>
+    <div class="risco" style="left: 332px; top: 92px; width: 42px;"></div>
+
+    <div class="bola" style="right: 36px; top: 300px;">
+      <b>Copo com o rival</b>
+      Uma foto com um adepto da outra equipa. Sem sangue.
+    </div>
+    <div class="risco" style="right: 332px; top: 362px; width: 42px;"></div>
+
+    <div class="bola" style="left: 36px; bottom: 210px;">
+      <b>Álbum da época</b>
+      As fotos ficam. A memória, essa, é que se vai.
+    </div>
+    <div class="risco" style="left: 332px; bottom: 272px; width: 42px;"></div>
+
+    <img class="telemovel" src="ecras/13-o-que-ha-para-fazer-alem-dos-90-minutos.png" alt="">
+  </div>
+  <div class="pe">
+    <div class="marca"><div class="selo">A</div><div class="nome">AwayDay</div></div>
+    <div class="nota">12 missões por época</div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -23,3 +23,15 @@ que a app desenha (cores e sigla do clube), nunca os oficiais.
 
 Tudo o que aparece nestas imagens é coisa que a app faz mesmo. Se um dia se mudar um ecrã, muda-se aqui também —
 senão o vídeo promete o que a app já não cumpre.
+
+## Posts para Instagram
+
+- **`posts/*.png`** — 8 publicações, 1080 × 1350 (o formato que o Instagram mostra maior no feed): o telemóvel ao
+  centro e as bolas à volta a apontar o que ali se faz.
+- **`posts.html`** — a fonte. Usa as imagens de `ecras/`, por isso gera primeiro os ecrãs.
+
+```bash
+PUPPETEER_CORE=<caminho>/puppeteer-core.js node scripts/gerar-posts.mjs
+```
+
+As legendas e a ordem de publicação estão no plano que acompanha estas imagens.
