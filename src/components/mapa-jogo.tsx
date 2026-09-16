@@ -193,6 +193,9 @@ export function MapaJogo({
   const theme = useTheme();
   const reduzirMovimento = useReducedMotion();
   const mapa = useRef<MapView>(null);
+  // O mapa nasce presto: dentro de uma página que desliza, um mapa que se arrasta rouba o dedo a quem só quer
+  // descer. Toca-se em «Mexer no mapa» para o soltar — e os pontos continuam a responder ao toque em qualquer caso.
+  const [mapaLivre, setMapaLivre] = useState(false);
 
   const [modo, setModo] = useState<'cidade' | 'estadio'>(inicio);
   const [pontosVisiveis, setPontosVisiveis] = useState(0);
@@ -376,6 +379,8 @@ export function MapaJogo({
         <MapView
           ref={mapa}
           style={StyleSheet.absoluteFill}
+          scrollEnabled={mapaLivre}
+          zoomEnabled={mapaLivre}
           initialRegion={regiao(
             venue.coordenadas,
             inicio === 'estadio' ? DELTA_ESTADIO : DELTA_CIDADE
@@ -522,6 +527,32 @@ export function MapaJogo({
               )
             : null}
         </MapView>
+
+        <Pressable
+          onPress={() => setMapaLivre((livre) => !livre)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: mapaLivre }}
+          accessibilityLabel={
+            mapaLivre
+              ? 'Prender o mapa, para a página voltar a deslizar por cima dele'
+              : 'Soltar o mapa, para o poderes arrastar e aproximar'
+          }
+          style={({ pressed }) => [
+            styles.trancaMapa,
+            { backgroundColor: mapaLivre ? theme.accent : theme.backgroundElement },
+            pressed && styles.trancaPressionada,
+          ]}>
+          <Icon
+            name={mapaLivre ? icons.selecionado : icons.rota}
+            size={16}
+            color={mapaLivre ? theme.accentText : theme.text}
+          />
+          <ThemedText
+            type="small"
+            style={[styles.trancaTexto, { color: mapaLivre ? theme.accentText : theme.text }]}>
+            {mapaLivre ? 'Prender' : 'Mexer no mapa'}
+          </ThemedText>
+        </Pressable>
 
         {localSelecionado ? (
           <CarrosselLocais
@@ -779,6 +810,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
+  },
+  trancaMapa: {
+    position: 'absolute',
+    top: Spacing.two,
+    right: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one + 2,
+    borderRadius: Radius.pill,
+    ...CardShadow,
+  },
+  trancaPressionada: {
+    opacity: 0.85,
+  },
+  trancaTexto: {
+    fontWeight: '600',
   },
   legenda: {
     flexDirection: 'row',

@@ -494,8 +494,9 @@ export default function ContasScreen() {
                 </View>
                 {despesa.source === 'boleia' ? (
                   <ThemedText type="small" themeColor="textMuted">
-                    Vem da boleia: combustível e portagens, como ficou quando foi publicada. Muda
-                    sozinha quando alguém entra ou sai do carro.
+                    Vem da boleia: combustível e portagens, como ficou quando foi publicada, e
+                    dividida só por quem vai no carro. Quem entrou nestas contas sem ir na boleia
+                    fica de fora desta despesa.
                   </ThemedText>
                 ) : null}
                 <ThemedText type="small" themeColor="textMuted">

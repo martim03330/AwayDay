@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import MapView, { MapMarker, Polyline } from 'react-native-maps';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { getCurrentPosition } from '@/features/presence/location';
 import { fetchWalkingRoute } from '@/features/routes/api';
 import { RouteRefused, type WalkingRoute } from '@/features/routes/types';
@@ -36,6 +36,8 @@ function minutos(segundos: number) {
 export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncontroProps) {
   const theme = useTheme();
   const mapa = useRef<MapView>(null);
+  // Preso, como o mapa do jogo: dentro de uma página que desliza, um mapa que se arrasta rouba o dedo a quem desce.
+  const [mapaLivre, setMapaLivre] = useState(false);
   const [rota, setRota] = useState<WalkingRoute | null>(null);
   const [aCalcular, setACalcular] = useState(false);
   const [verTodos, setVerTodos] = useState(false);
@@ -96,6 +98,8 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
         <MapView
           ref={mapa}
           style={StyleSheet.absoluteFill}
+          scrollEnabled={mapaLivre}
+          zoomEnabled={mapaLivre}
           initialRegion={{
             ...coordenadas,
             latitudeDelta: DELTA_INICIAL,
@@ -124,6 +128,32 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
             <Polyline coordinates={rota.path} strokeColor={theme.accent} strokeWidth={5} />
           ) : null}
         </MapView>
+
+        <Pressable
+          onPress={() => setMapaLivre((livre) => !livre)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: mapaLivre }}
+          accessibilityLabel={
+            mapaLivre
+              ? 'Prender o mapa, para a página voltar a deslizar por cima dele'
+              : 'Soltar o mapa, para o poderes arrastar e aproximar'
+          }
+          style={({ pressed }) => [
+            styles.trancaMapa,
+            { backgroundColor: mapaLivre ? theme.accent : theme.backgroundElement },
+            pressed && styles.trancaPressionada,
+          ]}>
+          <Icon
+            name={mapaLivre ? icons.selecionado : icons.rota}
+            size={16}
+            color={mapaLivre ? theme.accentText : theme.text}
+          />
+          <ThemedText
+            type="small"
+            style={[styles.trancaTexto, { color: mapaLivre ? theme.accentText : theme.text }]}>
+            {mapaLivre ? 'Prender' : 'Mexer no mapa'}
+          </ThemedText>
+        </Pressable>
       </View>
 
       {rota ? (
@@ -198,6 +228,24 @@ const styles = StyleSheet.create({
     borderRadius: Radius.button,
     borderCurve: 'continuous',
     overflow: 'hidden',
+  },
+  trancaMapa: {
+    position: 'absolute',
+    top: Spacing.two,
+    right: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one + 2,
+    borderRadius: Radius.pill,
+    ...CardShadow,
+  },
+  trancaPressionada: {
+    opacity: 0.85,
+  },
+  trancaTexto: {
+    fontWeight: '600',
   },
   pino: {
     width: 36,
