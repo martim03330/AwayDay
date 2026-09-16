@@ -81,8 +81,7 @@ export function acumularBlocos(
 export type MotivoMedicaoInvalida = 'curta' | 'saturada' | 'picos';
 
 export type ResultadoMedicao =
-  | { valida: true; nivel: number }
-  | { valida: false; motivo: MotivoMedicaoInvalida };
+  { valida: true; nivel: number } | { valida: false; motivo: MotivoMedicaoInvalida };
 
 function percentil(ordenados: readonly number[], fracao: number) {
   const indice = Math.round(fracao * (ordenados.length - 1));
@@ -109,7 +108,9 @@ export function analisarMedicao(blocos: readonly BlocoSom[]): ResultadoMedicao {
   const ordenados = [...niveis].sort((a, b) => a - b);
   const saltosGrandes = niveis
     .slice(1)
-    .filter((nivel, indice) => Math.abs(nivel - (niveis[indice] ?? nivel)) >= SALTO_GRANDE_DB).length;
+    .filter(
+      (nivel, indice) => Math.abs(nivel - (niveis[indice] ?? nivel)) >= SALTO_GRANDE_DB
+    ).length;
   const amplitude = percentil(ordenados, 0.9) - percentil(ordenados, 0.1);
   if (
     amplitude > MAX_AMPLITUDE_DB ||
@@ -146,7 +147,12 @@ export const ESCALA_BARULHO: readonly DegrauBarulho[] = [
     icone: 'megafone',
     frase: 'Já há cânticos, mas ainda há quem esteja a ver o telemóvel.',
   },
-  { minimo: 60, nome: 'Caldeirão', icone: 'quente', frase: 'Para falar com o do lado, só por gestos.' },
+  {
+    minimo: 60,
+    nome: 'Caldeirão',
+    icone: 'quente',
+    frase: 'Para falar com o do lado, só por gestos.',
+  },
   { minimo: 80, nome: 'Estádio a ferver', icone: 'explosao', frase: 'Amanhã ninguém tem voz.' },
 ];
 
@@ -177,7 +183,7 @@ export const mensagensMedicaoInvalida: Record<
 export type EstadoBarulhometro =
   | { tipo: 'antes' }
   | { tipo: 'depois' }
-  | { tipo: 'sem-check-in' }
+  | { tipo: 'sem-presenca' }
   | { tipo: 'espera'; disponivelEm: number }
   | { tipo: 'pode-medir' };
 
@@ -187,24 +193,34 @@ type DadosBarulhometro = {
   visitas: readonly VisitaLocal[];
   obterLocal: (id: string) => Local | undefined;
   medicoes: readonly MedicaoBarulho[];
+  /** Carimbou este estádio hoje: está lá dentro, e isso chega como prova. */
+  carimbou: boolean;
 };
 
-/** Só se mede com o jogo a decorrer, com check-in feito hoje perto do estádio e uma vez a cada 5 minutos. */
+/**
+ * Só se mede com o jogo a decorrer, uma vez a cada poucos minutos, e por quem prova que lá está: carimbou o estádio
+ * ou fez check-in hoje num tasco perto dele.
+ */
 export function estadoDoBarulhometro({
   jogo,
   agora,
   visitas,
   obterLocal,
   medicoes,
+  carimbou,
 }: DadosBarulhometro): EstadoBarulhometro {
   const fase = faseDoDiaDeJogo(jogo, agora);
   if (fase === 'depois') return { tipo: 'depois' };
   if (fase !== 'a-decorrer') return { tipo: 'antes' };
-  if (!temCheckInPerto(jogo.estadioId, agora, visitas, obterLocal)) return { tipo: 'sem-check-in' };
+  if (!carimbou && !temCheckInPerto(jogo.estadioId, agora, visitas, obterLocal)) {
+    return { tipo: 'sem-presenca' };
+  }
 
   const ultima = Math.max(
     -Infinity,
-    ...medicoes.filter((medicao) => medicao.jogoId === jogo.id).map((medicao) => Date.parse(medicao.medidaEm))
+    ...medicoes
+      .filter((medicao) => medicao.jogoId === jogo.id)
+      .map((medicao) => Date.parse(medicao.medidaEm))
   );
   if (agora - ultima < INTERVALO_ENTRE_MEDICOES_MS) {
     return { tipo: 'espera', disponivelEm: ultima + INTERVALO_ENTRE_MEDICOES_MS };
@@ -220,12 +236,15 @@ export function mostrarBarulhometro(
 ) {
   if (!mostrarRelogio(jogo, agora)) return false;
   return (
-    faseDoDiaDeJogo(jogo, agora) !== 'depois' || medicoes.some((medicao) => medicao.jogoId === jogo.id)
+    faseDoDiaDeJogo(jogo, agora) !== 'depois' ||
+    medicoes.some((medicao) => medicao.jogoId === jogo.id)
   );
 }
 
 export function melhorMedicao(jogoId: string, medicoes: readonly MedicaoBarulho[]) {
-  const niveis = medicoes.filter((medicao) => medicao.jogoId === jogoId).map((medicao) => medicao.nivel);
+  const niveis = medicoes
+    .filter((medicao) => medicao.jogoId === jogoId)
+    .map((medicao) => medicao.nivel);
   return niveis.length > 0 ? Math.max(...niveis) : null;
 }
 
@@ -252,7 +271,10 @@ export function rankingBarulho(
     nivel: adepto.nivel,
     eTu: false,
   }));
-  const eu = tu.nivel === null ? [] : [{ id: 'tu', nome: 'Tu', clubeId: tu.clubeId, nivel: tu.nivel, eTu: true }];
+  const eu =
+    tu.nivel === null
+      ? []
+      : [{ id: 'tu', nome: 'Tu', clubeId: tu.clubeId, nivel: tu.nivel, eTu: true }];
   return [...outros, ...eu]
     .sort((a, b) => b.nivel - a.nivel || Number(b.eTu) - Number(a.eTu))
     .map((entrada, indice) => ({ ...entrada, posicao: indice + 1 }));

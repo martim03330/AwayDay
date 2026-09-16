@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { ThemedText } from '@/ui/themed-text';
@@ -6,11 +6,13 @@ import { ThemedText } from '@/ui/themed-text';
 type SectionHeaderProps = {
   title: string;
   trailing?: string;
+  /** Onde este título ficou no ecrã, para a barra de secções saber para onde levar. */
+  onLayout?: (evento: LayoutChangeEvent) => void;
 };
 
-export function SectionHeader({ title, trailing }: SectionHeaderProps) {
+export function SectionHeader({ title, trailing, onLayout }: SectionHeaderProps) {
   return (
-    <View style={styles.row} accessibilityRole="header">
+    <View style={styles.row} accessibilityRole="header" onLayout={onLayout}>
       <ThemedText type="section" style={styles.title}>
         {title}
       </ThemedText>

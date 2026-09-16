@@ -35,6 +35,7 @@ describe('avisosDoJogo', () => {
       'porto-benfica:plano',
       'porto-benfica:tasco',
       'porto-benfica:estadio',
+      'porto-benfica:carimbo',
     ]);
     const plano = avisos[0].quando;
     expect(chaveDoDia(plano)).toBe('2026-09-16');
@@ -64,6 +65,7 @@ describe('avisosDoJogo', () => {
     expect(avisos.map((aviso) => aviso.id)).toEqual([
       'porto-benfica:plano',
       'porto-benfica:estadio',
+      'porto-benfica:carimbo',
     ]);
     expect(avisos[0].corpo).toContain('Escolhe o tasco');
   });
@@ -71,6 +73,34 @@ describe('avisosDoJogo', () => {
   it('não agenda o que já passou', () => {
     const noDiaDoJogo = Date.parse('2026-09-19T16:00:00.000Z');
     const avisos = avisosDoJogo(jogo, equipas, tasco, noDiaDoJogo);
-    expect(avisos.map((aviso) => aviso.id)).toEqual(['porto-benfica:estadio']);
+    // Já passou a hora de ir para o tasco; falta sair para o estádio e, depois do apito, carimbar.
+    expect(avisos.map((aviso) => aviso.id)).toEqual([
+      'porto-benfica:estadio',
+      'porto-benfica:carimbo',
+    ]);
+  });
+});
+
+describe('aviso do carimbo', () => {
+  it('toca pouco depois do apito, para quem lá está', () => {
+    const avisos = avisosDoJogo(
+      { id: 'jogo-1', inicio: '2026-09-20T19:30:00Z', horaConfirmada: true },
+      { casa: 'Académico de Viseu', fora: 'Benfica' },
+      null,
+      Date.parse('2026-09-20T12:00:00Z')
+    );
+    const carimbo = avisos.find((aviso) => aviso.id === 'jogo-1:carimbo');
+    expect(carimbo?.quando.toISOString()).toBe('2026-09-20T19:45:00.000Z');
+    expect(carimbo?.titulo).toBe('Já estás no estádio?');
+  });
+
+  it('não avisa de um jogo com hora por confirmar', () => {
+    const avisos = avisosDoJogo(
+      { id: 'jogo-2', inicio: '2026-09-20T19:30:00Z', horaConfirmada: false },
+      { casa: 'Académico de Viseu', fora: 'Benfica' },
+      null,
+      Date.parse('2026-09-20T12:00:00Z')
+    );
+    expect(avisos.some((aviso) => aviso.id === 'jogo-2:carimbo')).toBe(false);
   });
 });

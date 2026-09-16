@@ -1,9 +1,16 @@
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { corDoNivel, MedidorBarulho, MostradorBarulho, tintaDoNivel } from '@/components/medidor-barulho';
+import {
+  corDoNivel,
+  MedidorBarulho,
+  MostradorBarulho,
+  tintaDoNivel,
+} from '@/components/medidor-barulho';
 import { Spacing } from '@/constants/theme';
 import { useNoiseRanking } from '@/features/presence/hooks/usePresence';
+import { fetchMyStamps } from '@/features/stamps/api';
 import { useTheme } from '@/hooks/use-theme';
 import {
   degrauDoNivel,
@@ -80,7 +87,10 @@ function EscalaBarulho({ nivelAtual }: { nivelAtual: number | null }) {
             accessibilityLabel={`${degrau.minimo} ou mais: ${degrau.nome}. ${degrau.frase}${eAtual ? ' O teu nível.' : ''}`}
             style={[
               styles.degrau,
-              indice < degraus.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
+              indice < degraus.length - 1 && {
+                borderBottomWidth: 1,
+                borderBottomColor: theme.backgroundSelected,
+              },
               eAtual && [styles.degrauAtual, { backgroundColor: theme.warningBackground }],
             ]}>
             <View style={[styles.barraDegrau, { backgroundColor: corDoNivel(degrau.minimo) }]} />
@@ -109,12 +119,24 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
   const userId = useUserId();
   const rankingDaConta = useNoiseRanking(fonte === 'conta' ? userId : null, jogo.id);
 
+  // Carimbar o estádio já prova que lá estás: não é preciso ter passado por um tasco.
+  const carimbos = useQuery({
+    queryKey: ['stamps', userId],
+    queryFn: userId ? fetchMyStamps : skipToken,
+    meta: { persist: false },
+  });
+  const hoje = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Lisbon' }).format(new Date());
+  const carimbou = (carimbos.data ?? []).some(
+    (carimbo) => carimbo.venueId === jogo.estadioId && carimbo.lastVisit === hoje
+  );
+
   const estado = estadoDoBarulhometro({
     jogo,
     agora,
     visitas: visitasLocais,
     obterLocal,
     medicoes: medicoesBarulho,
+    carimbou,
   });
   const melhor = melhorMedicao(jogo.id, medicoesBarulho);
   // Demo: sample fans. With an account: the server's ranking (others only if they opted in). Without: just you.
@@ -141,13 +163,16 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
       nivel,
     }).then((resultado) => {
       if (resultado === 'cedo-demais') {
-        Alert.alert('Ainda é cedo', 'Só dá para medir outra vez uns minutos depois da última medição.');
+        Alert.alert(
+          'Ainda é cedo',
+          'Só dá para medir outra vez uns minutos depois da última medição.'
+        );
       } else if (resultado === 'fora-do-jogo') {
         Alert.alert('O jogo não está a decorrer', 'Só contam medições feitas durante o jogo.');
-      } else if (resultado === 'sem-check-in') {
+      } else if (resultado === 'sem-presenca') {
         Alert.alert(
-          'Falta o check-in',
-          'Para a medição contar, faz check-in hoje num tasco perto do estádio.'
+          'Falta provar que estás lá',
+          'Carimba o estádio aqui no jogo, ou faz check-in num tasco perto. Sem isso, a medição não conta.'
         );
       } else if (resultado === 'erro') {
         Alert.alert('Não deu para guardar', 'Verifica a ligação e tenta outra vez.');
@@ -168,18 +193,20 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
           />
         ) : null}
 
-        {estado.tipo === 'sem-check-in' ? (
+        {estado.tipo === 'sem-presenca' ? (
           <>
             <ListRow
               leading={<IconCircle name={icons.checkIn} tone="yellow" />}
-              title="Falta o check-in"
-              subtitle="Para a medição contar, faz check-in hoje num tasco perto do estádio."
+              title="Primeiro, prova que estás lá"
+              subtitle="Carimba o estádio no cartão «Estás no estádio?», aqui em cima, ou faz check-in num tasco perto. É o que impede que se meça o barulho do sofá."
             />
             <Button
               label="Ver tascos perto"
               variant="secondary"
               icon={icons.locais}
-              onPress={() => router.navigate({ pathname: '/locais', params: { estadio: jogo.estadioId } })}
+              onPress={() =>
+                router.navigate({ pathname: '/locais', params: { estadio: jogo.estadioId } })
+              }
             />
           </>
         ) : null}
@@ -191,7 +218,12 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
               title="Medição registada"
               message={`Próxima daqui a ${Math.max(1, Math.ceil((estado.disponivelEm - agora) / MINUTO_MS))} min. Assim ninguém mede até sair o número que quer.`}
             />
-            <Button label="Medir o barulho (10 s)" icon={icons.microfone} disabled onPress={() => {}} />
+            <Button
+              label="Medir o barulho (10 s)"
+              icon={icons.microfone}
+              disabled
+              onPress={() => {}}
+            />
           </>
         ) : null}
 
@@ -217,7 +249,10 @@ export function BarulhometroCard({ jogo, agora }: BarulhometroCardProps) {
                   key={entrada.id}
                   accessible
                   accessibilityLabel={`${entrada.posicao}.º lugar, ${entrada.eTu ? 'tu' : entrada.nome}, nível ${entrada.nivel}`}
-                  style={[styles.linha, entrada.eTu && { backgroundColor: theme.warningBackground }]}>
+                  style={[
+                    styles.linha,
+                    entrada.eTu && { backgroundColor: theme.warningBackground },
+                  ]}>
                   <ThemedText
                     type="score"
                     style={[

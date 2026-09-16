@@ -2,6 +2,22 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Ecrã do jogo: índice no topo, barulhómetro coerente e aviso do carimbo
+
+**Índice no topo.** A ficha do jogo tem uma dúzia de secções e era preciso rolar para descobrir o que
+lá estava. Agora abre com uma fila de secções — Barulhómetro, Estádio, Mapa, Boleias, Onde dormir,
+Estacionamento… — e tocar leva a página até lá. A fila mostra só as secções que aquele jogo tem.
+
+**Barulhómetro coerente.** Exigia check-in num tasco perto do estádio — regra escrita antes de
+existir o carimbo, e que deixava de fora exatamente quem está na bancada a fazer o barulho. Agora
+vale qualquer prova de presença nesse dia: **carimbo do estádio ou check-in no tasco**
+(`noise_needs_presence`). E o cartão passa a dizer o que falta, em vez de mostrar um botão desativado
+sem explicação.
+
+**Aviso do carimbo.** Quinze minutos depois do apito, para quem marcou que vai: «Já estás no
+estádio? Carimba-o enquanto cá estás. Depois de sair já não dá.» O carimbo é a única coisa que prova
+a visita, e ninguém se lembra dele sozinho.
+
 ## 2026-09-16 — «Hoje há jogo ao pé de ti»
 
 Para quem não marcou nada na app: um aviso de manhã, no próprio dia, quando há jogo num estádio perto

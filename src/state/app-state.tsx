@@ -139,7 +139,8 @@ export type Permissoes = { localizacao: EstadoPermissao; notificacoes: EstadoPer
 /** Where the activity on screen comes from. */
 export type FonteDados = 'demo' | 'telemovel' | 'conta';
 
-export type ResultadoMedicao = 'registada' | 'cedo-demais' | 'fora-do-jogo' | 'sem-check-in' | 'erro';
+export type ResultadoMedicao =
+  'registada' | 'cedo-demais' | 'fora-do-jogo' | 'sem-presenca' | 'erro';
 
 /** Your beer (cervejómetro) and food (petiscómetro) scores for a tasco. */
 export type NotasCervejaPetisco = { cerveja: Nota | null; petisco: Nota | null };
@@ -252,7 +253,8 @@ function eNota(valor: number): valor is Nota {
 
 function avaliacaoDaConta(review: ReviewRecord): AvaliacaoVisita | null {
   const jogo = obterJogo(review.fixtureId);
-  if (!jogo || !eNota(review.stadium) || !eNota(review.atmosphere) || !eNota(review.access)) return null;
+  if (!jogo || !eNota(review.stadium) || !eNota(review.atmosphere) || !eNota(review.access))
+    return null;
   return {
     id: `avaliacao-${review.fixtureId}`,
     jogoId: review.fixtureId,
@@ -313,7 +315,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [demo, setDemo] = useState<AtividadeLocal>(atividadeDemo);
   const [pratosRecomendados, setPratosRecomendados] = useState<ReadonlySet<string>>(new Set());
   /** With an account: recommendation taps made in this session, on top of what the account says. */
-  const [recomendacoesTocadas, setRecomendacoesTocadas] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const [recomendacoesTocadas, setRecomendacoesTocadas] = useState<ReadonlyMap<string, boolean>>(
+    new Map()
+  );
   const [votosDemo, setVotosDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
   const [wcDemo, setWcDemo] = useState<Readonly<Partial<Record<string, boolean>>>>({});
   /** Photos taken with an account that are still uploading (or samples, which never upload). */
@@ -374,12 +378,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }),
     visitas: (placeVisits.data ?? []).map(visitaDaConta),
     notasTascos: Object.fromEntries(
-      Object.entries(ratings.data ?? {}).filter((entrada): entrada is [string, Nota] => eNota(entrada[1]))
+      Object.entries(ratings.data ?? {}).filter((entrada): entrada is [string, Nota] =>
+        eNota(entrada[1])
+      )
     ),
     fotos: [
       ...fotosPendentes,
       ...(photos.data ?? [])
-        .filter((photo) => !fotosPendentes.some((pendente) => pendente.missaoId === photo.missionId))
+        .filter(
+          (photo) => !fotosPendentes.some((pendente) => pendente.missaoId === photo.missionId)
+        )
         .map(fotoDaConta),
     ],
     medicoes: (noise.data ?? []).flatMap((reading) => {
@@ -586,7 +594,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     mudarAtividade((anterior) => ({
       ...anterior,
       visitas: [
-        { id: `manual-${localId}`, localId, data: agoraDaApp(), verificado: false, origem: 'manual' },
+        {
+          id: `manual-${localId}`,
+          localId,
+          data: agoraDaApp(),
+          verificado: false,
+          origem: 'manual',
+        },
         ...anterior.visitas,
       ],
     }));
@@ -613,10 +627,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const registo: AvaliacaoVisita = { ...nova, id: `avaliacao-${nova.jogoId}`, atualizadaEm: agoraIso };
+    const registo: AvaliacaoVisita = {
+      ...nova,
+      id: `avaliacao-${nova.jogoId}`,
+      atualizadaEm: agoraIso,
+    };
     mudarAtividade((anterior) => ({
       ...anterior,
-      avaliacoes: [registo, ...anterior.avaliacoes.filter((avaliacao) => avaliacao.id !== registo.id)],
+      avaliacoes: [
+        registo,
+        ...anterior.avaliacoes.filter((avaliacao) => avaliacao.id !== registo.id),
+      ],
     }));
   }
 
@@ -629,14 +650,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       naConta((id) => savePlaceRating(id, localId, nota), refreshActivity);
       return;
     }
-    mudarAtividade((anterior) => ({ ...anterior, notasTascos: { ...anterior.notasTascos, [localId]: nota } }));
+    mudarAtividade((anterior) => ({
+      ...anterior,
+      notasTascos: { ...anterior.notasTascos, [localId]: nota },
+    }));
   }
 
   function adicionarFoto({ mimeType, ...foto }: NovaFoto) {
     const registo: FotoMissao = { ...foto, id: `foto-${foto.missaoId}-${Date.now()}` };
 
     if (fonte === 'conta') {
-      setFotosPendentes((atuais) => [registo, ...atuais.filter((atual) => atual.missaoId !== foto.missaoId)]);
+      setFotosPendentes((atuais) => [
+        registo,
+        ...atuais.filter((atual) => atual.missaoId !== foto.missaoId),
+      ]);
       // Sample photos (devices without a camera) never go to the account.
       const uri = foto.uri;
       if (!uri || foto.exemplo) return;
@@ -676,7 +703,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    mudarAtividade((anterior) => ({ ...anterior, fotos: anterior.fotos.filter((atual) => atual.id !== fotoId) }));
+    mudarAtividade((anterior) => ({
+      ...anterior,
+      fotos: anterior.fotos.filter((atual) => atual.id !== fotoId),
+    }));
   }
 
   async function registarMedicao(medicao: Omit<MedicaoBarulho, 'id'>): Promise<ResultadoMedicao> {
@@ -688,7 +718,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       } catch (erro: unknown) {
         if (erro instanceof NoiseMeasurementRefused) {
           if (erro.reason === 'too-soon') return 'cedo-demais';
-          return erro.reason === 'needs-check-in' ? 'sem-check-in' : 'fora-do-jogo';
+          return erro.reason === 'needs-presence' ? 'sem-presenca' : 'fora-do-jogo';
         }
         if (__DEV__) console.warn('Não foi possível guardar a medição:', erro);
         return 'erro';
@@ -710,14 +740,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   function alternarNotificacao(tipo: TipoNotificacao) {
     const ligar = !notificacoes[tipo];
     if (fonte === 'conta') {
-      queryClient.setQueryData<NotificationPreferences>(notificationPreferencesKey(userId), (atuais) => ({
-        ...atuais,
-        [TIPO_NA_CONTA[tipo]]: ligar,
-      }));
-      naConta((id) => saveNotificationPreference(id, TIPO_NA_CONTA[tipo], ligar), refreshNotifications);
+      queryClient.setQueryData<NotificationPreferences>(
+        notificationPreferencesKey(userId),
+        (atuais) => ({
+          ...atuais,
+          [TIPO_NA_CONTA[tipo]]: ligar,
+        })
+      );
+      naConta(
+        (id) => saveNotificationPreference(id, TIPO_NA_CONTA[tipo], ligar),
+        refreshNotifications
+      );
       return;
     }
-    mudarPreferencias((atuais) => ({ ...atuais, notificacoes: { ...atuais.notificacoes, [tipo]: ligar } }));
+    mudarPreferencias((atuais) => ({
+      ...atuais,
+      notificacoes: { ...atuais.notificacoes, [tipo]: ligar },
+    }));
   }
 
   function concluirOnboarding(escolhas: Permissoes) {
@@ -767,21 +806,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     marcarContaPerguntada(id);
 
     const tarefas: (() => Promise<unknown>)[] = [
-      ...local.avaliacoes.map((avaliacao) => () =>
-        recordReview(id, {
-          fixtureId: avaliacao.jogoId,
-          stadium: avaliacao.estadio,
-          atmosphere: avaliacao.ambiente,
-          access: avaliacao.acessos,
-          comment: avaliacao.comentario,
-        })
+      ...local.avaliacoes.map(
+        (avaliacao) => () =>
+          recordReview(id, {
+            fixtureId: avaliacao.jogoId,
+            stadium: avaliacao.estadio,
+            atmosphere: avaliacao.ambiente,
+            access: avaliacao.acessos,
+            comment: avaliacao.comentario,
+          })
       ),
       // Only the server verifies visits: the ones checked on the phone come in as "por verificar".
-      ...local.visitas.map((visita) => () => recordPlaceVisit(id, visita.localId, 'manual', visita.data)),
-      ...Object.entries(local.notasTascos).map(([localId, nota]) => () => savePlaceRating(id, localId, nota)),
+      ...local.visitas.map(
+        (visita) => () => recordPlaceVisit(id, visita.localId, 'manual', visita.data)
+      ),
+      ...Object.entries(local.notasTascos).map(
+        ([localId, nota]) =>
+          () =>
+            savePlaceRating(id, localId, nota)
+      ),
       // After the overall scores: beer and food scores only update an existing rating.
-      ...Object.entries(local.notasCervejaPetisco).map(([localId, notas]) => () =>
-        savePlaceSubScores(id, localId, { beerScore: notas.cerveja, foodScore: notas.petisco })
+      ...Object.entries(local.notasCervejaPetisco).map(
+        ([localId, notas]) =>
+          () =>
+            savePlaceSubScores(id, localId, { beerScore: notas.cerveja, foodScore: notas.petisco })
       ),
       ...local.fotos.flatMap((foto) => {
         const uri = foto.uri;
@@ -812,7 +860,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     // Nothing is lost: if part of it failed, the phone keeps its copy.
     if (falhados === 0) setAtividadeLocal(ATIVIDADE_VAZIA);
     await Promise.all([refreshActivity(), refreshPhotos()]);
-    return { juntados: tarefas.length - falhados, falhados, medicoesQueFicam: local.medicoes.length };
+    return {
+      juntados: tarefas.length - falhados,
+      falhados,
+      medicoesQueFicam: local.medicoes.length,
+    };
   }
 
   const recomendadosNaConta: ReadonlySet<string> = new Set(dishRecommendations.data ?? []);
@@ -843,7 +895,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return proximas;
         });
       })
-      .finally(() => void queryClient.invalidateQueries({ queryKey: myDishRecommendationsKey(userId) }));
+      .finally(
+        () => void queryClient.invalidateQueries({ queryKey: myDishRecommendationsKey(userId) })
+      );
   }
 
   function notaOuNada(valor: number | null): Nota | null {
@@ -865,11 +919,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const proximas: NotasCervejaPetisco = { ...atuais, ...notas };
 
     if (fonte === 'conta') {
-      const paraConta: PlaceSubScores = { beerScore: proximas.cerveja, foodScore: proximas.petisco };
-      queryClient.setQueryData<Record<string, PlaceSubScores>>(myPlaceSubScoresKey(userId), (lista) => ({
-        ...lista,
-        [localId]: paraConta,
-      }));
+      const paraConta: PlaceSubScores = {
+        beerScore: proximas.cerveja,
+        foodScore: proximas.petisco,
+      };
+      queryClient.setQueryData<Record<string, PlaceSubScores>>(
+        myPlaceSubScoresKey(userId),
+        (lista) => ({
+          ...lista,
+          [localId]: paraConta,
+        })
+      );
       naConta((id) => savePlaceSubScores(id, localId, paraConta), refreshActivity);
       return;
     }
@@ -928,10 +988,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     permissoes: preferencias.permissoes,
     concluirOnboarding,
     guardarPermissoes: (permissoes) => mudarPreferencias((atuais) => ({ ...atuais, permissoes })),
-    saltarOnboarding: () => mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: true })),
-    reverIntroducao: () => mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: false })),
+    saltarOnboarding: () =>
+      mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: true })),
+    reverIntroducao: () =>
+      mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: false })),
     clubeFavoritoId: preferencias.clubeFavoritoId ?? CLUBE_POR_OMISSAO,
-    escolherClube: (clubeId) => mudarPreferencias((atuais) => ({ ...atuais, clubeFavoritoId: clubeId })),
+    escolherClube: (clubeId) =>
+      mudarPreferencias((atuais) => ({ ...atuais, clubeFavoritoId: clubeId })),
     clubeDaTerraId: preferencias.clubeDaTerraId,
     confirmarClubeDaTerra: (clubeId) =>
       mudarPreferencias((atuais) => ({ ...atuais, clubeDaTerraId: clubeId })),
@@ -961,7 +1024,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       atividade.visitas.find((visita) => visita.localId === localId),
     registarVisitaManual,
     avaliacoes: atividade.avaliacoes,
-    avaliacaoDoJogo: (jogoId) => atividade.avaliacoes.find((avaliacao) => avaliacao.jogoId === jogoId),
+    avaliacaoDoJogo: (jogoId) =>
+      atividade.avaliacoes.find((avaliacao) => avaliacao.jogoId === jogoId),
     guardarAvaliacao,
     pratosRecomendados: recomendadosAgora,
     recomendacoesJaContadas: fonte === 'conta' ? recomendadosNaConta : new Set<string>(),
@@ -980,7 +1044,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     medicoesBarulho: atividade.medicoes,
     registarMedicao,
     sonsLigados: preferencias.sonsLigados,
-    alternarSons: () => mudarPreferencias((atuais) => ({ ...atuais, sonsLigados: !atuais.sonsLigados })),
+    alternarSons: () =>
+      mudarPreferencias((atuais) => ({ ...atuais, sonsLigados: !atuais.sonsLigados })),
     notificacoes,
     alternarNotificacao,
     atividadeParaJuntar,

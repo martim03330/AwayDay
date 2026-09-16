@@ -203,8 +203,8 @@ export async function recordNoiseMeasurement(
     if (error.message === 'noise_measurement_too_soon')
       throw new NoiseMeasurementRefused('too-soon');
     if (error.message === 'fixture_not_live') throw new NoiseMeasurementRefused('not-live');
-    if (error.message === 'noise_needs_checkin')
-      throw new NoiseMeasurementRefused('needs-check-in');
+    if (error.message === 'noise_needs_presence')
+      throw new NoiseMeasurementRefused('needs-presence');
     throw error;
   }
   return {

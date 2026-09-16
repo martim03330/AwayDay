@@ -18,6 +18,8 @@ export const CHEGAR_AO_TASCO_MINUTOS_ANTES = 150;
 export const FOLGA_PARA_SAIR_MINUTOS = 10;
 /** Without a tasco: head to the stadium this long before kick-off. */
 export const IR_PARA_O_ESTADIO_MINUTOS_ANTES = 90;
+/** Depois do apito, para quem já lá está: o carimbo é a única coisa que prova que se foi ao jogo. */
+export const CARIMBO_MINUTOS_DEPOIS = 15;
 
 export type HorasDoPlano = {
   /** `null` without a tasco. */
@@ -90,6 +92,15 @@ export function avisosDoJogo(
       corpo: local
         ? `São ${local.minutosAPe} min a pé de ${local.nome} até ao estádio. O jogo começa às ${formatarHora(inicio)}.`
         : `O ${nomeDoJogo} começa às ${formatarHora(inicio)}.`,
+    });
+  }
+
+  if (jogo.horaConfirmada) {
+    avisos.push({
+      id: `${jogo.id}:carimbo`,
+      quando: new Date(inicio.getTime() + CARIMBO_MINUTOS_DEPOIS * MINUTO_MS),
+      titulo: 'Já estás no estádio?',
+      corpo: `Carimba o ${nomeDoJogo} no teu passaporte enquanto estás cá. Depois de sair já não dá.`,
     });
   }
 

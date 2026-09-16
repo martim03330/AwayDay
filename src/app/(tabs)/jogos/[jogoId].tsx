@@ -1,8 +1,10 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useRef } from 'react';
+import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
+import { BarraDeSeccoes, type Seccao } from '@/components/barra-de-seccoes';
 import { BarulhometroCard } from '@/components/barulhometro-card';
 import { ComoChegar } from '@/components/como-chegar';
 import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
@@ -73,6 +75,25 @@ export default function JogoScreen() {
   // Every game: official routes and home fans' areas for visitors; derbies add police arrangements and incidents.
   const notasSeguranca = useSafetyNotes(jogo?.estadioId ?? null, true);
 
+  // O índice do ecrã: onde começa cada secção, para a barra de cima poder levar-nos lá.
+  const scrollRef = useRef<ScrollView>(null);
+  const posicoes = useRef<Record<string, number>>({});
+  const topoDoCorpo = useRef(0);
+  const marcar = useCallback(
+    (id: string) => (evento: LayoutChangeEvent) => {
+      posicoes.current[id] = evento.nativeEvent.layout.y;
+    },
+    []
+  );
+  const guardarTopo = useCallback((evento: LayoutChangeEvent) => {
+    topoDoCorpo.current = evento.nativeEvent.layout.y;
+  }, []);
+  const irPara = useCallback((id: string) => {
+    const y = posicoes.current[id];
+    if (y === undefined) return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, topoDoCorpo.current + y - 12), animated: true });
+  }, []);
+
   if (loading) {
     return (
       <Screen>
@@ -132,6 +153,25 @@ export default function JogoScreen() {
             ? dia
             : 'Apito';
 
+  const seccoes: Seccao[] = [
+    mostrarBarulhometro(jogo, agora, medicoesBarulho)
+      ? { id: 'barulhometro', titulo: 'Barulhómetro' }
+      : null,
+    eCompeticaoEuropeia(jogo.competicao)
+      ? { id: 'ponto-encontro', titulo: 'Ponto de encontro' }
+      : null,
+    { id: 'estadio', titulo: 'Estádio' },
+    { id: 'wc', titulo: 'WC' },
+    notasVisitante.length > 0 ? { id: 'cuidados', titulo: 'Cuidados' } : null,
+    { id: 'mapa', titulo: 'Mapa' },
+    jogo.meteorologia ? { id: 'meteorologia', titulo: 'Meteorologia' } : null,
+    { id: 'distancia', titulo: 'Distância' },
+    { id: 'como-chegar', titulo: 'Como chegar' },
+    { id: 'boleias', titulo: 'Boleias' },
+    estadio.regiao !== 'continente' ? { id: 'dormir', titulo: 'Onde dormir' } : null,
+    { id: 'estacionamento', titulo: 'Estacionamento' },
+  ].filter((seccao) => seccao !== null);
+
   const avaliacao = (
     <AvaliacaoJogo
       jogo={jogo}
@@ -143,6 +183,7 @@ export default function JogoScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
@@ -216,7 +257,9 @@ export default function JogoScreen() {
         </View>
       ) : null}
 
-      <View style={styles.corpo}>
+      <View style={styles.corpo} onLayout={guardarTopo}>
+        <BarraDeSeccoes seccoes={seccoes} onIr={irPara} />
+
         {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
 
         {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
@@ -226,6 +269,7 @@ export default function JogoScreen() {
             <SectionHeader
               title="Barulhómetro"
               trailing={estado === 'a-decorrer' ? 'Em jogo' : undefined}
+              onLayout={marcar('barulhometro')}
             />
             <BarulhometroCard jogo={jogo} agora={agora} />
           </>
@@ -235,7 +279,7 @@ export default function JogoScreen() {
 
         {eCompeticaoEuropeia(jogo.competicao) ? (
           <>
-            <SectionHeader title="Ponto de encontro oficial" />
+            <SectionHeader title="Ponto de encontro oficial" onLayout={marcar('ponto-encontro')} />
             <PontoEncontroCard ponto={jogo.pontoEncontro} />
             {jogo.pontoEncontro?.coordenadas ? (
               <MapaPontoEncontro
@@ -250,20 +294,20 @@ export default function JogoScreen() {
         {/* Em dia de jogo e no local: a única prova de que lá estiveste. Fora disso não aparece. */}
         <CarimboEstadio jogo={jogo} estadio={estadio} />
 
-        <SectionHeader title="Estádio" />
+        <SectionHeader title="Estádio" onLayout={marcar('estadio')} />
         <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
 
-        <SectionHeader title="WC mais próximo" />
+        <SectionHeader title="WC mais próximo" onLayout={marcar('wc')} />
         <WcMaisProximo origem={estadio.coordenadas} estadioId={estadio.id} />
 
         {notasVisitante.length > 0 ? (
           <>
-            <SectionHeader title="Cuidados para adeptos visitantes" />
+            <SectionHeader title="Cuidados para adeptos visitantes" onLayout={marcar('cuidados')} />
             <CuidadosVisitantes notas={notasVisitante} visitante={fora} />
           </>
         ) : null}
 
-        <SectionHeader title="Mapa" />
+        <SectionHeader title="Mapa" onLayout={marcar('mapa')} />
         <MapaJogo
           venue={estadio}
           zonas={zonas}
@@ -279,15 +323,19 @@ export default function JogoScreen() {
 
         {jogo.meteorologia ? (
           <>
-            <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
+            <SectionHeader
+              title="Meteorologia"
+              trailing="Previsão simulada"
+              onLayout={marcar('meteorologia')}
+            />
             <MeteorologiaCard meteorologia={jogo.meteorologia} />
           </>
         ) : null}
 
-        <SectionHeader title="Distância" />
+        <SectionHeader title="Distância" onLayout={marcar('distancia')} />
         <DistanciaCard venue={estadio} />
 
-        <SectionHeader title="Como chegar" />
+        <SectionHeader title="Como chegar" onLayout={marcar('como-chegar')} />
         {estadio.transportes.length > 0 ? <ComoChegar opcoes={estadio.transportes} /> : null}
 
         <Button
@@ -298,17 +346,17 @@ export default function JogoScreen() {
         />
 
         {/* As boleias são do jogo, não do teu plano: quem abre um jogo vê o que há para ele. */}
-        <SectionHeader title="Boleias" />
+        <SectionHeader title="Boleias" onLayout={marcar('boleias')} />
         <BoleiasDoJogo jogo={jogo} />
 
         {estadio.regiao !== 'continente' ? (
           <>
-            <SectionHeader title="Onde dormir" />
+            <SectionHeader title="Onde dormir" onLayout={marcar('dormir')} />
             <DormidaCard jogo={jogo} estadio={estadio} />
           </>
         ) : null}
 
-        <SectionHeader title="Estacionamento" />
+        <SectionHeader title="Estacionamento" onLayout={marcar('estacionamento')} />
         <EstacionamentoEstadio
           estadioId={estadio.id}
           jogoGrande={eJogoGrande(jogo)}
