@@ -3,6 +3,12 @@ export type ClubRelation = 'supporter' | 'hometown';
 export type MyProfile = {
   id: string;
   displayName: string;
+  /** Caminho da foto no balde `avatars`; `null` quando não há foto. */
+  avatarPath: string | null;
+  /** Link assinado para a foto, pronto a mostrar. */
+  avatarUrl: string | null;
+  /** De onde é, como a pessoa o escreveu. */
+  homeCity: string | null;
   supporterClubId: string | null;
   /** Only ever visible to its owner (RLS). */
   hometownClubId: string | null;
@@ -21,3 +27,16 @@ export type NotificationKind = 'kickoff_change' | 'weather' | 'group_movement' |
 
 /** Only the kinds the user changed; the others follow the app default. */
 export type NotificationPreferences = Partial<Record<NotificationKind, boolean>>;
+
+/** O cartão de uma pessoa: o que se mostra ao lado do nome dela numa boleia, num grupo ou numas contas. */
+export type ProfileCard = {
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  homeCity: string | null;
+  /** Desde quando tem conta. */
+  memberSince: string;
+  ridesCompleted: number;
+  ridesFaults: number;
+  isMe: boolean;
+};

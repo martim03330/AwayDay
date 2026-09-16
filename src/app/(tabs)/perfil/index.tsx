@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ColorValue } from 'react-native';
@@ -154,7 +155,7 @@ export default function PerfilScreen() {
         </Svg>
 
         <View style={styles.identidade}>
-          <AvatarCachecol iniciais={iniciais(nome)} />
+          <AvatarCachecol iniciais={iniciais(nome)} foto={perfilDaConta.data?.avatarUrl} />
           <View style={styles.flex}>
             <ThemedText type="title" style={styles.nome} numberOfLines={2}>
               {nome}
@@ -296,6 +297,28 @@ export default function PerfilScreen() {
 
         {userId ? (
           <>
+            <SectionHeader title="O teu perfil" />
+            <Card style={styles.grupo}>
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/editar')}
+                accessibilityLabel="O teu perfil: foto, nome e terra. Toca para abrir."
+                leading={
+                  <Azulejo
+                    icon={icons.camara}
+                    fundo={theme.highlight}
+                    tinta={theme.highlightText}
+                  />
+                }
+                title="Foto, nome e terra"
+                subtitle={
+                  perfilDaConta.data?.avatarUrl
+                    ? (perfilDaConta.data?.homeCity ?? 'A tua cara nas boleias e nos grupos')
+                    : 'Põe uma foto: ajuda quem vai contigo'
+                }
+                trailing={chevron}
+              />
+            </Card>
+
             <SectionHeader title="A tua malta" />
             <Card style={styles.grupo}>
               <LinhaGrupo
@@ -437,8 +460,23 @@ export default function PerfilScreen() {
   );
 }
 
-/** Initials on a yellow-and-white striped ring. */
-function AvatarCachecol({ iniciais: letras }: { iniciais: string }) {
+/** A foto da pessoa, ou as iniciais num anel de cachecol. */
+function AvatarCachecol({ iniciais: letras, foto }: { iniciais: string; foto?: string | null }) {
+  if (foto) {
+    return (
+      <View style={styles.avatar}>
+        <Image
+          source={{ uri: foto }}
+          style={styles.avatarFoto}
+          contentFit="cover"
+          transition={120}
+          accessibilityIgnoresInvertColors
+          accessibilityLabel="A tua foto de perfil"
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.avatar}>
       <Svg width={80} height={80} style={StyleSheet.absoluteFill}>
@@ -548,6 +586,11 @@ const styles = StyleSheet.create({
     height: 80,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarFoto: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   avatarInterior: {
     width: 70,

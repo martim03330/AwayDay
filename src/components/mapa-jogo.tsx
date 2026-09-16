@@ -201,7 +201,7 @@ export function MapaJogo({
   const clube = obterClube(venue.clubeId);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(venue.id));
   // Sample restrooms in demo mode; real ones (OpenStreetMap) otherwise.
-  const { modoDemo } = useAppState();
+  const { modoDemo, pessoasAqui } = useAppState();
   const wcsReais = useRestroomsNear(venue.id, !modoDemo);
   const wcsPerto: WcPerto[] = casasDeBanhoPerto(
     venue.coordenadas,
@@ -525,6 +525,7 @@ export function MapaJogo({
 
         {localSelecionado ? (
           <CarrosselLocais
+            pessoasAqui={pessoasAqui}
             locais={perto}
             emFocoId={localSelecionado.id}
             onFocar={irParaLocal}

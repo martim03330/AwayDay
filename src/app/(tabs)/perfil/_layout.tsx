@@ -19,6 +19,9 @@ export default function PerfilLayout() {
       <Stack.Screen name="rankings">
         <Stack.Screen.Title>Rankings</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="editar">
+        <Stack.Screen.Title>O teu perfil</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="amigos">
         <Stack.Screen.Title>Os teus amigos</Stack.Screen.Title>
       </Stack.Screen>

@@ -28,6 +28,8 @@ type CarrosselLocaisProps = {
   onFocar: (localId: string) => void;
   /** The buttons at the bottom of each card (e.g. "Ver local", "Escolher"). */
   acoes: (local: Local) => ReactNode;
+  /** Quanta malta está lá agora, quando se sabe (só a partir de 5 pessoas, como manda a regra dos agregados). */
+  pessoasAqui?: (local: Local) => number | null;
 };
 
 function textoNota(nota: Nota | null) {
@@ -41,12 +43,14 @@ function CartaoLocal({
   total,
   largura,
   acoes,
+  pessoas,
 }: {
   local: Local;
   posicao: number;
   total: number;
   largura: number;
   acoes: ReactNode;
+  pessoas: number | null;
 }) {
   const theme = useTheme();
 
@@ -72,6 +76,13 @@ function CartaoLocal({
         </View>
       </View>
       <View style={styles.etiquetas}>
+        {pessoas !== null && pessoas > 0 ? (
+          <Etiqueta
+            icon={icons.perfil}
+            label={pessoas === 1 ? 'já lá está 1' : `já lá estão ${pessoas}`}
+            tone="positivo"
+          />
+        ) : null}
         <Etiqueta icon={icons.tasco} label={textoNota(local.cervejometro)} tone="neutro" />
         <Etiqueta icon={icons.especialidade} label={textoNota(local.petiscometro)} tone="neutro" />
         {local.referencia ? (
@@ -91,7 +102,13 @@ function CartaoLocal({
  * the map which place is in focus; tapping a marker (a new `emFocoId`) scrolls the row to that card. The cards stay
  * short so the map above keeps its bearings.
  */
-export function CarrosselLocais({ locais, emFocoId, onFocar, acoes }: CarrosselLocaisProps) {
+export function CarrosselLocais({
+  locais,
+  emFocoId,
+  onFocar,
+  acoes,
+  pessoasAqui,
+}: CarrosselLocaisProps) {
   const lista = useRef<FlatList<Local>>(null);
   const [larguraArea, setLarguraArea] = useState(0);
   // The index the row is showing, so a swipe does not scroll the row back to where it already is.
@@ -144,6 +161,7 @@ export function CarrosselLocais({ locais, emFocoId, onFocar, acoes }: CarrosselL
           renderItem={({ item, index }) => (
             <CartaoLocal
               local={item}
+              pessoas={pessoasAqui?.(item) ?? null}
               posicao={index + 1}
               total={locais.length}
               largura={largura}

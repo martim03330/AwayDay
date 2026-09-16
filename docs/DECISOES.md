@@ -2,6 +2,28 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Um perfil com cara
+
+Uma pessoa era um nome e umas iniciais. Para quem vai meter-se num carro com um desconhecido, ou dividir contas com
+ele, isso é pouco. O perfil ganha **foto**, **a terra de onde se é**, e o nome deixa de ficar preso ao que se
+escreveu no registo (`set_display_name`, com limite de 5 mudanças por semana).
+
+**Quem vê a foto:** quem tem conta na app. É isso que a torna útil no quadro das boleias, onde ainda ninguém se
+conhece. **Não é pública na internet**: o balde `avatars` é privado, cada pessoa só escreve na sua pasta, e as
+imagens só se abrem com um link assinado de uma hora, dado a quem está autenticado. Ninguém é obrigado a ter foto —
+sem ela ficam as iniciais, e a app não põe lá boneco nenhum.
+
+**Há uma porta para o abuso:** qualquer pessoa pode denunciar uma foto (`report_profile_photo`) e quem administra
+tira-a (`admin_clear_profile_photo`). A pessoa não é apagada nem bloqueada, fica só sem foto. Falta o ecrã de
+administração para estas denúncias — está no servidor e ainda não na app.
+
+**Como chega aos ecrãs:** uma função só, `profile_cards(uuid[])`, devolve nome, foto, terra e os sinais das boleias
+de várias pessoas de uma vez, e o cliente assina os links todos num pedido. Foi por aqui em vez de acrescentar
+colunas às dez funções que já devolvem pessoas.
+
+Também: **a contagem de gente passa a aparecer no cartão do tasco no mapa** («já lá estão 7»), com a mesma regra de
+sempre — só a partir de 5 pessoas, e a localização de ninguém é guardada.
+
 ## 2026-09-16 — A sessão é que manda (correção de desenho)
 
 Estava mal pensado por mim: as contas eram **do grupo** ou **da boleia**, e quem tivesse as duas coisas para o mesmo

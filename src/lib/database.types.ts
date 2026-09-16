@@ -1627,8 +1627,10 @@ export type Database = {
       }
       profile: {
         Row: {
+          avatar_path: string | null
           created_at: string
           display_name: string
+          home_city: string | null
           id: string
           is_admin: boolean
           nudges_enabled: boolean
@@ -1637,8 +1639,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_path?: string | null
           created_at?: string
           display_name: string
+          home_city?: string | null
           id: string
           is_admin?: boolean
           nudges_enabled?: boolean
@@ -1647,8 +1651,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_path?: string | null
           created_at?: string
           display_name?: string
+          home_city?: string | null
           id?: string
           is_admin?: boolean
           nudges_enabled?: boolean
@@ -1691,6 +1697,42 @@ export type Database = {
           {
             foreignKeyName: "profile_club_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_photo_report: {
+        Row: {
+          created_at: string
+          profile_id: string
+          reason: string | null
+          reported_by: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          reason?: string | null
+          reported_by: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          reason?: string | null
+          reported_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_photo_report_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_photo_report_reported_by_fkey"
+            columns: ["reported_by"]
             isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
@@ -3040,6 +3082,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_clear_profile_photo: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
       ai_usage_since: {
         Args: { p_profile_id: string; p_since: string }
         Returns: {
@@ -3069,6 +3115,7 @@ export type Database = {
       can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
+      clear_profile_photo: { Args: never; Returns: undefined }
       club_supporter_counts: {
         Args: never
         Returns: {
@@ -3419,6 +3466,19 @@ export type Database = {
           score: number
         }[]
       }
+      profile_cards: {
+        Args: { p_profile_ids: string[] }
+        Returns: {
+          avatar_path: string
+          display_name: string
+          home_city: string
+          is_me: boolean
+          member_since: string
+          profile_id: string
+          rides_completed: number
+          rides_faults: number
+        }[]
+      }
       publish_place_candidate: {
         Args: {
           p_kind: string
@@ -3486,6 +3546,10 @@ export type Database = {
         Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
         Returns: undefined
       }
+      report_profile_photo: {
+        Args: { p_profile_id: string; p_reason?: string }
+        Returns: undefined
+      }
       report_ride_attendance: {
         Args: { p_ride_id: string; p_showed_up: boolean; p_subject_id: string }
         Returns: undefined
@@ -3493,6 +3557,16 @@ export type Database = {
       report_ride_incident: {
         Args: { p_note: string; p_reason: string; p_ride_id: string }
         Returns: undefined
+      }
+      reported_profile_photos: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          display_name: string
+          last_report: string
+          profile_id: string
+          reports: number
+        }[]
       }
       request_return_seat: {
         Args: {
@@ -3656,6 +3730,9 @@ export type Database = {
         Returns: Json
       }
       send_friend_request: { Args: { p_profile_id: string }; Returns: string }
+      set_display_name: { Args: { p_name: string }; Returns: undefined }
+      set_home_city: { Args: { p_city: string }; Returns: undefined }
+      set_profile_photo: { Args: { p_path: string }; Returns: undefined }
       set_ride_group: {
         Args: { p_group_id?: string; p_ride_id: string }
         Returns: undefined

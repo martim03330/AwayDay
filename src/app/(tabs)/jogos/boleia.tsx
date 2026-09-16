@@ -10,6 +10,8 @@ import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
 import { Spacing } from '@/constants/theme';
 import { inviteFriendToRide } from '@/features/friends/api';
 import { useMyFriends } from '@/features/friends/hooks/useFriends';
+import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
+import type { ProfileCard } from '@/features/profile/types';
 import {
   answerRequest,
   answerReturnRequest,
@@ -49,6 +51,7 @@ import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { Aviso } from '@/ui/aviso';
+import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
@@ -124,13 +127,16 @@ function LinhaValor({
   );
 }
 
-function Pessoa({ pessoa }: { pessoa: RidePerson }) {
+function Pessoa({ pessoa, cartao }: { pessoa: RidePerson; cartao?: ProfileCard }) {
   return (
     <View style={styles.pessoa}>
+      <Avatar nome={pessoa.name} url={cartao?.avatarUrl} />
       <View style={styles.flex}>
         <ThemedText style={styles.destaque}>{pessoa.name}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {reputacao(pessoa.completed, pessoa.faults)}
+          {[cartao?.homeCity, reputacao(pessoa.completed, pessoa.faults)]
+            .filter(Boolean)
+            .join(' · ')}
         </ThemedText>
       </View>
       <Etiqueta
@@ -167,6 +173,7 @@ export default function BoleiaScreen() {
     : false;
   const pessoas = useRidePeople(rideId ?? null, participante);
   const amigos = useMyFriends(userId !== null);
+  const cartoes = useProfileCards((pessoas.data ?? []).map((pessoa) => pessoa.profileId));
   const [convidados, setConvidados] = useState<string[]>([]);
   // Fans left at the stadium asking for a seat home: only the driver answers, and only while the window is open.
   const pedidosDaVolta = useReturnPeople(
@@ -460,7 +467,11 @@ export default function BoleiaScreen() {
           <SectionHeader title="No carro" />
           <Card style={styles.grupo}>
             {noCarro.map((pessoa) => (
-              <Pessoa key={pessoa.profileId} pessoa={pessoa} />
+              <Pessoa
+                key={pessoa.profileId}
+                pessoa={pessoa}
+                cartao={(cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId)}
+              />
             ))}
           </Card>
         </>
@@ -508,7 +519,10 @@ export default function BoleiaScreen() {
           </ThemedText>
           {pedidos.map((pedido) => (
             <Card key={pedido.profileId} style={styles.grupo}>
-              <Pessoa pessoa={pedido} />
+              <Pessoa
+                pessoa={pedido}
+                cartao={(cartoes.data ?? []).find((c) => c.profileId === pedido.profileId)}
+              />
               <View style={styles.botoes}>
                 <View style={styles.flex}>
                   <Button
@@ -677,7 +691,10 @@ export default function BoleiaScreen() {
             const resposta = presencas.data?.[pessoa.profileId];
             return (
               <Card key={pessoa.profileId} style={styles.grupo}>
-                <Pessoa pessoa={pessoa} />
+                <Pessoa
+                  pessoa={pessoa}
+                  cartao={(cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId)}
+                />
                 <View style={styles.botoes}>
                   <View style={styles.flex}>
                     <Button

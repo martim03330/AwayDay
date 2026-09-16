@@ -19,6 +19,7 @@ import {
   rotateGroupInvite,
   type GroupMember,
 } from '@/features/groups/api';
+import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { setRideVisibility } from '@/features/rides/api';
 import { setStayVisibility } from '@/features/stays/api';
@@ -28,6 +29,7 @@ import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
+import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
@@ -99,6 +101,8 @@ export default function GrupoScreen() {
     queryFn: grupoId ? () => fetchGroupMembers(grupoId) : skipToken,
     meta: { persist: false },
   });
+
+  const cartoes = useProfileCards((membros.data ?? []).map((pessoa) => pessoa.profileId));
 
   const [convidados, setConvidados] = useState<string[]>([]);
   const [nome, setNome] = useState('');
@@ -268,12 +272,25 @@ export default function GrupoScreen() {
       {lista.map((pessoa) => (
         <Card key={pessoa.profileId} style={styles.grupo}>
           <View style={styles.linha}>
+            <Avatar
+              nome={pessoa.displayName}
+              url={
+                (cartoes.data ?? []).find((cartao) => cartao.profileId === pessoa.profileId)
+                  ?.avatarUrl
+              }
+            />
             <View style={styles.flex}>
               <ThemedText style={styles.nome} numberOfLines={1}>
                 {pessoa.isMine ? `${pessoa.displayName} (tu)` : pessoa.displayName}
               </ThemedText>
               <ThemedText type="small" themeColor="textMuted">
-                {sinais(pessoa)}
+                {[
+                  (cartoes.data ?? []).find((cartao) => cartao.profileId === pessoa.profileId)
+                    ?.homeCity,
+                  sinais(pessoa),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               </ThemedText>
             </View>
             {pessoa.role === 'owner' ? (

@@ -2,6 +2,7 @@ import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/reac
 
 import {
   fetchMyProfile,
+  fetchProfileCards,
   saveProfileClub,
   updateMessagePreferences,
   updateRankingVisibility,
@@ -17,6 +18,20 @@ export function useMyProfile(userId: string | null) {
     queryKey: [PROFILE_KEY, userId],
     queryFn: userId ? () => fetchMyProfile(userId) : skipToken,
     staleTime: FIVE_MINUTES_MS,
+  });
+}
+
+/**
+ * Os cartões destas pessoas (foto, terra, sinais das boleias), para mostrar ao lado dos nomes. Uma consulta só para
+ * a lista toda: um pedido por pessoa punha a app a fazer dez pedidos para desenhar um grupo.
+ */
+export function useProfileCards(profileIds: string[]) {
+  const chave = [...profileIds].sort().join(',');
+  return useQuery({
+    queryKey: [PROFILE_KEY, 'cards', chave],
+    queryFn: profileIds.length > 0 ? () => fetchProfileCards(profileIds) : skipToken,
+    staleTime: FIVE_MINUTES_MS,
+    meta: { persist: false },
   });
 }
 
