@@ -6,7 +6,6 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
 import { BarraDeSeccoes, type Seccao } from '@/components/barra-de-seccoes';
 import { BarulhometroCard } from '@/components/barulhometro-card';
-import { ComoChegar } from '@/components/como-chegar';
 import { CuidadosVisitantes } from '@/components/cuidados-visitantes';
 import { DistanciaCard } from '@/components/distancia-card';
 import { Equipa } from '@/components/equipa';
@@ -340,7 +339,6 @@ export default function JogoScreen() {
           title={estado === 'a-decorrer' ? 'Como voltar' : 'Como chegar'}
           onLayout={marcar('como-chegar')}
         />
-        {estadio.transportes.length > 0 ? <ComoChegar opcoes={estadio.transportes} /> : null}
 
         <Button
           label={

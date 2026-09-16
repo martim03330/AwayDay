@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { modosTransporte } from '@/components/como-chegar';
+import { modosTransporte } from '@/lib/transportes';
 import { PontoAoVivo } from '@/components/jogo-card';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
@@ -86,7 +86,7 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
   const theme = useTheme();
   const agora = useNow(1000);
   const { simulacao } = useRelogio();
-  const { fezCheckIn, pessoasAqui, avaliacaoDoJogo } = useAppState();
+  const { fezCheckIn, pessoasAqui, avaliacaoDoJogo, modoDemo } = useAppState();
 
   const fase = faseDoDiaDeJogo(jogo, agora);
   const fim = fimDoJogo(jogo);
@@ -122,7 +122,9 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
       const tasco = tascoParaAlmocar(perto);
       if (!tasco) {
         return (
-          <ThemedText type="small">Almoça antes de vir: por aqui ainda não mapeámos tascos.</ThemedText>
+          <ThemedText type="small">
+            Almoça antes de vir: por aqui ainda não mapeámos tascos.
+          </ThemedText>
         );
       }
       return (
@@ -185,14 +187,9 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
       );
 
       if (!origem) {
-        const tempos = venue.transportes.map((transporte) => transporte.minutos);
         return (
           <>
-            <ThemedText type="small">
-              {tempos.length > 0
-                ? `Está na hora de ir para o estádio: a opção mais rápida demora ${Math.min(...tempos)} min.`
-                : 'Está na hora de ir para o estádio.'}
-            </ThemedText>
+            <ThemedText type="small">Está na hora de ir para o estádio.</ThemedText>
             {avisos}
           </>
         );
@@ -219,7 +216,9 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
 
   function renderDepois() {
     const avaliacao = avaliacaoDoJogo(jogo.id);
-    const transporte = ultimoTransporteDe(venue.id);
+    // Os horários do último transporte são valores de exemplo: fora do modo demo não se mostram, que ninguém pode
+    // perder o último metro por causa de um número inventado por nós.
+    const transporte = modoDemo ? ultimoTransporteDe(venue.id) : null;
     const partida = transporte ? partidaDoUltimoTransporte(jogo, transporte) : null;
     const falta = partida ? partida.getTime() - agora : 0;
 
@@ -238,7 +237,10 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
           <View style={[styles.transporte, { borderTopColor: theme.border }]}>
             <Icon name={modosTransporte[transporte.modo].icon} size={20} color={theme.info} />
             <View style={styles.flex}>
-              <ThemedText style={styles.transporteTitulo}>{`Último regresso às ${transporte.hora}`}</ThemedText>
+              <ThemedText
+                style={
+                  styles.transporteTitulo
+                }>{`Último regresso às ${transporte.hora}`}</ThemedText>
               <ThemedText themeColor="textSecondary" style={styles.transporteDescricao}>
                 {transporte.descricao}
               </ThemedText>
@@ -250,7 +252,8 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
           </View>
         ) : (
           <ThemedText type="small" themeColor="textSecondary">
-            Sem informação do último transporte de regresso.
+            Não temos os horários do último transporte deste estádio. Confirma-os antes de contares
+            com eles.
           </ThemedText>
         )}
       </>
