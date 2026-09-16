@@ -2,7 +2,7 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
-## 2026-09-16 — Dormir fora: pesquisa no Airbnb e preços relatados pelos adeptos
+## 2026-09-16 — Dormir fora: quem procura casa, quem já tem, e a pesquisa no Airbnb
 
 **O que não dá.** O Airbnb não tem API pública e a de parceiros é fechada. Guardar o link de um
 anúncio seria prometer uma coisa que não controlamos: verifiquei a 2026-09-16 que um anúncio
@@ -10,27 +10,28 @@ inventado (`/rooms/1234…`) devolve **HTTP 200** na mesma — a página só diz
 carregar no browser. Não há forma honesta de saber se um anúncio ainda está disponível, e raspar a
 página viola os termos do Airbnb e parte-se ao primeiro redesenho.
 
-**O que dá, e é o que fazemos.**
-- **Link de pesquisa, nunca de anúncio** (`src/lib/dormida.ts`): a app abre
-  `airbnb.pt/s/<Cidade>--<País>/homes?checkin=…&checkout=…&adults=N`, com entrada na véspera do jogo
-  e as noites e pessoas que o adepto escolher. Uma pesquisa mostra sempre o que está disponível
-  naquele momento: não pode ficar desatualizada.
-- **Preços como relatos datados** (`stay_report`): cada adepto diz o que pagou por noite, para
-  quantas pessoas e quantas noites — em cêntimos inteiros, como todo o dinheiro da app. Aparece com
-  o nome de quem disse e a data. Um preço com data é informação; sem data era uma promessa que
-  ninguém pode cumprir.
-- **Desmentido pela malta**: quem lá for e não encontrar nada parecido carrega em «já não encontro
-  assim». **Dois desmentidos escondem o relato**, e ninguém se pode desmentir a si próprio.
-- **Mediana só a partir de 3 relatos**; com um ou dois, o que há é a conta de quem falou, e essa já
-  está à vista.
-- Os relatos morrem 30 dias depois do jogo (cron diário): a essa altura já não servem para planear.
+**Link de pesquisa, nunca de anúncio** (`src/lib/dormida.ts`): a app abre
+`airbnb.pt/s/<Cidade>--<País>/homes?checkin=…&checkout=…&adults=N`, com entrada na véspera do jogo.
+Uma pesquisa mostra sempre o que está disponível naquele momento: não pode ficar desatualizada.
 
-**Onde aparece.** Só em jogos no estrangeiro e nas ilhas (Funchal e Ponta Delgada), que são as
-viagens onde dormir fora faz parte de ir ao jogo. O servidor confirma isso (`fixture_needs_stay`),
-não é só a app a esconder a secção.
+**O que a app guarda são intenções de pessoas, não preços de casas** (`stay_plan`). O primeiro
+desenho pedia «quanto pagaste» e estava errado — quem está a planear ainda não pagou nada, e o que
+interessa é juntar gente para dividir uma casa. Cada adepto diz uma de duas coisas:
+- **procuro casa**: até quanto paga, por pessoa e por noite, e com que convicção — «reservo de
+  qualquer maneira» ou «só se dividirmos». É essa convicção que diz aos outros se podem contar com
+  ele;
+- **já tenho casa**: quantos lugares sobram e quanto fica a cada um.
 
-Regras verificadas com teste SQL revertido: jogo do continente recusado, preço absurdo recusado,
-desmentir-se a si próprio recusado, e com dois desmentidos o relato desaparece.
+O cartão está organizado em três blocos, por esta ordem: **a tua ideia** (editável), **quem mais
+vai** (com a convicção à frente) e só depois **procurar casa**. As noites e as pessoas da pesquisa
+vivem dentro desse último bloco: no primeiro desenho estavam no topo e pareciam parte da resposta de
+cada um, o que confundia quem já tinha respondido.
+
+Um plano por pessoa e por jogo, em cêntimos inteiros, apagado um dia depois do jogo. Só aparece em
+jogos no estrangeiro e nas ilhas, e é o servidor que confirma isso (`fixture_needs_stay`).
+
+Regras verificadas com teste SQL revertido: procurar casa sem convicção é recusado, ter casa sem
+lugares é recusado, jogo do continente é recusado, e na lista quem já tem casa aparece primeiro.
 
 ## 2026-09-16 — Tascos sugeridos pelos próprios adeptos (e os que ficam mais longe)
 

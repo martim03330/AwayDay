@@ -2074,86 +2074,59 @@ export type Database = {
           },
         ]
       }
-      stay_report: {
+      stay_plan: {
         Row: {
-          cents_per_night: number
+          cents_per_person: number
+          commitment: string | null
           created_at: string
           fixture_id: string
           id: string
+          kind: string
           nights: number
           note: string | null
-          people: number
           profile_id: string
+          spare_places: number | null
           updated_at: string
         }
         Insert: {
-          cents_per_night: number
+          cents_per_person: number
+          commitment?: string | null
           created_at?: string
           fixture_id: string
           id?: string
+          kind: string
           nights: number
           note?: string | null
-          people: number
           profile_id: string
+          spare_places?: number | null
           updated_at?: string
         }
         Update: {
-          cents_per_night?: number
+          cents_per_person?: number
+          commitment?: string | null
           created_at?: string
           fixture_id?: string
           id?: string
+          kind?: string
           nights?: number
           note?: string | null
-          people?: number
           profile_id?: string
+          spare_places?: number | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "stay_report_fixture_id_fkey"
+            foreignKeyName: "stay_plan_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: false
             referencedRelation: "fixture"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "stay_report_profile_id_fkey"
+            foreignKeyName: "stay_plan_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profile"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stay_report_denial: {
-        Row: {
-          created_at: string
-          profile_id: string
-          report_id: string
-        }
-        Insert: {
-          created_at?: string
-          profile_id: string
-          report_id: string
-        }
-        Update: {
-          created_at?: string
-          profile_id?: string
-          report_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stay_report_denial_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profile"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stay_report_denial_report_id_fkey"
-            columns: ["report_id"]
-            isOneToOne: false
-            referencedRelation: "stay_report"
             referencedColumns: ["id"]
           },
         ]
@@ -2480,9 +2453,8 @@ export type Database = {
       coach_venue_facts: { Args: { p_venue_id: string }; Returns: Json }
       confirm_place: { Args: { p_place_id: string }; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
-      delete_old_stay_reports: { Args: never; Returns: number }
+      delete_old_stay_plans: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
-      deny_stay_report: { Args: { p_report_id: string }; Returns: undefined }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
@@ -2490,18 +2462,19 @@ export type Database = {
       expire_ride_requests: { Args: never; Returns: number }
       fixture_going_count: { Args: { p_fixture_id: string }; Returns: number }
       fixture_needs_stay: { Args: { p_fixture_id: string }; Returns: boolean }
-      fixture_stays: {
+      fixture_stay_plans: {
         Args: { p_fixture_id: string }
         Returns: {
-          cents_per_night: number
-          denied_by_me: boolean
+          cents_per_person: number
+          commitment: string
           display_name: string
           id: string
           is_mine: boolean
+          kind: string
           nights: number
           note: string
-          people: number
-          reported_on: string
+          spare_places: number
+          updated_on: string
         }[]
       }
       home_fan_usual_streets: {
@@ -2620,6 +2593,7 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
+      remove_stay_plan: { Args: { p_fixture_id: string }; Returns: undefined }
       report_home_fans: {
         Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
         Returns: undefined
@@ -2631,16 +2605,6 @@ export type Database = {
       report_ride_incident: {
         Args: { p_note: string; p_reason: string; p_ride_id: string }
         Returns: undefined
-      }
-      report_stay: {
-        Args: {
-          p_cents_per_night: number
-          p_fixture_id: string
-          p_nights: number
-          p_note: string
-          p_people: number
-        }
-        Returns: string
       }
       request_return_seat: {
         Args: {
@@ -2783,6 +2747,18 @@ export type Database = {
       season_recap_stats: {
         Args: { p_profile_id: string; p_season_id: string }
         Returns: Json
+      }
+      set_stay_plan: {
+        Args: {
+          p_cents_per_person: number
+          p_commitment?: string
+          p_fixture_id: string
+          p_kind: string
+          p_nights: number
+          p_note?: string
+          p_spare_places?: number
+        }
+        Returns: string
       }
       settle_rides: { Args: never; Returns: number }
       start_checkin: {
