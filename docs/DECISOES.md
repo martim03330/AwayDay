@@ -2,6 +2,27 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — «Hoje há jogo ao pé de ti»
+
+Para quem não marcou nada na app: um aviso de manhã, no próprio dia, quando há jogo num estádio perto
+de casa. Não é preciso abrir a app nem dar permissão nenhuma nova.
+
+**Porque não é geofencing.** Reparar que o telemóvel está a 2 km do estádio com a app fechada exige
+localização em segundo plano (permissão «Sempre»), a dependência `expo-task-manager` e um
+*development build* — **não funciona no Expo Go**, e a Apple pede justificação para essa permissão.
+Fica para quando houver build própria; até lá, isto dá quase o mesmo efeito sem pedir nada a
+ninguém.
+
+**Como sabe que é «ao pé de ti»** sem ler a localização: pelo estádio do **clube da terra** (ou, sem
+ele, do clube do coração), que a pessoa já escolheu. Um jogo conta como perto até **40 km** em linha
+reta.
+
+**Quando toca:** às 10:00 do dia do jogo — com tempo para decidir, combinar boleia e ver onde
+almoçar — ou três horas antes do apito, se o jogo for de manhã. Jogos já marcados ficam de fora:
+esses têm os avisos do plano. E continua a não haver avisos na véspera.
+
+Regras em `src/lib/avisos-perto.ts` com 7 testes.
+
 ## 2026-09-16 — O jogo, o bilhete, o carimbo e o ranking
 
 **O jogo mostra tudo o que é do jogo.** As boleias só apareciam depois de abrir o bilhete à mão,
