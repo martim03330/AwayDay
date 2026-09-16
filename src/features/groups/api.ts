@@ -181,12 +181,3 @@ export async function fetchGroupTrips(groupId: string): Promise<GroupTrip[]> {
       : []
   );
 }
-
-/** Diz de que grupo é uma casa proposta (ou `null` para nenhum). */
-export async function setStayGroup(planId: string, groupId: string | null) {
-  const { error } = await client().rpc('set_stay_group', {
-    p_plan_id: planId,
-    p_group_id: groupId ?? undefined,
-  });
-  if (error) throw refusal(error);
-}

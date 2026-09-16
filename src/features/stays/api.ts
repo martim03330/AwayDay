@@ -86,6 +86,11 @@ export type StayHouse = TrustSigns & {
   myStatus: StayPlaceStatus | null;
   /** Pedidos à espera de resposta (só a quem propôs a casa). */
   pending: number;
+  /** O grupo de que a casa é, quando quem a propôs o disse. `null` para quem é de fora. */
+  groupId: string | null;
+  groupName: string | null;
+  /** 'grupo': só a malta do grupo a vê. 'publica': aparece a toda a gente. */
+  visibility: 'grupo' | 'publica';
 };
 
 export type StayPlacePerson = TrustSigns & {
@@ -135,6 +140,9 @@ export async function fetchStayHouses(fixtureId: string): Promise<StayHouse[]> {
             isMine: row.is_mine === true,
             myStatus: toPlaceStatus(row.my_status),
             pending: row.pending ?? 0,
+            groupId: row.group_id,
+            groupName: row.group_name,
+            visibility: row.visibility === 'grupo' ? ('grupo' as const) : ('publica' as const),
           },
         ]
   );
@@ -149,9 +157,9 @@ export type NewStayHouse = {
   note: string;
 };
 
-/** Propõe (ou corrige) a tua casa para este jogo. Uma por pessoa e por jogo. */
-export async function setStayHouse(fixtureId: string, casa: NewStayHouse) {
-  const { error } = await client().rpc('set_stay_plan', {
+/** Propõe (ou corrige) a tua casa para este jogo. Uma por pessoa e por jogo; devolve o id da casa. */
+export async function setStayHouse(fixtureId: string, casa: NewStayHouse): Promise<string> {
+  const { data, error } = await client().rpc('set_stay_plan', {
     p_fixture_id: fixtureId,
     p_nights: casa.nights,
     p_total_cents: casa.totalCents,
@@ -161,6 +169,7 @@ export async function setStayHouse(fixtureId: string, casa: NewStayHouse) {
     p_listing_url: casa.listingUrl?.trim() || undefined,
   });
   if (error) throw refusal(error);
+  return data;
 }
 
 /** Desisti da casa que propus. */
@@ -223,4 +232,22 @@ export async function canShareHouse(profileId: string): Promise<boolean> {
   const { data, error } = await client().rpc('can_share_house', { p_profile_id: profileId });
   if (error) throw error;
   return data === true;
+}
+
+/** Abre a casa a toda a gente, ou volta a fechá-la ao grupo. Só quem a propôs. */
+export async function setStayVisibility(planId: string, publica: boolean) {
+  const { error } = await client().rpc('set_stay_visibility', {
+    p_plan_id: planId,
+    p_public: publica,
+  });
+  if (error) throw refusal(error);
+}
+
+/** Diz de que grupo é uma casa proposta (ou `null` para nenhum). */
+export async function setStayGroup(planId: string, groupId: string | null) {
+  const { error } = await client().rpc('set_stay_group', {
+    p_plan_id: planId,
+    p_group_id: groupId ?? undefined,
+  });
+  if (error) throw refusal(error);
 }

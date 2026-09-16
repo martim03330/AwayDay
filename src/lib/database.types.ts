@@ -1735,6 +1735,7 @@ export type Database = {
           toll_m: number
           total_cents: number
           updated_at: string
+          visibility: string
         }
         Insert: {
           accepts_return_requests?: boolean
@@ -1764,6 +1765,7 @@ export type Database = {
           toll_m: number
           total_cents: number
           updated_at?: string
+          visibility?: string
         }
         Update: {
           accepts_return_requests?: boolean
@@ -1793,6 +1795,7 @@ export type Database = {
           toll_m?: number
           total_cents?: number
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -2223,6 +2226,7 @@ export type Database = {
           status: string
           total_cents: number
           updated_at: string
+          visibility: string
         }
         Insert: {
           commitment: string
@@ -2239,6 +2243,7 @@ export type Database = {
           status?: string
           total_cents: number
           updated_at?: string
+          visibility?: string
         }
         Update: {
           commitment?: string
@@ -2255,6 +2260,7 @@ export type Database = {
           status?: string
           total_cents?: number
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -2622,6 +2628,8 @@ export type Database = {
         Returns: {
           commitment: string
           display_name: string
+          group_id: string
+          group_name: string
           id: string
           is_mine: boolean
           listing_seen_on: string
@@ -2640,6 +2648,7 @@ export type Database = {
           taken: number
           total_cents: number
           updated_on: string
+          visibility: string
         }[]
       }
       group_by_code: {
@@ -2884,6 +2893,7 @@ export type Database = {
           toll_cents: number
           toll_m: number
           total_cents: number
+          visibility: string
         }[]
       }
       ride_incidents: {
@@ -2984,6 +2994,10 @@ export type Database = {
         Args: { p_group_id?: string; p_ride_id: string }
         Returns: undefined
       }
+      set_ride_visibility: {
+        Args: { p_public: boolean; p_ride_id: string }
+        Returns: undefined
+      }
       set_stay_group: {
         Args: { p_group_id?: string; p_plan_id: string }
         Returns: undefined
@@ -3013,6 +3027,10 @@ export type Database = {
             }
             Returns: string
           }
+      set_stay_visibility: {
+        Args: { p_plan_id: string; p_public: boolean }
+        Returns: undefined
+      }
       settle_rides: { Args: never; Returns: number }
       start_checkin: {
         Args: { p_place_id: string; p_profile_id: string }

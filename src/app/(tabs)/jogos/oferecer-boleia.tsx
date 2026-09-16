@@ -13,6 +13,7 @@ import {
   createRide,
   fetchReputation,
   setRideGroup,
+  setRideVisibility,
   quoteRide,
   RideRefused,
   searchPlace,
@@ -141,6 +142,8 @@ export default function OferecerBoleiaScreen() {
   const [aceitaVolta, setAceitaVolta] = useState(true);
   // Uma boleia pode ser «a boleia do grupo»: aparece lá dentro e fica no histórico do grupo.
   const [grupoId, setGrupoId] = useState<string | null>(null);
+  // Começa privada: a malta do grupo primeiro, e abre-se a toda a gente se o carro não encher.
+  const [soParaOGrupo, setSoParaOGrupo] = useState(true);
   const [nota, setNota] = useState('');
   const [cotacoes, setCotacoes] = useState<RideQuote[] | null>(null);
   const [escolhida, setEscolhida] = useState<RouteOption | null>(null);
@@ -419,7 +422,10 @@ export default function OferecerBoleiaScreen() {
         acceptsReturnRequests: idaEVolta && aceitaVolta,
       });
       // O grupo é uma etiqueta da boleia: se falhar, a boleia fica publicada na mesma e dá para escolher depois.
-      if (grupoId) await setRideGroup(id, grupoId).catch(() => undefined);
+      if (grupoId) {
+        await setRideGroup(id, grupoId).catch(() => undefined);
+        if (soParaOGrupo) await setRideVisibility(id, false).catch(() => undefined);
+      }
       await atualizar();
       router.replace({ pathname: '/jogos/boleia', params: { rideId: id, jogoId: jogo.id } });
     } catch (erro) {
@@ -667,6 +673,26 @@ export default function OferecerBoleiaScreen() {
                 />
               ))}
             </View>
+            {grupoId ? (
+              <>
+                <View style={styles.linhaSwitch}>
+                  <ThemedText style={styles.flex}>Só para o grupo, por agora</ThemedText>
+                  <Switch
+                    value={soParaOGrupo}
+                    onValueChange={setSoParaOGrupo}
+                    trackColor={{ true: theme.accent, false: theme.border }}
+                    thumbColor={theme.accentText}
+                    ios_backgroundColor={theme.border}
+                    accessibilityLabel="Só para o grupo, por agora"
+                  />
+                </View>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {soParaOGrupo
+                    ? 'Só a malta do grupo vê esta boleia. Se o carro não encher, abres a toda a gente com um toque.'
+                    : 'A boleia aparece a qualquer adepto que vá a este jogo.'}
+                </ThemedText>
+              </>
+            ) : null}
           </Card>
         </>
       ) : null}

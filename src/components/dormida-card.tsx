@@ -1,9 +1,10 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, Switch, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { fetchMyGroups } from '@/features/groups/api';
 import {
   answerStayPlace,
   canShareHouse,
@@ -13,7 +14,9 @@ import {
   markStayHouse,
   removeStayHouse,
   requestStayPlace,
+  setStayGroup,
   setStayHouse,
+  setStayVisibility,
   StayRefused,
   type StayCommitment,
   type StayHouse,
@@ -140,6 +143,7 @@ function CasaProposta({
   onSair,
   onResponder,
   onReservar,
+  onAbrir,
   onMudar,
   onApagar,
 }: {
@@ -150,6 +154,7 @@ function CasaProposta({
   onSair: () => void;
   onResponder: (profileId: string, aceitar: boolean) => void;
   onReservar: (reservada: boolean) => void;
+  onAbrir: (publica: boolean) => void;
   onMudar: () => void;
   onApagar: () => void;
 }) {
@@ -196,6 +201,13 @@ function CasaProposta({
         ) : (
           <Etiqueta icon={icons.aviso} label="Só reserva se encher" tone="aviso" />
         )}
+        {casa.visibility === 'grupo' ? (
+          <Etiqueta
+            icon={icons.perfil}
+            label={casa.groupName ? `Só do grupo ${casa.groupName}` : 'Só para um grupo'}
+            tone="info"
+          />
+        ) : null}
       </View>
 
       {casa.note ? <ThemedText>{casa.note}</ThemedText> : null}
@@ -222,6 +234,12 @@ function CasaProposta({
             label={reservada ? 'Voltar a juntar gente' : 'Já reservei a casa'}
             onPress={() => onReservar(!reservada)}
           />
+          {casa.groupId ? (
+            <LinkTexto
+              label={casa.visibility === 'grupo' ? 'Abrir a toda a gente' : 'Fechar ao grupo'}
+              onPress={() => onAbrir(casa.visibility === 'grupo')}
+            />
+          ) : null}
           <LinkTexto label="Mudar" onPress={onMudar} />
           <LinkTexto label="Apagar" onPress={onApagar} />
         </View>
@@ -277,6 +295,11 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
     queryFn: userId ? () => fetchStayHouses(jogo.id) : skipToken,
     meta: { persist: false },
   });
+  const meusGrupos = useQuery({
+    queryKey: ['groups', userId],
+    queryFn: userId ? fetchMyGroups : skipToken,
+    meta: { persist: false },
+  });
   const permissao = useQuery({
     queryKey: ['stays', 'can-share', userId],
     queryFn: userId ? () => canShareHouse(userId) : skipToken,
@@ -297,6 +320,8 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
   const [conviccao, setConviccao] = useState<StayCommitment>('se_houver');
   const [link, setLink] = useState('');
   const [nota, setNota] = useState('');
+  const [grupoId, setGrupoId] = useState<string | null>(null);
+  const [soParaOGrupo, setSoParaOGrupo] = useState(true);
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -337,6 +362,8 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
     setConviccao(minhaCasa?.commitment ?? 'se_houver');
     setLink(minhaCasa?.listingUrl ?? '');
     setNota(minhaCasa?.note ?? '');
+    setGrupoId(minhaCasa?.groupId ?? null);
+    setSoParaOGrupo(minhaCasa ? minhaCasa.visibility === 'grupo' : true);
     setErro(null);
     setAberto(true);
   }
@@ -346,16 +373,19 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
       setErro('Escreve quanto custa a casa ao todo, por exemplo 320.');
       return;
     }
-    const guardado = await tratar(() =>
-      setStayHouse(jogo.id, {
+    const guardado = await tratar(async () => {
+      const id = await setStayHouse(jogo.id, {
         nights: noites,
         totalCents: centimos,
         sparePlaces: lugares,
         commitment: conviccao,
         listingUrl: link,
         note: nota,
-      })
-    );
+      });
+      // O grupo e a privacidade são etiquetas da casa: se falharem, a casa fica proposta na mesma.
+      await setStayGroup(id, grupoId).catch(() => undefined);
+      await setStayVisibility(id, !(grupoId && soParaOGrupo)).catch(() => undefined);
+    });
     if (guardado) setAberto(false);
   }
 
@@ -388,6 +418,7 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
             void tratar(() => answerStayPlace(casa.id, profileId, aceitar))
           }
           onReservar={(reservada) => void tratar(() => markStayHouse(casa.id, reservada))}
+          onAbrir={(publica) => void tratar(() => setStayVisibility(casa.id, publica))}
           onMudar={abrirForm}
           onApagar={() => void tratar(() => removeStayHouse(jogo.id))}
         />
@@ -473,6 +504,49 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
                 onPress={() => setConviccao('se_houver')}
               />
             </View>
+
+            {(meusGrupos.data ?? []).length > 0 ? (
+              <>
+                <ThemedText style={styles.rotulo}>De quem é esta casa?</ThemedText>
+                <View style={styles.chips}>
+                  <Chip
+                    label="De ninguém em especial"
+                    selected={grupoId === null}
+                    emCartao
+                    onPress={() => setGrupoId(null)}
+                  />
+                  {(meusGrupos.data ?? []).map((grupo) => (
+                    <Chip
+                      key={grupo.id}
+                      label={grupo.name}
+                      selected={grupoId === grupo.id}
+                      emCartao
+                      onPress={() => setGrupoId(grupo.id)}
+                    />
+                  ))}
+                </View>
+                {grupoId ? (
+                  <>
+                    <View style={styles.linhaSwitch}>
+                      <ThemedText style={styles.flex}>Só para o grupo, por agora</ThemedText>
+                      <Switch
+                        value={soParaOGrupo}
+                        onValueChange={setSoParaOGrupo}
+                        trackColor={{ true: theme.accent, false: theme.border }}
+                        thumbColor={theme.accentText}
+                        ios_backgroundColor={theme.border}
+                        accessibilityLabel="Só para o grupo, por agora"
+                      />
+                    </View>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {soParaOGrupo
+                        ? 'Só a malta do grupo vê esta casa. Se sobrarem lugares, abres a toda a gente com um toque.'
+                        : 'A casa aparece a qualquer adepto que vá a este jogo.'}
+                    </ThemedText>
+                  </>
+                ) : null}
+              </>
+            ) : null}
 
             <Campo
               label="Link da casa no Airbnb (opcional)"
@@ -593,6 +667,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   form: {
+    gap: Spacing.two,
+  },
+  linhaSwitch: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
   },
   acoes: {

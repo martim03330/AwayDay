@@ -5,11 +5,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { createGroup, fetchMyGroups } from '@/features/groups/api';
-import { setRideGroup, type RideSummary } from '@/features/rides/api';
+import { setRideGroup, setRideVisibility, type RideSummary } from '@/features/rides/api';
 import { useRefreshRides } from '@/features/rides/hooks/useRides';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
 import { Card } from '@/ui/card';
+import { Etiqueta } from '@/ui/etiqueta';
 import { Chip } from '@/ui/chip';
 import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
@@ -44,6 +45,23 @@ export function GrupoDaBoleia({
     meta: { persist: false },
   });
   const grupos = meusGrupos.data ?? [];
+
+  async function abrir(publica: boolean) {
+    setErro(null);
+    setATratar(true);
+    try {
+      await setRideVisibility(boleia.id, publica);
+      await atualizar();
+    } catch {
+      setErro(
+        publica
+          ? 'Não deu para abrir a boleia a toda a gente.'
+          : 'Não deu para fechar a boleia ao grupo.'
+      );
+    } finally {
+      setATratar(false);
+    }
+  }
 
   async function escolher(grupoId: string | null) {
     setErro(null);
@@ -81,9 +99,29 @@ export function GrupoDaBoleia({
       {boleia.groupId && boleia.groupName ? (
         <>
           <ThemedText style={styles.destaque}>{`Boleia do grupo ${boleia.groupName}`}</ThemedText>
+          <Etiqueta
+            icon={boleia.visibility === 'grupo' ? icons.perfil : icons.partilhar}
+            label={
+              boleia.visibility === 'grupo' ? 'Só para a malta do grupo' : 'Aberta a toda a gente'
+            }
+            tone={boleia.visibility === 'grupo' ? 'info' : 'positivo'}
+          />
           <ThemedText type="small" themeColor="textSecondary">
-            Fica no histórico de viagens do grupo.
+            {boleia.visibility === 'grupo'
+              ? 'Só quem é do grupo vê esta boleia. Se o carro não encher, abre-a a toda a gente.'
+              : 'Aparece a qualquer adepto. Quem é de fora não vê o nome do grupo, só os lugares já ocupados.'}
           </ThemedText>
+          {boleia.isMine ? (
+            <Button
+              label={
+                boleia.visibility === 'grupo' ? 'Abrir a toda a gente' : 'Voltar a fechar ao grupo'
+              }
+              icon={boleia.visibility === 'grupo' ? icons.partilhar : icons.perfil}
+              variant="secondary"
+              disabled={aTratar}
+              onPress={() => void abrir(boleia.visibility === 'grupo')}
+            />
+          ) : null}
           <View style={styles.acoes}>
             <LinkTexto
               label="Abrir o grupo"

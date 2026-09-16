@@ -2,6 +2,29 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-16 — Primeiro entre a malta, depois para toda a gente
+
+Uma boleia ou uma casa criadas dentro de um grupo começam **privadas**: só as vê quem é do grupo.
+Quando o carro não enche (ou sobram camas), quem as ofereceu carrega em «abrir a toda a gente» e
+elas passam a aparecer no quadro do jogo como quaisquer outras, com os lugares já ocupados à vista —
+quem entra vê que vai com malta que já se conhece.
+
+**O nome do grupo não aparece a quem é de fora.** Vê-se «Boleia do João · 2 lugares ocupados ·
+2 livres». O nome de um grupo privado não é da conta de estranhos; quem é do grupo continua a ver a
+etiqueta. A regra está nas funções do servidor (`ride_board`, `fixture_stay_plans`), que devolvem o
+nome do grupo a `null` para quem não é membro.
+
+Enquanto está fechada, uma boleia também **não recebe pedidos de lugar nem de boleia de volta** de
+quem não é do grupo: `request_ride_seat`, `request_stay_place` e `ride_return_board` tratam-na como
+se não existisse.
+
+Regras verificadas com teste SQL revertido: um estranho não vê a boleia privada nem consegue pedir
+lugar; quem é do grupo vê-a com o nome do grupo; depois de aberta, o estranho vê a boleia mas sem o
+nome do grupo.
+
+**A seguir:** a sessão da viagem (abre no dia do jogo) com as despesas — quem pagou o quê, quem entra
+em cada uma — e o acerto de contas.
+
 ## 2026-09-16 — Uma boleia não é um grupo: as viagens é que se ligam aos grupos
 
 **O erro.** Ao criar um grupo por cada boleia, a app produzia grupos que ninguém pediu — e, pior,
