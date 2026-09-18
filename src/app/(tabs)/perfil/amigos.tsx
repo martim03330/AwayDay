@@ -128,6 +128,7 @@ export default function AmigosScreen() {
                 onPress={() => void tratar(() => acceptFriendRequest(pedido.profileId))}
               />
               <LinkTexto
+                neutro
                 label="Agora não"
                 onPress={() => void tratar(() => removeFriend(pedido.profileId))}
               />
@@ -158,6 +159,7 @@ export default function AmigosScreen() {
               {sinais(amigo)}
             </ThemedText>
             <LinkTexto
+              perigo
               label="Deixar de ser amigo"
               onPress={() => desfazer(amigo.profileId, amigo.displayName)}
             />
@@ -175,6 +177,7 @@ export default function AmigosScreen() {
                 À espera de resposta · {sinais(pedido)}
               </ThemedText>
               <LinkTexto
+                perigo
                 label="Desistir do pedido"
                 onPress={() => void tratar(() => removeFriend(pedido.profileId))}
               />

@@ -169,7 +169,7 @@ export default function SugerirPratoScreen() {
         onPress={() => void enviar()}
         disabled={aEnviar}
       />
-      <LinkTexto label="Cancelar" onPress={() => router.back()} />
+      <LinkTexto neutro label="Cancelar" onPress={() => router.back()} />
     </Screen>
   );
 }

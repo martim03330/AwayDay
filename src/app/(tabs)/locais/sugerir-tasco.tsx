@@ -208,7 +208,7 @@ export default function SugerirTascoScreen() {
         disabled={!podeEnviar}
         onPress={() => void enviar()}
       />
-      <LinkTexto label="Deixa estar" onPress={() => router.back()} />
+      <LinkTexto neutro label="Deixa estar" onPress={() => router.back()} />
 
       <ThemedText type="small" themeColor="textMuted">
         Aceitamos sítios até 45 min a pé de um estádio com jogos. Nada de links nem telefones no

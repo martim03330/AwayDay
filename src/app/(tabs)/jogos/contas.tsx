@@ -508,6 +508,7 @@ export default function ContasScreen() {
                 </ThemedText>
                 {despesa.mine ? (
                   <LinkTexto
+                    perigo
                     label="Apagar"
                     onPress={() => apagar(despesa.id, despesa.description)}
                   />
@@ -529,6 +530,7 @@ export default function ContasScreen() {
                 </ThemedText>
                 {gente.length > 1 && sessionId ? (
                   <LinkTexto
+                    neutro
                     label="Tirar"
                     onPress={() => void tratar(() => removeTripPerson(sessionId, pessoa.profileId))}
                   />
@@ -648,6 +650,7 @@ export default function ContasScreen() {
       {sessionId && (despesas.data ?? []).every((despesa) => despesa.source === 'boleia') ? (
         <Card style={styles.cartao}>
           <LinkTexto
+            perigo
             label="Apagar estas contas"
             onPress={() =>
               Alert.alert(

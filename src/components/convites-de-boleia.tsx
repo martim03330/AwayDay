@@ -86,6 +86,7 @@ export function ConvitesDeBoleia() {
             }
           />
           <LinkTexto
+            neutro
             label="Agora não"
             onPress={() => void responder(() => declineRideInvite(convite.rideId))}
           />

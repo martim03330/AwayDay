@@ -88,7 +88,7 @@ export default function AjudarScreen() {
               : 'Ficou registado. As ideias que aparecem mais do que uma vez são as primeiras a entrar.'}
           </ThemedText>
           <Button label="Escrever outra coisa" onPress={() => setEnviado(false)} />
-          <LinkTexto label="Voltar às definições" onPress={() => router.back()} />
+          <LinkTexto neutro label="Voltar às definições" onPress={() => router.back()} />
         </Card>
       </Screen>
     );

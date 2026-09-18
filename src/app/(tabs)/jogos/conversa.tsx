@@ -199,7 +199,7 @@ export default function ConversaScreen() {
               </View>
               <ThemedText>{mensagem.body}</ThemedText>
               {mensagem.canRemove ? (
-                <LinkTexto label="Apagar" onPress={() => apagar(mensagem.id)} />
+                <LinkTexto perigo label="Apagar" onPress={() => apagar(mensagem.id)} />
               ) : null}
             </Card>
           ))

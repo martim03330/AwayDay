@@ -116,7 +116,7 @@ function Carro({
                 onPress={() => carro.parking && abrirDirecoes(carro.parking, 'a-pe')}
               />
             ) : null}
-            <LinkTexto label="Já não preciso" onPress={onCancelar} />
+            <LinkTexto neutro label="Já não preciso" onPress={onCancelar} />
           </View>
         </>
       ) : carro.myStatus === 'pending' ? (
@@ -125,7 +125,7 @@ function Carro({
             Pedido enviado. O condutor foi avisado no telemóvel e sabe a que distância estás do
             carro.
           </ThemedText>
-          <LinkTexto label="Retirar o pedido" onPress={onCancelar} />
+          <LinkTexto perigo label="Retirar o pedido" onPress={onCancelar} />
         </>
       ) : (
         <Button

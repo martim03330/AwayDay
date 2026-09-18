@@ -156,6 +156,7 @@ export default function EditarPerfilScreen() {
         />
         {dados?.avatarUrl ? (
           <LinkTexto
+            perigo
             label="Tirar a foto"
             onPress={() =>
               Alert.alert('Tirar a foto?', 'Voltas a aparecer com as tuas iniciais.', [
