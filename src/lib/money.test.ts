@@ -4,6 +4,7 @@ import {
   compararCentimos,
   eCentimos,
   formatarCentimos,
+  formatarCentimosCurto,
   formatarPreco,
   lerPrecoEmCentimos,
   PRECO_MAXIMO_CENTIMOS,
@@ -90,6 +91,24 @@ describe('somarCentimos', () => {
 
   it('recusa totais fora do intervalo de inteiros seguros', () => {
     expect(() => somarCentimos(Number.MAX_SAFE_INTEGER, 1)).toThrow(RangeError);
+  });
+});
+
+describe('formatarCentimosCurto', () => {
+  it.each([
+    [5000, '50 €'],
+    [0, '0 €'],
+    [20000, '200 €'],
+    [123400, '1234 €'],
+    [350, '3,50 €'],
+    [5001, '50,01 €'],
+    [-5000, '-50 €'],
+  ])('formata %i cêntimos como "%s"', (centimos, esperado) => {
+    expect(comEspacosNormais(formatarCentimosCurto(centimos))).toBe(esperado);
+  });
+
+  it('recusa valores que não são cêntimos inteiros', () => {
+    expect(() => formatarCentimosCurto(50.5)).toThrow(RangeError);
   });
 });
 

@@ -2,6 +2,31 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-18 — Onde dormir: primeiro procurar, e pelo que cada um quer pagar
+
+O ecrã «Onde dormir» começava pelas casas propostas e deixava a pesquisa para o fim, e a pesquisa pedia logo o
+número de pessoas. Para quem quer dividir casa com desconhecidos isso é ao contrário: não se sabe quantos vão ser,
+sabe-se quanto se quer gastar.
+
+**A pesquisa vem primeiro**, depois as casas propostas, e no fim «Viste uma casa? Propõe-na».
+
+**Pergunta-se quanto cada um quer pagar pela dormida toda**, em escalões de 50 € (até 50, 50–100, 100–150,
+150–200, mais de 200), e o tamanho da casa sai daí: a app mostra uma pesquisa para casas de 2, 4 e 6 pessoas, cada
+uma já com o preço filtrado para que, dividida por essa gente, caiba no escalão («Casa para 4 · 200–400 € ao
+todo»). A conta está em `pesquisasPorOrcamento` (`src/lib/dormida.ts`), com testes, em cêntimos inteiros.
+
+**Porque não calculamos com as casas do Airbnb:** o Airbnb não tem API pública e ler as páginas deles
+automaticamente vai contra os termos. A app faz a conta ao contrário e deixa o Airbnb filtrar. O filtro de preço do
+endereço (`price_min`/`price_max`) conta **por noite** — confirmado a 2026-09-18 com uma pesquisa real no Funchal
+(filtro 100–200 €/noite, 2 noites, casas de 219 € a 415 € ao todo). O total divide-se pelas noites; o máximo
+arredonda para cima e o mínimo para baixo, para não deixar de fora nenhuma casa que caiba. O Airbnb filtra antes
+das taxas, por isso uma ou outra casa pode passar um pouco do limite.
+
+**Nos grupos continua o número de pessoas.** Vindo de um plano, a pesquisa é para quantos disseram «vou» (e pode
+mudar-se), porque aí já se sabe quem vai.
+
+Novo em `money.ts`: `formatarCentimosCurto` («50 €» para valores redondos, «3,50 €» para o resto), com testes.
+
 ## 2026-09-18 — Planos: combinar um jogo dentro do grupo
 
 Segunda parte do plano de simplificação. Até aqui, combinar um jogo era oferecer uma boleia e esperar que a malta a

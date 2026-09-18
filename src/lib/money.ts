@@ -4,6 +4,12 @@
  */
 
 const formatoEuros = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
+const formatoEurosRedondos = new Intl.NumberFormat('pt-PT', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
 
 /** The largest price someone can type: 9999,99 €. */
 export const PRECO_MAXIMO_CENTIMOS = 999_999;
@@ -51,6 +57,16 @@ export function lerPrecoEmCentimos(texto: string): number | null {
 /** "3,50 €". The division by 100 is only for display and never feeds back into a calculation. */
 export function formatarCentimos(centimos: number) {
   return formatoEuros.format(exigirCentimos(centimos) / 100);
+}
+
+/**
+ * "50 €" para valores redondos (escalões, rótulos curtos), "3,50 €" para o resto — nunca esconde cêntimos que lá
+ * estejam.
+ */
+export function formatarCentimosCurto(centimos: number) {
+  return exigirCentimos(centimos) % 100 === 0
+    ? formatoEurosRedondos.format(centimos / 100)
+    : formatarCentimos(centimos);
 }
 
 const formatosPorMoeda = new Map<string, Intl.NumberFormat>([['EUR', formatoEuros]]);

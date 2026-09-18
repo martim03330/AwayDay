@@ -60,24 +60,100 @@ function destino(cidade: string, pais: string) {
     .join('--');
 }
 
-/** Pesquisa de casas no Airbnb para esta cidade, nestas datas, para esta gente. */
+/**
+ * Pesquisa de casas no Airbnb para esta cidade, nestas datas, para esta gente. Os preços, quando os há, são **por
+ * noite e em euros inteiros**, que é como o filtro de preço do endereço do Airbnb os lê.
+ */
 export function linkAirbnb({
   cidade,
   pais,
   estadia,
   pessoas,
+  precoMinPorNoite = null,
+  precoMaxPorNoite = null,
 }: {
   cidade: string;
   pais: string;
   estadia: Estadia;
   pessoas: number;
+  precoMinPorNoite?: number | null;
+  precoMaxPorNoite?: number | null;
 }) {
   const parametros = new URLSearchParams({
     checkin: estadia.checkin,
     checkout: estadia.checkout,
     adults: String(Math.max(1, Math.round(pessoas))),
   });
+  if (precoMinPorNoite !== null) parametros.set('price_min', String(precoMinPorNoite));
+  if (precoMaxPorNoite !== null) parametros.set('price_max', String(precoMaxPorNoite));
   return `${AIRBNB}/${encodeURI(destino(cidade, pais))}/homes?${parametros}`;
+}
+
+/** Quanto cada um quer pagar pela dormida toda (todas as noites), em cêntimos. `max: null` é «mais de». */
+export type Escalao = { minCentimos: number; maxCentimos: number | null };
+
+/** Os escalões da pergunta «quanto queres pagar, só tu?»: de 50 em 50 euros, pela estadia toda. */
+export const ESCALOES_POR_PESSOA: readonly Escalao[] = [
+  { minCentimos: 0, maxCentimos: 5000 },
+  { minCentimos: 5000, maxCentimos: 10000 },
+  { minCentimos: 10000, maxCentimos: 15000 },
+  { minCentimos: 15000, maxCentimos: 20000 },
+  { minCentimos: 20000, maxCentimos: null },
+];
+
+/** Os tamanhos de casa para que se procura: o número de pessoas sai do orçamento, não se escolhe antes. */
+export const TAMANHOS_DE_CASA = [2, 4, 6] as const;
+
+export type PesquisaPorOrcamento = {
+  pessoas: number;
+  /** O que a casa toda pode custar, pelas noites todas, para cada um pagar dentro do escalão. */
+  totalMinCentimos: number;
+  totalMaxCentimos: number | null;
+  link: string;
+};
+
+/**
+ * A pergunta ao contrário: quem diz quanto quer pagar **só por si** recebe uma pesquisa por tamanho de casa, cada
+ * uma com o preço já filtrado para que, dividida por essa gente, a casa caiba no escalão. Uma casa de 400 € para 4
+ * fica a 100 € cada — tanto faz se a malta é conhecida ou não.
+ *
+ * O filtro do Airbnb é por noite: o total divide-se pelas noites. O máximo arredonda para cima e o mínimo para
+ * baixo, para nunca deixar de fora uma casa que caiba no escalão.
+ */
+export function pesquisasPorOrcamento({
+  cidade,
+  pais,
+  estadia,
+  noites,
+  escalao,
+  tamanhos = TAMANHOS_DE_CASA,
+}: {
+  cidade: string;
+  pais: string;
+  estadia: Estadia;
+  noites: number;
+  escalao: Escalao;
+  tamanhos?: readonly number[];
+}): PesquisaPorOrcamento[] {
+  const n = Math.max(1, Math.round(noites));
+  return tamanhos.map((pessoas) => {
+    const totalMinCentimos = escalao.minCentimos * pessoas;
+    const totalMaxCentimos = escalao.maxCentimos === null ? null : escalao.maxCentimos * pessoas;
+    const porNoite = n * 100;
+    return {
+      pessoas,
+      totalMinCentimos,
+      totalMaxCentimos,
+      link: linkAirbnb({
+        cidade,
+        pais,
+        estadia,
+        pessoas,
+        precoMinPorNoite: totalMinCentimos > 0 ? Math.floor(totalMinCentimos / porNoite) : null,
+        precoMaxPorNoite: totalMaxCentimos === null ? null : Math.ceil(totalMaxCentimos / porNoite),
+      }),
+    };
+  });
 }
 
 /**

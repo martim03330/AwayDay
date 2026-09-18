@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { datasDaEstadia, linkAirbnb, porPessoaNaCasa, precisaDeDormida } from '@/lib/dormida';
+import {
+  datasDaEstadia,
+  ESCALOES_POR_PESSOA,
+  linkAirbnb,
+  pesquisasPorOrcamento,
+  porPessoaNaCasa,
+  precisaDeDormida,
+} from '@/lib/dormida';
 
 describe('datasDaEstadia', () => {
   it('enters the day before the game and leaves after the nights asked for', () => {
@@ -44,6 +51,77 @@ describe('linkAirbnb', () => {
     });
     expect(link).toContain('/s/');
     expect(link).not.toContain('/rooms/');
+  });
+});
+
+describe('pesquisasPorOrcamento', () => {
+  const base = {
+    cidade: 'Funchal',
+    pais: 'Portugal',
+    estadia: { checkin: '2026-10-01', checkout: '2026-10-03' },
+    noites: 2,
+  };
+
+  it('turns what each one pays into the most the whole house can cost, for each house size', () => {
+    const pesquisas = pesquisasPorOrcamento({
+      ...base,
+      escalao: { minCentimos: 5000, maxCentimos: 10000 },
+    });
+    expect(pesquisas.map((p) => [p.pessoas, p.totalMinCentimos, p.totalMaxCentimos])).toEqual([
+      [2, 10000, 20000],
+      [4, 20000, 40000],
+      [6, 30000, 60000],
+    ]);
+  });
+
+  it('filters the Airbnb search by night, because that is how its price filter reads', () => {
+    const [quatro] = pesquisasPorOrcamento({
+      ...base,
+      escalao: { minCentimos: 5000, maxCentimos: 10000 },
+      tamanhos: [4],
+    });
+    // 200 € a 400 € pela casa, em 2 noites: 100 € a 200 € por noite.
+    expect(quatro.link).toContain('adults=4');
+    expect(quatro.link).toContain('price_min=100');
+    expect(quatro.link).toContain('price_max=200');
+  });
+
+  it('rounds the maximum up and the minimum down, so no house that fits is left out', () => {
+    const [dois] = pesquisasPorOrcamento({
+      ...base,
+      noites: 3,
+      estadia: { checkin: '2026-10-01', checkout: '2026-10-04' },
+      escalao: { minCentimos: 5000, maxCentimos: 10000 },
+      tamanhos: [2],
+    });
+    // 100 € a 200 € pela casa, em 3 noites: 33,33 € a 66,67 € por noite.
+    expect(dois.link).toContain('price_min=33');
+    expect(dois.link).toContain('price_max=67');
+  });
+
+  it('the lowest band has no minimum, and the highest has no maximum', () => {
+    const [primeiro] = pesquisasPorOrcamento({
+      ...base,
+      escalao: ESCALOES_POR_PESSOA[0],
+      tamanhos: [2],
+    });
+    const [ultimo] = pesquisasPorOrcamento({
+      ...base,
+      escalao: ESCALOES_POR_PESSOA[ESCALOES_POR_PESSOA.length - 1],
+      tamanhos: [2],
+    });
+    expect(primeiro.link).not.toContain('price_min');
+    expect(primeiro.link).toContain('price_max=50');
+    expect(ultimo.totalMaxCentimos).toBeNull();
+    expect(ultimo.link).not.toContain('price_max');
+    expect(ultimo.link).toContain('price_min=200');
+  });
+
+  it('the bands go up 50 € at a time, with no gaps between them', () => {
+    ESCALOES_POR_PESSOA.slice(1).forEach((escalao, indice) => {
+      expect(escalao.minCentimos).toBe(ESCALOES_POR_PESSOA[indice].maxCentimos);
+    });
+    expect(ESCALOES_POR_PESSOA.every((e) => Number.isInteger(e.minCentimos))).toBe(true);
   });
 });
 

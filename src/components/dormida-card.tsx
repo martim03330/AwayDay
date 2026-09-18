@@ -1,7 +1,7 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, StyleSheet, Switch, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { fetchMyGroups } from '@/features/groups/api';
@@ -24,9 +24,16 @@ import {
 } from '@/features/stays/api';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData } from '@/lib/datas';
-import { datasDaEstadia, linkAirbnb, porPessoaNaCasa } from '@/lib/dormida';
+import {
+  datasDaEstadia,
+  ESCALOES_POR_PESSOA,
+  linkAirbnb,
+  pesquisasPorOrcamento,
+  porPessoaNaCasa,
+  type Escalao,
+} from '@/lib/dormida';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos, lerPrecoEmCentimos } from '@/lib/money';
+import { formatarCentimos, formatarCentimosCurto, lerPrecoEmCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import type { Jogo, Venue } from '@/mocks/tipos';
@@ -36,13 +43,29 @@ import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
 import { Etiqueta } from '@/ui/etiqueta';
-import { icons } from '@/ui/icon';
+import { Icon, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 
 const NOITES = [1, 2, 3];
 const LUGARES = [1, 2, 3, 4, 5, 6, 7, 8];
-const PESSOAS_PESQUISA = [1, 2, 3, 4, 5, 6];
+const PESSOAS_PESQUISA = [1, 2, 3, 4, 5, 6, 7, 8];
+
+/** "até 50 €", "50–100 €", "mais de 200 €". */
+function rotuloDoEscalao(escalao: Escalao) {
+  if (escalao.minCentimos === 0 && escalao.maxCentimos !== null) {
+    return `até ${formatarCentimosCurto(escalao.maxCentimos)}`;
+  }
+  if (escalao.maxCentimos === null) return `mais de ${formatarCentimosCurto(escalao.minCentimos)}`;
+  return `${formatarCentimosCurto(escalao.minCentimos).replace(/\s*€$/, '')}–${formatarCentimosCurto(escalao.maxCentimos)}`;
+}
+
+/** O que a casa toda pode custar: "até 400 € ao todo", "200–400 € ao todo", "mais de 400 € ao todo". */
+function rotuloDoTotal(minCentimos: number, maxCentimos: number | null) {
+  if (maxCentimos === null) return `mais de ${formatarCentimosCurto(minCentimos)} ao todo`;
+  if (minCentimos === 0) return `até ${formatarCentimosCurto(maxCentimos)} ao todo`;
+  return `${formatarCentimosCurto(minCentimos).replace(/\s*€$/, '')}–${formatarCentimosCurto(maxCentimos)} ao todo`;
+}
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof StayRefused)) return 'Não deu para guardar. Tenta outra vez daqui a pouco.';
@@ -125,6 +148,7 @@ function PessoasDaCasa({
                 onPress={() => !aTratar && onResponder(pedido.profileId, true)}
               />
               <LinkTexto
+                neutro
                 label="Recusar"
                 onPress={() => !aTratar && onResponder(pedido.profileId, false)}
               />
@@ -242,19 +266,19 @@ function CasaProposta({
             />
           ) : null}
           <LinkTexto label="Mudar" onPress={onMudar} />
-          <LinkTexto label="Apagar" onPress={onApagar} />
+          <LinkTexto perigo label="Apagar" onPress={onApagar} />
         </View>
       ) : casa.myStatus === 'aceite' ? (
         <>
           <Etiqueta icon={icons.selecionado} label="Tens lugar nesta casa" tone="positivo" />
-          <LinkTexto label="Sair da casa" onPress={onSair} />
+          <LinkTexto perigo label="Sair da casa" onPress={onSair} />
         </>
       ) : casa.myStatus === 'pedido' ? (
         <>
           <ThemedText type="small" themeColor="textSecondary">
             Pedido enviado. Quem propôs a casa é que decide.
           </ThemedText>
-          <LinkTexto label="Retirar o pedido" onPress={onSair} />
+          <LinkTexto perigo label="Retirar o pedido" onPress={onSair} />
         </>
       ) : livres > 0 && !reservada && podeEntrar ? (
         <Button
@@ -285,7 +309,25 @@ function CasaProposta({
  * dinheiro pede mais cuidado do que partilhar um carro: por isso só propõe ou entra quem já tem algum pé na app, o
  * que se sabe de cada um fica à vista, e a app diz claramente que não trata de dinheiro nenhum.
  */
-export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
+export function DormidaCard({
+  jogo,
+  estadio,
+  grupoInicial = null,
+  abrirLogo = false,
+  pessoasDoGrupo = null,
+}: {
+  jogo: Jogo;
+  estadio: Venue;
+  /** Vindo de um plano: a casa nasce já desse grupo. */
+  grupoInicial?: string | null;
+  /** Vindo de «Propor uma casa» num plano: o formulário abre logo. */
+  abrirLogo?: boolean;
+  /**
+   * Vindo de um plano: quantos disseram «vou». Aí já se sabe quanta gente vai, e a pesquisa é para esse número;
+   * fora de um grupo, pergunta-se quanto cada um quer pagar e o tamanho da casa sai daí.
+   */
+  pessoasDoGrupo?: number | null;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const userId = useUserId();
@@ -315,24 +357,33 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
     .filter((casa) => casa.status === 'a_juntar')
     .reduce((soma, casa) => soma + Math.max(0, casa.sparePlaces - casa.taken), 0);
 
-  const [aberto, setAberto] = useState(false);
+  const [aberto, setAberto] = useState(abrirLogo);
   const [valor, setValor] = useState('');
   const [noites, setNoites] = useState(2);
   const [lugares, setLugares] = useState(3);
   const [conviccao, setConviccao] = useState<StayCommitment>('se_houver');
   const [link, setLink] = useState('');
   const [nota, setNota] = useState('');
-  const [grupoId, setGrupoId] = useState<string | null>(null);
+  const [grupoId, setGrupoId] = useState<string | null>(grupoInicial);
   const [soParaOGrupo, setSoParaOGrupo] = useState(true);
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const [noitesPesquisa, setNoitesPesquisa] = useState<number | null>(null);
   const [pessoasPesquisa, setPessoasPesquisa] = useState<number | null>(null);
+  // O escalão de 50 € a 100 € por pessoa é o ponto de partida: é onde cai a maior parte das casas partilhadas.
+  const [escalao, setEscalao] = useState(1);
   const noitesUsadas = noitesPesquisa ?? minhaCasa?.nights ?? 2;
-  const pessoasUsadas = pessoasPesquisa ?? 4;
+  const pessoasUsadas = pessoasPesquisa ?? Math.min(8, Math.max(1, pessoasDoGrupo ?? 4));
 
   const estadia = datasDaEstadia(jogo.inicio, noitesUsadas);
+  const pesquisas = pesquisasPorOrcamento({
+    cidade: estadio.cidade,
+    pais: estadio.pais,
+    estadia,
+    noites: noitesUsadas,
+    escalao: ESCALOES_POR_PESSOA[escalao] ?? ESCALOES_POR_PESSOA[1],
+  });
   const linkDePesquisa = linkAirbnb({
     cidade: estadio.cidade,
     pais: estadio.pais,
@@ -364,7 +415,7 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
     setConviccao(minhaCasa?.commitment ?? 'se_houver');
     setLink(minhaCasa?.listingUrl ?? '');
     setNota(minhaCasa?.note ?? '');
-    setGrupoId(minhaCasa?.groupId ?? null);
+    setGrupoId(minhaCasa?.groupId ?? grupoInicial);
     setSoParaOGrupo(minhaCasa ? minhaCasa.visibility === 'grupo' : true);
     setErro(null);
     setAberto(true);
@@ -395,24 +446,113 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
 
   return (
     <>
+      {/* Procurar casa vem primeiro: é por aí que quase toda a gente começa. */}
       <Card style={styles.card}>
+        <ThemedText type="eyebrow" themeColor="accentInk">
+          Procurar casa
+        </ThemedText>
         <ThemedText themeColor="textSecondary">
-          {`Jogo ${estadio.regiao === 'estrangeiro' ? 'fora do país' : 'numa ilha'}: quem vai dorme em ${estadio.cidade}. Quem encontrar uma casa propõe-na aqui, e a malta junta-se — quantos mais entram, menos cada um paga.`}
+          {`Jogo ${estadio.regiao === 'estrangeiro' ? 'fora do país' : 'numa ilha'}: quem vai dorme em ${estadio.cidade}. Entrada a ${formatarData(new Date(estadia.checkin))}, saída a ${formatarData(new Date(estadia.checkout))}.`}
         </ThemedText>
 
-        {lista.length > 0 ? (
-          <ThemedText style={styles.destaque}>
-            {[
-              `${plural(lista.length, 'casa proposta', 'casas propostas')}`,
-              lugaresLivres > 0
-                ? `${plural(lugaresLivres, 'lugar livre', 'lugares livres')}`
-                : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </ThemedText>
-        ) : null}
+        <ThemedText style={styles.rotulo}>Quantas noites</ThemedText>
+        <View style={styles.chips}>
+          {NOITES.map((numero) => (
+            <Chip
+              key={`noite-${numero}`}
+              label={plural(numero, 'noite', 'noites')}
+              selected={numero === noitesUsadas}
+              emCartao
+              onPress={() => setNoitesPesquisa(numero)}
+            />
+          ))}
+        </View>
+
+        {pessoasDoGrupo !== null ? (
+          <>
+            <ThemedText style={styles.rotulo}>Para quantas pessoas</ThemedText>
+            <View style={styles.chips}>
+              {PESSOAS_PESQUISA.map((numero) => (
+                <Chip
+                  key={`pessoa-${numero}`}
+                  label={plural(numero, 'pessoa', 'pessoas')}
+                  selected={numero === pessoasUsadas}
+                  emCartao
+                  onPress={() => setPessoasPesquisa(numero)}
+                />
+              ))}
+            </View>
+            <Button
+              label="Procurar no Airbnb"
+              icon={icons.casa}
+              onPress={() => void Linking.openURL(linkDePesquisa).catch(() => undefined)}
+            />
+          </>
+        ) : (
+          <>
+            <ThemedText style={styles.rotulo}>Quanto queres pagar, só tu?</ThemedText>
+            <View style={styles.chips}>
+              {ESCALOES_POR_PESSOA.map((opcao, indice) => (
+                <Chip
+                  key={`escalao-${opcao.minCentimos}`}
+                  label={rotuloDoEscalao(opcao)}
+                  selected={indice === escalao}
+                  emCartao
+                  onPress={() => setEscalao(indice)}
+                />
+              ))}
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              Pela dormida toda. O tamanho da casa sai daí: quanto mais gente, mais cara pode ser.
+            </ThemedText>
+            <View style={styles.pesquisas}>
+              {pesquisas.map((pesquisa) => (
+                <Pressable
+                  key={pesquisa.pessoas}
+                  onPress={() => void Linking.openURL(pesquisa.link).catch(() => undefined)}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Procurar no Airbnb casas para ${pesquisa.pessoas} pessoas, ${rotuloDoTotal(pesquisa.totalMinCentimos, pesquisa.totalMaxCentimos)}`}
+                  style={({ pressed }) => [
+                    styles.pesquisa,
+                    { backgroundColor: theme.background, borderColor: theme.border },
+                    pressed && styles.premido,
+                  ]}>
+                  <View style={[styles.azulejo, { backgroundColor: theme.successBackground }]}>
+                    <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
+                      {String(pesquisa.pessoas)}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.flex}>
+                    <ThemedText type="smallBold">{`Casa para ${pesquisa.pessoas}`}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {rotuloDoTotal(pesquisa.totalMinCentimos, pesquisa.totalMaxCentimos)}
+                    </ThemedText>
+                  </View>
+                  <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
+                    Airbnb
+                  </ThemedText>
+                  <Icon name={icons.seguinte} size={16} color={theme.accentInk} />
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
+        <ThemedText type="small" themeColor="textMuted">
+          Abre o Airbnb com a cidade, as datas e o preço já preenchidos. Encontraste uma boa? Volta
+          aqui e propõe-na à malta.
+        </ThemedText>
       </Card>
+
+      {lista.length > 0 ? (
+        <ThemedText style={styles.destaque}>
+          {[
+            `${plural(lista.length, 'casa proposta', 'casas propostas')}`,
+            lugaresLivres > 0 ? `${plural(lugaresLivres, 'lugar livre', 'lugares livres')}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </ThemedText>
+      ) : null}
 
       {lista.map((casa) => (
         <CasaProposta
@@ -582,7 +722,7 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
               disabled={aTratar}
               onPress={() => void guardar()}
             />
-            <LinkTexto label="Deixa estar" onPress={() => setAberto(false)} />
+            <LinkTexto neutro label="Deixa estar" onPress={() => setAberto(false)} />
           </View>
         ) : minhaCasa ? (
           <ThemedText type="small" themeColor="textSecondary">
@@ -605,47 +745,6 @@ export function DormidaCard({ jogo, estadio }: { jogo: Jogo; estadio: Venue }) {
         {erro && !aberto ? (
           <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText>
         ) : null}
-      </Card>
-
-      {/* Procurar casa: as noites e as pessoas são só para esta pesquisa. */}
-      <Card style={styles.card}>
-        <ThemedText type="eyebrow" themeColor="accentInk">
-          Procurar casa
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {`Para a pesquisa: ${plural(noitesUsadas, 'noite', 'noites')} para ${plural(pessoasUsadas, 'pessoa', 'pessoas')} · entrada a ${formatarData(new Date(estadia.checkin))}, saída a ${formatarData(new Date(estadia.checkout))}.`}
-        </ThemedText>
-        <View style={styles.chips}>
-          {NOITES.map((numero) => (
-            <Chip
-              key={`noite-${numero}`}
-              label={plural(numero, 'noite', 'noites')}
-              selected={numero === noitesUsadas}
-              emCartao
-              onPress={() => setNoitesPesquisa(numero)}
-            />
-          ))}
-        </View>
-        <View style={styles.chips}>
-          {PESSOAS_PESQUISA.map((numero) => (
-            <Chip
-              key={`pessoa-${numero}`}
-              label={plural(numero, 'pessoa', 'pessoas')}
-              selected={numero === pessoasUsadas}
-              emCartao
-              onPress={() => setPessoasPesquisa(numero)}
-            />
-          ))}
-        </View>
-        <Button
-          label="Procurar no Airbnb"
-          icon={icons.casa}
-          onPress={() => void Linking.openURL(linkDePesquisa).catch(() => undefined)}
-        />
-        <ThemedText type="small" themeColor="textMuted">
-          Abre a pesquisa com a cidade e as datas já preenchidas. Encontraste uma boa? Volta aqui e
-          propõe-na à malta.
-        </ThemedText>
       </Card>
     </>
   );
@@ -714,5 +813,27 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  pesquisas: {
+    gap: Spacing.two,
+  },
+  pesquisa: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.twoAndHalf,
+    padding: Spacing.twoAndHalf,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+  },
+  azulejo: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premido: {
+    opacity: 0.8,
   },
 });

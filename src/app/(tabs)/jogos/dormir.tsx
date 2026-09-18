@@ -11,7 +11,15 @@ import { SectionHeader } from '@/ui/section-header';
 /** Dormir fora: quem propõe casa, quem se junta, e a pesquisa com as noites já preenchidas. */
 export default function DormirScreen() {
   const router = useRouter();
-  const { jogoId } = useLocalSearchParams<{ jogoId?: string }>();
+  // Vindo de um plano: a casa nasce do grupo, o formulário abre logo (`propor`) e a pesquisa é para quem disse «vou»
+  // (`pessoas`), em vez de perguntar quanto cada um quer pagar.
+  const { jogoId, grupoId, propor, pessoas } = useLocalSearchParams<{
+    jogoId?: string;
+    grupoId?: string;
+    propor?: string;
+    pessoas?: string;
+  }>();
+  const pessoasDoGrupo = pessoas && /^\d+$/.test(pessoas) ? Number(pessoas) : null;
   const jogo = jogoId ? obterJogo(jogoId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
 
@@ -31,7 +39,13 @@ export default function DormirScreen() {
   return (
     <Screen>
       <SectionHeader title="Onde dormir" />
-      <DormidaCard jogo={jogo} estadio={estadio} />
+      <DormidaCard
+        jogo={jogo}
+        estadio={estadio}
+        grupoInicial={grupoId ?? null}
+        abrirLogo={propor === '1'}
+        pessoasDoGrupo={pessoasDoGrupo}
+      />
     </Screen>
   );
 }
