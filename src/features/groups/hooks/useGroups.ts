@@ -148,36 +148,51 @@ export function useGroupChannel(groupId: string | null, userId: string | null) {
     if (!cliente || !groupId || !userId) return;
 
     let ativo = true;
-    const canal = cliente.channel(`group:${groupId}`, {
-      config: { private: true, presence: { key: userId } },
-    });
+    let canal: ReturnType<typeof cliente.channel> | null = null;
+    const topico = `realtime:group:${groupId}`;
 
-    canal
-      .on('presence', { event: 'sync' }, () => {
-        if (!ativo) return;
-        setOnline(Object.keys(canal.presenceState()));
-      })
-      .on('broadcast', { event: 'messages' }, () => {
-        void queryClient.invalidateQueries({ queryKey: groupMessagesKey(groupId) });
-        void queryClient.invalidateQueries({ queryKey: groupInboxKey() });
-      })
-      // Alguém respondeu a um plano, ou o plano fechou: os cartões mudam.
-      .on('broadcast', { event: 'plans' }, () => {
-        void queryClient.invalidateQueries({ queryKey: plansKey() });
-      });
+    async function entrar() {
+      if (!cliente || !groupId || !userId) return;
+      // Um canal do mesmo grupo que ainda está a fechar (voltaste a abrir a conversa depressa) seria devolvido tal e
+      // qual pelo `channel()`, já ligado — e aí não se lhe podem juntar ouvintes. Espera-se que feche primeiro.
+      for (const antigo of cliente.getChannels().filter((c) => c.topic === topico)) {
+        await cliente.removeChannel(antigo);
+      }
+      if (!ativo || cliente.getChannels().some((c) => c.topic === topico)) return;
 
-    // Um canal privado precisa do token da sessão antes de entrar.
-    void cliente.realtime.setAuth().then(() => {
+      // Um canal privado precisa do token da sessão antes de entrar.
+      await cliente.realtime.setAuth();
       if (!ativo) return;
-      canal.subscribe((estado) => {
-        if (estado === 'SUBSCRIBED') void canal.track({ at: new Date().toISOString() });
+
+      const novo = cliente.channel(`group:${groupId}`, {
+        config: { private: true, presence: { key: userId } },
       });
-    });
+      canal = novo;
+      novo
+        .on('presence', { event: 'sync' }, () => {
+          if (!ativo) return;
+          setOnline(Object.keys(novo.presenceState()));
+        })
+        .on('broadcast', { event: 'messages' }, () => {
+          void queryClient.invalidateQueries({ queryKey: groupMessagesKey(groupId) });
+          void queryClient.invalidateQueries({ queryKey: groupInboxKey() });
+        })
+        // Alguém respondeu a um plano, ou o plano fechou: os cartões mudam.
+        .on('broadcast', { event: 'plans' }, () => {
+          void queryClient.invalidateQueries({ queryKey: plansKey() });
+        })
+        .subscribe((estado) => {
+          if (estado === 'SUBSCRIBED') void novo.track({ at: new Date().toISOString() });
+        });
+    }
+
+    // Sem canal, a conversa continua a funcionar (volta a perguntar de 30 em 30 segundos); só se perde o «online».
+    entrar().catch(() => undefined);
 
     return () => {
       ativo = false;
       setOnline([]);
-      void cliente.removeChannel(canal);
+      if (canal) void cliente.removeChannel(canal);
     };
   }, [groupId, userId, queryClient]);
 
