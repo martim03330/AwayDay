@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
 import { useMyNudges } from '@/features/nudges/hooks/useMyNudges';
 import type { NudgeItem } from '@/features/nudges/types';
 import { useNow } from '@/hooks/use-now';
@@ -70,6 +70,7 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
   }, [copyWidth, reduceMotion, offset]);
 
   const theme = useTheme();
+  const escuro = useEstaEscuro();
   const moving = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
 
   return (
@@ -80,7 +81,8 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
       accessibilityHint="Abre a lista de novidades"
       style={({ pressed }) => [
         styles.strip,
-        { backgroundColor: theme.text },
+        // Sempre escura por dentro: de dia é a tinta; de noite a tinta é clara, e a faixa passa ao chão mais escuro.
+        { backgroundColor: escuro ? theme.backgroundSelected : theme.text },
         pressed && styles.pressed,
       ]}>
       <View style={[styles.tag, { backgroundColor: theme.highlight }]}>
@@ -92,7 +94,7 @@ function Ticker({ items, onPress }: { items: NudgeItem[]; onPress: () => void })
       {reduceMotion ? (
         // No motion: the latest item, still, and the full list one tap away.
         <View style={[styles.track, styles.still]}>
-          <ThemedText numberOfLines={1} style={styles.text}>
+          <ThemedText numberOfLines={1} style={[styles.text, { color: theme.accentText }]}>
             {items[0].body}
           </ThemedText>
         </View>
