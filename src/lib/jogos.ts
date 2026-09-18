@@ -20,14 +20,6 @@ export function estadoDoJogo(jogo: Pick<Jogo, 'inicio'>, agora: number): EstadoJ
   return 'terminado';
 }
 
-/**
- * A partir de quando faz sentido falar das contas da viagem: a véspera do jogo. Muita viagem começa no dia anterior
- * — a casa, a estrada, o jantar — e as contas não fecham nunca, ficam lá para consulta muito depois do apito.
- */
-export function contasDaViagemAbertas(jogo: Pick<Jogo, 'inicio'>, agora: number) {
-  return agora >= dataEmLisboaAPartirDe(new Date(jogo.inicio), -1, '00:00').getTime();
-}
-
 /** O próximo jogo (a decorrer ou agendado) num estádio. */
 export function proximoJogoNoEstadio(jogos: readonly Jogo[], estadioId: string, agora: number) {
   return jogos

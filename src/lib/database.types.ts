@@ -738,6 +738,7 @@ export type Database = {
           group_id: string
           id: string
           ride_id: string | null
+          session_id: string | null
           status: string
           stay_plan_id: string | null
           updated_at: string
@@ -751,6 +752,7 @@ export type Database = {
           group_id: string
           id?: string
           ride_id?: string | null
+          session_id?: string | null
           status?: string
           stay_plan_id?: string | null
           updated_at?: string
@@ -764,6 +766,7 @@ export type Database = {
           group_id?: string
           id?: string
           ride_id?: string | null
+          session_id?: string | null
           status?: string
           stay_plan_id?: string | null
           updated_at?: string
@@ -795,6 +798,13 @@ export type Database = {
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trip_session"
             referencedColumns: ["id"]
           },
           {
@@ -3594,6 +3604,7 @@ export type Database = {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
       }
+      ensure_plan_session: { Args: { p_plan_id: string }; Returns: string }
       expire_ride_requests: { Args: never; Returns: number }
       feedback_inbox: {
         Args: { p_status?: string }
@@ -3932,6 +3943,7 @@ export type Database = {
           total_cents: number
         }[]
       }
+      my_open_trip_sessions: { Args: never; Returns: string[] }
       my_ride_alerts: {
         Args: never
         Returns: {
@@ -4565,6 +4577,31 @@ export type Database = {
           reason: string
         }[]
       }
+      trip_session_cards: {
+        Args: { p_session_ids: string[] }
+        Returns: {
+          departure_at: string
+          driver_id: string
+          driver_name: string
+          expenses: number
+          fixture_id: string
+          group_id: string
+          i_drive: boolean
+          kickoff_at: string
+          my_balance_cents: number
+          name: string
+          opens_at: string
+          origin_name: string
+          people: number
+          people_names: string[]
+          plan_id: string
+          ride_cents: number
+          ride_id: string
+          ride_people: number
+          session_id: string
+          total_cents: number
+        }[]
+      }
       trip_session_of: {
         Args: { p_fixture_id: string; p_group_id: string }
         Returns: {
@@ -4573,6 +4610,7 @@ export type Database = {
           total_cents: number
         }[]
       }
+      trip_session_opens_at: { Args: { p_fixture_id: string }; Returns: string }
       trip_session_people: {
         Args: { p_session_id: string }
         Returns: {

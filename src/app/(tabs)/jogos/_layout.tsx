@@ -59,17 +59,11 @@ export default function JogosLayout() {
       <Stack.Screen name="barulho">
         <Stack.Screen.Title>Barulhómetro</Stack.Screen.Title>
       </Stack.Screen>
-      <Stack.Screen name="contas-do-jogo">
-        <Stack.Screen.Title>Contas da viagem</Stack.Screen.Title>
-      </Stack.Screen>
       <Stack.Screen name="conversa">
         <Stack.Screen.Title>Conversa do carro</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="resumo">
         <Stack.Screen.Title>Resumo da viagem</Stack.Screen.Title>
-      </Stack.Screen>
-      <Stack.Screen name="contas">
-        <Stack.Screen.Title>Contas da viagem</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen
         name="avaliar"

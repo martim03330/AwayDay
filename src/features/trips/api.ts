@@ -496,3 +496,77 @@ export async function removeTripSettlement(settlementId: string) {
   const { error } = await client().rpc('remove_trip_settlement', { p_settlement_id: settlementId });
   if (error) throw refusal(error);
 }
+
+/**
+ * A sessão da viagem, como aparece na página dos Jogos e no ecrã da sessão: o jogo, quem vai, quem dá a boleia e a
+ * que horas sai, e o dinheiro. Nasce do plano fechado e aparece na véspera do jogo.
+ */
+export type TripSessionCard = {
+  sessionId: string;
+  name: string;
+  fixtureId: string;
+  kickoffAt: string;
+  /** A partir de quando aparece na página dos Jogos. */
+  opensAt: string;
+  planId: string | null;
+  groupId: string | null;
+  people: number;
+  peopleNames: string[];
+  ride: {
+    id: string;
+    driverId: string;
+    driverName: string;
+    departureAt: string;
+    originName: string;
+    iDrive: boolean;
+    /** A despesa do carro, e por quantos se divide (contas do servidor). `null` enquanto não houver. */
+    cents: number | null;
+    people: number | null;
+  } | null;
+  expenses: number;
+  totalCents: number;
+  /** Positivo: tens a receber. Negativo: deves. */
+  myBalanceCents: number;
+};
+
+export async function fetchTripSessionCards(sessionIds: string[]): Promise<TripSessionCard[]> {
+  if (sessionIds.length === 0) return [];
+  const { data, error } = await client().rpc('trip_session_cards', { p_session_ids: sessionIds });
+  if (error) throw error;
+  return data.map((row) => ({
+    sessionId: row.session_id,
+    name: row.name ?? 'A viagem',
+    fixtureId: row.fixture_id,
+    kickoffAt: row.kickoff_at,
+    opensAt: row.opens_at,
+    planId: row.plan_id,
+    groupId: row.group_id,
+    people: row.people ?? 0,
+    peopleNames: row.people_names ?? [],
+    ride:
+      row.ride_id && row.driver_id && row.departure_at
+        ? {
+            id: row.ride_id,
+            driverId: row.driver_id,
+            driverName: row.driver_name ?? 'Um adepto',
+            departureAt: row.departure_at,
+            originName: row.origin_name ?? '',
+            iDrive: row.i_drive === true,
+            cents: row.ride_cents,
+            people: row.ride_people,
+          }
+        : null,
+    expenses: row.expenses ?? 0,
+    totalCents: row.total_cents ?? 0,
+    myBalanceCents: row.my_balance_cents ?? 0,
+  }));
+}
+
+/** As sessões abertas agora: da véspera do jogo (ou dois dias antes, fora do país) até três dias depois. */
+export async function fetchMyOpenTripSessions(): Promise<TripSessionCard[]> {
+  const { data, error } = await client().rpc('my_open_trip_sessions');
+  if (error) throw error;
+  const ids = data.filter((id): id is string => typeof id === 'string');
+  const cartoes = await fetchTripSessionCards(ids);
+  return ids.flatMap((id) => cartoes.filter((cartao) => cartao.sessionId === id));
+}

@@ -14,6 +14,7 @@ import { obterJogo } from '@/mocks/jogos';
  *   os avisos das boleias precisam do telemóvel registado para toda a gente.
  * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem as Novidades. O aviso da retrospetiva abre a retrospetiva.
  * - Uma mensagem de um grupo abre a conversa do grupo; um convite para um grupo abre a Malta.
+ * - Uma despesa ou um pagamento abre as despesas da viagem.
  */
 export function NotificacoesPush() {
   const router = useRouter();
@@ -61,6 +62,11 @@ export function NotificacoesPush() {
         router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });
       }
       if (tipo === 'convite-grupo') router.push('/malta');
+      const sessaoId =
+        typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'sessionId') : null;
+      if (tipo === 'contas' && typeof sessaoId === 'string') {
+        router.push({ pathname: '/sessao/[sessaoId]/despesas', params: { sessaoId } });
+      }
       if (tipo === 'o-meu-jogo' && typeof jogoId === 'string' && obterJogo(jogoId)) {
         router.push({ pathname: '/jogos/[jogoId]', params: { jogoId } });
       }

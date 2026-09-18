@@ -2,6 +2,33 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-18 — A sessão da viagem, e as despesas só lá dentro
+
+Terceira parte do plano de simplificação. As contas abriam-se de três maneiras (da boleia, do grupo, do nada) e
+viviam na página do jogo, misturadas com tascos e estacionamento.
+
+**A sessão nasce do plano fechado.** Quando um plano fecha (à mão, ou porque o carro encheu), o servidor cria a
+sessão da viagem — ou reaproveita a da boleia do plano, se já existir — e põe lá quem convidou, quem disse «vou», o
+condutor e quem tem lugar no carro (`ensure_plan_session`, num trigger). Com boleia, a sessão é da boleia, e a
+despesa do carro entra sozinha como já entrava.
+
+**Aparece na página dos Jogos na véspera** (00:00 de Lisboa), ou dois dias antes nos jogos fora do país, e fica até
+três dias depois do jogo (`trip_session_opens_at`, `my_open_trip_sessions`). A regra está no servidor; as sessões que
+já existiam seguem a mesma regra.
+
+**A sessão é simples:** as horas (saída do carro e apito), com o aviso para estarem a horas; quem deu a boleia e
+quanto fica a cada um, com o lembrete para não se esquecerem de lhe pagar; quem vai; e as despesas. Tascos e mapas
+ficam no jogo. As despesas **só existem na sessão**: saíram a linha «Contas da viagem» da página do jogo, os ecrãs
+`jogos/contas` e `jogos/contas-do-jogo` e o cartão «Viagem a decorrer».
+
+**Despesas numa página própria**, com um título com graça conforme o que já se gastou e um interruptor em cima:
+**Lista** (linhas compactas, para caberem várias sem deslizar; tocar sem largar apaga as tuas) e **Acertar contas**
+(«O Rui deve-te 12,50 €», com «Já paguei» / «Já recebi», e os pagamentos por confirmar). Em baixo, fixo: na lista,
+«Adicionar despesa», que abre um ecrã próprio; no acerto, o estado — «Contas acertadas» ou «Contas por acertar». As
+contas continuam a ser feitas no servidor e o acerto em `src/lib/acerto.ts`, sem mudanças.
+
+Novo em `src/ui`: `Segmentado`, para duas ou três vistas do mesmo ecrã.
+
 ## 2026-09-18 — Onde dormir: primeiro procurar, e pelo que cada um quer pagar
 
 O ecrã «Onde dormir» começava pelas casas propostas e deixava a pesquisa para o fim, e a pesquisa pedia logo o

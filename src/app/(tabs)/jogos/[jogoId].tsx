@@ -8,7 +8,6 @@ import { CarimboEstadio } from '@/components/carimbo-estadio';
 import { PlanoDoJogo } from '@/components/plano-do-jogo';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
 import { useRideBoard } from '@/features/rides/hooks/useRides';
 import { GoingButton } from '@/features/activity/components/GoingButton';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
@@ -21,7 +20,7 @@ import { useUserId } from '@/lib/session';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { formatarNota, plural } from '@/lib/formatos';
-import { contasDaViagemAbertas, estadoDoJogo } from '@/lib/jogos';
+import { estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
 import { precisaDeDormida } from '@/lib/dormida';
 import { avisoDeChuva } from '@/lib/meteorologia';
@@ -103,7 +102,6 @@ export default function JogoScreen() {
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
   const quadroBoleias = useRideBoard(jogoId ?? null, userId !== null);
-  const contasDoJogo = useMyTripAccounts(jogoId ?? null, userId !== null);
 
   if (loading) {
     return (
@@ -161,20 +159,6 @@ export default function JogoScreen() {
         : 'Ainda não há boleias para este jogo'
       : `${plural(comLugar.length, 'carro com lugar', 'carros com lugar')}${
           maisBarata !== null ? ` · desde ${formatarCentimos(maisBarata)}` : ''
-        }`;
-
-  const minhasContas = contasDoJogo.data ?? [];
-  const saldo = minhasContas.reduce((total, conta) => total + conta.myBalanceCents, 0);
-  const gasto = minhasContas.reduce((total, conta) => total + conta.totalCents, 0);
-  const resumoContas =
-    minhasContas.length === 0
-      ? 'Divide as despesas do dia com quem foi contigo'
-      : `${formatarCentimos(gasto)} lançados${
-          saldo === 0
-            ? ' · estás em dia'
-            : saldo > 0
-              ? ` · tens a receber ${formatarCentimos(saldo)}`
-              : ` · deves ${formatarCentimos(-saldo)}`
         }`;
 
   const inicio = new Date(jogo.inicio);
@@ -348,17 +332,8 @@ export default function JogoScreen() {
             titulo="Boleias"
             resumo={resumoBoleias}
             onPress={() => abrir('/jogos/boleias')}
-            separador={contasDaViagemAbertas(jogo, agora) || dormidaFazSentido}
+            separador={dormidaFazSentido}
           />
-          {contasDaViagemAbertas(jogo, agora) ? (
-            <LinhaSeccao
-              icone={icons.preco}
-              titulo="Contas da viagem"
-              resumo={resumoContas}
-              onPress={() => abrir('/jogos/contas-do-jogo')}
-              separador={dormidaFazSentido}
-            />
-          ) : null}
           {dormidaFazSentido ? (
             <LinhaSeccao
               icone={icons.casa}

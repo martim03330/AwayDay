@@ -194,8 +194,8 @@ export default function ResumoScreen() {
                 icon={icons.preco}
                 onPress={() =>
                   router.push({
-                    pathname: '/jogos/contas',
-                    params: { jogoId: jogo.id, sessaoId: viagem.sessionId },
+                    pathname: '/sessao/[sessaoId]/despesas',
+                    params: { sessaoId: viagem.sessionId },
                   })
                 }
               />

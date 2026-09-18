@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JogoCard } from '@/components/jogo-card';
 import { ConvitesDeBoleia } from '@/components/convites-de-boleia';
-import { ViagemADecorrer } from '@/components/viagem-a-decorrer';
+import { SessoesAbertas } from '@/components/sessoes-abertas';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { CoachBanner } from '@/features/coach/components/CoachBanner';
 import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
@@ -331,7 +331,7 @@ export default function JogosScreen() {
         </View>
 
         <View style={styles.conteudo}>
-          <ViagemADecorrer />
+          <SessoesAbertas />
           <ConvitesDeBoleia />
           <AlertasBoleias />
           {renderConteudo()}

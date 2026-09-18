@@ -1,6 +1,8 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  fetchMyOpenTripSessions,
+  fetchTripSessionCards,
   fetchMyLiveTrips,
   fetchMyTripAccounts,
   fetchTripStartOptions,
@@ -157,4 +159,29 @@ export function useMyTripHistory(signedIn: boolean) {
 export function useRefreshTrips() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: [TRIPS_KEY] });
+}
+
+export const openSessionsKey = () => [TRIPS_KEY, 'open-sessions'] as const;
+
+/** As sessões da viagem abertas agora, para a página dos Jogos. */
+export function useMyOpenTripSessions(signedIn: boolean) {
+  return useQuery({
+    queryKey: openSessionsKey(),
+    queryFn: signedIn ? fetchMyOpenTripSessions : skipToken,
+    staleTime: 30 * 1000,
+    refetchInterval: 2 * 60 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** O cartão de uma sessão, para o ecrã da sessão e das despesas. */
+export function useTripSessionCard(sessionId: string | null) {
+  const cartao = useQuery({
+    queryKey: [TRIPS_KEY, 'card', sessionId],
+    queryFn: sessionId ? () => fetchTripSessionCards([sessionId]) : skipToken,
+    staleTime: STALE_MS,
+    refetchInterval: 60 * 1000,
+    meta: { persist: false },
+  });
+  return { ...cartao, card: cartao.data?.[0] ?? null };
 }
