@@ -2,7 +2,6 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { Colors as colors } from '@/constants/theme';
 
 export default function TabsLayout() {
-
   return (
     <NativeTabs
       backgroundColor={colors.background}
@@ -13,6 +12,11 @@ export default function TabsLayout() {
       <NativeTabs.Trigger name="jogos">
         <NativeTabs.Trigger.Label>Jogos</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="soccerball" md="sports_soccer" selectedColor={colors.accent} />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="malta">
+        <NativeTabs.Trigger.Label>Malta</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="person.3" md="groups" selectedColor={colors.accent} />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="locais">

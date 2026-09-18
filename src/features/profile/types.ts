@@ -30,6 +30,8 @@ export type NotificationKind =
   | 'new_stamp'
   /** Mensagens na conversa do carro. */
   | 'ride_message'
+  /** Mensagens na conversa de um grupo (e o «estou aqui» num tasco). */
+  | 'group_message'
   /** Convites para uma boleia ou para um grupo. */
   | 'invites'
   /** Pedidos de amizade e respostas. */

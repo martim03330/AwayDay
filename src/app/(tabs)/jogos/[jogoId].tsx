@@ -334,6 +334,15 @@ export default function JogoScreen() {
 
         <SectionHeader title="Com quem vais" />
         <Card style={styles.lista}>
+          {estado === 'agendado' ? (
+            <LinhaSeccao
+              icone={icons.perfil}
+              titulo="Combinar com a malta"
+              resumo="Convida um grupo teu: quem vai, a boleia e a dormida"
+              onPress={() => abrir('/jogos/combinar')}
+              separador
+            />
+          ) : null}
           <LinhaSeccao
             icone={icons.carro}
             titulo="Boleias"

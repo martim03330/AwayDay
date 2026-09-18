@@ -12,6 +12,7 @@ import { FotoTasco } from '@/components/foto-tasco';
 import { ReferenciaAdeptos } from '@/components/referencia-adeptos';
 import { WcDoTasco } from '@/components/wc-do-tasco';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
+import { EstouAqui } from '@/features/groups/components/EstouAqui';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
@@ -349,6 +350,8 @@ export default function LocalScreen() {
           />
         )}
       </View>
+
+      <EstouAqui placeId={local.id} />
 
       <SectionHeader
         title="O que pedir"

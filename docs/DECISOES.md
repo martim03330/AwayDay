@@ -2,6 +2,83 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-09-18 — Planos: combinar um jogo dentro do grupo
+
+Segunda parte do plano de simplificação. Até aqui, combinar um jogo era oferecer uma boleia e esperar que a malta a
+visse. Passa a haver **planos**.
+
+**O convite.** Na página do jogo, «Combinar com a malta» → escolhe-se o grupo, e cai na conversa um cartão com o
+jogo, a hora, o estádio e dois botões: **Vou** e **Estou a pensar** (tocar outra vez tira a resposta). Quem convida
+fica logo como «vou». **Um plano por grupo e por jogo**: convidar outra vez volta a pôr o mesmo plano na conversa.
+
+**O plano** (a partir do cartão, ou de «Planos em aberto») mostra quem vai, a boleia e a dormida. Os planos futuros
+e os em aberto ficaram a mesma coisa, como combinado: no rodapé da conversa só há «Planos em aberto» e «Histórico».
+
+**A boleia e a casa ligam-se sozinhas.** Quem está no plano oferece a boleia para o grupo (o ecrã de oferecer já
+vem com o grupo escolhido) e ela passa a ser a do plano. Também se escolhe à mão, entre as boleias do grupo para
+esse jogo. O mesmo para a casa.
+
+**Sempre à mão:** abrir a boleia ao público (só o condutor, como até aqui), deixar a volta aberta a quem precisar
+(só o condutor, só em ida e volta) e mandar o plano a outro grupo (só quem convidou, só para grupos onde está).
+
+**Misturar grupos.** Mandar o plano a outro grupo põe o cartão na conversa desse grupo, e essa malta passa a ver a
+boleia e a casa do plano mesmo que sejam «só do grupo» — senão não podia pedir lugar. Para isso, as cinco funções
+que decidem quem vê uma boleia ou casa privadas (`ride_board`, `ride_return_board`, `request_ride_seat`,
+`fixture_stay_plans`, `request_stay_place`) foram reescritas a partir das que estão em produção, com uma única
+mudança: «é do grupo» passa a ser `can_see_private_ride` / `can_see_private_stay` (é do grupo **ou** de um grupo a
+quem o plano foi mandado). Quem é de fora continua sem ver.
+
+**Fechar o plano.** Fecha sozinho quando o carro enche (trigger nos lugares aceites). Quem convidou também o fecha
+à mão; se ainda houver lugares, aparece o aviso «Ainda sobra 1 lugar no carro» com as saídas (abrir ao público,
+mandar a outro grupo) e «Fechar mesmo assim». Sem boleia, pergunta se quer fechar na mesma. Um plano fechado pode
+voltar a abrir, e quem convidou pode desistir dele. **É o plano fechado que abre a sessão na véspera do jogo** —
+isso é a parte seguinte.
+
+**Na conversa, em direto.** As respostas e o fecho avisam o canal de cada grupo do plano (`plans`), e os cartões
+atualizam-se sem sair do ecrã. As notificações de convite dizem «O Rui convida-te para Benfica x Porto. Vais?».
+
+**As casas à vista no plano.** Não fazia sentido ter de sair do plano para «Onde dormir» para ver se já havia casa.
+As casas do jogo propostas no grupo (ou nos grupos do plano, ou por quem respondeu) aparecem em lista no próprio
+plano, com quanto fica a cada um. Cada pessoa diz **qual prefere** — uma preferência por pessoa e por plano, que
+muda com um toque —, e a lista ordena-se pela casa escolhida e depois pelas mais preferidas. Quem não gostar propõe
+outra (o formulário abre logo, já com o grupo). Quem convidou escolhe «a casa do plano»; a primeira proposta fica
+escolhida sozinha. A secção só aparece nos jogos fora do país e nas ilhas, que é onde o servidor aceita casas.
+
+## 2026-09-18 — A Malta: o grupo passa a ser uma conversa
+
+Primeira parte de um plano maior para simplificar a app (grupos → planos → sessão e despesas → pedir boleia →
+histórico e álbum → entrada na app → Top e pontos). Os grupos estavam escondidos no perfil e eram uma lista de
+pessoas com um link; a malta não combina nada numa lista, combina a falar.
+
+**Um separador próprio, «Malta».** Fica entre Jogos e Locais. Mostra os grupos em cartões — foto, nome, última
+mensagem e quantas estão por ler — e os convites por responder. O perfil perdeu a linha «Os teus grupos», e os
+ecrãs `perfil/grupos` e `perfil/grupo` saíram.
+
+**Dentro do grupo é uma conversa** (`/grupos/[grupoId]`), fora dos separadores para ocupar o ecrã todo e o teclado
+se portar bem. Por baixo da caixa de escrita há dois atalhos: **Planos em aberto** e **Histórico**. Por agora
+mostram o que o grupo já tinha (as boleias e casas do grupo, e as viagens); passam a ser os planos e o álbum nas
+partes seguintes. O que estava no ecrã do grupo (pessoas, convite, nome, sair) foi para as definições do grupo, que
+se abrem a tocar no título.
+
+**Cara e fundo.** Cada grupo pode ter uma foto e um fundo de conversa: cinco que vêm com a app (relvado, bancada,
+jogo à noite, cachecol, liso) ou uma foto da galeria. Qualquer pessoa do grupo os muda — o grupo é de todos. As
+fotos ficam num balde privado (`group-photos`), numa pasta por grupo, e só quem é do grupo as abre.
+
+**Quem está online.** Não havia Realtime nenhum na app; tudo era perguntar de x em x segundos. A conversa passa a
+entrar num canal privado `group:<id>`: a presença diz quantas pessoas a têm aberta, e um trigger avisa o canal
+quando há mensagem nova (o aviso leva só o id; a conversa volta a pedir as mensagens pela função de sempre, que é
+quem verifica se a pessoa é do grupo). Só entra no canal quem é do grupo — políticas em `realtime.messages`. Não
+entrou dependência nova: o Realtime vem no `supabase-js`. O intervalo de 30 s fica como rede de segurança.
+
+**«Estou aqui» em vez de pintar o tasco no mapa.** A ideia era mostrar no mapa, com outra cor, os tascos onde está
+alguém do grupo. Isso mostrava onde uma pessoa está sem ela o ter dito, e as regras de privacidade não o permitem
+(localização individual nunca exposta; o mapa só lê agregados). Em vez disso, na ficha do tasco há «Estás aqui? Diz
+à malta»: um toque manda para a conversa do grupo escolhido «O Rui está no Tasco do Zé». É a própria pessoa que o
+diz, quando quer; vai só o nome do tasco, nunca coordenadas, e os check-ins continuam sem ser lidos pela app.
+
+**Notificações.** Cada mensagem avisa os outros do grupo (`social-notify`, tipo `group_message`), e pode
+desligar-se em Notificações → «Conversa do grupo». Tocar no aviso abre a conversa.
+
 ## 2026-09-16 — Reportar um erro, de dentro da app
 
 Não havia porta nenhuma: quem encontrasse um erro tinha de o dizer a alguém ou calar-se. Passa a haver, em

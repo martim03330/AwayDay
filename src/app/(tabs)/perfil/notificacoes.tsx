@@ -177,6 +177,11 @@ const AVISOS_DA_MALTA: { kind: NotificationKind; titulo: string; descricao: stri
     descricao: 'Quando alguém escreve na conversa de uma boleia em que vais.',
   },
   {
+    kind: 'group_message',
+    titulo: 'Conversa do grupo',
+    descricao: 'Quando alguém escreve num grupo teu, ou diz em que tasco está.',
+  },
+  {
     kind: 'invites',
     titulo: 'Convites',
     descricao: 'Quando um amigo te guarda lugar no carro ou te chama para um grupo.',

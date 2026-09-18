@@ -43,7 +43,7 @@ export default function EntrarNoGrupoScreen() {
           icon={icons.naoEncontrado}
           title="Convite sem código"
           message="Pede à malta que te mande o link outra vez."
-          action={{ label: 'Voltar', onPress: () => router.replace('/perfil/grupos') }}
+          action={{ label: 'Voltar', onPress: () => router.replace('/malta') }}
         />
       </Screen>
     );
@@ -70,7 +70,7 @@ export default function EntrarNoGrupoScreen() {
     try {
       const id = await joinGroupWithCode(code as string);
       void queryClient.invalidateQueries({ queryKey: ['groups'] });
-      router.replace({ pathname: '/perfil/grupo', params: { grupoId: id } });
+      router.replace({ pathname: '/grupos/[grupoId]', params: { grupoId: id } });
     } catch (problema) {
       setErro(
         problema instanceof GroupRefused && problema.reason === 'group_not_found'
@@ -91,7 +91,7 @@ export default function EntrarNoGrupoScreen() {
           icon={icons.naoEncontrado}
           title="Convite já não serve"
           message="O grupo pode ter trocado o link ou deixado de existir. Pede um link novo à malta."
-          action={{ label: 'Os meus grupos', onPress: () => router.replace('/perfil/grupos') }}
+          action={{ label: 'Os meus grupos', onPress: () => router.replace('/malta') }}
         />
       ) : (
         <Card style={styles.grupo}>
@@ -105,7 +105,7 @@ export default function EntrarNoGrupoScreen() {
               <Button
                 label="Abrir o grupo"
                 onPress={() =>
-                  router.replace({ pathname: '/perfil/grupo', params: { grupoId: grupo.id } })
+                  router.replace({ pathname: '/grupos/[grupoId]', params: { grupoId: grupo.id } })
                 }
               />
             </>
@@ -124,7 +124,7 @@ export default function EntrarNoGrupoScreen() {
             </>
           )}
           {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
-          <LinkTexto label="Agora não" onPress={() => router.replace('/perfil/grupos')} />
+          <LinkTexto neutro label="Agora não" onPress={() => router.replace('/malta')} />
         </Card>
       )}
     </Screen>

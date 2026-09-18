@@ -1,6 +1,8 @@
 // Notificações do resto da app, chamadas por triggers da base de dados com o segredo do cron:
 //
 // - mensagem na conversa do carro -> aos outros que vão no carro;
+// - mensagem na conversa do grupo -> aos outros do grupo (e o «estou aqui» num tasco e o convite para um jogo, que
+//   também são mensagens);
 // - convite para uma boleia       -> a quem foi convidado;
 // - convite para um grupo         -> a quem foi convidado;
 // - pedido de amizade             -> a quem o recebeu; e a aceitação -> a quem o tinha feito;
@@ -16,7 +18,7 @@ import { hasCronSecret } from '../_shared/auth.ts';
 import { sendExpoPush, type PushMessage } from '../_shared/expo-push.ts';
 
 /** Os tipos que uma pessoa pode desligar nas definições. */
-type Preferencia = 'ride_message' | 'invites' | 'friends' | 'trip_money';
+type Preferencia = 'ride_message' | 'group_message' | 'invites' | 'friends' | 'trip_money';
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -132,6 +134,35 @@ async function construir(
       title: `${nome} escreveu na conversa do carro`,
       body: resumir(mensagem),
       data: { type: 'conversa', rideId, fixtureId: carro.fixtureId ?? '' },
+    };
+  }
+
+  if (kind === 'group_message') {
+    const groupId = texto(body.group_id);
+    const autor = texto(body.profile_id);
+    const mensagem = texto(body.body);
+    if (!groupId || !autor || !mensagem) return null;
+
+    const [grupo, membros] = await Promise.all([
+      admin.from('fan_group').select('name').eq('id', groupId).maybeSingle(),
+      admin.from('fan_group_member').select('profile_id').eq('group_id', groupId),
+    ]);
+    const nome = await nameOf(admin, autor);
+    const nomeDoGrupo = texto(grupo.data?.name) ?? 'Grupo';
+    const local = body.message_kind === 'local';
+    const plano = body.message_kind === 'plano';
+    return {
+      recipients: (membros.data ?? [])
+        .map((row) => String(row.profile_id))
+        .filter((pessoa) => pessoa !== autor),
+      preferencia: 'group_message',
+      title: nomeDoGrupo,
+      body: plano
+        ? `${nome} convida-te para ${mensagem}. Vais?`
+        : local
+          ? `${nome} está ${mensagem}`
+          : `${nome}: ${resumir(mensagem)}`,
+      data: { type: 'grupo', groupId },
     };
   }
 

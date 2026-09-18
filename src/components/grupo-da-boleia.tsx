@@ -84,7 +84,7 @@ export function GrupoDaBoleia({
       if (boleia.isMine) await setRideGroup(boleia.id, id).catch(() => undefined);
       void queryClient.invalidateQueries({ queryKey: ['groups'] });
       await atualizar();
-      router.push({ pathname: '/perfil/grupo', params: { grupoId: id } });
+      router.push({ pathname: '/grupos/[grupoId]', params: { grupoId: id } });
     } catch {
       setErro('Não deu para criar o grupo. Tenta outra vez.');
     } finally {
@@ -125,12 +125,17 @@ export function GrupoDaBoleia({
           <View style={styles.acoes}>
             <LinkTexto
               label="Abrir o grupo"
-              onPress={() =>
-                router.push({ pathname: '/perfil/grupo', params: { grupoId: boleia.groupId } })
-              }
+              onPress={() => {
+                if (boleia.groupId) {
+                  router.push({
+                    pathname: '/grupos/[grupoId]',
+                    params: { grupoId: boleia.groupId },
+                  });
+                }
+              }}
             />
             {boleia.isMine ? (
-              <LinkTexto label="Tirar do grupo" onPress={() => void escolher(null)} />
+              <LinkTexto perigo label="Tirar do grupo" onPress={() => void escolher(null)} />
             ) : null}
           </View>
         </>

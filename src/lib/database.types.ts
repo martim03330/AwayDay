@@ -404,31 +404,40 @@ export type Database = {
       }
       fan_group: {
         Row: {
+          chat_background: string
+          chat_background_path: string | null
           created_at: string
           created_by: string | null
           id: string
           invite_code: string
           name: string
+          photo_path: string | null
           ride_id: string | null
           source: string
           updated_at: string
         }
         Insert: {
+          chat_background?: string
+          chat_background_path?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           invite_code: string
           name: string
+          photo_path?: string | null
           ride_id?: string | null
           source?: string
           updated_at?: string
         }
         Update: {
+          chat_background?: string
+          chat_background_path?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
           invite_code?: string
           name?: string
+          photo_path?: string | null
           ride_id?: string | null
           source?: string
           updated_at?: string
@@ -719,6 +728,206 @@ export type Database = {
           },
         ]
       }
+      fixture_plan: {
+        Row: {
+          closed_at: string | null
+          closed_reason: string | null
+          created_at: string
+          created_by: string
+          fixture_id: string
+          group_id: string
+          id: string
+          ride_id: string | null
+          status: string
+          stay_plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_reason?: string | null
+          created_at?: string
+          created_by: string
+          fixture_id: string
+          group_id: string
+          id?: string
+          ride_id?: string | null
+          status?: string
+          stay_plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_reason?: string | null
+          created_at?: string
+          created_by?: string
+          fixture_id?: string
+          group_id?: string
+          id?: string
+          ride_id?: string | null
+          status?: string
+          stay_plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_plan_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_stay_plan_id_fkey"
+            columns: ["stay_plan_id"]
+            isOneToOne: false
+            referencedRelation: "stay_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fixture_plan_answer: {
+        Row: {
+          answer: string
+          plan_id: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          plan_id: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          plan_id?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_plan_answer_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "fixture_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_answer_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fixture_plan_group: {
+        Row: {
+          created_at: string
+          group_id: string
+          plan_id: string
+          shared_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          plan_id: string
+          shared_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          plan_id?: string
+          shared_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_plan_group_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_group_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "fixture_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_group_shared_by_fkey"
+            columns: ["shared_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fixture_plan_house_vote: {
+        Row: {
+          created_at: string
+          plan_id: string
+          profile_id: string
+          stay_plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          plan_id: string
+          profile_id: string
+          stay_plan_id: string
+        }
+        Update: {
+          created_at?: string
+          plan_id?: string
+          profile_id?: string
+          stay_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_plan_house_vote_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "fixture_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_house_vote_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_plan_house_vote_stay_plan_id_fkey"
+            columns: ["stay_plan_id"]
+            isOneToOne: false
+            referencedRelation: "stay_plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendship: {
         Row: {
           addressee_id: string
@@ -794,6 +1003,101 @@ export type Database = {
           },
           {
             foreignKeyName: "group_invite_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_message: {
+        Row: {
+          body: string
+          created_at: string
+          group_id: string
+          id: string
+          kind: string
+          place_id: string | null
+          plan_id: string | null
+          profile_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          group_id: string
+          id?: string
+          kind?: string
+          place_id?: string | null
+          plan_id?: string | null
+          profile_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          kind?: string
+          place_id?: string | null
+          plan_id?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_message_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "place"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "fixture_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_message_read: {
+        Row: {
+          group_id: string
+          last_read_at: string
+          profile_id: string
+        }
+        Insert: {
+          group_id: string
+          last_read_at?: string
+          profile_id: string
+        }
+        Update: {
+          group_id?: string
+          last_read_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_message_read_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_read_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profile"
@@ -3212,6 +3516,10 @@ export type Database = {
           recap_output_tokens: number
         }[]
       }
+      answer_fixture_plan: {
+        Args: { p_answer?: string; p_plan_id: string }
+        Returns: undefined
+      }
       answer_return_request: {
         Args: { p_accept: boolean; p_profile_id: string; p_ride_id: string }
         Returns: undefined
@@ -3228,10 +3536,27 @@ export type Database = {
         Args: { p_one: string; p_other: string }
         Returns: boolean
       }
+      can_see_fixture_plan: {
+        Args: { p_plan_id: string; p_profile_id: string }
+        Returns: boolean
+      }
+      can_see_private_ride: {
+        Args: { p_group_id: string; p_profile_id: string; p_ride_id: string }
+        Returns: boolean
+      }
+      can_see_private_stay: {
+        Args: { p_group_id: string; p_profile_id: string; p_stay_id: string }
+        Returns: boolean
+      }
       can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
+      can_use_group_topic: { Args: { p_topic: string }; Returns: boolean }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       clear_profile_photo: { Args: never; Returns: undefined }
+      close_plans_with_full_ride: {
+        Args: { p_ride_id: string }
+        Returns: undefined
+      }
       club_supporter_counts: {
         Args: never
         Returns: {
@@ -3286,6 +3611,75 @@ export type Database = {
       }
       fixture_going_count: { Args: { p_fixture_id: string }; Returns: number }
       fixture_needs_stay: { Args: { p_fixture_id: string }; Returns: boolean }
+      fixture_plan_houses: {
+        Args: { p_plan_id: string }
+        Returns: {
+          chosen: boolean
+          id: string
+          is_mine: boolean
+          listing_url: string
+          my_status: string
+          my_vote: boolean
+          nights: number
+          note: string
+          owner_id: string
+          owner_name: string
+          share_full_cents: number
+          share_now_cents: number
+          spare_places: number
+          status: string
+          taken: number
+          total_cents: number
+          votes: number
+        }[]
+      }
+      fixture_plan_people: {
+        Args: { p_plan_id: string }
+        Returns: {
+          answer: string
+          display_name: string
+          is_me: boolean
+          profile_id: string
+        }[]
+      }
+      fixture_plan_summaries: {
+        Args: { p_plan_ids: string[] }
+        Returns: {
+          closed_reason: string
+          created_by: string
+          creator_name: string
+          fixture_id: string
+          going: number
+          group_id: string
+          group_name: string
+          id: string
+          is_mine: boolean
+          kickoff_at: string
+          maybe: number
+          my_answer: string
+          ride_accepts_return: boolean
+          ride_departure_at: string
+          ride_driver_id: string
+          ride_driver_name: string
+          ride_id: string
+          ride_my_status: string
+          ride_round_trip: boolean
+          ride_seats_offered: number
+          ride_seats_taken: number
+          ride_share_now_cents: number
+          ride_visibility: string
+          shared_groups: number
+          status: string
+          stay_id: string
+          stay_owner_id: string
+          stay_owner_name: string
+          stay_spare: number
+          stay_status: string
+          stay_taken: number
+          stay_visibility: string
+        }[]
+      }
+      fixture_short_title: { Args: { p_fixture_id: string }; Returns: string }
       fixture_stay_plans: {
         Args: { p_fixture_id: string }
         Returns: {
@@ -3330,6 +3724,7 @@ export type Database = {
           name: string
         }[]
       }
+      group_fixture_plans: { Args: { p_group_id: string }; Returns: string[] }
       group_members: {
         Args: { p_group_id: string }
         Returns: {
@@ -3340,6 +3735,21 @@ export type Database = {
           rides_completed: number
           rides_faults: number
           role: string
+        }[]
+      }
+      group_messages: {
+        Args: { p_before?: string; p_group_id: string; p_limit?: number }
+        Returns: {
+          body: string
+          can_remove: boolean
+          created_at: string
+          display_name: string
+          id: string
+          kind: string
+          mine: boolean
+          place_id: string
+          plan_id: string
+          profile_id: string
         }[]
       }
       group_plans: {
@@ -3404,7 +3814,19 @@ export type Database = {
         Args: { p_profile_id: string; p_ride_id: string }
         Returns: undefined
       }
+      invite_group_to_fixture: {
+        Args: { p_fixture_id: string; p_group_id: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
+      is_fixture_plan_house: {
+        Args: { p_plan_id: string; p_stay_plan_id: string }
+        Returns: boolean
+      }
+      is_group_folder_member: {
+        Args: { p_folder: string; p_profile_id: string }
+        Returns: boolean
+      }
       is_group_member: {
         Args: { p_group_id: string; p_profile_id: string }
         Returns: boolean
@@ -3417,6 +3839,10 @@ export type Database = {
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      mark_group_messages_read: {
+        Args: { p_group_id: string }
+        Returns: undefined
+      }
       mark_ride_messages_read: {
         Args: { p_ride_id: string }
         Returns: undefined
@@ -3446,6 +3872,25 @@ export type Database = {
           friends_since: string
           profile_id: string
           trips_together: number
+        }[]
+      }
+      my_group_inbox: {
+        Args: never
+        Returns: {
+          chat_background: string
+          chat_background_path: string
+          group_id: string
+          invite_code: string
+          last_at: string
+          last_body: string
+          last_kind: string
+          last_mine: boolean
+          last_name: string
+          members: number
+          name: string
+          photo_path: string
+          role: string
+          unread: number
         }[]
       }
       my_group_invites: {
@@ -3614,6 +4059,10 @@ export type Database = {
           score: number
         }[]
       }
+      post_plan_message: {
+        Args: { p_group_id: string; p_plan_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       profile_cards: {
         Args: { p_profile_ids: string[] }
         Returns: {
@@ -3663,6 +4112,10 @@ export type Database = {
       remove_friend: { Args: { p_profile_id: string }; Returns: undefined }
       remove_group_member: {
         Args: { p_group_id: string; p_profile_id: string }
+        Returns: undefined
+      }
+      remove_group_message: {
+        Args: { p_message_id: string }
         Returns: undefined
       }
       remove_ride_message: {
@@ -3905,6 +4358,10 @@ export type Database = {
         Returns: string
       }
       send_friend_request: { Args: { p_profile_id: string }; Returns: string }
+      send_group_message: {
+        Args: { p_body: string; p_group_id: string }
+        Returns: string
+      }
       send_ride_message: {
         Args: { p_body: string; p_ride_id: string }
         Returns: string
@@ -3912,6 +4369,26 @@ export type Database = {
       set_display_name: { Args: { p_name: string }; Returns: undefined }
       set_feedback_status: {
         Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
+      set_fixture_plan_ride: {
+        Args: { p_plan_id: string; p_ride_id?: string }
+        Returns: undefined
+      }
+      set_fixture_plan_status: {
+        Args: { p_plan_id: string; p_status: string }
+        Returns: undefined
+      }
+      set_fixture_plan_stay: {
+        Args: { p_plan_id: string; p_stay_plan_id?: string }
+        Returns: undefined
+      }
+      set_group_chat_background: {
+        Args: { p_background: string; p_group_id: string; p_path?: string }
+        Returns: undefined
+      }
+      set_group_photo: {
+        Args: { p_group_id: string; p_path?: string }
         Returns: undefined
       }
       set_home_city: { Args: { p_city: string }; Returns: undefined }
@@ -3962,6 +4439,14 @@ export type Database = {
         Returns: undefined
       }
       settle_rides: { Args: never; Returns: number }
+      share_fixture_plan: {
+        Args: { p_group_id: string; p_plan_id: string }
+        Returns: undefined
+      }
+      share_place_with_group: {
+        Args: { p_group_id: string; p_place_id: string }
+        Returns: string
+      }
       stadium_ranking: {
         Args: { p_limit?: number }
         Returns: {
@@ -4131,6 +4616,10 @@ export type Database = {
           rank_position: number
           verified_places: number
         }[]
+      }
+      vote_fixture_plan_house: {
+        Args: { p_plan_id: string; p_stay_plan_id?: string }
+        Returns: undefined
       }
       vote_ride_incident: {
         Args: { p_accept: boolean; p_incident_id: string }

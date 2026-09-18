@@ -25,12 +25,6 @@ export default function PerfilLayout() {
       <Stack.Screen name="amigos">
         <Stack.Screen.Title>Os teus amigos</Stack.Screen.Title>
       </Stack.Screen>
-      <Stack.Screen name="grupos">
-        <Stack.Screen.Title>Os teus grupos</Stack.Screen.Title>
-      </Stack.Screen>
-      <Stack.Screen name="grupo">
-        <Stack.Screen.Title>Grupo</Stack.Screen.Title>
-      </Stack.Screen>
       <Stack.Screen name="pontos-de-encontro">
         <Stack.Screen.Title>Pontos de encontro</Stack.Screen.Title>
       </Stack.Screen>

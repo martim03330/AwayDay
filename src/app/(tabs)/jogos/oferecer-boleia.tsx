@@ -163,7 +163,11 @@ export default function OferecerBoleiaScreen() {
   const { garantirVou } = usePlanosJogos();
   const atualizar = useRefreshRides();
   const mapa = useRef<MapView>(null);
-  const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
+  // `grupoId` vem de um plano: a boleia já nasce do grupo, e o plano apanha-a sozinho.
+  const { jogoId, grupoId: grupoDoPlano } = useLocalSearchParams<{
+    jogoId: string;
+    grupoId?: string;
+  }>();
   const jogo = jogoId ? obterJogo(jogoId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
 
@@ -179,7 +183,7 @@ export default function OferecerBoleiaScreen() {
   // A seat home for whoever is left at the stadium: only makes sense when the driver is coming back anyway.
   const [aceitaVolta, setAceitaVolta] = useState(true);
   // Uma boleia pode ser «a boleia do grupo»: aparece lá dentro e fica no histórico do grupo.
-  const [grupoId, setGrupoId] = useState<string | null>(null);
+  const [grupoId, setGrupoId] = useState<string | null>(grupoDoPlano ?? null);
   // Começa privada: a malta do grupo primeiro, e abre-se a toda a gente se o carro não encher.
   const [soParaOGrupo, setSoParaOGrupo] = useState(true);
   const [nota, setNota] = useState('');

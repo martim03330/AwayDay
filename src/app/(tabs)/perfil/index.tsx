@@ -341,21 +341,6 @@ export default function PerfilScreen() {
                 separador
               />
               <LinhaGrupo
-                onPress={() => router.push('/perfil/grupos')}
-                accessibilityLabel="Os teus grupos. Toca para abrir."
-                leading={
-                  <Azulejo
-                    icon={icons.perfil}
-                    fundo={theme.infoBackground}
-                    tinta={theme.infoText}
-                  />
-                }
-                title="Os teus grupos"
-                subtitle="A malta com quem vais aos jogos"
-                trailing={chevron}
-                separador
-              />
-              <LinhaGrupo
                 onPress={() => router.push('/perfil/rankings')}
                 accessibilityLabel="Rankings públicos. Toca para abrir."
                 leading={

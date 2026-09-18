@@ -44,6 +44,15 @@ export default function JogosLayout() {
       <Stack.Screen name="boleias">
         <Stack.Screen.Title>Boleias</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen
+        name="combinar"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.6, 0.92],
+          sheetGrabberVisible: true,
+          headerShown: false,
+        }}
+      />
       <Stack.Screen name="dormir">
         <Stack.Screen.Title>Onde dormir</Stack.Screen.Title>
       </Stack.Screen>

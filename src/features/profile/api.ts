@@ -122,6 +122,7 @@ const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   'group_movement',
   'new_stamp',
   'ride_message',
+  'group_message',
   'invites',
   'friends',
   'trip_money',
