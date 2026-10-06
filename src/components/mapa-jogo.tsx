@@ -128,7 +128,7 @@ function PontoMapa({
       accessibilityLabel={accessibilityLabel}>
       <View style={styles.pontoArea}>
         <Animated.View entering={animar ? ZoomIn.duration(250) : undefined}>
-          {children(selecionado ? 26 : 18)}
+          {children(selecionado ? 30 : 22)}
         </Animated.View>
       </View>
     </MapMarker>
@@ -497,7 +497,11 @@ export function MapaJogo({
                             ),
                           },
                         ]}>
-                        <ThemedText style={[styles.letraParque, { fontSize: tamanho * 0.62 }]}>
+                        <ThemedText
+                          style={[
+                            styles.letraParque,
+                            { fontSize: tamanho * 0.62, color: theme.backgroundElement },
+                          ]}>
                           P
                         </ThemedText>
                       </View>
@@ -519,7 +523,7 @@ export function MapaJogo({
                           styles.pontoWc,
                           { width: tamanho + 4, height: tamanho + 4, backgroundColor: theme.info },
                         ]}>
-                        <Icon name={icons.wc} size={tamanho / 2} color="#FFFFFF" />
+                        <Icon name={icons.wc} size={tamanho / 2} color={theme.backgroundElement} />
                       </View>
                     )}
                   </PontoMapa>
@@ -729,15 +733,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // A área de toque é maior do que o ponto (e transparente): um dedo acerta sem o ponto ter de ser grande.
   pontoArea: {
-    width: 34,
-    height: 34,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ponto: {
     borderWidth: 3,
     borderColor: '#FFFFFF',
+    boxShadow: '0 1px 4px rgba(19, 36, 27, 0.35)',
   },
   pontoParque: {
     borderRadius: 6,
@@ -745,7 +751,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   letraParque: {
-    color: '#FFFFFF',
     fontWeight: 900,
     lineHeight: undefined,
   },

@@ -1,12 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { FriendRefused, sendFriendRequest } from '@/features/friends/api';
 import { useRefreshFriends, useTripCompanions } from '@/features/friends/hooks/useFriends';
 import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
-import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarHora } from '@/lib/datas';
 import { formatarNota, plural } from '@/lib/formatos';
 import { notaMedia } from '@/lib/jogos';
@@ -16,22 +15,33 @@ import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { useAppState } from '@/state/app-state';
+import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { icons } from '@/ui/icon';
+import { IconCircle, icons } from '@/ui/icon';
 import { LinhaDetalhes } from '@/ui/linha-detalhes';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof FriendRefused)) return 'Não deu para fazer isso. Tenta outra vez.';
   if (erro.reason === 'never_met') return 'Só podes pedir amizade a quem foi contigo.';
   if (erro.reason === 'rate_limited') return 'Já mandaste muitos pedidos hoje. Continua amanhã.';
   return 'Não deu para fazer isso. Tenta outra vez.';
+}
+
+/** Your balance on one trip, in a few words. */
+function saldo(centimos: number) {
+  if (centimos === 0) return 'Estás em dia';
+  return centimos > 0
+    ? `Recebes ${formatarCentimos(centimos)}`
+    : `Deves ${formatarCentimos(-centimos)}`;
 }
 
 /**
@@ -42,7 +52,6 @@ function mensagemDeRecusa(erro: unknown) {
  */
 export default function ResumoScreen() {
   const router = useRouter();
-  const theme = useTheme();
   const userId = useUserId();
   const { avaliacaoDoJogo } = useAppState();
   const { jogoId } = useLocalSearchParams<{ jogoId?: string }>();
@@ -79,6 +88,7 @@ export default function ResumoScreen() {
   const viagens = contas.data ?? [];
   const companheiros = companhia.data ?? [];
   const gastoTotal = viagens.reduce((total, viagem) => total + viagem.totalCents, 0);
+  const comDespesas = viagens.filter((viagem) => viagem.expenses > 0);
 
   async function pedirAmizade(profileId: string) {
     setErro(null);
@@ -95,7 +105,7 @@ export default function ResumoScreen() {
 
   return (
     <Screen>
-      <ThemedText type="title">
+      <ThemedText type="title" accessibilityRole="header">
         {casa?.nomeCurto ?? ''} x {fora?.nomeCurto ?? ''}
       </ThemedText>
       <ThemedText themeColor="textSecondary">
@@ -111,74 +121,70 @@ export default function ResumoScreen() {
       <SectionHeader title="Com quem foste" />
       {companheiros.length === 0 ? (
         <Card>
-          <ThemedText themeColor="textSecondary">
-            Deste jogo não ficou registo de companhia. Quando vais numa boleia ou divides contas,
-            fica aqui quem foi contigo.
-          </ThemedText>
+          <ThemedText themeColor="textSecondary">Sem companhia registada neste jogo.</ThemedText>
         </Card>
       ) : (
-        companheiros.map((pessoa) => (
-          <Card key={pessoa.profileId} style={styles.cartao}>
-            <View style={styles.linha}>
-              <ThemedText style={[styles.nome, styles.flex]} numberOfLines={1}>
-                {pessoa.displayName}
-              </ThemedText>
-              {pessoa.state === 'amigos' ? (
-                <Etiqueta icon={icons.perfil} label="Amigo" tone="positivo" />
-              ) : null}
-            </View>
-            <ThemedText type="small" themeColor="textMuted">
-              {pessoa.tripsTogether > 1
-                ? plural(pessoa.tripsTogether, 'viagem juntos', 'viagens juntos')
-                : 'primeira viagem juntos'}
-            </ThemedText>
-            {pessoa.state === 'pode_pedir' ? (
-              <Button
-                label="Adicionar amigo"
-                variant="secondary"
-                icon={icons.perfil}
-                disabled={aTratar}
-                onPress={() => void pedirAmizade(pessoa.profileId)}
-              />
-            ) : pessoa.state === 'pedido_enviado' ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                Pedido de amizade enviado. Falta essa pessoa aceitar.
-              </ThemedText>
-            ) : pessoa.state === 'pedido_recebido' ? (
-              <LinkTexto
-                label="Pediu-te amizade — responder"
-                onPress={() => router.push('/perfil/amigos')}
-              />
-            ) : null}
-          </Card>
-        ))
+        // One card, one row per person: the action (add, answer) sits at the end of the row.
+        <Card style={styles.grupo}>
+          {companheiros.map((pessoa, indice) => (
+            <LinhaGrupo
+              key={pessoa.profileId}
+              leading={<Avatar nome={pessoa.displayName} size={38} />}
+              title={pessoa.displayName}
+              subtitle={
+                pessoa.state === 'pedido_enviado'
+                  ? 'Pedido de amizade enviado'
+                  : pessoa.tripsTogether > 1
+                    ? plural(pessoa.tripsTogether, 'viagem juntos', 'viagens juntos')
+                    : 'Primeira viagem juntos'
+              }
+              separador={indice < companheiros.length - 1}
+              trailing={
+                pessoa.state === 'amigos' ? (
+                  <Etiqueta icon={icons.perfil} label="Amigo" tone="positivo" />
+                ) : pessoa.state === 'pode_pedir' ? (
+                  <LinkTexto
+                    label="Adicionar"
+                    disabled={aTratar}
+                    onPress={() => void pedirAmizade(pessoa.profileId)}
+                  />
+                ) : pessoa.state === 'pedido_recebido' ? (
+                  <LinkTexto label="Responder" onPress={() => router.push('/perfil/amigos')} />
+                ) : null
+              }
+            />
+          ))}
+        </Card>
       )}
-      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+      {erro ? <MensagemErro>{erro}</MensagemErro> : null}
 
-      <SectionHeader title="O que se gastou" />
+      <SectionHeader
+        title="O que se gastou"
+        trailing={gastoTotal > 0 ? formatarCentimos(gastoTotal) : undefined}
+      />
       {gastoTotal === 0 ? (
         <Card>
           <ThemedText themeColor="textSecondary">Não há contas lançadas neste jogo.</ThemedText>
         </Card>
       ) : (
-        viagens
-          .filter((viagem) => viagem.expenses > 0)
-          .map((viagem) => (
-            <Card key={viagem.sessionId} style={styles.cartao}>
-              <ThemedText style={styles.nome}>{viagem.name}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {`${formatarCentimos(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}`}
-              </ThemedText>
-              <View style={styles.etiquetas}>
+        <Card style={styles.grupo}>
+          {comDespesas.map((viagem, indice) => (
+            <LinhaGrupo
+              key={viagem.sessionId}
+              onPress={() =>
+                router.push({
+                  pathname: '/sessao/[sessaoId]/despesas',
+                  params: { sessaoId: viagem.sessionId },
+                })
+              }
+              accessibilityLabel={`${viagem.name}: ${formatarCentimos(viagem.totalCents)}, ${saldo(viagem.myBalanceCents)}. Toca para ver as contas.`}
+              leading={<IconCircle name={icons.preco} />}
+              title={viagem.name}
+              subtitle={`${formatarCentimos(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}`}
+              separador={indice < comDespesas.length - 1}
+              trailing={
                 <Etiqueta
-                  icon={viagem.myBalanceCents < 0 ? icons.preco : icons.selecionado}
-                  label={
-                    viagem.myBalanceCents === 0
-                      ? 'Estás em dia'
-                      : viagem.myBalanceCents > 0
-                        ? `Tens a receber ${formatarCentimos(viagem.myBalanceCents)}`
-                        : `Deves ${formatarCentimos(-viagem.myBalanceCents)}`
-                  }
+                  label={saldo(viagem.myBalanceCents)}
                   tone={
                     viagem.myBalanceCents === 0
                       ? 'neutro'
@@ -187,20 +193,10 @@ export default function ResumoScreen() {
                         : 'aviso'
                   }
                 />
-              </View>
-              <Button
-                label="Ver as contas"
-                variant="secondary"
-                icon={icons.preco}
-                onPress={() =>
-                  router.push({
-                    pathname: '/sessao/[sessaoId]/despesas',
-                    params: { sessaoId: viagem.sessionId },
-                  })
-                }
-              />
-            </Card>
-          ))
+              }
+            />
+          ))}
+        </Card>
       )}
 
       <SectionHeader title="O que achaste" />
@@ -225,9 +221,7 @@ export default function ResumoScreen() {
         </Card>
       ) : (
         <Card style={styles.cartao}>
-          <ThemedText themeColor="textSecondary">
-            Ainda não disseste o que achaste deste jogo. A tua nota entra nas médias do estádio.
-          </ThemedText>
+          <ThemedText themeColor="textSecondary">Ainda não deste nota a este jogo.</ThemedText>
           <Button
             label="Avaliar o jogo"
             onPress={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
@@ -235,11 +229,9 @@ export default function ResumoScreen() {
         </Card>
       )}
 
-      <Card style={styles.cartao}>
-        <ThemedText type="small" style={{ color: theme.textMuted }}>
-          Este resumo é só teu: ninguém vê com quem foste nem o que gastaste.
-        </ThemedText>
-      </Card>
+      <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
+        Este resumo é só teu: ninguém vê com quem foste nem o que gastaste.
+      </ThemedText>
     </Screen>
   );
 }
@@ -248,20 +240,12 @@ const styles = StyleSheet.create({
   cartao: {
     gap: Spacing.two,
   },
-  nome: {
-    fontWeight: '600',
+  grupo: {
+    // Rows bring their own vertical space; the card keeps its side padding.
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
-  linha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  flex: {
-    flex: 1,
-  },
-  etiquetas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
+  centro: {
+    textAlign: 'center',
   },
 });

@@ -22,6 +22,7 @@ import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 const MARGEM = 20;
 
@@ -131,7 +132,7 @@ export default function MaltaScreen() {
               </View>
             ) : null}
 
-            {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+            {erro ? <MensagemErro>{erro}</MensagemErro> : null}
 
             <View style={styles.bloco}>
               {inbox.isLoading ? (
@@ -143,8 +144,7 @@ export default function MaltaScreen() {
                 <Card style={styles.convite}>
                   <ThemedText type="subtitle">Ainda sem malta</ThemedText>
                   <ThemedText themeColor="textSecondary">
-                    Cria um grupo para a malta do costume e manda-lhes o link. Lá dentro combinam os
-                    jogos, as boleias e as contas.
+                    Cria um grupo para a malta do costume e manda-lhes o link.
                   </ThemedText>
                 </Card>
               ) : (
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   porLer: {
     minWidth: 22,
-    height: 22,
+    minHeight: 22,
     borderRadius: 11,
     paddingHorizontal: 6,
     alignItems: 'center',

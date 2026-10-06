@@ -32,6 +32,8 @@ export function Chip({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
+      // 38 pt tall: the slop takes the touch area to 46 pt without spreading the chips apart.
+      hitSlop={{ top: 4, bottom: 4 }}
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         styles.chip,

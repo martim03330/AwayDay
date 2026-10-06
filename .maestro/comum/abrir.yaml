@@ -1,0 +1,19 @@
+# Opens a route of the app in Expo Go (Metro on 127.0.0.1:8081) and waits for it to settle.
+# Usage: - runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+appId: host.exp.Exponent
+---
+- openLink: exp://127.0.0.1:8081/--${ROTA}
+- runFlow:
+    when:
+      visible: "Reload|Recarregar"
+    commands:
+      - tapOn: "Reload|Recarregar"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
+      visible: "Guardar palavra.passe\\?|Save Password\\?"
+    commands:
+      - tapOn:
+          text: "Agora não|Not Now"
+          below: "Guardar palavra.passe\\?|Save Password\\?"

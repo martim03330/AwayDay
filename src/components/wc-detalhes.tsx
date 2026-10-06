@@ -59,7 +59,7 @@ export function WcDetalhes({ wc, metros, minutos }: WcDetalhesProps) {
             {wc.nome}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.subtitulo}>
-            {`${formatarDistancia(metros)} a pé · ${nomesTipoWc[wc.tipo]}`}
+            {`${nomesTipoWc[wc.tipo]} · ${nomesAcesso[wc.acesso]}`}
           </ThemedText>
         </View>
         <View style={styles.tempo}>
@@ -75,16 +75,14 @@ export function WcDetalhes({ wc, metros, minutos }: WcDetalhesProps) {
           tone={abertura.aberta === null ? 'neutro' : abertura.aberta ? 'positivo' : 'negativo'}
         />
         <Etiqueta icon={icons.preco} label={preco} tone={wc.gratuita ? 'positivo' : 'neutro'} />
-        <Etiqueta
-          icon={icons.acessivel}
-          label={acessivel}
-          tone={wc.acessivel === null ? 'neutro' : wc.acessivel ? 'positivo' : 'aviso'}
-        />
-        <Etiqueta
-          icon={icons.acesso}
-          label={nomesAcesso[wc.acesso]}
-          tone={wc.acesso === 'livre' ? 'positivo' : 'neutro'}
-        />
+        {/* At most three tags: who may use it already reads in the line above; unknown access stays unsaid. */}
+        {wc.acessivel === null ? null : (
+          <Etiqueta
+            icon={icons.acessivel}
+            label={acessivel}
+            tone={wc.acessivel ? 'positivo' : 'aviso'}
+          />
+        )}
       </View>
 
       {wc.nota ? (

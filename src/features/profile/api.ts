@@ -2,9 +2,12 @@ import type {
   ClubRelation,
   ProfileCard,
   MessagePreferences,
+  Municipality,
+  MyHome,
   MyProfile,
   NotificationKind,
   NotificationPreferences,
+  UsualTransport,
 } from '@/features/profile/types';
 import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
 import { supabase } from '@/lib/supabase';
@@ -37,7 +40,7 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
     client()
       .from('profile')
       .select(
-        'id, display_name, avatar_path, home_city, nudges_enabled, recap_enabled, show_in_rankings, is_admin'
+        'id, display_name, avatar_path, home_city, nudges_enabled, recap_enabled, show_in_rankings, is_admin, share_checkins_with_groups'
       )
       .eq('id', userId)
       .maybeSingle(),
@@ -62,6 +65,7 @@ export async function fetchMyProfile(userId: string): Promise<MyProfile | null> 
     nudgesEnabled: profile.data.nudges_enabled,
     recapEnabled: profile.data.recap_enabled,
     showInRankings: profile.data.show_in_rankings,
+    shareCheckinsWithGroups: profile.data.share_checkins_with_groups,
     isAdmin: profile.data.is_admin,
   };
 }
@@ -276,4 +280,67 @@ export async function reportProfilePhoto(profileId: string, reason?: string) {
     p_reason: reason?.trim(),
   });
   if (error) throw refusal(error);
+}
+
+/** Sim ou não a dizer sozinho aos grupos em que tasco fazes check-in. */
+export async function setShareCheckinsWithGroups(share: boolean) {
+  const { error } = await client().rpc('set_share_checkins_with_groups', { p_share: share });
+  if (error) throw refusal(error);
+}
+
+function region(value: string): Municipality['region'] {
+  return value === 'madeira' || value === 'azores' ? value : 'mainland';
+}
+
+function usualTransport(value: string | null): UsualTransport | null {
+  return value === 'driver' || value === 'passenger' || value === 'public_transport' ? value : null;
+}
+
+/** Os 308 concelhos, por ordem alfabética. */
+export async function fetchMunicipalities(): Promise<Municipality[]> {
+  const { data, error } = await client()
+    .from('municipality')
+    .select('id, name, district, region, latitude, longitude')
+    .order('name');
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    district: row.district,
+    region: region(row.region),
+    latitude: row.latitude ?? 0,
+    longitude: row.longitude ?? 0,
+  }));
+}
+
+/** De onde a pessoa parte para os jogos e como costuma ir. Só ela lê isto (RLS). */
+export async function fetchMyHome(userId: string): Promise<MyHome> {
+  const { data, error } = await client()
+    .from('profile_home')
+    .select('municipality_id, usual_transport')
+    .eq('profile_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return {
+    municipalityId: data?.municipality_id ?? null,
+    usualTransport: usualTransport(data?.usual_transport ?? null),
+  };
+}
+
+/** Guarda só o que vier: o concelho e a maneira de ir mudam-se em sítios diferentes. */
+export async function saveMyHome(userId: string, changes: Partial<MyHome>) {
+  const row: { profile_id: string; municipality_id?: string | null; usual_transport?: string | null } = {
+    profile_id: userId,
+  };
+  if (changes.municipalityId !== undefined) row.municipality_id = changes.municipalityId;
+  if (changes.usualTransport !== undefined) row.usual_transport = changes.usualTransport;
+  const { error } = await client().from('profile_home').upsert(row, { onConflict: 'profile_id' });
+  if (error) throw error;
+}
+
+/** Adeptos de cada clube na app, de verdade. O servidor só devolve clubes com 5 ou mais. */
+export async function fetchClubSupporterCounts(): Promise<Record<string, number>> {
+  const { data, error } = await client().rpc('club_supporter_counts');
+  if (error) throw error;
+  return Object.fromEntries(data.map((row) => [row.club_id, row.supporters]));
 }

@@ -8,7 +8,8 @@ function client() {
   return supabase;
 }
 
-export type SignUpInput = { email: string; password: string; displayName: string };
+/** `termsVersion`: the terms and privacy policy the person accepted (and, with them, the minimum age). */
+export type SignUpInput = { email: string; password: string; displayName: string; termsVersion: string };
 export type SignInInput = { email: string; password: string };
 export type CodeInput = { email: string; code: string };
 export type ResetPasswordInput = { email: string; code: string; password: string };
@@ -19,11 +20,18 @@ export type DeleteAccountInput = { password: string };
  * session; with it off, the user is signed in straight away. An email that already has a confirmed
  * account comes back as 'already-registered' (see signUpOutcome).
  */
-export async function signUp({ email, password, displayName }: SignUpInput) {
+export async function signUp({ email, password, displayName, termsVersion }: SignUpInput) {
   const { data, error } = await client().auth.signUp({
     email: normalizeEmail(email),
     password,
-    options: { data: { display_name: displayName.trim() } },
+    // The accepted version and when are kept with the account, as proof of consent.
+    options: {
+      data: {
+        display_name: displayName.trim(),
+        terms_version: termsVersion,
+        terms_accepted_at: new Date().toISOString(),
+      },
+    },
   });
   if (error) throw error;
   return signUpOutcome(data);

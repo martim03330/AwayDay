@@ -1,0 +1,33 @@
+# If the app is on the welcome screen or any intro step (with or without account), finishes the intro the short
+# way: «Faço isto depois» on every step and «Agora não» to the notices.
+appId: host.exp.Exponent
+---
+- runFlow:
+    when:
+      visible: "Vamos à bola\\?"
+    commands:
+      - tapOn: "Espreitar sem conta"
+      - extendedWaitUntil:
+          visible: "Faço isto depois"
+          timeout: 10000
+- repeat:
+    times: 6
+    while:
+      visible: "Faço isto depois"
+    commands:
+      - tapOn: "Faço isto depois"
+      - waitForAnimationToEnd:
+          timeout: 2000
+- runFlow:
+    when:
+      visible: "Ligar avisos"
+    commands:
+      - tapOn: "Agora não"
+      - extendedWaitUntil:
+          visible: "Tab Bar"
+          timeout: 15000
+- runFlow:
+    when:
+      visible: "Juntar à tua conta\\?"
+    commands:
+      - tapOn: "Agora não"

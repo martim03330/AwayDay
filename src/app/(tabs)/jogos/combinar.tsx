@@ -6,6 +6,7 @@ import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { nomeDoJogo, quandoEOnde } from '@/features/groups/components/CartaoDoPlano';
 import { useMyGroupInbox, useRefreshGroups } from '@/features/groups/hooks/useGroups';
+import { avisarConviteRepetido } from '@/features/groups/convite-repetido';
 import { inviteGroupToFixture, PlanRefused } from '@/features/groups/plans';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
@@ -14,6 +15,7 @@ import { obterJogo } from '@/mocks/jogos';
 import { Button } from '@/ui/button';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof PlanRefused)) return 'Não deu para convidar. Tenta outra vez.';
@@ -29,7 +31,7 @@ function mensagemDeRecusa(erro: unknown) {
 
 /**
  * Combinar um jogo com a malta: escolhe-se o grupo, e o convite cai na conversa com o jogo, a hora e os botões para
- * responder. Se o grupo já tinha plano para este jogo, o mesmo plano volta à conversa.
+ * responder. Cada grupo tem um só convite por jogo: um segundo é recusado, com um aviso e o convite que já existe.
  */
 export default function CombinarScreen() {
   const router = useRouter();
@@ -54,8 +56,13 @@ export default function CombinarScreen() {
       router.back();
       router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });
     } catch (problema) {
-      setErro(mensagemDeRecusa(problema));
       setAConvidar(null);
+      const grupo = grupos.find((candidato) => candidato.id === grupoId);
+      if (problema instanceof PlanRefused && problema.reason === 'plan_exists' && grupo) {
+        avisarConviteRepetido(router, grupo, problema.planId, () => router.back());
+        return;
+      }
+      setErro(mensagemDeRecusa(problema));
     }
   }
 
@@ -63,7 +70,9 @@ export default function CombinarScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.conteudo}>
-      <ThemedText type="title">Combinar com a malta</ThemedText>
+      <ThemedText type="title" accessibilityRole="header">
+        Combinar com a malta
+      </ThemedText>
       {jogo ? (
         <ThemedText themeColor="textSecondary">
           {`${nomeDoJogo(jogo.id)} · ${quandoEOnde({ fixtureId: jogo.id, kickoffAt: jogo.inicio })}`}
@@ -128,7 +137,7 @@ export default function CombinarScreen() {
         </>
       )}
 
-      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+      {erro ? <MensagemErro>{erro}</MensagemErro> : null}
     </ScrollView>
   );
 }

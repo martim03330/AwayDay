@@ -2,16 +2,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
-import { plansKey, useGroupFixturePlans } from '@/features/groups/hooks/useGroups';
+import {
+  plansKey,
+  useGroupFixturePlans,
+  usePlanConflicts,
+} from '@/features/groups/hooks/useGroups';
 import { useUserId } from '@/lib/session';
-import { Button } from '@/ui/button';
-import { Card } from '@/ui/card';
+import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { ThemedText } from '@/ui/themed-text';
 
 /**
- * Os planos em aberto do grupo: os jogos para onde alguém convidou a malta (aqui ou noutro grupo que mandou o plano
+ * Os planos do grupo: os jogos para onde alguém convidou a malta (aqui ou noutro grupo que mandou o plano
  * para cá). Os fechados ficam até ao jogo, para se ver quem vai.
  */
 export default function PlanosDoGrupoScreen() {
@@ -21,29 +24,25 @@ export default function PlanosDoGrupoScreen() {
   const { grupoId } = useLocalSearchParams<{ grupoId?: string }>();
   const planos = useGroupFixturePlans(grupoId ?? null);
   const lista = planos.data ?? [];
+  const conflitos = usePlanConflicts(lista.map((plano) => plano.id));
 
   return (
     <Screen refreshing={planos.isRefetching} onRefresh={() => void planos.refetch()}>
       {planos.isLoading ? (
         <ThemedText themeColor="textSecondary">A procurar os planos do grupo…</ThemedText>
       ) : lista.length === 0 ? (
-        <Card>
-          <ThemedText type="subtitle">Nada combinado… ainda</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            Abre um jogo e toca em «Combinar com a malta». O convite cai na conversa, e daqui
-            combina-se a boleia, a dormida e quem vai.
-          </ThemedText>
-          <Button
-            label="Ver os jogos"
-            icon={icons.jogos}
-            onPress={() => router.navigate('/jogos')}
-          />
-        </Card>
+        <EmptyState
+          icon={icons.calendario}
+          title="Nada combinado… ainda"
+          message="Abre um jogo e toca em «Combinar com a malta»."
+          action={{ label: 'Ver os jogos', onPress: () => router.navigate('/jogos') }}
+        />
       ) : (
         lista.map((plano) => (
           <CartaoDoPlano
             key={plano.id}
             plano={plano}
+            vaisComOutroGrupo={conflitos.data?.[plano.id]}
             quemConvidou={plano.createdBy === userId ? 'eu' : plano.creatorName.split(' ')[0]}
             onAbrir={() =>
               grupoId

@@ -12,7 +12,7 @@ export default function GruposLayout() {
         <Stack.Screen.Title>Grupo</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="[grupoId]/planos">
-        <Stack.Screen.Title>Planos em aberto</Stack.Screen.Title>
+        <Stack.Screen.Title>Planos</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="[grupoId]/plano/[planoId]">
         <Stack.Screen.Title>Plano</Stack.Screen.Title>

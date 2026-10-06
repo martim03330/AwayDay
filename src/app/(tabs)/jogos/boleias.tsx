@@ -5,7 +5,6 @@ import { obterJogo } from '@/mocks/jogos';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
-import { SectionHeader } from '@/ui/section-header';
 
 /** As boleias deste jogo: quem leva quem, e a volta depois do apito. */
 export default function BoleiasScreen() {
@@ -28,7 +27,6 @@ export default function BoleiasScreen() {
 
   return (
     <Screen>
-      <SectionHeader title="Boleias" />
       <BoleiasDoJogo jogo={jogo} />
     </Screen>
   );

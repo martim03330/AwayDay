@@ -26,6 +26,7 @@ export function Segmentado<T extends string>({ opcoes, valor, onChange }: Segmen
             key={opcao.valor}
             onPress={() => onChange(opcao.valor)}
             accessibilityRole="tab"
+            hitSlop={{ top: 4, bottom: 4 }}
             accessibilityState={{ selected: ativo }}
             style={[
               styles.opcao,

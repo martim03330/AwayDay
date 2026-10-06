@@ -7,17 +7,11 @@ export default function PerfilLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Perfil</Stack.Screen.Title>
       </Stack.Screen>
-      <Stack.Screen name="missoes" options={{ headerShown: false }}>
-        <Stack.Screen.Title>Missões</Stack.Screen.Title>
-      </Stack.Screen>
       <Stack.Screen name="passaporte">
         <Stack.Screen.Title>Passaporte de estádios</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="os-meus-jogos">
         <Stack.Screen.Title>Os teus jogos</Stack.Screen.Title>
-      </Stack.Screen>
-      <Stack.Screen name="rankings">
-        <Stack.Screen.Title>Rankings</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="editar">
         <Stack.Screen.Title>O teu perfil</Stack.Screen.Title>
@@ -31,6 +25,12 @@ export default function PerfilLayout() {
       <Stack.Screen name="fotos-por-aprovar">
         <Stack.Screen.Title>Fotos por aprovar</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="denuncias">
+        <Stack.Screen.Title>Denúncias por rever</Stack.Screen.Title>
+      </Stack.Screen>
+      <Stack.Screen name="bloqueados">
+        <Stack.Screen.Title>Pessoas bloqueadas</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="ajudar">
         <Stack.Screen.Title>Ajudar a melhorar</Stack.Screen.Title>
       </Stack.Screen>
@@ -39,9 +39,6 @@ export default function PerfilLayout() {
       </Stack.Screen>
       <Stack.Screen name="album">
         <Stack.Screen.Title>Álbum de recordações</Stack.Screen.Title>
-      </Stack.Screen>
-      <Stack.Screen name="novidades">
-        <Stack.Screen.Title>Novidades</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="retrospetiva">
         <Stack.Screen.Title>Retrospetiva</Stack.Screen.Title>

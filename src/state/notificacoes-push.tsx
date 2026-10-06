@@ -12,7 +12,7 @@ import { obterJogo } from '@/mocks/jogos';
  * - Com sessão, regista este telemóvel (sem pedir permissão: isso só acontece quando a pessoa liga as
  *   sugestões ou oferece e pede boleias). As sugestões continuam a ir só a quem as ligou (servidor);
  *   os avisos das boleias precisam do telemóvel registado para toda a gente.
- * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem as Novidades. O aviso da retrospetiva abre a retrospetiva.
+ * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem a lista de jogos, onde está a dica do treinador. O aviso da retrospetiva abre a retrospetiva.
  * - Uma mensagem de um grupo abre a conversa do grupo; um convite para um grupo abre a Malta.
  * - Uma despesa ou um pagamento abre as despesas da viagem.
  */
@@ -42,11 +42,11 @@ export function NotificacoesPush() {
       const jogoId =
         typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'fixtureId') : null;
       if (tipo === 'nudge') {
-        // A tip about a game opens the game; the others open Novidades.
+        // A tip about a game opens the game; the others open the games list, where the coach's tip lives.
         if (typeof jogoId === 'string' && obterJogo(jogoId)) {
           router.push({ pathname: '/jogos/[jogoId]', params: { jogoId } });
         } else {
-          router.push('/perfil/novidades');
+          router.push('/jogos');
         }
       }
       if (tipo === 'recap') router.push('/perfil/retrospetiva');
@@ -58,6 +58,9 @@ export function NotificacoesPush() {
       }
       const grupoId =
         typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'groupId') : null;
+      if (tipo === 'conversa' && typeof rideId === 'string' && typeof jogoId === 'string') {
+        router.push({ pathname: '/carro/[rideId]', params: { rideId, jogoId } });
+      }
       if (tipo === 'grupo' && typeof grupoId === 'string') {
         router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });
       }

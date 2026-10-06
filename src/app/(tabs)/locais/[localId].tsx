@@ -11,6 +11,7 @@ import { TascoPorConfirmar } from '@/components/tasco-por-confirmar';
 import { FotoTasco } from '@/components/foto-tasco';
 import { ReferenciaAdeptos } from '@/components/referencia-adeptos';
 import { WcDoTasco } from '@/components/wc-do-tasco';
+import { usePerguntarPartilhaDoCheckIn } from '@/components/partilha-check-in';
 import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { EstouAqui } from '@/features/groups/components/EstouAqui';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -155,6 +156,7 @@ export default function LocalScreen() {
     checkInEmCurso,
   } = useAppState();
   const { tocarCheckIn } = useSons();
+  const partilhaDoCheckIn = usePerguntarPartilhaDoCheckIn();
 
   const local = obterLocal(localId);
   const estadio = local ? obterEstadio(local.estadioId) : undefined;
@@ -203,7 +205,10 @@ export default function LocalScreen() {
     const fazer = !checkedIn;
     void alternarCheckIn(local.id).then((feito) => {
       // O som só toca ao fazer check-in, nunca ao anular.
-      if (feito && fazer) tocarCheckIn();
+      if (feito && fazer) {
+        tocarCheckIn();
+        if (fonte === 'conta') partilhaDoCheckIn.depoisDoCheckIn(local.id);
+      }
     });
   }
 
@@ -301,7 +306,7 @@ export default function LocalScreen() {
           {local.notaDeAdepto ? <ThemedText>{local.notaDeAdepto}</ThemedText> : null}
           <ThemedText type="small" themeColor="textSecondary">
             {local.confirmacao === 'confirmado'
-              ? 'Já foi confirmado por outros adeptos.'
+              ? 'Já está confirmado.'
               : `Ainda por confirmar: ${local.votos.sim} de 5 adeptos disseram que é bom.`}
           </ThemedText>
         </Card>
@@ -351,7 +356,7 @@ export default function LocalScreen() {
         )}
       </View>
 
-      <EstouAqui placeId={local.id} />
+      {partilhaDoCheckIn.automatica ? null : <EstouAqui placeId={local.id} />}
 
       <SectionHeader
         title="O que pedir"

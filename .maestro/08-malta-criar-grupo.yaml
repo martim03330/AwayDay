@@ -1,0 +1,49 @@
+# Jornada 8 — com conta, criar um grupo na Malta, escrever na conversa e vê-lo na lista.
+# O grupo «E2E Malta do café» é apagado por scripts/dados-de-teste/e2e-apagar.sql (ou ao recriar a conta).
+appId: host.exp.Exponent
+name: 08 Criar um grupo
+tags: [com-conta, malta]
+---
+- runFlow: comum/entrar-e2e.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /malta } }
+- extendedWaitUntil:
+    visible: "Criar um grupo"
+    timeout: 15000
+- tapOn: "Criar um grupo"
+- extendedWaitUntil:
+    visible: "Novo grupo"
+    timeout: 10000
+- assertVisible: "Dá-lhe um nome\\. Depois partilhas o link e quem o abrir entra\\."
+
+# Sem nome não cria
+- tapOn: "Criar grupo"
+- assertVisible: "Escreve um nome para o grupo\\."
+- tapOn: "Nome do grupo"
+- inputText: "E2E Malta do café"
+- tapOn: "Novo grupo"
+- tapOn: "Criar grupo"
+
+# Abre a conversa do grupo novo
+- extendedWaitUntil:
+    visible: "E2E Malta do café, .*"
+    timeout: 20000
+- assertVisible: "Escrever ao grupo.*"
+- assertVisible: "A conversa ainda está a zeros"
+- assertVisible: "Planos"
+- assertVisible: "Histórico"
+- tapOn: "Escrever ao grupo.*"
+- inputText: "Olá malta, isto é um teste E2E"
+- tapOn: "Enviar"
+- extendedWaitUntil:
+    visible: ".*Olá malta, isto é um teste E2E.*"
+    timeout: 15000
+
+# Volta à lista: o grupo está lá
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /malta } }
+- extendedWaitUntil:
+    visible: "E2E Malta do café\\..*"
+    timeout: 15000
+- tapOn: "E2E Malta do café\\..*"
+- extendedWaitUntil:
+    visible: ".*Olá malta, isto é um teste E2E.*"
+    timeout: 15000

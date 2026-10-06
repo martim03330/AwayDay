@@ -1,0 +1,143 @@
+# Jornada 7 — com conta, editar o perfil: nome, de onde parte (distrito → concelho) e como costuma ir à bola.
+# Sai e volta a entrar no ecrã para confirmar que ficou guardado na conta.
+appId: host.exp.Exponent
+name: 07 Editar o perfil
+tags: [com-conta]
+---
+- runFlow: comum/entrar-e2e.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+- scrollUntilVisible:
+    element: "O teu perfil: foto, nome e de onde partes.*"
+    direction: DOWN
+- tapOn: "O teu perfil: foto, nome e de onde partes.*"
+- extendedWaitUntil:
+    visible: "A tua foto"
+    timeout: 10000
+- assertVisible: "Tirar uma foto"
+- assertVisible: "Escolher da galeria"
+
+# O nome: menos de 2 letras não deixa guardar
+- tapOn: "Como te chamam.*"
+- eraseText: 40
+- inputText: "E"
+- tapOn: "O teu nome"
+- assertVisible:
+    text: "Guardar o nome"
+    enabled: false
+- tapOn: "Como te chamam.*"
+- eraseText: 40
+- inputText: "E2E Provisorio"
+- tapOn: "O teu nome"
+- tapOn: "Guardar o nome"
+- extendedWaitUntil:
+    visible:
+      text: "Guardar o nome"
+      enabled: false
+    timeout: 15000
+- assertVisible: "Sem foto de E2E Provisorio"
+# A confirmação aparece no fim do ecrã
+- scrollUntilVisible:
+    element: "Nome guardado\\."
+    direction: DOWN
+- scrollUntilVisible:
+    element: "Sem foto de .*"
+    direction: UP
+- tapOn: "Como te chamam.*"
+- eraseText: 40
+- inputText: "E2E Malta (teste)"
+- tapOn: "O teu nome"
+- tapOn: "Guardar o nome"
+- extendedWaitUntil:
+    visible:
+      text: "Guardar o nome"
+      enabled: false
+    timeout: 15000
+- assertVisible: "Sem foto de E2E Malta \\(teste\\)"
+
+# De onde parte: distrito, depois concelho
+- scrollUntilVisible:
+    element: "De onde partes para os jogos"
+    direction: DOWN
+- assertVisible: "Pomos primeiro as boleias que saem perto de ti\\. Só o concelho, e só tu o vês\\."
+- runFlow:
+    when:
+      visible: ".*\\. Toca para escolher outro distrito\\."
+    commands:
+      - tapOn: ".*\\. Toca para escolher outro distrito\\."
+- extendedWaitUntil:
+    visible: "Primeiro o distrito"
+    timeout: 15000
+- scrollUntilVisible:
+    element: "Porto"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Porto"
+- extendedWaitUntil:
+    visible: "Porto\\. Toca para escolher outro distrito\\."
+    timeout: 5000
+- scrollUntilVisible:
+    element: "Matosinhos"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Matosinhos"
+- waitForAnimationToEnd
+
+# Como costuma ir
+- scrollUntilVisible:
+    element: "Vou de transportes.*"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Vou de transportes.*"
+- waitForAnimationToEnd
+# Só «Vou de transportes» fica marcado (o último da lista)
+- assertVisible:
+    text: "radio button, checked"
+    below: "Costumo precisar de boleia.*"
+- assertNotVisible:
+    text: "radio button, checked"
+    above: "Vou de transportes.*"
+- assertNotVisible: "Não deu para guardar.*"
+- assertVisible: "O que os outros veem de ti: .*Nunca o email, o concelho de onde partes nem onde estás\\."
+
+# Sair e voltar: ficou guardado
+- runFlow: comum/voltar.yaml
+- extendedWaitUntil:
+    visible: "E2E Malta \\(teste\\)"
+    timeout: 15000
+- scrollUntilVisible:
+    element: "O teu perfil: foto, nome e de onde partes.*"
+    direction: DOWN
+- tapOn: "O teu perfil: foto, nome e de onde partes.*"
+- scrollUntilVisible:
+    element: "Porto\\. Toca para escolher outro distrito\\."
+    direction: DOWN
+- scrollUntilVisible:
+    element: "Matosinhos"
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    text: "Matosinhos"
+    selected: true
+- scrollUntilVisible:
+    element: "Vou de transportes.*"
+    direction: DOWN
+    centerElement: true
+# Só «Vou de transportes» fica marcado (o último da lista)
+- assertVisible:
+    text: "radio button, checked"
+    below: "Costumo precisar de boleia.*"
+- assertNotVisible:
+    text: "radio button, checked"
+    above: "Vou de transportes.*"
+
+# Trocar para «Costumo precisar de boleia»
+- tapOn: "Costumo precisar de boleia.*"
+- waitForAnimationToEnd
+# Só «Costumo precisar de boleia» fica marcado (o do meio)
+- assertVisible:
+    text: "radio button, checked"
+    below: "Vou de carro e posso dar boleia.*"
+    above: "Vou de transportes.*"
+- assertNotVisible:
+    text: "radio button, checked"
+    below: "Costumo precisar de boleia.*"

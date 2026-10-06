@@ -21,7 +21,7 @@ export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
       <View style={[styles.azulejo, { backgroundColor: theme.successBackground }]}>
         <Icon name={icon} size={30} color={theme.accentInk} />
       </View>
-      <ThemedText type="section" style={styles.title}>
+      <ThemedText type="section" style={styles.title} accessibilityRole="header">
         {title}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary" style={styles.message}>

@@ -10,7 +10,6 @@ import {
   type AreaFeedback,
   type NaturezaFeedback,
 } from '@/features/feedback/api';
-import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
@@ -20,6 +19,7 @@ import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 /** Como se diz cada sítio da app, na lista. */
 const NOME_DA_AREA: Record<AreaFeedback, string> = {
@@ -54,7 +54,6 @@ function mensagemDeRecusa(erro: unknown) {
  */
 export default function AjudarScreen() {
   const router = useRouter();
-  const theme = useTheme();
 
   const [natureza, setNatureza] = useState<NaturezaFeedback>('erro');
   const [area, setArea] = useState<AreaFeedback>('jogos');
@@ -136,6 +135,8 @@ export default function AjudarScreen() {
               : 'Era bom poder ver as boleias de um jogo sem entrar na conta'
           }
           maxLength={1000}
+          autoCapitalize="sentences"
+          returnKeyType="done"
           ajuda={
             natureza === 'erro'
               ? 'Diz o que fizeste antes de acontecer: é o que permite repetir o erro deste lado.'
@@ -143,7 +144,7 @@ export default function AjudarScreen() {
           }
         />
 
-        {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+        {erro ? <MensagemErro>{erro}</MensagemErro> : null}
 
         <Button
           label={aEnviar ? 'A enviar…' : 'Enviar'}

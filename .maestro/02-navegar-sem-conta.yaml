@@ -1,0 +1,106 @@
+# Jornada 2 — quem espreita sem conta: todas as tabs, o jogo, o estádio, chegar e estacionar, e o que pede conta
+# (boleias, combinar com a malta, malta, ranking).
+appId: host.exp.Exponent
+name: 02 Navegar sem conta
+tags: [sem-conta]
+---
+- runFlow: comum/boas-vindas.yaml
+- runFlow: comum/concluir-introducao.yaml
+
+# Tabs
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /jogos } }
+- extendedWaitUntil:
+    visible: "Tab Bar"
+    timeout: 15000
+- assertVisible: "Todas"
+- assertVisible: "Liga Betclic"
+- assertVisible: "Europa"
+- tapOn: "Malta"
+- extendedWaitUntil:
+    visible: "A malta precisa de conta"
+    timeout: 10000
+- tapOn: "Locais"
+- extendedWaitUntil:
+    visible: "Tascos a menos de .* min a pé|TASCOS A MENOS DE .* MIN A PÉ"
+    timeout: 10000
+- tapOn: "Ranking"
+- extendedWaitUntil:
+    visible: "O ranking precisa de conta"
+    timeout: 10000
+- tapOn: "Perfil"
+- scrollUntilVisible:
+    element: "Guarda o teu progresso"
+    direction: DOWN
+    timeout: 15000
+- assertNotVisible: "Terminar sessão"
+- assertNotVisible: "Apagar conta"
+- tapOn: "Jogos"
+- extendedWaitUntil:
+    visible: ".* contra .*|Jornada de descanso"
+    timeout: 15000
+
+# Filtros de competição
+- tapOn: "Europa"
+- waitForAnimationToEnd
+- tapOn: "Todas"
+- waitForAnimationToEnd
+
+# O jogo
+- runFlow: comum/abrir-um-jogo.yaml
+- assertVisible: "Antes de ir"
+- assertVisible: "Boleias\\. Entra para veres quem leva quem\\. Toca para abrir\\."
+- assertVisible: "Combinar com a malta\\. Convida um grupo teu para este jogo\\."
+
+# Boleias pedem conta
+- tapOn: "Boleias\\. Entra para veres quem leva quem\\. Toca para abrir\\."
+- extendedWaitUntil:
+    visible: "Entra na tua conta para ver as boleias deste jogo ou oferecer lugares no teu carro\\."
+    timeout: 10000
+- assertVisible: "Entrar"
+- assertNotVisible: "Oferecer boleia"
+- runFlow: comum/voltar.yaml
+
+# O estádio. Fora do modo demo não há meteorologia inventada.
+- scrollUntilVisible:
+    element: "O estádio\\..*"
+    direction: DOWN
+- tapOn: "O estádio\\..*"
+- extendedWaitUntil:
+    visible: "WC mais próximo"
+    timeout: 15000
+- assertNotVisible: "Previsão simulada"
+- assertNotVisible: "Meteorologia"
+- runFlow: comum/voltar.yaml
+
+# Chegar e estacionar
+- scrollUntilVisible:
+    element: "(Chegar e estacionar|Como voltar)\\..*"
+    direction: DOWN
+- tapOn: "(Chegar e estacionar|Como voltar)\\..*"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "BackButton"
+- assertNotVisible: "Jogo não encontrado"
+- runFlow: comum/voltar.yaml
+
+# Mapa e sítios
+- scrollUntilVisible:
+    element: "Mapa e sítios\\..*"
+    direction: DOWN
+- tapOn: "Mapa e sítios\\..*"
+- waitForAnimationToEnd
+- assertNotVisible: "Jogo não encontrado"
+- runFlow: comum/voltar.yaml
+
+# Combinar com a malta pede conta
+- scrollUntilVisible:
+    element: "Combinar com a malta\\..*"
+    direction: UP
+- tapOn: "Combinar com a malta\\..*"
+- extendedWaitUntil:
+    visible: "Para convidar a malta precisas de conta.*"
+    timeout: 10000
+- assertVisible: "Entrar"
+- swipe:
+    direction: DOWN
+- waitForAnimationToEnd

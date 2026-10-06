@@ -49,13 +49,15 @@ export function AICoachProvider({ children }: { children: ReactNode }) {
   const perfil = useMyProfile(userId);
   // A fase do dia de jogo muda aos minutos: basta acordar uma vez por minuto.
   const agora = useNow(MINUTO_MS);
-  const { clubeFavoritoId, clubeDaTerraId, estadiosVisitados, visitasLocais, fezCheckIn } = useAppState();
+  const { clubeFavoritoId, clubeDaTerraId, estadiosVisitados, visitasLocais, fezCheckIn, modoDemo } =
+    useAppState();
 
   // As visitas estão da mais recente para a mais antiga.
   const ultimoCheckIn = visitasLocais.find(
     (visita) => visita.origem === 'check-in' && fezCheckIn(visita.localId)
   );
-  const contexto = userId
+  // Demo mode leaves the account alone, and its sample activity never goes to the AI.
+  const contexto = userId && !modoDemo
     ? localCoachContext({
         userId,
         now: agora,

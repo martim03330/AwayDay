@@ -6,7 +6,6 @@ import { obterJogo } from '@/mocks/jogos';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
-import { SectionHeader } from '@/ui/section-header';
 
 /** O barulhómetro deste jogo: só mede quem está lá, e por isso vive numa página onde se fica. */
 export default function BarulhoScreen() {
@@ -30,7 +29,6 @@ export default function BarulhoScreen() {
 
   return (
     <Screen>
-      <SectionHeader title="Barulhómetro" />
       <BarulhometroCard jogo={jogo} agora={agora} />
     </Screen>
   );

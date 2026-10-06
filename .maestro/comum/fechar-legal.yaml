@@ -1,0 +1,5 @@
+# Closes a legal document (modal with a «Fechar» button on the left of the header).
+appId: host.exp.Exponent
+---
+- tapOn: "Fechar"
+- waitForAnimationToEnd

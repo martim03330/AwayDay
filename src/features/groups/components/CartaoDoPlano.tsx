@@ -58,26 +58,47 @@ export function estadoDoPlano(plano: FixturePlan) {
   return `Em aberto · ${livres > 0 ? plural(livres, 'lugar livre', 'lugares livres') : 'carro cheio'}`;
 }
 
+/** O estado do plano em poucas palavras, para ir na mesma linha de quem vai. */
+function estadoCurto(plano: FixturePlan) {
+  if (plano.status === 'fechado') return 'fechado';
+  if (!plano.ride) return 'sem boleia';
+  const livres = Math.max(0, plano.ride.seatsOffered - plano.ride.seatsTaken);
+  return livres > 0 ? plural(livres, 'lugar livre', 'lugares livres') : 'carro cheio';
+}
+
+/** "sábado, 19 de setembro · 18:00", sem o estádio: no cartão, o jogo já diz onde é. */
+function quando(plano: Pick<FixturePlan, 'fixtureId' | 'kickoffAt'>) {
+  const jogo = obterJogo(plano.fixtureId);
+  const inicio = new Date(jogo?.inicio ?? plano.kickoffAt);
+  return `${formatarDia(inicio)} · ${jogo && !jogo.horaConfirmada ? 'hora por definir' : formatarHora(inicio)}`;
+}
+
 type CartaoDoPlanoProps = {
   plano: FixturePlan;
   /** Quem mandou o convite para esta conversa (pode não ser quem criou o plano). `'eu'` quando foste tu. */
   quemConvidou?: string;
   /** Por cima de um fundo escuro, o cartão ganha contorno. */
   escuro?: boolean;
+  /** Já vais a este jogo com outro grupo (plano fechado lá): aqui não dá para dizer que vais. */
+  vaisComOutroGrupo?: string | null;
   onAbrir: () => void;
   onRespondido?: () => void;
+  /** O que acontece ao tocar, para o leitor de ecrã. Por omissão, abre o plano. */
+  dicaAoTocar?: string;
 };
 
 /**
- * O convite para um jogo, como aparece na conversa do grupo e nos planos em aberto: o jogo, a hora, o estádio, quem
- * vai, e os botões para responder.
+ * O convite para um jogo, como aparece na conversa do grupo e nos planos: o essencial (o jogo, o dia, quem vai) e
+ * a resposta. O resto está a um toque, no plano.
  */
 export function CartaoDoPlano({
   plano,
   quemConvidou,
   escuro = false,
+  vaisComOutroGrupo = null,
   onAbrir,
   onRespondido,
+  dicaAoTocar = 'Toca para abrir o plano.',
 }: CartaoDoPlanoProps) {
   const theme = useTheme();
   const jogo = obterJogo(plano.fixtureId);
@@ -87,6 +108,12 @@ export function CartaoDoPlano({
   const [erro, setErro] = useState<string | null>(null);
 
   const aberto = plano.status === 'aberto';
+  const convite =
+    quemConvidou === 'eu'
+      ? 'Convidaste a malta'
+      : quemConvidou
+        ? `${quemConvidou} convida`
+        : 'Convite para o jogo';
 
   async function responder(resposta: PlanAnswer) {
     setErro(null);
@@ -99,7 +126,9 @@ export function CartaoDoPlano({
       setErro(
         problema instanceof PlanRefused && problema.reason === 'plan_closed'
           ? 'O plano já fechou.'
-          : 'Não deu para responder. Tenta outra vez.'
+          : problema instanceof PlanRefused && problema.reason === 'already_going'
+            ? 'Já vais a este jogo com outro grupo.'
+            : 'Não deu para responder. Tenta outra vez.'
       );
     } finally {
       setAResponder(null);
@@ -110,7 +139,7 @@ export function CartaoDoPlano({
     <Pressable
       onPress={onAbrir}
       accessibilityRole="button"
-      accessibilityLabel={`Convite para ${nomeDoJogo(plano.fixtureId)}, ${quandoEOnde(plano)}. ${respostas(plano)}. Toca para abrir o plano.`}
+      accessibilityLabel={`${convite}: ${nomeDoJogo(plano.fixtureId)}, ${quandoEOnde(plano)}. ${respostas(plano)}. ${estadoDoPlano(plano)}. ${dicaAoTocar}`}
       style={({ pressed }) => [
         styles.cartao,
         CardShadow,
@@ -120,71 +149,67 @@ export function CartaoDoPlano({
         },
         pressed && styles.premido,
       ]}>
-      <View style={[styles.faixa, { backgroundColor: theme.accent }]}>
-        <Icon name={icons.calendario} size={14} color={theme.highlight} />
-        <ThemedText type="eyebrow" style={{ color: theme.accentText }} numberOfLines={1}>
-          {quemConvidou === 'eu'
-            ? 'Convidaste a malta para o jogo'
-            : quemConvidou
-              ? `${quemConvidou} convida para o jogo`
-              : 'Convite para o jogo'}
+      <View style={styles.topo}>
+        <Icon name={icons.calendario} size={13} color={theme.accentInk} />
+        <ThemedText type="eyebrow" themeColor="accentInk" numberOfLines={1} style={styles.flex}>
+          {convite}
         </ThemedText>
+        <Icon name={icons.seguinte} size={16} color={theme.textMuted} />
       </View>
 
-      <View style={styles.corpo}>
-        <View style={styles.equipas}>
-          {casa ? <Escudo clube={casa} size={30} /> : null}
-          <ThemedText type="subtitle" style={styles.flex} numberOfLines={2}>
-            {nomeDoJogo(plano.fixtureId)}
-          </ThemedText>
-          {fora ? <Escudo clube={fora} size={30} /> : null}
-        </View>
-        <ThemedText type="small" themeColor="textSecondary">
-          {quandoEOnde(plano)}
-        </ThemedText>
-
-        <View style={styles.linha}>
-          <Icon name={icons.perfil} size={14} color={theme.textSecondary} />
-          <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-            {respostas(plano)}
-          </ThemedText>
-        </View>
-        <View style={styles.linha}>
-          <Icon
-            name={plano.status === 'fechado' ? icons.selecionado : icons.carro}
-            size={14}
-            color={plano.status === 'fechado' ? theme.accentInk : theme.textSecondary}
-          />
-          <ThemedText
-            type="small"
-            themeColor={plano.status === 'fechado' ? 'accentInk' : 'textSecondary'}
-            style={styles.flex}>
-            {estadoDoPlano(plano)}
-          </ThemedText>
-        </View>
-
-        {aberto ? (
-          <View style={styles.botoes}>
-            <BotaoResposta
-              label="Vou"
-              escolhido={plano.myAnswer === 'vou'}
-              aTratar={aResponder === 'vou'}
-              onPress={() => void responder('vou')}
-            />
-            <BotaoResposta
-              label="Estou a pensar"
-              escolhido={plano.myAnswer === 'talvez'}
-              aTratar={aResponder === 'talvez'}
-              onPress={() => void responder('talvez')}
-            />
+      <View style={styles.equipas}>
+        {casa && fora ? (
+          <View style={styles.escudos}>
+            <Escudo clube={casa} size={26} />
+            <Escudo clube={fora} size={26} />
           </View>
         ) : null}
-        {erro ? (
-          <ThemedText type="small" style={{ color: theme.dangerText }}>
-            {erro}
+        <View style={styles.flex}>
+          <ThemedText style={styles.jogo} numberOfLines={1}>
+            {nomeDoJogo(plano.fixtureId)}
           </ThemedText>
-        ) : null}
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {quando(plano)}
+          </ThemedText>
+        </View>
       </View>
+
+      <View style={styles.linha}>
+        <Icon
+          name={plano.status === 'fechado' ? icons.selecionado : icons.perfil}
+          size={14}
+          color={plano.status === 'fechado' ? theme.accentInk : theme.textSecondary}
+        />
+        <ThemedText type="small" themeColor="textSecondary" style={styles.flex} numberOfLines={1}>
+          {`${respostas(plano)} · ${estadoCurto(plano)}`}
+        </ThemedText>
+      </View>
+
+      {vaisComOutroGrupo ? (
+        <ThemedText type="small" style={{ color: theme.warningText }}>
+          {`Já vais a este jogo com «${vaisComOutroGrupo}».`}
+        </ThemedText>
+      ) : aberto ? (
+        <View style={styles.botoes}>
+          <BotaoResposta
+            label="Vou"
+            escolhido={plano.myAnswer === 'vou'}
+            aTratar={aResponder === 'vou'}
+            onPress={() => void responder('vou')}
+          />
+          <BotaoResposta
+            label="Estou a pensar"
+            escolhido={plano.myAnswer === 'talvez'}
+            aTratar={aResponder === 'talvez'}
+            onPress={() => void responder('talvez')}
+          />
+        </View>
+      ) : null}
+      {erro ? (
+        <ThemedText type="small" style={{ color: theme.dangerText }}>
+          {erro}
+        </ThemedText>
+      ) : null}
     </Pressable>
   );
 }
@@ -224,29 +249,33 @@ function BotaoResposta({
 
 const styles = StyleSheet.create({
   cartao: {
+    gap: Spacing.twoAndHalf,
+    padding: Spacing.three,
     borderRadius: Radius.card,
     borderCurve: 'continuous',
     borderWidth: 1,
-    overflow: 'hidden',
   },
   premido: {
     opacity: 0.85,
   },
-  faixa: {
+  topo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
-  corpo: {
-    padding: Spacing.three,
-    gap: Spacing.two,
   },
   equipas: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
+  },
+  escudos: {
+    flexDirection: 'row',
+    gap: Spacing.half,
+  },
+  jogo: {
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: 800,
   },
   linha: {
     flexDirection: 'row',
@@ -259,7 +288,6 @@ const styles = StyleSheet.create({
   botoes: {
     flexDirection: 'row',
     gap: Spacing.two,
-    marginTop: Spacing.one,
   },
   botao: {
     flex: 1,

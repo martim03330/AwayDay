@@ -50,6 +50,7 @@ function ChipRelvado({ clubeId, nome, selected, onPress }: ChipRelvadoProps) {
 
   return (
     <Pressable
+      hitSlop={4}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
@@ -173,7 +174,7 @@ export default function LocaisScreen() {
     return (
       <>
         {confirmados.length > 0 && sugestoes.length > 0 ? (
-          <SectionHeader title="Confirmados pelos adeptos" />
+          <SectionHeader title="Confirmados" />
         ) : null}
         {confirmados.map(cartao)}
         {sugestoes.length > 0 ? (
@@ -196,7 +197,7 @@ export default function LocaisScreen() {
               trailing={plural(valeAPena.length, 'sítio', 'sítios')}
             />
             <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
-              {`Ficam a mais de ${MAX_MINUTOS_A_PE} min a pé, mas foram confirmados ou sugeridos por adeptos.`}
+              {`Ficam a mais de ${MAX_MINUTOS_A_PE} min a pé, mas estão confirmados ou foram sugeridos.`}
             </ThemedText>
             {valeAPena.map(cartao)}
           </>
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   chip: {
-    height: 40,
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,

@@ -7,7 +7,6 @@ import { authErrorMessage } from '@/features/auth/errors';
 import { useResetPassword } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { codeError, PASSWORD_MAX_LENGTH, passwordError } from '@/features/auth/validation';
-import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { icons } from '@/ui/icon';
@@ -16,8 +15,7 @@ import { ThemedText } from '@/ui/themed-text';
 export default function NovaPasswordScreen() {
   const { email = '' } = useLocalSearchParams<{ email?: string }>();
   const mudar = useResetPassword();
-  const { onboardingConcluido } = useAppState();
-  const fecharConta = useCloseAccountFlow(onboardingConcluido);
+  const fecharConta = useCloseAccountFlow();
   const [codigo, setCodigo] = useState('');
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);

@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Switch, View, type TextInput } from 'react-native';
 import MapView, { MapMarker } from 'react-native-maps';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
@@ -51,13 +51,17 @@ import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
+import { Icon, IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
-import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
-/** DGEG weekly averages, 14–20 September 2026 (the driver can change it). */
+/**
+ * Starting values only, not an official price: the driver sets what they paid. Not attributed to any source, since they
+ * are not kept up to date from one.
+ */
 const COMBUSTIVEIS = [
   { id: 'gasolina', nome: 'Gasolina 95', milesimas: 2072 },
   { id: 'gasoleo', nome: 'Gasóleo', milesimas: 2152 },
@@ -85,6 +89,11 @@ function lerPrecoLitro(texto: string) {
   if (!partes) return null;
   const milesimas = Number(partes[1]) * 1000 + Number((partes[2] ?? '').padEnd(3, '0') || '0');
   return milesimas >= 500 && milesimas <= 4000 ? milesimas : null;
+}
+
+/** 2072 -> "2,072", with integer maths. */
+function milesimasEmTexto(milesimas: number) {
+  return `${Math.floor(milesimas / 1000)},${String(milesimas % 1000).padStart(3, '0')}`;
 }
 
 function duracao(segundos: number) {
@@ -118,8 +127,6 @@ function mensagemRecusa(erro: unknown) {
       return 'Não deu para concluir. Tenta outra vez.';
   }
 }
-
-/** A driver offers seats for a game: meeting point, time, seats and car, then picks a route with its cost. */
 
 /**
  * Um passo de quinze minutos na hora de saída.
@@ -156,6 +163,10 @@ function PassoDeQuarto({
   );
 }
 
+/**
+ * A driver offers seats for a game: meeting point, time and seats first; the car, the car park, the return and a note
+ * folded under "Mais opções"; then a route with its cost.
+ */
 export default function OferecerBoleiaScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -177,8 +188,9 @@ export default function OferecerBoleiaScreen() {
   const [saidaManual, setSaidaManual] = useState<Date | null>(null);
   const [lugares, setLugares] = useState<(typeof LUGARES)[number]>(3);
   const [consumo, setConsumo] = useState('6,5');
+  const campoPrecoLitro = useRef<TextInput>(null);
   const [combustivel, setCombustivel] = useState<(typeof COMBUSTIVEIS)[number]['id']>('gasolina');
-  const [precoLitro, setPrecoLitro] = useState('2,072');
+  const [precoLitro, setPrecoLitro] = useState(milesimasEmTexto(COMBUSTIVEIS[0].milesimas));
   const [idaEVolta, setIdaEVolta] = useState(true);
   // A seat home for whoever is left at the stadium: only makes sense when the driver is coming back anyway.
   const [aceitaVolta, setAceitaVolta] = useState(true);
@@ -200,6 +212,10 @@ export default function OferecerBoleiaScreen() {
   const [aProcurar, setAProcurar] = useState(false);
   const [compromisso, setCompromisso] = useState(false);
   const [parqueId, setParqueId] = useState<string | null>(null);
+  // Folded by default: the form shows the essentials, the rest has sensible defaults.
+  const [verOpcoes, setVerOpcoes] = useState(false);
+  const [verPorque, setVerPorque] = useState(false);
+  const [verPartilhas, setVerPartilhas] = useState(false);
   const agora = useNow(60 * 1000);
   const quadro = useRideBoard(jogo?.id ?? null, userId !== null);
   const meusGrupos = useQuery({
@@ -479,10 +495,35 @@ export default function OferecerBoleiaScreen() {
     }
   }
 
+  const nomeCombustivel =
+    COMBUSTIVEIS.find((opcao) => opcao.id === combustivel)?.nome ?? COMBUSTIVEIS[0].nome;
+  // What "Mais opções" is set to, so the defaults are visible without opening it.
+  const resumoOpcoes = [
+    `${consumo || '—'} l/100 km`,
+    `${nomeCombustivel} a ${precoLitro || '—'} €`,
+    parqueEscolhido ? parqueEscolhido.name : null,
+    idaEVolta ? (aceitaVolta ? 'aceitas pedidos de volta' : 'sem pedidos de volta') : null,
+    nota.trim() ? 'com nota' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const opcoesComErro = (consumo !== '' && consumoCl === null) || (precoLitro !== '' && precoMilesimas === null);
+  const partilhas = cotacao ? cotacao.shareCentsByPeople.slice(0, lugares + 1) : [];
+  const interruptor = (valor: boolean, mudar: (valor: boolean) => void, rotulo: string) => (
+    <Switch
+      value={valor}
+      onValueChange={mudar}
+      trackColor={{ true: theme.accent, false: theme.border }}
+      thumbColor={theme.accentText}
+      ios_backgroundColor={theme.border}
+      accessibilityLabel={rotulo}
+    />
+  );
+
   return (
     <Screen>
-      <SectionHeader title="Ponto de encontro" />
-      <Card style={styles.grupo}>
+      <SectionHeader title="Ponto de encontro" trailing="Toca no mapa para acertar" />
+      <Card>
         <View style={styles.mapaArea}>
           <MapView
             ref={mapa}
@@ -503,7 +544,7 @@ export default function OferecerBoleiaScreen() {
             pitchEnabled={false}
             rotateEnabled={false}
             toolbarEnabled={false}
-            accessibilityLabel="Mapa para escolher o ponto de encontro. Toca para pôr o pino.">
+            accessibilityLabel="Mapa para escolher o ponto de encontro. Toca para pôr o pino, ou arrasta-o.">
             {partida ? (
               <MapMarker
                 coordinate={partida}
@@ -518,105 +559,86 @@ export default function OferecerBoleiaScreen() {
             ) : null}
           </MapView>
         </View>
-        <View style={styles.pesquisa}>
-          <View style={styles.flex}>
-            <Campo
-              label="Procurar rua ou sítio"
-              value={pesquisa}
-              onChangeText={setPesquisa}
-              placeholder="Ex.: Estação de Coimbra-B"
-              returnKeyType="search"
-              onSubmitEditing={() => void procurar()}
-              maxLength={120}
-            />
-          </View>
-        </View>
-        <Button
-          label={aProcurar ? 'A procurar…' : 'Procurar'}
-          variant="secondary"
-          icon={icons.rota}
-          disabled={aProcurar || pesquisa.trim().length < 3}
-          onPress={() => void procurar()}
-        />
-        {resultados ? (
-          resultados.length === 0 ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              Não encontrámos nada com esse nome. Experimenta a rua e a cidade.
-            </ThemedText>
-          ) : (
-            <View style={styles.resultados}>
-              {resultados.map((resultado) => (
-                <Pressable
-                  key={`${resultado.latitude},${resultado.longitude}`}
-                  onPress={() => escolherResultado(resultado)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${resultado.name}, ${resultado.detail}`}
-                  style={({ pressed }) => [
-                    styles.resultado,
-                    { borderColor: theme.border },
-                    pressed && styles.pressed,
-                  ]}>
-                  <ThemedText style={styles.rotulo} numberOfLines={1}>
-                    {resultado.name}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                    {[
-                      resultado.detail,
-                      resultado.distanceM !== null
-                        ? `a ${formatarDistancia(resultado.distanceM)}`
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </View>
-          )
-        ) : null}
-        <View style={[styles.estadoLocalizacao, { backgroundColor: theme.backgroundSelected }]}>
+
+        <View style={styles.localizacao}>
           {estadoLocalizacao === 'a-procurar' ? (
             <ThemedText type="small" themeColor="textSecondary">
               A procurar a tua localização…
             </ThemedText>
           ) : estadoLocalizacao === 'ok' && naMinhaLocalizacao ? (
-            <Etiqueta
-              icon={icons.selecionado}
-              label="O ponto de encontro está na tua localização atual"
-              tone="positivo"
-            />
+            <Etiqueta icon={icons.selecionado} label="Na tua localização atual" tone="positivo" />
           ) : estadoLocalizacao === 'ok' ? (
             <>
-              <ThemedText type="small" themeColor="textSecondary">
-                O pino está num sítio escolhido por ti, não na tua localização.
+              <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                Pino num sítio escolhido por ti
               </ThemedText>
-              <LinkTexto label="Usar a minha localização" onPress={usarAMinhaLocalizacao} />
+              <LinkTexto label="Usar onde estou" onPress={usarAMinhaLocalizacao} />
             </>
           ) : estadoLocalizacao === 'negada' ? (
             <>
-              <ThemedText type="small" themeColor="textSecondary">
-                Sem acesso à localização. Ativa-a nas Definições para pôr o pino onde estás, ou
-                procura a rua.
+              <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                Sem acesso à localização
               </ThemedText>
-              <View style={styles.linksLocalizacao}>
-                <LinkTexto label="Abrir Definições" onPress={() => void Linking.openSettings()} />
-                <LinkTexto label="Tentar outra vez" onPress={usarAMinhaLocalizacao} />
-              </View>
+              <LinkTexto label="Abrir Definições" onPress={() => void Linking.openSettings()} />
+              <LinkTexto neutro label="Tentar outra vez" onPress={usarAMinhaLocalizacao} />
             </>
           ) : (
             <>
-              <ThemedText type="small" themeColor="textSecondary">
-                Não conseguimos saber onde estás (a localização do telemóvel pode estar desligada).
-                Procura a rua ou toca no mapa.
+              <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                Não sabemos onde estás: procura a rua ou toca no mapa
               </ThemedText>
-              <LinkTexto label="Tentar outra vez" onPress={usarAMinhaLocalizacao} />
+              <LinkTexto neutro label="Tentar outra vez" onPress={usarAMinhaLocalizacao} />
             </>
           )}
         </View>
-        <ThemedText type="small" themeColor="textMuted">
-          Toca no mapa ou arrasta o pino para acertar. Escolhe um sítio público (uma estação, uma
-          bomba de gasolina), nunca a tua casa.
-        </ThemedText>
+
+        <Campo
+          label="Procurar rua ou sítio"
+          value={pesquisa}
+          onChangeText={setPesquisa}
+          placeholder="Ex.: Estação de Coimbra-B"
+          returnKeyType="search"
+          onSubmitEditing={() => void procurar()}
+          maxLength={120}
+        />
+        {pesquisa.trim().length >= 3 ? (
+          <Button
+            label={aProcurar ? 'A procurar…' : 'Procurar'}
+            variant="secondary"
+            icon={icons.rota}
+            disabled={aProcurar}
+            onPress={() => void procurar()}
+          />
+        ) : null}
+        {resultados ? (
+          resultados.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Nada com esse nome. Experimenta a rua e a cidade.
+            </ThemedText>
+          ) : (
+            <View>
+              {resultados.map((resultado, indice) => (
+                <LinhaGrupo
+                  key={`${resultado.latitude},${resultado.longitude}`}
+                  onPress={() => escolherResultado(resultado)}
+                  accessibilityLabel={`${resultado.name}, ${resultado.detail}`}
+                  leading={<IconCircle name={icons.locais} tone="neutral" size={16} />}
+                  title={resultado.name}
+                  subtitle={[
+                    resultado.detail,
+                    resultado.distanceM !== null
+                      ? `a ${formatarDistancia(resultado.distanceM)}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  separador={indice < resultados.length - 1}
+                />
+              ))}
+            </View>
+          )
+        ) : null}
+
         <Campo
           label="Nome do ponto de encontro"
           value={nomePartida}
@@ -624,15 +646,17 @@ export default function OferecerBoleiaScreen() {
           placeholder="Ex.: Estação de Coimbra-B"
           maxLength={80}
           autoCapitalize="words"
+          returnKeyType="done"
+          ajuda="Um sítio público (estação, bomba de gasolina), nunca a tua casa."
         />
       </Card>
 
       <SectionHeader title="Quando e quantos" />
-      <Card style={styles.grupo}>
+      <Card>
         <ThemedText style={styles.rotulo}>Hora de saída</ThemedText>
         {semTempo || !limites ? (
           <ThemedText type="small" themeColor="textSecondary">
-            {`Já não dá para oferecer boleia para este jogo: tem de ser publicada pelo menos ${CRIAR_HORAS_ANTES} h antes da saída.`}
+            {`Já não dá: as boleias têm de ser publicadas pelo menos ${CRIAR_HORAS_ANTES} h antes da saída.`}
           </ThemedText>
         ) : (
           <>
@@ -643,7 +667,7 @@ export default function OferecerBoleiaScreen() {
                 onPress={() => setSaidaManual(ajustarSaida(saida, -1, limites))}
               />
               <View style={styles.horaCentro}>
-                <ThemedText style={styles.horaValor} numberOfLines={1}>
+                <ThemedText type="score" style={styles.horaValor} numberOfLines={1}>
                   {formatarHora(saida)}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
@@ -656,24 +680,37 @@ export default function OferecerBoleiaScreen() {
                 onPress={() => setSaidaManual(ajustarSaida(saida, 1, limites))}
               />
             </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              {cotacao
-                ? `Sugerido: ${formatarHora(sugerida)} — ${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''}${extraDoParque > 0 ? `, mais ${extraDoParque} min porque o parque enche cedo` : ''} e ${margemMinutos(jogoGrande)} min de margem${jogoGrande ? ' (jogo grande: mais trânsito e filas)' : ''}.`
-                : 'Vê os percursos e escolhe o parque: acertamos a hora à distância e ao tipo de jogo.'}
-            </ThemedText>
             {apertada ? (
               <ThemedText type="small" style={{ color: theme.warningText }}>
                 Com esta hora chegam mais em cima do apito do que sugerimos.
               </ThemedText>
             ) : null}
-            {saidaManual !== null ? (
-              <LinkTexto label="Usar a hora sugerida" onPress={() => setSaidaManual(null)} />
+            <View style={styles.linhaAcoes}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                {cotacao
+                  ? `Sugerida: ${formatarHora(sugerida)}`
+                  : 'Acertamos a hora quando vires os percursos.'}
+              </ThemedText>
+              {saidaManual !== null ? (
+                <LinkTexto label="Usar a sugerida" onPress={() => setSaidaManual(null)} />
+              ) : null}
+              <LinkTexto
+                neutro
+                label={verPorque ? 'Esconder' : 'Porquê?'}
+                onPress={() => setVerPorque((atual) => !atual)}
+              />
+            </View>
+            {verPorque ? (
+              <ThemedText type="small" themeColor="textMuted">
+                {cotacao
+                  ? `${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''}${extraDoParque > 0 ? `, mais ${extraDoParque} min porque o parque enche cedo` : ''} e ${margemMinutos(jogoGrande)} min de margem${jogoGrande ? ' (jogo grande: mais trânsito e filas)' : ''}. Os pedidos de lugar fecham 2 h antes da saída.`
+                  : 'A hora acerta-se à distância, ao parque e ao tipo de jogo. Os pedidos de lugar fecham 2 h antes da saída.'}
+              </ThemedText>
             ) : null}
-            <ThemedText type="small" themeColor="textMuted">
-              Os pedidos de lugar fecham 2 h antes da saída.
-            </ThemedText>
           </>
         )}
+
+        <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />
         <ThemedText style={styles.rotulo}>Lugares livres</ThemedText>
         <View style={styles.chips}>
           {LUGARES.map((numero) => (
@@ -682,20 +719,32 @@ export default function OferecerBoleiaScreen() {
               label={String(numero)}
               selected={numero === lugares}
               emCartao
+              accessibilityLabel={`${numero} ${numero === 1 ? 'lugar livre' : 'lugares livres'}`}
               onPress={() => setLugares(numero)}
             />
           ))}
         </View>
+
+        <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />
+        <LinhaGrupo
+          leading={<IconCircle name={icons.rota} tone="neutral" />}
+          title="Ida e volta"
+          subtitle={idaEVolta ? 'Trazes a malta de volta depois do jogo' : 'Só levas a malta ao jogo'}
+          trailing={interruptor(
+            idaEVolta,
+            (valor) => {
+              setIdaEVolta(valor);
+              mudou();
+            },
+            'Ida e volta'
+          )}
+        />
       </Card>
 
       {(meusGrupos.data ?? []).length > 0 ? (
         <>
-          <SectionHeader title="De quem é esta boleia?" />
-          <Card style={styles.grupo}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Se for a boleia de um grupo teu, fica a aparecer lá dentro e entra no histórico de
-              viagens do grupo. Continua aberta a qualquer adepto.
-            </ThemedText>
+          <SectionHeader title="De quem é a boleia" />
+          <Card>
             <View style={styles.chips}>
               <Chip
                 label="Só minha"
@@ -714,181 +763,218 @@ export default function OferecerBoleiaScreen() {
               ))}
             </View>
             {grupoId ? (
-              <>
-                <View style={styles.linhaSwitch}>
-                  <ThemedText style={styles.flex}>Só para o grupo, por agora</ThemedText>
-                  <Switch
-                    value={soParaOGrupo}
-                    onValueChange={setSoParaOGrupo}
-                    trackColor={{ true: theme.accent, false: theme.border }}
-                    thumbColor={theme.accentText}
-                    ios_backgroundColor={theme.border}
-                    accessibilityLabel="Só para o grupo, por agora"
-                  />
-                </View>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {soParaOGrupo
-                    ? 'Só a malta do grupo vê esta boleia. Se o carro não encher, abres a toda a gente com um toque.'
-                    : 'A boleia aparece a qualquer adepto que vá a este jogo.'}
-                </ThemedText>
-              </>
-            ) : null}
+              <LinhaGrupo
+                leading={<IconCircle name={icons.perfil} />}
+                title="Só para o grupo, por agora"
+                subtitle={
+                  soParaOGrupo
+                    ? 'Se o carro não encher, abres a toda a gente'
+                    : 'Qualquer adepto deste jogo a vê'
+                }
+                trailing={interruptor(soParaOGrupo, setSoParaOGrupo, 'Só para o grupo, por agora')}
+              />
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                A boleia de um grupo aparece lá dentro e fica no histórico do grupo.
+              </ThemedText>
+            )}
           </Card>
         </>
       ) : null}
 
-      <SectionHeader title="Onde deixamos o carro" />
-      <Card style={styles.grupo}>
-        <EscolherParque
-          parques={parquesDoEstadio}
-          escolhido={parqueId}
-          onEscolher={setParqueId}
-          jogoGrande={jogoGrande}
-          inicio={jogo.inicio}
+      <Card style={styles.linhas}>
+        <LinhaGrupo
+          onPress={() => setVerOpcoes((atual) => !atual)}
+          accessibilityLabel={`Mais opções: ${resumoOpcoes}. Toca para ${verOpcoes ? 'esconder' : 'mudar'}.`}
+          leading={<IconCircle name={icons.definicoes} tone={opcoesComErro ? 'red' : 'neutral'} />}
+          title="Mais opções"
+          subtitle={opcoesComErro ? 'Há um valor por corrigir' : resumoOpcoes}
+          trailing={
+            <View style={verOpcoes ? styles.setaAberta : undefined}>
+              <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
+            </View>
+          }
+          separador={verOpcoes}
         />
-      </Card>
-
-      <SectionHeader title="O teu carro" />
-      <Card style={styles.grupo}>
-        <Campo
-          label="Consumo (litros aos 100 km)"
-          value={consumo}
-          onChangeText={(texto) => {
-            setConsumo(texto);
-            mudou();
-          }}
-          keyboardType="decimal-pad"
-          erro={consumo && consumoCl === null ? 'Escreve um valor entre 2 e 25, ex.: 6,5' : null}
-        />
-        <View style={styles.chips}>
-          {COMBUSTIVEIS.map((opcao) => (
-            <Chip
-              key={opcao.id}
-              label={opcao.nome}
-              selected={opcao.id === combustivel}
-              emCartao
-              onPress={() => {
-                setCombustivel(opcao.id);
-                setPrecoLitro((opcao.milesimas / 1000).toFixed(3).replace('.', ','));
+        {verOpcoes ? (
+          <View style={styles.opcoes}>
+            <ThemedText type="eyebrow" themeColor="accentInk">
+              O teu carro
+            </ThemedText>
+            <Campo
+              label="Consumo (litros aos 100 km)"
+              value={consumo}
+              onChangeText={(texto) => {
+                setConsumo(texto);
                 mudou();
               }}
+              keyboardType="decimal-pad"
+              returnKeyType="next"
+              onSubmitEditing={() => campoPrecoLitro.current?.focus()}
+              erro={consumo && consumoCl === null ? 'Escreve um valor entre 2 e 25, ex.: 6,5' : null}
             />
-          ))}
-        </View>
-        <Campo
-          label="Preço por litro (€)"
-          value={precoLitro}
-          onChangeText={(texto) => {
-            setPrecoLitro(texto);
-            mudou();
-          }}
-          keyboardType="decimal-pad"
-          ajuda="Média da DGEG na semana de 14 a 20 de setembro. Muda se pagaste outro valor."
-          erro={precoLitro && precoMilesimas === null ? 'Escreve um preço como 2,072' : null}
-        />
-        <View style={styles.linhaSwitch}>
-          <ThemedText style={styles.flex}>Ida e volta</ThemedText>
-          <Switch
-            value={idaEVolta}
-            onValueChange={(valor) => {
-              setIdaEVolta(valor);
-              mudou();
-            }}
-            trackColor={{ true: theme.accent, false: theme.border }}
-            thumbColor={theme.accentText}
-            ios_backgroundColor={theme.border}
-            accessibilityLabel="Ida e volta"
-          />
-        </View>
-        {idaEVolta ? (
-          <>
-            <View style={styles.linhaSwitch}>
-              <ThemedText style={styles.flex}>Aceito pedidos de boleia de volta</ThemedText>
-              <Switch
-                value={aceitaVolta}
-                onValueChange={setAceitaVolta}
-                trackColor={{ true: theme.accent, false: theme.border }}
-                thumbColor={theme.accentText}
-                ios_backgroundColor={theme.border}
-                accessibilityLabel="Aceito pedidos de boleia de volta"
-              />
+            <View style={styles.chips}>
+              {COMBUSTIVEIS.map((opcao) => (
+                <Chip
+                  key={opcao.id}
+                  label={opcao.nome}
+                  selected={opcao.id === combustivel}
+                  emCartao
+                  onPress={() => {
+                    setCombustivel(opcao.id);
+                    setPrecoLitro(milesimasEmTexto(opcao.milesimas));
+                    mudou();
+                  }}
+                />
+              ))}
             </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              Quem ficar sem transporte depois do jogo pode pedir-te lugar na volta. Decides na hora
-              e a pessoa paga a sua parte da viagem de volta.
+            <Campo
+              ref={campoPrecoLitro}
+              label="Preço por litro (€)"
+              value={precoLitro}
+              onChangeText={(texto) => {
+                setPrecoLitro(texto);
+                mudou();
+              }}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              ajuda="Valor de referência. Põe o que pagaste da última vez que atestaste."
+              erro={precoLitro && precoMilesimas === null ? 'Escreve um preço como 2,072' : null}
+            />
+
+            <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />
+            <ThemedText type="eyebrow" themeColor="accentInk">
+              Onde deixas o carro
             </ThemedText>
-          </>
+            <EscolherParque
+              parques={parquesDoEstadio}
+              escolhido={parqueId}
+              onEscolher={setParqueId}
+              jogoGrande={jogoGrande}
+              inicio={jogo.inicio}
+            />
+
+            {idaEVolta ? (
+              <>
+                <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />
+                <LinhaGrupo
+                  leading={<IconCircle name={icons.carro} tone="sky" />}
+                  title="Aceito pedidos de boleia de volta"
+                  subtitle="Quem ficar sem transporte pede-te lugar; decides na hora"
+                  trailing={interruptor(
+                    aceitaVolta,
+                    setAceitaVolta,
+                    'Aceito pedidos de boleia de volta'
+                  )}
+                />
+              </>
+            ) : null}
+
+            <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />
+            <Campo
+              label="Nota para quem vai (opcional)"
+              value={nota}
+              onChangeText={setNota}
+              placeholder="Ex.: saio pontualmente, cabe uma mochila"
+              maxLength={280}
+              autoCapitalize="sentences"
+              returnKeyType="done"
+            />
+          </View>
         ) : null}
-        <Campo
-          label="Nota para quem vai (opcional)"
-          value={nota}
-          onChangeText={setNota}
-          placeholder="Ex.: saio pontualmente, cabe uma mochila"
-          maxLength={280}
-        />
       </Card>
 
-      <Button
-        label={aCarregar && !cotacoes ? 'A calcular…' : 'Ver percursos e custos'}
-        icon={icons.rota}
-        variant={cotacoes ? 'secondary' : 'primary'}
-        disabled={!podeCotar || aCarregar}
-        onPress={() => void verPercursos()}
-      />
-      {partida === null ? (
-        <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
-          Põe primeiro o ponto de encontro no mapa.
-        </ThemedText>
-      ) : null}
+      {cotacoes ? null : (
+        <>
+          <Button
+            label={aCarregar ? 'A calcular…' : 'Ver percursos e custos'}
+            icon={icons.rota}
+            disabled={!podeCotar || aCarregar}
+            onPress={() => void verPercursos()}
+          />
+          {partida === null ? (
+            <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
+              Põe primeiro o ponto de encontro no mapa.
+            </ThemedText>
+          ) : null}
+        </>
+      )}
 
       {cotacoes ? (
         <>
-          <SectionHeader title="Escolhe o percurso" />
-          {cotacoes.map((opcao) => {
-            const selecionada = opcao.option === escolhida;
-            return (
-              <Pressable
-                key={opcao.option}
-                onPress={() => setEscolhida(opcao.option)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: selecionada }}
-                style={[
-                  styles.opcao,
-                  {
-                    backgroundColor: theme.backgroundElement,
-                    borderColor: selecionada ? theme.accent : theme.border,
-                  },
-                ]}>
-                <View style={styles.opcaoTopo}>
-                  <ThemedText style={styles.opcaoTitulo}>{OPCOES[opcao.option].titulo}</ThemedText>
-                  <ThemedText style={styles.opcaoTitulo}>
-                    {formatarCentimos(opcao.totalCents)}
-                  </ThemedText>
-                </View>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {`${duracao(opcao.durationS)} · ${formatarDistancia(opcao.distanceM)} · ${opcao.tollM > 0 ? `${formatarDistancia(opcao.tollM)} com portagem` : 'sem portagens'}`}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {`Combustível ${formatarCentimos(opcao.fuelCents)} · portagens ${formatarCentimos(opcao.tollCents)} (estimativa)`}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textMuted">
-                  {OPCOES[opcao.option].descricao}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
+          <SectionHeader title="Percurso e preço" />
+          <Card style={styles.linhas}>
+            {cotacoes.map((opcao, indice) => {
+              const selecionada = opcao.option === escolhida;
+              return (
+                <Pressable
+                  key={opcao.option}
+                  onPress={() => setEscolhida(opcao.option)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selecionada }}
+                  accessibilityLabel={`${OPCOES[opcao.option].titulo}, ${formatarCentimos(opcao.totalCents)}. ${OPCOES[opcao.option].descricao}`}
+                  style={({ pressed }) => [
+                    styles.percurso,
+                    indice < cotacoes.length - 1 && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: theme.backgroundSelected,
+                    },
+                    pressed && styles.pressed,
+                  ]}>
+                  <View
+                    style={[
+                      styles.radio,
+                      { borderColor: selecionada ? theme.accent : theme.borderStrong },
+                      selecionada && { backgroundColor: theme.accent },
+                    ]}>
+                    {selecionada ? (
+                      <Icon name={icons.checkInFeito} size={12} color={theme.accentText} strokeWidth={3} />
+                    ) : null}
+                  </View>
+                  <View style={styles.flex}>
+                    <ThemedText style={styles.rotulo}>{OPCOES[opcao.option].titulo}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {`${duracao(opcao.durationS)} · ${formatarDistancia(opcao.distanceM)} · ${opcao.tollM > 0 ? `${formatarDistancia(opcao.tollM)} com portagem` : 'sem portagens'}`}
+                    </ThemedText>
+                    {selecionada ? (
+                      <ThemedText type="small" themeColor="textMuted">
+                        {`Combustível ${formatarCentimos(opcao.fuelCents)} · portagens ${formatarCentimos(opcao.tollCents)} (estimativa)`}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                  <ThemedText style={styles.valor}>{formatarCentimos(opcao.totalCents)}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </Card>
 
-          {cotacao ? (
-            <Card style={styles.grupo}>
-              <ThemedText style={styles.rotulo}>Quanto paga cada um</ThemedText>
-              {cotacao.shareCentsByPeople.slice(0, lugares + 1).map((valor, indice) => (
-                <View key={indice} style={styles.linhaValor}>
-                  <ThemedText themeColor="textSecondary">
-                    {indice === 0 ? 'Só tu' : `Tu e mais ${indice}`}
-                  </ThemedText>
-                  <ThemedText style={styles.valor}>{`${formatarCentimos(valor)} cada`}</ThemedText>
-                </View>
-              ))}
+          {cotacao && partilhas.length > 0 ? (
+            <Card>
+              <View style={styles.linhaValor}>
+                <ThemedText themeColor="textSecondary" style={styles.flex}>
+                  {`Cada um, com o carro cheio (${partilhas.length} pessoas)`}
+                </ThemedText>
+                <ThemedText style={styles.valorGrande}>
+                  {formatarCentimos(partilhas[partilhas.length - 1])}
+                </ThemedText>
+              </View>
+              {verPartilhas
+                ? partilhas.slice(0, -1).map((valor, indice) => (
+                    <View key={indice} style={styles.linhaValor}>
+                      <ThemedText themeColor="textSecondary">
+                        {indice === 0 ? 'Só tu' : `Tu e mais ${indice}`}
+                      </ThemedText>
+                      <ThemedText style={styles.valor}>{`${formatarCentimos(valor)} cada`}</ThemedText>
+                    </View>
+                  ))
+                : null}
+              {partilhas.length > 1 ? (
+                <LinkTexto
+                  neutro
+                  label={verPartilhas ? 'Esconder' : 'Ver com menos gente'}
+                  onPress={() => setVerPartilhas((atual) => !atual)}
+                />
+              ) : null}
             </Card>
           ) : null}
 
@@ -917,14 +1003,18 @@ export default function OferecerBoleiaScreen() {
 }
 
 const styles = StyleSheet.create({
-  grupo: {
-    gap: Spacing.two,
-  },
   mapaArea: {
-    height: 240,
+    height: 220,
     borderRadius: Radius.button,
     borderCurve: 'continuous',
     overflow: 'hidden',
+  },
+  localizacao: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 38,
   },
   rotulo: {
     fontWeight: 800,
@@ -932,7 +1022,7 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   hora: {
     flexDirection: 'row',
@@ -965,75 +1055,66 @@ const styles = StyleSheet.create({
     minWidth: 96,
   },
   horaValor: {
-    fontSize: 28,
-    lineHeight: 32,
+    fontVariant: ['tabular-nums'],
+  },
+  linhaAcoes: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  separador: {
+    height: 1,
+  },
+  linhas: {
+    gap: 0,
+    paddingVertical: Spacing.one,
+  },
+  opcoes: {
+    gap: Spacing.twoAndHalf,
+    paddingTop: Spacing.twoAndHalf,
+    paddingBottom: Spacing.two,
+  },
+  setaAberta: {
+    transform: [{ rotate: '90deg' }],
+  },
+  percurso: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.twoAndHalf,
+    paddingVertical: Spacing.twoAndHalf,
+  },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  linhaValor: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    gap: Spacing.two,
+  },
+  valor: {
     fontWeight: 800,
     fontVariant: ['tabular-nums'],
   },
-  linhaSwitch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
+  valorGrande: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: 800,
+    fontVariant: ['tabular-nums'],
   },
   flex: {
     flex: 1,
   },
   centro: {
     textAlign: 'center',
-  },
-  estadoLocalizacao: {
-    gap: 4,
-    padding: 10,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-  },
-  linksLocalizacao: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.three,
-  },
-  pesquisa: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
-  resultados: {
-    gap: Spacing.one,
-  },
-  resultado: {
-    gap: 2,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  opcao: {
-    gap: 4,
-    padding: 14,
-    borderWidth: 2,
-    borderRadius: Radius.card,
-    borderCurve: 'continuous',
-  },
-  opcaoTopo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-  },
-  opcaoTitulo: {
-    fontSize: 16,
-    lineHeight: 21,
-    fontWeight: 800,
-  },
-  linhaValor: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-  },
-  valor: {
-    fontWeight: 800,
-    fontVariant: ['tabular-nums'],
   },
 });

@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
@@ -7,7 +7,7 @@ import { Equipa } from '@/components/equipa';
 import { CarimboEstadio } from '@/components/carimbo-estadio';
 import { PlanoDoJogo } from '@/components/plano-do-jogo';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useRideBoard } from '@/features/rides/hooks/useRides';
 import { GoingButton } from '@/features/activity/components/GoingButton';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
@@ -209,7 +209,11 @@ export default function JogoScreen() {
               <View key={left} style={[styles.risca, { left }]} />
             ))}
           </View>
-          <View style={styles.circuloCentral} pointerEvents="none">
+          <View
+            style={styles.circuloCentral}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants">
             <Svg
               width={300}
               height={300}
@@ -223,7 +227,7 @@ export default function JogoScreen() {
             </Svg>
           </View>
 
-          <ThemedText type="eyebrow" style={[styles.centro, { color: theme.highlight }]}>
+          <ThemedText type="eyebrow" style={[styles.centro, { color: theme.accentText }]}>
             {nomesCompeticao[jogo.competicao]} · {jogo.fase}
           </ThemedText>
 
@@ -261,33 +265,34 @@ export default function JogoScreen() {
       <View style={styles.corpo}>
         {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
 
-        {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
-
-        {/* O carimbo é uma ação de um toque: fica à mão, não atrás de um botão. */}
-        <CarimboEstadio jogo={jogo} estadio={estadio} />
-
-        {vou(jogo.id) && estado !== 'terminado' ? <PlanoDoJogo jogo={jogo} agora={agora} /> : null}
-
-        {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
-          <Card style={styles.lista}>
-            <LinhaSeccao
-              icone={icons.som}
-              tom="destaque"
-              titulo="Barulhómetro"
-              resumo={
-                estado === 'a-decorrer' ? 'Em jogo — mede agora' : 'Mede o barulho da bancada'
-              }
-              onPress={() => abrir('/jogos/barulho')}
-            />
-          </Card>
+        <SectionHeader title="Com quem vais" />
+        {estado === 'agendado' ? (
+          <CombinarComAMalta onPress={() => abrir('/jogos/combinar')} />
         ) : null}
+        <Card style={styles.lista}>
+          <LinhaSeccao
+            icone={icons.carro}
+            titulo="Boleias"
+            resumo={resumoBoleias}
+            onPress={() => abrir('/jogos/boleias')}
+            separador={dormidaFazSentido}
+          />
+          {dormidaFazSentido ? (
+            <LinhaSeccao
+              icone={icons.casa}
+              titulo="Onde dormir"
+              resumo="Juntar a malta para uma casa, nos jogos longe"
+              onPress={() => abrir('/jogos/dormir')}
+            />
+          ) : null}
+        </Card>
 
         <SectionHeader title="Antes de ir" />
         <Card style={styles.lista}>
           <LinhaSeccao
             icone={icons.rota}
             titulo={estado === 'a-decorrer' ? 'Como voltar' : 'Chegar e estacionar'}
-            resumo="O caminho no mapa e os parques à volta do estádio"
+            resumo="O caminho e os parques à volta"
             onPress={() => abrir('/jogos/chegar')}
             separador
           />
@@ -316,33 +321,28 @@ export default function JogoScreen() {
           />
         </Card>
 
-        <SectionHeader title="Com quem vais" />
-        <Card style={styles.lista}>
-          {estado === 'agendado' ? (
+        {/* A chuva muda o que se leva: fica junto ao que se vê antes de sair de casa. */}
+        {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
+
+        {/* O carimbo é uma ação de um toque: fica à mão, não atrás de um botão. */}
+        <CarimboEstadio jogo={jogo} estadio={estadio} />
+
+        {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
+          <Card style={styles.lista}>
             <LinhaSeccao
-              icone={icons.perfil}
-              titulo="Combinar com a malta"
-              resumo="Convida um grupo teu: quem vai, a boleia e a dormida"
-              onPress={() => abrir('/jogos/combinar')}
-              separador
+              icone={icons.som}
+              tom="destaque"
+              titulo="Barulhómetro"
+              resumo={
+                estado === 'a-decorrer' ? 'Em jogo — mede agora' : 'Mede o barulho da bancada'
+              }
+              onPress={() => abrir('/jogos/barulho')}
             />
-          ) : null}
-          <LinhaSeccao
-            icone={icons.carro}
-            titulo="Boleias"
-            resumo={resumoBoleias}
-            onPress={() => abrir('/jogos/boleias')}
-            separador={dormidaFazSentido}
-          />
-          {dormidaFazSentido ? (
-            <LinhaSeccao
-              icone={icons.casa}
-              titulo="Onde dormir"
-              resumo="Juntar a malta para uma casa, nos jogos longe"
-              onPress={() => abrir('/jogos/dormir')}
-            />
-          ) : null}
-        </Card>
+          </Card>
+        ) : null}
+
+        {/* O teu plano (horas e avisos) fica no fim: primeiro o que se combina. */}
+        {vou(jogo.id) && estado !== 'terminado' ? <PlanoDoJogo jogo={jogo} agora={agora} /> : null}
 
         {avaliacao}
       </View>
@@ -350,7 +350,68 @@ export default function JogoScreen() {
   );
 }
 
+/** O convite à malta, em destaque: é por aqui que começa um dia de jogo em grupo. */
+function CombinarComAMalta({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Combinar com a malta. Convida um grupo teu para este jogo."
+      style={({ pressed }) => [
+        styles.combinar,
+        CardShadow,
+        { backgroundColor: theme.accent },
+        pressed && styles.combinarPremido,
+      ]}>
+      <View style={[styles.combinarIcone, { backgroundColor: theme.highlight }]}>
+        <Icon name={icons.perfil} size={22} color={theme.highlightText} />
+      </View>
+      <View style={styles.flex}>
+        <ThemedText type="subtitle" style={{ color: theme.accentText }}>
+          Combinar com a malta
+        </ThemedText>
+        <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.9 }}>
+          Quem vai, a boleia e a dormida, num só sítio.
+        </ThemedText>
+      </View>
+      <View style={[styles.combinarSeta, { backgroundColor: theme.accentPressed }]}>
+        <Icon name={icons.seguinte} size={18} color={theme.accentText} />
+      </View>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  combinar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.twoAndHalf,
+    padding: Spacing.three,
+    borderRadius: Radius.card,
+    borderCurve: 'continuous',
+  },
+  combinarPremido: {
+    opacity: 0.92,
+    transform: [{ scale: 0.985 }],
+  },
+  combinarIcone: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flex: {
+    flex: 1,
+  },
+  combinarSeta: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   lista: {
     // As linhas trazem o seu espaço vertical; o lado fica com o do cartão, senão o ícone cola-se à borda.
     gap: 0,

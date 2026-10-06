@@ -12,7 +12,7 @@ const STRIPES = Array.from({ length: 24 }, (_, index) => index * 72 + 36);
 
 type CabecalhoRelvadoProps = {
   title: string;
-  /** Small yellow line above the title (e.g. today's date). */
+  /** Small line above the title (e.g. today's date). White: small yellow text on the green fails contrast. */
   eyebrow?: string;
   /** Content under the title, such as the coach tip card. */
   children?: ReactNode;
@@ -29,7 +29,11 @@ export function CabecalhoRelvado({ title, eyebrow, children }: CabecalhoRelvadoP
         styles.relvado,
         { backgroundColor: theme.accent, paddingTop: insets.top + Spacing.three },
       ]}>
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <View
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants">
         {STRIPES.map((left) => (
           <View key={left} style={[styles.risca, { left }]} />
         ))}
@@ -42,7 +46,9 @@ export function CabecalhoRelvado({ title, eyebrow, children }: CabecalhoRelvadoP
         stroke={theme.accentText}
         strokeWidth={3}
         style={styles.circuloCentral}
-        pointerEvents="none">
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants">
         <Circle cx={116} cy={116} r={66} />
         <Path d="M116 0V232" />
         <Circle cx={116} cy={116} r={5} fill={theme.accentText} />
@@ -50,7 +56,7 @@ export function CabecalhoRelvado({ title, eyebrow, children }: CabecalhoRelvadoP
 
       <View style={styles.titulos} accessibilityRole="header">
         {eyebrow ? (
-          <ThemedText type="eyebrow" style={{ color: theme.highlight }}>
+          <ThemedText type="eyebrow" style={{ color: theme.accentText }}>
             {eyebrow}
           </ThemedText>
         ) : null}

@@ -14,7 +14,7 @@ export const Colors = {
   text: '#13241B',
   textSecondary: '#56675D',
   /** Placeholders, counters, disabled labels. */
-  textMuted: '#8A968F',
+  textMuted: '#636E68',
 
   /** Whitewash: app background. */
   background: '#F8F7F2',
@@ -27,7 +27,7 @@ export const Colors = {
   borderStrong: '#D6D2C4',
 
   /** Pitch green: primary action, screen headers. */
-  accent: '#1C8A4D',
+  accent: '#187C44',
   accentPressed: '#0E5530',
   accentText: '#FFFFFF',
   /** Green text on light backgrounds (eyebrows, links, selected labels). */
@@ -44,11 +44,11 @@ export const Colors = {
   warningText: '#5A4300',
   warningBackground: '#FFF3C7',
   /** Red card: errors, destructive actions, live. */
-  danger: '#D9432F',
+  danger: '#D03A26',
   dangerText: '#A12A18',
   dangerBackground: '#FBE2DD',
   /** Sky: transport, weather, informative notes. */
-  info: '#2F7BEA',
+  info: '#186CE8',
   infoText: '#1F5BB5',
   infoBackground: '#DCEAFD',
 
@@ -66,7 +66,7 @@ export type Paleta = Readonly<Record<ThemeColor, string>>;
 export const ColorsEscuro = {
   text: '#E7EEE8',
   textSecondary: '#A6B5AA',
-  textMuted: '#7B8A80',
+  textMuted: '#86948A',
 
   background: '#0E1512',
   backgroundElement: '#18211C',
@@ -74,7 +74,7 @@ export const ColorsEscuro = {
   border: '#2C3830',
   borderStrong: '#3B4A41',
 
-  accent: '#1B7C46',
+  accent: '#19763F',
   accentPressed: '#146138',
   accentText: '#F2F7F3',
   accentInk: '#68CE93',

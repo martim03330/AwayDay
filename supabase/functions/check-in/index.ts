@@ -2,6 +2,9 @@
 // The phone sends its position once: it is only used here to measure the distance to the place, then dropped. It is
 // never stored, logged or returned. Presence lives in public.checkin (changed only through start_checkin and
 // end_checkin), and every change refreshes the public aggregates in public.place_pulse.
+//
+// Who said yes to it (profile.share_checkins_with_groups) also tells their groups which tasco they checked in at —
+// the place's name only, as an «estou aqui» message. Nobody else's check-ins are ever read.
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { authenticatedCaller } from '../_shared/auth.ts';
@@ -142,8 +145,15 @@ Deno.serve(async (request) => {
   const result = asRecord(started.data);
   if (started.error || !result) return json(500, { error: 'check_in_failed' });
 
+  // Telling the groups never fails the check-in itself.
+  const shared = await admin.rpc('share_checkin_with_groups', {
+    p_profile_id: caller.user.id,
+    p_place_id: body.placeId,
+  });
+
   return json(200, {
     status: 'checked-in',
+    shared_groups: typeof shared.data === 'number' ? shared.data : 0,
     visit_id: result.visit_id,
     visited_at: result.visited_at,
     expires_at: result.expires_at,

@@ -8,7 +8,6 @@ import { authErrorMessage } from '@/features/auth/errors';
 import { useResendSignUpCode, useVerifySignUpCode } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { codeError } from '@/features/auth/validation';
-import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
@@ -18,8 +17,7 @@ export default function ConfirmarEmailScreen() {
   const { email = '' } = useLocalSearchParams<{ email?: string }>();
   const verificar = useVerifySignUpCode();
   const reenviar = useResendSignUpCode();
-  const { onboardingConcluido } = useAppState();
-  const fecharConta = useCloseAccountFlow(onboardingConcluido);
+  const fecharConta = useCloseAccountFlow();
   const [codigo, setCodigo] = useState('');
   const [tentou, setTentou] = useState(false);
 

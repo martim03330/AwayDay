@@ -1,0 +1,107 @@
+# Jornada 4 — criar conta e entrar, só a validação: nunca chega a submeter um pedido ao servidor.
+appId: host.exp.Exponent
+name: 04 Validação de criar conta e entrar
+tags: [sem-conta, conta]
+---
+- runFlow: comum/boas-vindas.yaml
+- tapOn: "Criar conta"
+- extendedWaitUntil:
+    visible: "Com conta, os teus clubes e o teu passaporte ficam guardados\\."
+    timeout: 10000
+- assertVisible: "É o que os outros adeptos veem\\."
+- assertVisible: "Serve só para entrares\\. Ninguém mais o vê\\."
+- assertVisible: "Pelo menos 8 caracteres, com letras e números\\."
+- assertVisible: "Tenho .* anos ou mais e aceito .*"
+
+# Tudo vazio: cada campo diz o que falta, e falta aceitar os termos
+- scrollUntilVisible:
+    element:
+      text: "Criar conta"
+      below: "Tenho .* anos ou mais e aceito .*"
+    direction: DOWN
+- tapOn:
+    text: "Criar conta"
+    below: "Tenho .* anos ou mais e aceito .*"
+- scrollUntilVisible:
+    element: "Como te chamamos\\. Erro: Diz-nos como te chamamos\\."
+    direction: UP
+- assertVisible: "Email\\. Erro: Falta o email\\."
+- assertVisible: "Password\\. Erro: Falta a password\\."
+- assertVisible: "Para criar conta tens de aceitar os termos e a política de privacidade\\."
+
+# Valores maus
+- tapOn: "Como te chamamos.*"
+- inputText: "R"
+- tapOn: "Email.*"
+- inputText: "isto-nao-e-email"
+# A password não se escreve aqui: no simulador o iOS ocupa o campo «nova password» com a sugestão de password forte
+# do porta-chaves e o texto não entra. As regras da password estão nos testes de validation.ts.
+- tapOn: "Com conta, os teus clubes e o teu passaporte ficam guardados\\."
+- assertVisible: "Como te chamamos\\. Erro: O nome precisa de pelo menos 2 letras\\."
+- assertVisible: "Email\\. Erro: Este email não parece bem escrito\\."
+- assertVisible: "Password\\. Erro: Falta a password\\."
+
+# Mostrar e esconder a password
+- tapOn: "Mostrar password"
+- assertVisible: "Esconder password"
+- tapOn: "Esconder password"
+- assertVisible: "Mostrar password"
+
+# Aceitar os termos tira o erro do consentimento (o email continua mau: nada é enviado)
+# (Toca no quadrado: no meio da frase está o link da política de privacidade.)
+- scrollUntilVisible:
+    element:
+      id: "caixa-consentimento"
+    direction: DOWN
+- assertVisible: "checkbox, unchecked"
+- tapOn:
+    id: "caixa-consentimento"
+- assertVisible: "checkbox, checked"
+- assertNotVisible: "Para criar conta tens de aceitar os termos e a política de privacidade\\."
+- tapOn:
+    text: "Criar conta"
+    below: "Tenho .* anos ou mais e aceito .*"
+- assertNotVisible: "A criar conta…"
+- assertVisible: "Email\\. Erro: Este email não parece bem escrito\\."
+# Voltar a desmarcar faz o erro voltar
+- tapOn:
+    id: "caixa-consentimento"
+- assertVisible: "checkbox, unchecked"
+- assertVisible: "Para criar conta tens de aceitar os termos e a política de privacidade\\."
+
+# Tocar no meio da frase do consentimento abre a política de privacidade (o link), sem marcar a caixa
+- tapOn: "Tenho .* anos ou mais e aceito .*"
+- extendedWaitUntil:
+    visible: "Em poucas palavras"
+    timeout: 10000
+- runFlow: comum/fechar-legal.yaml
+- assertVisible: "checkbox, unchecked"
+
+# Para entrar
+- scrollUntilVisible:
+    element: "Já tens conta\\? Entra"
+    direction: DOWN
+- tapOn: "Já tens conta\\? Entra"
+- extendedWaitUntil:
+    visible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+    timeout: 10000
+- tapOn:
+    text: "Entrar"
+    below: "Password.*"
+- assertVisible: "Email\\. Erro: Falta o email\\."
+- assertVisible: "Password\\. Erro: Falta a password\\."
+- tapOn: "Email.*"
+- inputText: "malta@"
+- tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+- assertVisible: "Email\\. Erro: Este email não parece bem escrito\\."
+- assertVisible: "Esqueceste a password\\?"
+- assertVisible: "Ainda não tens conta\\? Cria uma"
+- tapOn: "Ainda não tens conta\\? Cria uma"
+- extendedWaitUntil:
+    visible: "Com conta, os teus clubes e o teu passaporte ficam guardados\\."
+    timeout: 10000
+# Fechar volta às boas-vindas
+- tapOn: "Fechar"
+- extendedWaitUntil:
+    visible: "Vamos à bola\\?"
+    timeout: 10000

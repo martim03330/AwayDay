@@ -31,7 +31,7 @@ export function usePendingPlacePhotos(enabled: boolean) {
 export function useMyApprovedPhotoCount(userId: string | null) {
   return useQuery({
     queryKey: ['place-photo', 'mine-approved', userId],
-    queryFn: userId ? () => fetchMyApprovedPhotoCount(userId) : skipToken,
+    queryFn: userId ? fetchMyApprovedPhotoCount : skipToken,
     staleTime: 5 * 60 * 1000,
   });
 }

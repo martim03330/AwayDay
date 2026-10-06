@@ -16,6 +16,8 @@ type CaraDoGrupoProps = {
 export function CaraDoGrupo({ nome, url, size = 52 }: CaraDoGrupoProps) {
   const theme = useTheme();
   const forma = { width: size, height: size, borderRadius: size * 0.32 };
+  // The line height follows the letters: with the text style's fixed one, big initials were cut top and bottom.
+  const letra = Math.round(size * 0.34);
 
   if (url) {
     return (
@@ -25,6 +27,8 @@ export function CaraDoGrupo({ nome, url, size = 52 }: CaraDoGrupoProps) {
         contentFit="cover"
         transition={120}
         accessibilityIgnoresInvertColors
+        accessible
+        accessibilityRole="image"
         accessibilityLabel={`Foto do grupo ${nome}`}
       />
     );
@@ -33,11 +37,13 @@ export function CaraDoGrupo({ nome, url, size = 52 }: CaraDoGrupoProps) {
   return (
     <View
       style={[forma, styles.contorno, styles.iniciais, { backgroundColor: theme.accent }]}
+      accessible
+      accessibilityRole="image"
       accessibilityLabel={`Grupo ${nome}, sem foto`}>
       <ThemedText
         type="smallBold"
         allowFontScaling={false}
-        style={{ color: theme.accentText, fontSize: Math.round(size * 0.34) }}>
+        style={{ color: theme.accentText, fontSize: letra, lineHeight: Math.round(letra * 1.25) }}>
         {iniciais(nome)}
       </ThemedText>
     </View>

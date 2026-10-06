@@ -1,8 +1,8 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import * as Linking from 'expo-linking';
-import { Alert, Share, StyleSheet, View } from 'react-native';
+import { Alert, Share, StyleSheet, Switch, View } from 'react-native';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
 import { GrupoDaBoleia } from '@/components/grupo-da-boleia';
@@ -10,6 +10,7 @@ import { ImprevistoBoleia, MOTIVOS } from '@/components/imprevisto-boleia';
 import { Spacing } from '@/constants/theme';
 import { inviteFriendToRide } from '@/features/friends/api';
 import { useMyFriends } from '@/features/friends/hooks/useFriends';
+import { BotaoMais, useModeracao } from '@/features/moderation/components/Moderacao';
 import { useMyRideChats } from '@/features/rides/hooks/useRideChat';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import type { ProfileCard } from '@/features/profile/types';
@@ -39,7 +40,7 @@ import {
 } from '@/features/rides/hooks/useRides';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarData, formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarData, formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
@@ -53,11 +54,14 @@ import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { Aviso } from '@/ui/aviso';
 import { Avatar } from '@/ui/avatar';
+import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
+import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
-import { IconCircle, icons } from '@/ui/icon';
+import { Icon, IconCircle, icons } from '@/ui/icon';
+import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
@@ -128,29 +132,70 @@ function LinhaValor({
   );
 }
 
-function Pessoa({ pessoa, cartao }: { pessoa: RidePerson; cartao?: ProfileCard }) {
+/**
+ * A person in the car: photo, name and their record. Only the driver and late leavers get a label. Someone else also
+ * gets a discreet «⋯» (report, block).
+ */
+function Pessoa({
+  pessoa,
+  cartao,
+  separador,
+  onMais,
+}: {
+  pessoa: RidePerson;
+  cartao?: ProfileCard;
+  separador?: boolean;
+  onMais?: () => void;
+}) {
+  const etiqueta =
+    pessoa.status === 'driver' ? (
+      <Etiqueta icon={icons.carro} label="Condutor" tone="neutro" />
+    ) : pessoa.status === 'left_late' ? (
+      <Etiqueta label="Saiu tarde" tone="aviso" />
+    ) : null;
   return (
-    <View style={styles.pessoa}>
-      <Avatar nome={pessoa.name} url={cartao?.avatarUrl} />
-      <View style={styles.flex}>
-        <ThemedText style={styles.destaque}>{pessoa.name}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {[cartao?.homeCity, reputacao(pessoa.completed, pessoa.faults)]
-            .filter(Boolean)
-            .join(' · ')}
+    <LinhaGrupo
+      leading={<Avatar nome={pessoa.name} url={cartao?.avatarUrl} />}
+      title={pessoa.name}
+      subtitle={reputacao(pessoa.completed, pessoa.faults)}
+      trailing={
+        etiqueta || onMais ? (
+          <View style={styles.trailing}>
+            {etiqueta}
+            {onMais ? <BotaoMais nome={pessoa.name} onPress={onMais} /> : null}
+          </View>
+        ) : undefined
+      }
+      separador={separador}
+    />
+  );
+}
+
+/** One of the three big facts at the top of the ride: when, how much, how many seats. */
+function Facto({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?: string }) {
+  return (
+    <View style={styles.facto} accessible accessibilityLabel={`${rotulo}: ${valor}${nota ? `, ${nota}` : ''}`}>
+      <ThemedText type="eyebrow" themeColor="textSecondary" numberOfLines={1}>
+        {rotulo}
+      </ThemedText>
+      <ThemedText type="score" style={styles.factoValor} numberOfLines={1} adjustsFontSizeToFit>
+        {valor}
+      </ThemedText>
+      {nota ? (
+        <ThemedText type="small" themeColor="textMuted" numberOfLines={1}>
+          {nota}
         </ThemedText>
-      </View>
-      <Etiqueta
-        icon={pessoa.status === 'driver' ? icons.carro : icons.perfil}
-        label={
-          pessoa.status === 'driver'
-            ? 'Condutor'
-            : pessoa.status === 'left_late'
-              ? 'Saiu tarde'
-              : 'Passageiro'
-        }
-        tone={pessoa.status === 'left_late' ? 'aviso' : 'neutro'}
-      />
+      ) : null}
+    </View>
+  );
+}
+
+/** Chevron at the end of a row; turned down when the row is open. */
+function Seta({ aberta = false }: { aberta?: boolean }) {
+  const theme = useTheme();
+  return (
+    <View style={aberta ? styles.setaAberta : undefined}>
+      <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
     </View>
   );
 }
@@ -202,6 +247,10 @@ export default function BoleiaScreen() {
   const [aTratar, setATratar] = useState(false);
   const [compromisso, setCompromisso] = useState(false);
   const [formImprevisto, setFormImprevisto] = useState(false);
+  // Secondary detail stays folded until asked for.
+  const [verCusto, setVerCusto] = useState(false);
+  const [verConvidar, setVerConvidar] = useState(false);
+  const moderacao = useModeracao();
 
   async function executar(acao: () => Promise<void>) {
     setATratar(true);
@@ -341,207 +390,286 @@ export default function BoleiaScreen() {
     );
   }
 
+  const cartaoDe = (profileId: string) =>
+    (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId);
+  // Someone else in or asking for the car: report or block, behind a discreet «⋯».
+  const maisSobre = (pessoa: RidePerson) =>
+    pessoa.profileId === userId
+      ? undefined
+      : () =>
+          moderacao.abrirPessoa({
+            pessoa: { profileId: pessoa.profileId, nome: pessoa.name },
+            temFoto: Boolean(cartaoDe(pessoa.profileId)?.avatarUrl),
+          });
+
+  // Before departure, with the ride still on: the time when seats are asked for, given up or cancelled.
+  const ativa = !cancelada && fase !== 'a-confirmar' && fase !== 'terminada';
+  const souPassageiro =
+    !boleia.isMine && (boleia.myStatus === 'requested' || boleia.myStatus === 'accepted');
+  const partilharEmDestaque = boleia.isMine && fase === 'aberta' && !cancelada && livres > 0;
+  const podeConvidar = boleia.isMine && fase === 'aberta' && livres > 0 && porConvidar.length > 0;
+  const podeVotar = agora <= prazos.votarAte.getTime();
+  const listaImprevistos = imprevistos.data ?? [];
+  const mostrarImprevisto = participante && podeReportarImprevisto(partida, agora) && !meuImprevisto;
+
+  function abrirConversa() {
+    if (!boleia || !jogo) return;
+    router.push({ pathname: '/carro/[rideId]', params: { rideId: boleia.id, jogoId: jogo.id } });
+  }
+
+  /** The one thing this person can do about the ride right now. */
+  function acaoPrincipal(): ReactNode {
+    if (!boleia || cancelada) return null;
+    if (boleia.isMine) {
+      return partilharEmDestaque ? (
+        <Button
+          label="Partilhar boleia"
+          icon={icons.partilhar}
+          variant={pedidos.length > 0 ? 'secondary' : 'primary'}
+          onPress={() => void partilhar()}
+        />
+      ) : null;
+    }
+    if (fase === 'a-confirmar' || fase === 'terminada') return null;
+    if (boleia.myStatus === 'accepted' || boleia.myStatus === 'requested') {
+      const aceite = boleia.myStatus === 'accepted';
+      return (
+        <View style={styles.estado}>
+          <Etiqueta
+            icon={aceite ? icons.checkInFeito : icons.horario}
+            label={aceite ? 'Tens lugar' : 'Pedido enviado'}
+            tone={aceite ? 'positivo' : 'aviso'}
+          />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+            {aceite
+              ? 'Aparece a horas no ponto de encontro.'
+              : `O condutor responde até às ${formatarHora(prazos.pedidosFecham)}.`}
+          </ThemedText>
+        </View>
+      );
+    }
+    if (suspensoAte) {
+      return (
+        <Aviso
+          tone="erro"
+          title="Estás suspenso das boleias"
+          message={`Por faltas em boleias anteriores, só podes pedir lugar a partir de ${formatarData(new Date(suspensoAte))}.`}
+        />
+      );
+    }
+    if (fase === 'aberta') {
+      return (
+        <Button
+          label={livres > 0 ? 'Pedir lugar' : 'Boleia cheia'}
+          icon={icons.perfil}
+          disabled={aTratar || livres <= 0}
+          onPress={() => setCompromisso(true)}
+        />
+      );
+    }
+    return (
+      <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
+        Os pedidos para esta boleia já fecharam.
+      </ThemedText>
+    );
+  }
+
+  // The car's card: the chat first, then who is going, then (for the driver) friends to invite.
+  type Linha = { chave: string; desenhar: (separador: boolean) => ReactNode };
+  const linhasDoCarro: Linha[] = participante
+    ? [
+        {
+          chave: 'conversa',
+          desenhar: (separador) => (
+            <LinhaGrupo
+              onPress={abrirConversa}
+              accessibilityLabel={`Conversa do carro${conversa && conversa.unread > 0 ? `, ${plural(conversa.unread, 'mensagem nova', 'mensagens novas')}` : ''}. Toca para abrir.`}
+              leading={<IconCircle name={icons.conversa} />}
+              title="Conversa do carro"
+              subtitle={
+                conversa?.lastBody
+                  ? `${conversa.lastName ?? 'Alguém'}: ${conversa.lastBody}`
+                  : 'Combinem a hora certa e o sítio de encontro'
+              }
+              trailing={
+                <View style={styles.trailing}>
+                  {conversa && conversa.unread > 0 ? (
+                    <Badge label={String(conversa.unread)} />
+                  ) : null}
+                  <Seta />
+                </View>
+              }
+              separador={separador}
+            />
+          ),
+        },
+        ...noCarro.map((pessoa) => ({
+          chave: pessoa.profileId,
+          desenhar: (separador: boolean) => (
+            <Pessoa
+              pessoa={pessoa}
+              cartao={cartaoDe(pessoa.profileId)}
+              separador={separador}
+              onMais={maisSobre(pessoa)}
+            />
+          ),
+        })),
+        ...(boleia.isMine ? naVolta : []).map((pessoa) => ({
+          chave: `volta-${pessoa.profileId}`,
+          desenhar: (separador: boolean) => (
+            <LinhaGrupo
+              leading={<Avatar nome={pessoa.displayName} />}
+              title={pessoa.displayName}
+              subtitle={`Só na volta · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${formatarCentimos(pessoa.shareCents)}`}
+              separador={separador}
+            />
+          ),
+        })),
+        ...(podeConvidar
+          ? [
+              {
+                chave: 'convidar',
+                desenhar: (separador: boolean) => (
+                  <LinhaGrupo
+                    onPress={() => setVerConvidar((atual) => !atual)}
+                    accessibilityLabel={`Convidar amigos, ${plural(porConvidar.length, 'amigo', 'amigos')}. Toca para ${verConvidar ? 'esconder' : 'ver'}.`}
+                    leading={<IconCircle name={icons.perfil} tone="yellow" />}
+                    title="Convidar amigos"
+                    subtitle="Entram sem pedir: o lugar fica deles quando aceitarem"
+                    trailing={<Seta aberta={verConvidar} />}
+                    separador={separador || verConvidar}
+                  />
+                ),
+              },
+              ...(verConvidar ? porConvidar : []).map((amigo) => ({
+                chave: `amigo-${amigo.profileId}`,
+                desenhar: (separador: boolean) => (
+                  <LinhaGrupo
+                    leading={<Avatar nome={amigo.displayName} />}
+                    title={amigo.displayName}
+                    subtitle={
+                      amigo.tripsTogether > 0
+                        ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
+                        : 'Ainda sem viagens juntos'
+                    }
+                    trailing={
+                      <LinkTexto
+                        label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
+                        disabled={convidados.includes(amigo.profileId)}
+                        onPress={() => {
+                          if (convidados.includes(amigo.profileId)) return;
+                          void executar(() => inviteFriendToRide(boleia.id, amigo.profileId)).then(
+                            () => setConvidados((atuais) => [...atuais, amigo.profileId])
+                          );
+                        }}
+                      />
+                    }
+                    separador={separador}
+                  />
+                ),
+              })),
+            ]
+          : []),
+      ]
+    : [];
+
+  // Rows after the cost in the details card: the deadlines (unless cancelled) and the return seats.
+  const depoisDoCusto = !cancelada || (boleia.isMine && boleia.roundTrip);
+  const linhaSeparada = (ultima: boolean) =>
+    ultima ? null : { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected };
+
   return (
     <Screen>
-      <Card style={styles.grupo}>
-        <ThemedText type="eyebrow" themeColor="accentInk">
-          {`${OPCOES[boleia.routeOption]} · ${boleia.roundTrip ? 'ida e volta' : 'só ida'}`}
-        </ThemedText>
-        <ThemedText type="title" style={styles.titulo}>
-          {boleia.originName}
-        </ThemedText>
-        <ThemedText themeColor="textSecondary">
-          {`${boleia.isMine ? 'A tua boleia' : `Com ${boleia.driverName}`} · sai ${formatarDiaEHora(partida, agora).toLowerCase()}${estadio ? ` para o ${estadio.nome}` : ''}`}
-        </ThemedText>
-        <View style={styles.etiquetas}>
-          {cancelada ? (
-            <Etiqueta icon={icons.fechar} label="Cancelada" tone="negativo" />
-          ) : (
-            <Etiqueta
-              icon={icons.perfil}
-              label={livres > 0 ? plural(livres, 'lugar livre', 'lugares livres') : 'Cheia'}
-              tone={livres > 0 ? 'positivo' : 'neutro'}
+      {moderacao.elemento}
+      <Card>
+        <View style={styles.condutor}>
+          <Avatar nome={boleia.driverName} url={cartaoDe(boleia.driverId)?.avatarUrl} size={48} />
+          <View style={styles.flex}>
+            <ThemedText type="eyebrow" themeColor="accentInk" numberOfLines={1}>
+              {boleia.isMine ? 'A tua boleia' : `Boleia de ${boleia.driverName}`}
+            </ThemedText>
+            <ThemedText type="subtitle" style={styles.origem} numberOfLines={2}>
+              {boleia.originName}
+            </ThemedText>
+            <LinhaDetalhes
+              partes={[
+                formatarDia(partida, agora),
+                estadio ? `para o ${estadio.nome}` : null,
+                boleia.isMine ? null : reputacao(boleia.driverCompleted, boleia.driverFaults),
+              ]}
             />
-          )}
-          <Etiqueta
-            icon={icons.rota}
-            label={`${formatarDistancia(boleia.distanceM)} · ${duracao(boleia.durationS)}`}
-            tone="neutro"
-          />
-          {boleia.isMine ? null : (
-            <Etiqueta
-              icon={icons.selecionado}
-              label={reputacao(boleia.driverCompleted, boleia.driverFaults)}
-              tone={boleia.driverFaults > 0 ? 'aviso' : 'neutro'}
+          </View>
+          {/* Whoever is in the car already has the «⋯» on the driver's row below. */}
+          {boleia.isMine || participante ? null : (
+            <BotaoMais
+              nome={boleia.driverName}
+              onPress={() =>
+                moderacao.abrirPessoa({
+                  pessoa: { profileId: boleia.driverId, nome: boleia.driverName },
+                  temFoto: Boolean(cartaoDe(boleia.driverId)?.avatarUrl),
+                })
+              }
             />
           )}
         </View>
-        {boleia.note ? <ThemedText>{boleia.note}</ThemedText> : null}
-        <Button
-          label="Ver o ponto de encontro no mapa"
-          variant="secondary"
-          icon={icons.carro}
-          onPress={() => abrirDirecoes(boleia.origin, 'carro')}
-        />
-        {cancelada ? null : (
-          <Button
-            label="Partilhar boleia"
-            variant="secondary"
-            icon={icons.partilhar}
-            onPress={() => void partilhar()}
+        {cancelada ? <Etiqueta icon={icons.fechar} label="Cancelada" tone="negativo" /> : null}
+        <View style={[styles.factos, { borderColor: theme.backgroundSelected }]}>
+          <Facto rotulo="Saída" valor={formatarHora(partida)} />
+          <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
+          <Facto
+            rotulo="Por pessoa"
+            valor={formatarCentimos(boleia.shareNowCents)}
+            nota={
+              boleia.shareFullCents < boleia.shareNowCents
+                ? `cheia: ${formatarCentimos(boleia.shareFullCents)}`
+                : undefined
+            }
           />
-        )}
+          <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
+          <Facto
+            rotulo="Lugares"
+            valor={livres > 0 ? String(livres) : 'Cheia'}
+            nota={livres > 0 ? `livres de ${boleia.seatsOffered}` : undefined}
+          />
+        </View>
+        {boleia.note ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {`«${boleia.note}»`}
+          </ThemedText>
+        ) : null}
+        {acaoPrincipal()}
       </Card>
-
-      {cancelada ? null : (
-        <Card style={styles.grupo}>
-          <ThemedText style={styles.destaque}>Prazos</ThemedText>
-          <LinhaValor
-            rotulo="Pedidos de lugar e cancelar sem falta"
-            valor={`até às ${formatarHora(prazos.pedidosFecham)}`}
-          />
-          <LinhaValor
-            rotulo="Confirmar quem apareceu"
-            valor={`até ${formatarData(prazos.confirmarAte)}`}
-          />
-          {fase === 'fechada' && participante ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              Os pedidos já fecharam. Se não puderes ir, regista um imprevisto antes de sair.
-            </ThemedText>
-          ) : null}
-        </Card>
-      )}
-
-      {boleia.parking ? (
-        <>
-          <SectionHeader title="Onde deixamos o carro" />
-          <Card style={styles.grupo}>
-            <ThemedText style={styles.destaque}>{boleia.parking.name}</ThemedText>
-            {minutosDoParque !== null ? (
-              <ThemedText themeColor="textSecondary">
-                {`${minutosDoParque} min a pé até ao estádio`}
-              </ThemedText>
-            ) : null}
-            {boleia.parking.location ? (
-              <LinkTexto
-                label="Como chegar de carro"
-                onPress={() =>
-                  boleia.parking?.location && abrirDirecoes(boleia.parking.location, 'carro')
-                }
-              />
-            ) : null}
-            <ThemedText type="small" themeColor="textMuted">
-              Parque escolhido pelo condutor entre os que verificámos. Vê as fontes na ficha do
-              jogo.
-            </ThemedText>
-          </Card>
-        </>
-      ) : null}
-
-      <SectionHeader title="Quanto custa" />
-      <Card style={styles.grupo}>
-        <LinhaValor
-          rotulo={`Combustível${boleia.roundTrip ? ' (ida e volta)' : ''}`}
-          valor={formatarCentimos(boleia.fuelCents)}
-        />
-        <LinhaValor
-          rotulo={`Portagens${boleia.tollM > 0 ? ` · ${formatarDistancia(boleia.tollM)} pagos por sentido` : ''}`}
-          valor={formatarCentimos(boleia.tollCents)}
-        />
-        <LinhaValor rotulo="Total" valor={formatarCentimos(boleia.totalCents)} destaque />
-        <View style={[styles.separador, { backgroundColor: theme.border }]} />
-        <LinhaValor
-          rotulo={`Cada um agora (${plural(1 + boleia.seatsTaken, 'pessoa', 'pessoas')})`}
-          valor={formatarCentimos(boleia.shareNowCents)}
-          destaque
-        />
-        <LinhaValor
-          rotulo={`Com a boleia cheia (${plural(1 + boleia.seatsOffered, 'pessoa', 'pessoas')})`}
-          valor={formatarCentimos(boleia.shareFullCents)}
-        />
-        <ThemedText type="small" themeColor="textMuted">
-          Portagens estimadas com os preços de 2026 (classe 1). O combustível usa o consumo e o
-          preço que o condutor indicou. O condutor também paga a sua parte.
-        </ThemedText>
-      </Card>
-
-      {participante ? (
-        <>
-          <SectionHeader title="No carro" />
-          <Card style={styles.grupo}>
-            {noCarro.map((pessoa) => (
-              <Pessoa
-                key={pessoa.profileId}
-                pessoa={pessoa}
-                cartao={(cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId)}
-              />
-            ))}
-          </Card>
-        </>
-      ) : null}
-
-      {boleia.isMine && fase === 'aberta' && livres > 0 && porConvidar.length > 0 ? (
-        <>
-          <SectionHeader title="Convidar amigos" />
-          <Card style={styles.grupo}>
-            <ThemedText themeColor="textSecondary">
-              Um amigo convidado entra sem pedir — o lugar fica dele quando aceitar.
-            </ThemedText>
-            {porConvidar.map((amigo) => (
-              <LinhaGrupo
-                key={amigo.profileId}
-                leading={<IconCircle name={icons.perfil} tone="neutral" />}
-                title={amigo.displayName}
-                subtitle={
-                  amigo.tripsTogether > 0
-                    ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
-                    : 'ainda sem viagens juntos'
-                }
-                trailing={
-                  <LinkTexto
-                    label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
-                    onPress={() => {
-                      if (convidados.includes(amigo.profileId)) return;
-                      void executar(() => inviteFriendToRide(boleia.id, amigo.profileId)).then(() =>
-                        setConvidados((atuais) => [...atuais, amigo.profileId])
-                      );
-                    }}
-                  />
-                }
-              />
-            ))}
-          </Card>
-        </>
-      ) : null}
 
       {boleia.isMine && pedidos.length > 0 && fase === 'aberta' ? (
         <>
-          <SectionHeader title="Pedidos" trailing={String(pedidos.length)} />
-          <ThemedText type="small" themeColor="textSecondary">
-            {`Responde até às ${formatarHora(prazos.pedidosFecham)}: os pedidos sem resposta caducam.`}
-          </ThemedText>
-          {pedidos.map((pedido) => (
-            <Card key={pedido.profileId} style={styles.grupo}>
-              <Pessoa
-                pessoa={pedido}
-                cartao={(cartoes.data ?? []).find((c) => c.profileId === pedido.profileId)}
-              />
-              <View style={styles.botoes}>
-                <View style={styles.flex}>
-                  <Button
-                    label="Aceitar"
-                    icon={icons.selecionado}
-                    disabled={aTratar || livres <= 0}
-                    onPress={() =>
-                      void executar(() => answerRequest(boleia.id, pedido.profileId, true))
-                    }
-                  />
-                </View>
-                <View style={styles.flex}>
-                  <Button
+          <SectionHeader
+            title="Pedidos"
+            trailing={`Responde até às ${formatarHora(prazos.pedidosFecham)}`}
+          />
+          <Card style={styles.linhas}>
+            {pedidos.map((pedido, indice) => (
+              <View
+                key={pedido.profileId}
+                style={[styles.bloco, linhaSeparada(indice === pedidos.length - 1)]}>
+                <Pessoa
+                  pessoa={pedido}
+                  cartao={cartaoDe(pedido.profileId)}
+                  onMais={maisSobre(pedido)}
+                />
+                <View style={styles.botoes}>
+                  <View style={styles.flex}>
+                    <Button
+                      label="Aceitar"
+                      icon={icons.selecionado}
+                      disabled={aTratar || livres <= 0}
+                      onPress={() =>
+                        void executar(() => answerRequest(boleia.id, pedido.profileId, true))
+                      }
+                    />
+                  </View>
+                  <LinkTexto
+                    neutro
                     label="Recusar"
-                    variant="secondary"
-                    icon={icons.fechar}
                     disabled={aTratar}
                     onPress={() =>
                       void executar(() => answerRequest(boleia.id, pedido.profileId, false))
@@ -549,104 +677,46 @@ export default function BoleiaScreen() {
                   />
                 </View>
               </View>
-            </Card>
-          ))}
-        </>
-      ) : null}
-
-      {participante ? (
-        <>
-          <SectionHeader title="Conversa do carro" />
-          <Card style={styles.grupo}>
-            <ThemedText themeColor="textSecondary">
-              {conversa?.lastBody
-                ? `${conversa.lastName ?? 'Alguém'}: «${conversa.lastBody}»`
-                : 'Combina aqui a hora certa, o sítio de encontro e a volta. Escrevem o condutor e quem já tem lugar.'}
-            </ThemedText>
-            <Button
-              label={
-                conversa && conversa.unread > 0
-                  ? `Abrir a conversa (${plural(conversa.unread, 'nova', 'novas')})`
-                  : 'Abrir a conversa'
-              }
-              variant={conversa && conversa.unread > 0 ? 'highlight' : 'secondary'}
-              icon={icons.megafone}
-              onPress={() =>
-                router.push({
-                  pathname: '/jogos/conversa',
-                  params: { rideId: boleia.id, jogoId: jogo.id },
-                })
-              }
-            />
+            ))}
           </Card>
         </>
       ) : null}
 
-      <SectionHeader title="Grupo" />
-      <GrupoDaBoleia
-        boleia={boleia}
-        nomeDoJogo={`${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`}
-        participante={participante}
-      />
-
-      {boleia.isMine && boleia.roundTrip ? (
-        <Card style={styles.grupo}>
-          <ThemedText style={styles.destaque}>Lugares na volta</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {boleia.acceptsReturnRequests
-              ? 'Estás a aceitar quem ficou sem transporte. Os pedidos aparecem aqui em baixo.'
-              : 'Sobram lugares no regresso? Abre-os a quem ficar sem transporte — decides na hora quem entra.'}
-          </ThemedText>
-          <LinkTexto
-            label={
-              boleia.acceptsReturnRequests
-                ? 'Deixar de aceitar pedidos de volta'
-                : 'Abrir os lugares da volta'
-            }
-            onPress={() =>
-              void executar(() => setRideReturnRequests(boleia.id, !boleia.acceptsReturnRequests))
-            }
-          />
-        </Card>
-      ) : null}
-
       {boleia.isMine && pedidosVolta.length > 0 ? (
         <>
-          <SectionHeader
-            title="Pedidos de boleia de volta"
-            trailing={String(pedidosVolta.length)}
-          />
+          <SectionHeader title="Pedidos para a volta" trailing={String(pedidosVolta.length)} />
           <ThemedText type="small" themeColor="textSecondary">
-            Ficaram sem transporte depois do jogo. Só sabes a que distância estão do carro: a
-            localização exata não é mostrada a ninguém.
+            Ficaram sem transporte. Só vês a que distância estão do carro.
           </ThemedText>
-          {pedidosVolta.map((pedido) => (
-            <Card key={pedido.profileId} style={styles.grupo}>
-              <ThemedText style={styles.destaque}>{pedido.displayName}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {`A ${formatarDistancia(pedido.distanceToCarM)} do carro · ${plural(pedido.completed, 'boleia', 'boleias')} · ${plural(pedido.faults, 'falta', 'faltas')}`}
-              </ThemedText>
-              <Etiqueta
-                icon={icons.preco}
-                label={`Paga ${formatarCentimos(pedido.shareCents)} da volta`}
-                tone="destaque"
-              />
-              <View style={styles.botoes}>
-                <View style={styles.flex}>
-                  <Button
-                    label="Aceitar"
-                    icon={icons.selecionado}
-                    disabled={aTratar || livres - naVolta.length <= 0}
-                    onPress={() =>
-                      void executar(() => answerReturnRequest(boleia.id, pedido.profileId, true))
-                    }
-                  />
-                </View>
-                <View style={styles.flex}>
-                  <Button
+          <Card style={styles.linhas}>
+            {pedidosVolta.map((pedido, indice) => (
+              <View
+                key={pedido.profileId}
+                style={[styles.bloco, linhaSeparada(indice === pedidosVolta.length - 1)]}>
+                <LinhaGrupo
+                  leading={<Avatar nome={pedido.displayName} />}
+                  title={pedido.displayName}
+                  subtitle={`A ${formatarDistancia(pedido.distanceToCarM)} do carro · ${reputacao(pedido.completed, pedido.faults)}`}
+                  trailing={
+                    <ThemedText type="smallBold">
+                      {formatarCentimos(pedido.shareCents)}
+                    </ThemedText>
+                  }
+                />
+                <View style={styles.botoes}>
+                  <View style={styles.flex}>
+                    <Button
+                      label="Aceitar"
+                      icon={icons.selecionado}
+                      disabled={aTratar || livres - naVolta.length <= 0}
+                      onPress={() =>
+                        void executar(() => answerReturnRequest(boleia.id, pedido.profileId, true))
+                      }
+                    />
+                  </View>
+                  <LinkTexto
+                    neutro
                     label="Recusar"
-                    variant="secondary"
-                    icon={icons.fechar}
                     disabled={aTratar}
                     onPress={() =>
                       void executar(() => answerReturnRequest(boleia.id, pedido.profileId, false))
@@ -654,157 +724,251 @@ export default function BoleiaScreen() {
                   />
                 </View>
               </View>
-            </Card>
-          ))}
-        </>
-      ) : null}
-
-      {boleia.isMine && naVolta.length > 0 ? (
-        <Card style={styles.grupo}>
-          <ThemedText style={styles.destaque}>
-            {plural(naVolta.length, 'pessoa vai contigo na volta', 'pessoas vão contigo na volta')}
-          </ThemedText>
-          {naVolta.map((pessoa) => (
-            <ThemedText key={pessoa.profileId} type="small" themeColor="textSecondary">
-              {`${pessoa.displayName} · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${formatarCentimos(pessoa.shareCents)}`}
-            </ThemedText>
-          ))}
-        </Card>
-      ) : null}
-
-      {participante && (imprevistos.data ?? []).length > 0 ? (
-        <>
-          <SectionHeader title="Imprevistos" />
-          {(imprevistos.data ?? []).map((item) => {
-            const meu = item.profileId === userId;
-            return (
-              <Card key={item.id} style={styles.grupo}>
-                <ThemedText style={styles.destaque}>
-                  {`${meu ? 'Tu' : item.name}: ${MOTIVOS[item.reason]}`}
-                </ThemedText>
-                {item.note ? <ThemedText themeColor="textSecondary">{item.note}</ThemedText> : null}
-                <ThemedText type="small" themeColor="textMuted">
-                  {`${plural(item.accepts, 'aceita', 'aceitam')} · ${plural(item.rejects, 'não aceita', 'não aceitam')}. Sem votos contra a mais, não fica falta.`}
-                </ThemedText>
-                {meu || agora > prazos.votarAte.getTime() ? null : (
-                  <View style={styles.botoes}>
-                    <View style={styles.flex}>
-                      <Button
-                        label="Aceito"
-                        variant={item.myVote === true ? 'primary' : 'secondary'}
-                        disabled={aTratar}
-                        onPress={() => void executar(() => voteIncident(item.id, true))}
-                      />
-                    </View>
-                    <View style={styles.flex}>
-                      <Button
-                        label="Não aceito"
-                        variant={item.myVote === false ? 'danger' : 'secondary'}
-                        disabled={aTratar}
-                        onPress={() => void executar(() => voteIncident(item.id, false))}
-                      />
-                    </View>
-                  </View>
-                )}
-              </Card>
-            );
-          })}
+            ))}
+          </Card>
         </>
       ) : null}
 
       {participante && !cancelada && fase === 'a-confirmar' && outros.length > 0 ? (
         <>
-          <SectionHeader title="Quem apareceu?" />
-          <ThemedText type="small" themeColor="textSecondary">
-            Diz com honestidade. Ninguém vê o que respondeste, só o resultado.
-          </ThemedText>
-          {outros.map((pessoa) => {
-            const resposta = presencas.data?.[pessoa.profileId];
-            return (
-              <Card key={pessoa.profileId} style={styles.grupo}>
-                <Pessoa
-                  pessoa={pessoa}
-                  cartao={(cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId)}
-                />
-                <View style={styles.botoes}>
-                  <View style={styles.flex}>
-                    <Button
+          <SectionHeader title="Quem apareceu?" trailing="Ninguém vê o que respondes" />
+          <Card style={styles.linhas}>
+            {outros.map((pessoa, indice) => {
+              const resposta = presencas.data?.[pessoa.profileId];
+              return (
+                <View
+                  key={pessoa.profileId}
+                  style={[styles.bloco, linhaSeparada(indice === outros.length - 1)]}>
+                  <Pessoa pessoa={pessoa} cartao={cartaoDe(pessoa.profileId)} />
+                  <View style={styles.chips}>
+                    <Chip
                       label="Apareceu"
-                      variant={resposta === true ? 'primary' : 'secondary'}
-                      disabled={aTratar}
-                      onPress={() =>
-                        void executar(() => reportAttendance(boleia.id, pessoa.profileId, true))
-                      }
+                      selected={resposta === true}
+                      emCartao
+                      accessibilityLabel={`${pessoa.name} apareceu`}
+                      onPress={() => {
+                        if (aTratar) return;
+                        void executar(() => reportAttendance(boleia.id, pessoa.profileId, true));
+                      }}
                     />
-                  </View>
-                  <View style={styles.flex}>
-                    <Button
+                    <Chip
                       label="Não apareceu"
-                      variant={resposta === false ? 'danger' : 'secondary'}
-                      disabled={aTratar}
-                      onPress={() =>
-                        void executar(() => reportAttendance(boleia.id, pessoa.profileId, false))
-                      }
+                      selected={resposta === false}
+                      emCartao
+                      accessibilityLabel={`${pessoa.name} não apareceu`}
+                      onPress={() => {
+                        if (aTratar) return;
+                        void executar(() => reportAttendance(boleia.id, pessoa.profileId, false));
+                      }}
                     />
                   </View>
                 </View>
-              </Card>
-            );
-          })}
+              );
+            })}
+          </Card>
         </>
       ) : null}
 
-      {participante && podeReportarImprevisto(partida, agora) && !meuImprevisto ? (
-        <Button
-          label="Tive um imprevisto"
-          variant="secondary"
-          icon={icons.aviso}
-          disabled={aTratar}
-          onPress={() => setFormImprevisto(true)}
-        />
+      {participante && listaImprevistos.length > 0 ? (
+        <>
+          <SectionHeader title="Imprevistos" />
+          <Card style={styles.linhas}>
+            {listaImprevistos.map((item, indice) => {
+              const meu = item.profileId === userId;
+              return (
+                <View
+                  key={item.id}
+                  style={[styles.bloco, linhaSeparada(indice === listaImprevistos.length - 1)]}>
+                  <LinhaGrupo
+                    leading={<IconCircle name={icons.aviso} tone="yellow" />}
+                    title={`${meu ? 'Tu' : item.name}: ${MOTIVOS[item.reason]}`}
+                    subtitle={[
+                      item.note,
+                      `${plural(item.accepts, 'aceita', 'aceitam')} · ${plural(item.rejects, 'não aceita', 'não aceitam')}`,
+                    ]
+                      .filter(Boolean)
+                      .join('\n')}
+                  />
+                  {meu || !podeVotar ? null : (
+                    <View style={styles.chips}>
+                      <Chip
+                        label="Aceito"
+                        selected={item.myVote === true}
+                        emCartao
+                        accessibilityLabel={`Aceito o imprevisto de ${item.name}`}
+                        onPress={() => {
+                          if (aTratar) return;
+                          void executar(() => voteIncident(item.id, true));
+                        }}
+                      />
+                      <Chip
+                        label="Não aceito"
+                        selected={item.myVote === false}
+                        emCartao
+                        accessibilityLabel={`Não aceito o imprevisto de ${item.name}`}
+                        onPress={() => {
+                          if (aTratar) return;
+                          void executar(() => voteIncident(item.id, false));
+                        }}
+                      />
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </Card>
+          <ThemedText type="small" themeColor="textMuted">
+            Se não houver mais votos contra do que a favor, não fica falta.
+          </ThemedText>
+        </>
       ) : null}
 
-      {cancelada || fase === 'a-confirmar' || fase === 'terminada' ? null : boleia.isMine ? (
-        <Button
-          label="Cancelar boleia"
-          variant="danger"
-          icon={icons.fechar}
-          disabled={aTratar}
-          onPress={cancelar}
-        />
-      ) : boleia.myStatus === 'requested' || boleia.myStatus === 'accepted' ? (
+      {linhasDoCarro.length > 0 ? (
         <>
-          <ThemedText themeColor="textSecondary" style={styles.centro}>
-            {boleia.myStatus === 'accepted'
-              ? 'Tens lugar. Estás comprometido: aparece a horas no ponto de encontro.'
-              : `Pedido enviado. O condutor tem até às ${formatarHora(prazos.pedidosFecham)} para responder.`}
-          </ThemedText>
-          <Button
+          <SectionHeader title="No carro" />
+          <Card style={styles.linhas}>
+            {linhasDoCarro.map((linha, indice) => (
+              <View key={linha.chave}>{linha.desenhar(indice < linhasDoCarro.length - 1)}</View>
+            ))}
+          </Card>
+        </>
+      ) : null}
+
+      <SectionHeader title="Detalhes" />
+      <Card style={styles.linhas}>
+        <LinhaGrupo
+          onPress={() => abrirDirecoes(boleia.origin, 'carro')}
+          accessibilityLabel={`Ponto de encontro: ${boleia.originName}. Toca para abrir no mapa.`}
+          leading={<IconCircle name={icons.pontoEncontro} />}
+          title="Ponto de encontro"
+          subtitle="Abrir no mapa"
+          trailing={<Seta />}
+          separador
+        />
+        {boleia.parking ? (
+          <LinhaGrupo
+            onPress={
+              boleia.parking.location
+                ? () => boleia.parking?.location && abrirDirecoes(boleia.parking.location, 'carro')
+                : undefined
+            }
+            accessibilityLabel={`O carro fica no ${boleia.parking.name}.${boleia.parking.location ? ' Toca para ver como chegar.' : ''}`}
+            leading={<IconCircle name={icons.carro} tone="sky" />}
+            title={boleia.parking.name}
+            subtitle={
+              minutosDoParque !== null
+                ? `${minutosDoParque} min a pé até ao estádio · parque escolhido`
+                : 'Parque verificado'
+            }
+            trailing={boleia.parking.location ? <Seta /> : undefined}
+            separador
+          />
+        ) : null}
+        <LinhaGrupo
+          leading={<IconCircle name={icons.rota} tone="neutral" />}
+          title={`${OPCOES[boleia.routeOption]} · ${boleia.roundTrip ? 'ida e volta' : 'só ida'}`}
+          subtitle={`${formatarDistancia(boleia.distanceM)} · ${duracao(boleia.durationS)}`}
+          separador
+        />
+        <LinhaGrupo
+          onPress={() => setVerCusto((atual) => !atual)}
+          accessibilityLabel={`Custo total ${formatarCentimos(boleia.totalCents)}. Toca para ${verCusto ? 'esconder' : 'ver'} as contas.`}
+          leading={<IconCircle name={icons.preco} tone="yellow" />}
+          title={`Total ${formatarCentimos(boleia.totalCents)}`}
+          subtitle="Combustível e portagens, a dividir por todos"
+          trailing={<Seta aberta={verCusto} />}
+          separador={depoisDoCusto || verCusto}
+        />
+        {verCusto ? (
+          <View style={[styles.contas, linhaSeparada(!depoisDoCusto)]}>
+            <LinhaValor
+              rotulo={`Combustível${boleia.roundTrip ? ' (ida e volta)' : ''}`}
+              valor={formatarCentimos(boleia.fuelCents)}
+            />
+            <LinhaValor
+              rotulo={`Portagens${boleia.tollM > 0 ? ` · ${formatarDistancia(boleia.tollM)} por sentido` : ''}`}
+              valor={formatarCentimos(boleia.tollCents)}
+            />
+            <LinhaValor
+              rotulo={`Cada um agora (${plural(1 + boleia.seatsTaken, 'pessoa', 'pessoas')})`}
+              valor={formatarCentimos(boleia.shareNowCents)}
+              destaque
+            />
+            <LinhaValor
+              rotulo={`Com a boleia cheia (${plural(1 + boleia.seatsOffered, 'pessoa', 'pessoas')})`}
+              valor={formatarCentimos(boleia.shareFullCents)}
+            />
+            <ThemedText type="small" themeColor="textMuted">
+              Portagens estimadas com os preços de 2026 (classe 1). O combustível usa o consumo e o
+              preço que o condutor indicou. O condutor também paga a sua parte.
+            </ThemedText>
+          </View>
+        ) : null}
+        {cancelada ? null : (
+          <LinhaGrupo
+            leading={<IconCircle name={icons.horario} tone="neutral" />}
+            title={`Pedidos fecham às ${formatarHora(prazos.pedidosFecham)}`}
+            subtitle={
+              fase === 'fechada' && participante
+                ? 'Já fecharam. Se não puderes ir, regista um imprevisto.'
+                : `Confirmar quem apareceu até ${formatarData(prazos.confirmarAte)}`
+            }
+            separador={boleia.isMine && boleia.roundTrip}
+          />
+        )}
+        {boleia.isMine && boleia.roundTrip ? (
+          <LinhaGrupo
+            leading={<IconCircle name={icons.carro} tone="neutral" />}
+            title="Lugares na volta"
+            subtitle={
+              boleia.acceptsReturnRequests
+                ? 'Aceitas quem ficou sem transporte'
+                : 'Abre-os a quem ficar sem transporte'
+            }
+            trailing={
+              <Switch
+                value={boleia.acceptsReturnRequests}
+                disabled={aTratar}
+                onValueChange={(valor) =>
+                  void executar(() => setRideReturnRequests(boleia.id, valor))
+                }
+                trackColor={{ true: theme.accent, false: theme.border }}
+                thumbColor={theme.accentText}
+                ios_backgroundColor={theme.border}
+                accessibilityLabel="Aceitar pedidos de boleia de volta"
+              />
+            }
+          />
+        ) : null}
+      </Card>
+
+      <GrupoDaBoleia boleia={boleia} participante={participante} />
+
+      <View style={styles.secundarias}>
+        {!cancelada && !partilharEmDestaque ? (
+          <LinkTexto label="Partilhar" onPress={() => void partilhar()} />
+        ) : null}
+        {mostrarImprevisto ? (
+          <LinkTexto
+            neutro
+            label="Tive um imprevisto"
+            disabled={aTratar}
+            onPress={() => setFormImprevisto(true)}
+          />
+        ) : null}
+        {ativa && souPassageiro ? (
+          <LinkTexto
+            perigo={boleia.myStatus === 'accepted'}
+            neutro={boleia.myStatus !== 'accepted'}
             label={boleia.myStatus === 'accepted' ? 'Sair da boleia' : 'Cancelar pedido'}
-            variant="secondary"
-            icon={icons.fechar}
             disabled={aTratar}
             onPress={sair}
           />
-        </>
-      ) : suspensoAte ? (
-        <Aviso
-          tone="erro"
-          title="Estás suspenso das boleias"
-          message={`Por faltas em boleias anteriores, só podes pedir lugar a partir de ${formatarData(new Date(suspensoAte))}.`}
-        />
-      ) : fase === 'aberta' ? (
-        <Button
-          label={livres > 0 ? 'Pedir lugar' : 'Boleia cheia'}
-          icon={icons.perfil}
-          disabled={aTratar || livres <= 0}
-          onPress={() => setCompromisso(true)}
-        />
-      ) : (
-        <ThemedText themeColor="textSecondary" style={styles.centro}>
-          Os pedidos para esta boleia já fecharam.
-        </ThemedText>
-      )}
+        ) : null}
+        {ativa && boleia.isMine ? (
+          <LinkTexto perigo label="Cancelar boleia" disabled={aTratar} onPress={cancelar} />
+        ) : null}
+      </View>
 
       <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
         Percurso: © contribuidores do OpenStreetMap, Valhalla (FOSSGIS)
@@ -840,17 +1004,58 @@ export default function BoleiaScreen() {
 }
 
 const styles = StyleSheet.create({
-  grupo: {
-    gap: Spacing.two,
+  condutor: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.twoAndHalf,
   },
-  titulo: {
+  origem: {
+    fontSize: 28,
+    lineHeight: 32,
+  },
+  factos: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    paddingVertical: Spacing.twoAndHalf,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  facto: {
+    flex: 1,
+    alignItems: 'center',
+    gap: Spacing.half,
+  },
+  factoValor: {
     fontSize: 26,
     lineHeight: 30,
+    fontVariant: ['tabular-nums'],
   },
-  etiquetas: {
+  divisoria: {
+    width: 1,
+  },
+  estado: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: Spacing.two,
+  },
+  linhas: {
+    gap: 0,
+    paddingVertical: Spacing.one,
+  },
+  bloco: {
+    paddingBottom: Spacing.twoAndHalf,
+  },
+  contas: {
+    gap: Spacing.two,
+    paddingVertical: Spacing.twoAndHalf,
+  },
+  trailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  setaAberta: {
+    transform: [{ rotate: '90deg' }],
   },
   linhaValor: {
     flexDirection: 'row',
@@ -864,17 +1069,20 @@ const styles = StyleSheet.create({
   destaque: {
     fontWeight: 800,
   },
-  separador: {
-    height: 1,
-    marginVertical: 4,
-  },
-  pessoa: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
   botoes: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.twoAndHalf,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  secundarias: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: Spacing.two,
   },
   flex: {

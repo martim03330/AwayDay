@@ -1,0 +1,130 @@
+# Jornada 5 — modo demo: cinco toques no cartão do perfil abrem as Definições com o interruptor do modo demo; ligado,
+# a etiqueta «Modo demo · dados de exemplo» fica sempre à vista. No fim desliga-o.
+appId: host.exp.Exponent
+name: 05 Modo demo
+tags: [sem-conta, demo]
+---
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+- runFlow: comum/concluir-introducao.yaml
+- runFlow: comum/sair-do-modo-demo.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+# Deep links in Expo Go sometimes land on another tab: the tab bar always gets there, and on the active tab it goes
+# back to the top.
+- tapOn: "Perfil"
+- tapOn: "Perfil"
+- extendedWaitUntil:
+    visible:
+      id: "cabecalho-perfil"
+    timeout: 10000
+
+# Fora do modo demo, as Definições não mostram o interruptor
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- scrollUntilVisible:
+    element: "Sobre e contactos.*"
+    direction: DOWN
+- assertNotVisible:
+    id: "interruptor-modo-demo"
+
+# Quatro toques seguidos não chegam não faz nada
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+# Deep links in Expo Go sometimes land on another tab: the tab bar always gets there, and on the active tab it goes
+# back to the top.
+- tapOn: "Perfil"
+- tapOn: "Perfil"
+- extendedWaitUntil:
+    visible:
+      id: "cabecalho-perfil"
+    timeout: 10000
+- tapOn:
+    id: "cabecalho-perfil"
+    repeat: 4
+    delay: 150
+- assertVisible:
+    id: "cabecalho-perfil"
+- assertNotVisible: "Rever a introdução"
+
+# Cinco toques rápidos
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+# Deep links in Expo Go sometimes land on another tab: the tab bar always gets there, and on the active tab it goes
+# back to the top.
+- tapOn: "Perfil"
+- tapOn: "Perfil"
+- extendedWaitUntil:
+    visible:
+      id: "cabecalho-perfil"
+    timeout: 10000
+- tapOn:
+    id: "cabecalho-perfil"
+    repeat: 5
+    delay: 150
+- extendedWaitUntil:
+    visible: "Rever a introdução"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "interruptor-modo-demo"
+    direction: DOWN
+    # Centred: at the top it sits under Expo Go's floating button.
+    centerElement: true
+- assertVisible: "Mostra a app com dados de exemplo, sem mexer nos teus\\."
+- tapOn:
+    id: "interruptor-modo-demo"
+- extendedWaitUntil:
+    visible: "Modo demo ligado: estás a ver dados de exemplo"
+    timeout: 10000
+- assertVisible: "Dados de exemplo e hora simulada\\. Nada vai para a tua conta\\."
+
+# A etiqueta acompanha todas as tabs
+- tapOn: "Jogos"
+- assertVisible: "Modo demo ligado: estás a ver dados de exemplo"
+- tapOn: "Malta"
+- assertVisible: "Modo demo ligado: estás a ver dados de exemplo"
+- tapOn: "Locais"
+- assertVisible: "Modo demo ligado: estás a ver dados de exemplo"
+- tapOn: "Ranking"
+- assertVisible: "Modo demo ligado: estás a ver dados de exemplo"
+- tapOn: "Perfil"
+- assertVisible: "Modo demo ligado: estás a ver dados de exemplo"
+
+# Hora simulada: escolher a fase «A caminho» e abrir a ficha do jogo de exemplo
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- scrollUntilVisible:
+    element: "A caminho"
+    direction: DOWN
+# O seletor tem de trazer os jogos de exemplo
+- assertVisible: "Benfica x Moreirense"
+- tapOn: "A caminho"
+- assertVisible: "Hora na app: .* \\(simulada\\)"
+- scrollUntilVisible:
+    element: "Abrir ficha do jogo"
+    direction: DOWN
+- tapOn: "Abrir ficha do jogo"
+- extendedWaitUntil:
+    visible: "Com quem vais"
+    timeout: 15000
+- scrollUntilVisible:
+    element: "Antes de ir"
+    direction: DOWN
+- assertVisible: "Modo demo ligado: estás a ver dados de exemplo"
+# The game opened in the Jogos tab: going back lands on the games list, so the settings are opened again.
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- scrollUntilVisible:
+    element: "Hora real"
+    direction: DOWN
+- tapOn: "Hora real"
+- assertNotVisible: "Hora na app: .* \\(simulada\\)"
+
+# Com a hora real, o modo demo tem de continuar a mostrar jogos de exemplo (não uma jornada de descanso)
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /jogos } }
+- runFlow:
+    when:
+      visible: "Espreitar a concorrência.*"
+    commands:
+      - tapOn: "Espreitar a concorrência.*"
+- assertVisible: ".* contra .*"
+
+# Desligar tira a etiqueta
+- runFlow: comum/sair-do-modo-demo.yaml
+# abrir.yaml also closes Expo Go's developer menu when a test gesture opens it.
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /jogos } }
+- assertNotVisible: "Modo demo ligado: estás a ver dados de exemplo"

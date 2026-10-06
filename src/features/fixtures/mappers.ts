@@ -61,7 +61,6 @@ export type CatalogExtras = {
   venues: Readonly<
     Partial<Record<string, Pick<Venue, 'photoUrl' | 'hasShade' | 'hasShelter' | 'transportes'>>>
   >;
-  clubs: Readonly<Partial<Record<string, Pick<Clube, 'adeptosNaApp'>>>>;
 };
 
 /** Preferred order of venues and clubs (ids); anything not listed goes last, by name. */
@@ -143,8 +142,7 @@ function toVenue(
 
 function toClub(
   row: ClubRow,
-  venueIds: ReadonlySet<string>,
-  extras: CatalogExtras['clubs']
+  venueIds: ReadonlySet<string>
 ): Clube | null {
   const division = toDivision(row.tier);
   if (division === undefined) return null;
@@ -159,7 +157,6 @@ function toClub(
     pais: row.country,
     cores: { primaria: row.primary_color, secundaria: row.secondary_color },
     divisao: division,
-    adeptosNaApp: extras[row.id]?.adeptosNaApp ?? 0,
     estadioId: hasVenue ? row.home_venue_id : null,
   };
 }
@@ -251,7 +248,7 @@ export function buildFixtureCatalog(
   const clubs = collect(
     rows.clubs,
     'club',
-    (row) => toClub(row, candidateVenueIds, extras.clubs),
+    (row) => toClub(row, candidateVenueIds),
     skipped
   );
   const clubIds = new Set(clubs.map((club) => club.id));

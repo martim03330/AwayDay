@@ -2,9 +2,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora } from '@/lib/datas';
 import { formatarNota } from '@/lib/formatos';
-import { estadoDoJogo, fimDoJogo, notaMedia } from '@/lib/jogos';
+import { estadoDoJogo, notaMedia } from '@/lib/jogos';
 import type { AvaliacaoVisita, Jogo } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
@@ -31,19 +30,8 @@ function TileEstrela() {
 export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJogoProps) {
   const theme = useTheme();
 
-  if (estadoDoJogo(jogo, agora) !== 'terminado') {
-    return (
-      <Card style={styles.linhaTile}>
-        <TileEstrela />
-        <View style={styles.textos}>
-          <ThemedText style={styles.titulo}>Avaliação da experiência</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {`Abre ${formatarDiaEHora(fimDoJogo(jogo)).toLowerCase()}, depois do apito final.`}
-          </ThemedText>
-        </View>
-      </Card>
-    );
-  }
+  // Before the final whistle there is nothing to rate: the section stays out of the way instead of a placeholder.
+  if (estadoDoJogo(jogo, agora) !== 'terminado') return null;
 
   if (!avaliacao) {
     return (
@@ -59,7 +47,12 @@ export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJo
             </ThemedText>
           </View>
         </View>
-        <Button label="Avaliar experiência" icon={icons.estrela} variant="highlight" onPress={onAvaliar} />
+        <Button
+          label="Avaliar experiência"
+          icon={icons.estrela}
+          variant="highlight"
+          onPress={onAvaliar}
+        />
       </Card>
     );
   }
@@ -107,7 +100,12 @@ export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJo
           “{avaliacao.comentario}”
         </ThemedText>
       ) : null}
-      <Button label="Editar avaliação" icon={icons.estrela} variant="secondary" onPress={onAvaliar} />
+      <Button
+        label="Editar avaliação"
+        icon={icons.estrela}
+        variant="secondary"
+        onPress={onAvaliar}
+      />
     </Card>
   );
 }
@@ -154,7 +152,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
-    height: 30,
+    minHeight: 30,
     paddingHorizontal: 11,
     borderRadius: 999,
   },

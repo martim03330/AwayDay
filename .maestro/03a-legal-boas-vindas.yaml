@@ -1,0 +1,36 @@
+# Jornada 3a — as páginas legais a partir dos links «Termos · Privacidade» das boas-vindas.
+# Toca no centro de cada link, como um dedo. Tem de abrir o documento da app (e não o Safari).
+appId: host.exp.Exponent
+name: 03a Páginas legais nas boas-vindas
+tags: [sem-conta, legal]
+---
+- runFlow: comum/boas-vindas.yaml
+
+# Das boas-vindas: Termos
+- tapOn: "Termos"
+- assertNotVisible: "Regressar a Expo Go"
+- extendedWaitUntil:
+    visible: "Termos de utilização"
+    timeout: 10000
+- assertVisible: "As regras para usar o AwayDay.*"
+- assertVisible: "Atualizado a .*"
+- assertVisible: "Quem presta o serviço"
+- runFlow: comum/fechar-legal.yaml
+- assertVisible: "Vamos à bola\\?"
+
+# Das boas-vindas: Privacidade
+- tapOn: "Privacidade"
+- assertNotVisible: "Regressar a Expo Go"
+- extendedWaitUntil:
+    visible: "Política de privacidade"
+    timeout: 10000
+- assertVisible: "Em poucas palavras"
+- assertVisible: "Quem é o responsável"
+- scrollUntilVisible:
+    element: "A tua localização"
+    direction: DOWN
+- scrollUntilVisible:
+    element: "Os teus direitos"
+    direction: DOWN
+- runFlow: comum/fechar-legal.yaml
+- assertVisible: "Vamos à bola\\?"

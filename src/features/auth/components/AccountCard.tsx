@@ -21,7 +21,7 @@ function Cabecalho({ title, subtitle, muted = false }: { title: string; subtitle
     <View style={styles.cabecalho}>
       <IconCircle name={icons.perfil} tone={muted ? 'neutral' : 'green'} />
       <View style={styles.flex}>
-        <ThemedText type="section" style={styles.titulo}>
+        <ThemedText type="section" style={styles.titulo} accessibilityRole="header">
           {title}
         </ThemedText>
         {subtitle ? (

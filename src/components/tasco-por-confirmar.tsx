@@ -50,6 +50,7 @@ export function TascoPorConfirmar({ local }: { local: Local }) {
                 label="Sim"
                 icon={icons.checkInFeito}
                 variant={voto === true ? 'primary' : 'secondary'}
+                selected={voto === true}
                 onPress={() => votarTasco(local.id, true)}
               />
             </View>
@@ -58,6 +59,7 @@ export function TascoPorConfirmar({ local }: { local: Local }) {
                 label="Não"
                 icon={icons.fechar}
                 variant={voto === false ? 'danger' : 'secondary'}
+                selected={voto === false}
                 onPress={() => votarTasco(local.id, false)}
               />
             </View>

@@ -5,7 +5,6 @@ import { StyleSheet } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import { acceptRideInvite, declineRideInvite, FriendRefused } from '@/features/friends/api';
 import { useMyRideInvites, useRefreshFriends } from '@/features/friends/hooks/useFriends';
-import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
@@ -17,6 +16,7 @@ import { Etiqueta } from '@/ui/etiqueta';
 import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 function nomeDoJogo(fixtureId: string) {
   const jogo = obterJogo(fixtureId);
@@ -37,7 +37,6 @@ function mensagemDeRecusa(erro: unknown) {
  */
 export function ConvitesDeBoleia() {
   const router = useRouter();
-  const theme = useTheme();
   const userId = useUserId();
   const convites = useMyRideInvites(userId !== null);
   const refrescar = useRefreshFriends();
@@ -90,7 +89,7 @@ export function ConvitesDeBoleia() {
             label="Agora não"
             onPress={() => void responder(() => declineRideInvite(convite.rideId))}
           />
-          {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+          {erro ? <MensagemErro>{erro}</MensagemErro> : null}
         </Card>
       ))}
     </>

@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    height: 30,
+    minHeight: 30,
     paddingHorizontal: 11,
     borderRadius: Radius.pill,
   },

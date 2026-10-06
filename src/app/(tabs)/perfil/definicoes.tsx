@@ -1,15 +1,12 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Linking, StyleSheet, Switch, View } from 'react-native';
+import { Linking, StyleSheet, Switch, View } from 'react-native';
 
 import { ModoDemoCard } from '@/components/modo-demo-card';
 import { Spacing } from '@/constants/theme';
-import { rankingsKey } from '@/features/presence/hooks/usePresence';
 import { useLocationPermission } from '@/features/presence/location';
-import { useMyProfile, useUpdateRankingVisibility } from '@/features/profile/hooks/useMyProfile';
+import { useMyProfile, useUpdateShareCheckins } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
-import { TIPOS_NOTIFICACAO } from '@/mocks/notificacoes';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
@@ -35,13 +32,11 @@ const TEMAS = [
 export default function DefinicoesScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const queryClient = useQueryClient();
   // The profile header opens this screen with `demo=1` after five quick taps.
   const { demo } = useLocalSearchParams<{ demo?: string }>();
   const {
     sonsLigados,
     alternarSons,
-    notificacoes,
     permissoes,
     reverIntroducao,
     modoDemo,
@@ -53,12 +48,11 @@ export default function DefinicoesScreen() {
   const [permissaoLocalizacao] = useLocationPermission();
   const userId = useUserId();
   const perfil = useMyProfile(fonte === 'conta' ? userId : null);
-  const visibilidade = useUpdateRankingVisibility(userId);
-  const aparecerNosRankings =
-    visibilidade.isPending && visibilidade.variables !== undefined
-      ? visibilidade.variables
-      : (perfil.data?.showInRankings ?? false);
-  const notificacoesLigadas = TIPOS_NOTIFICACAO.filter((tipo) => notificacoes[tipo]).length;
+  const partilha = useUpdateShareCheckins(userId);
+  const partilharCheckIns =
+    partilha.isPending && partilha.variables !== undefined
+      ? partilha.variables
+      : (perfil.data?.shareCheckinsWithGroups ?? false);
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
   const localizacaoBloqueada =
     permissaoLocalizacao !== null &&
@@ -70,13 +64,6 @@ export default function DefinicoesScreen() {
     if (permissaoLocalizacao?.granted) return 'Autorizada. Só a usamos para confirmar o check-in.';
     if (localizacaoBloqueada) return 'Recusada. Toca para abrir as definições do telemóvel.';
     return 'Pedimos quando fizeres check-in num tasco.';
-  }
-
-  function mudarVisibilidade(mostrar: boolean) {
-    visibilidade.mutate(mostrar, {
-      onSuccess: () => void queryClient.invalidateQueries({ queryKey: rankingsKey(userId) }),
-      onError: () => Alert.alert('Não deu para guardar', 'Verifica a ligação e tenta outra vez.'),
-    });
   }
 
   return (
@@ -101,10 +88,10 @@ export default function DefinicoesScreen() {
         <LinhaGrupo
           separador
           onPress={() => router.push('/perfil/notificacoes')}
-          accessibilityLabel={`Notificações: ${notificacoesLigadas} de ${TIPOS_NOTIFICACAO.length} ligadas. Toca para escolher.`}
+          accessibilityLabel="Notificações: boleias, malta e dicas. Toca para escolher."
           leading={<Icon name={icons.notificacoes} size={20} color={theme.accentInk} />}
           title="Notificações"
-          subtitle={`${notificacoesLigadas} de ${TIPOS_NOTIFICACAO.length} ligadas`}
+          subtitle="Boleias, malta e dicas do treinador"
           trailing={chevron}
         />
         <LinhaGrupo
@@ -122,7 +109,7 @@ export default function DefinicoesScreen() {
           accessibilityLabel="Rever a introdução"
           leading={<Icon name={icons.recomecar} size={20} color={theme.accentInk} />}
           title="Rever a introdução"
-          subtitle="Os três ecrãs do início, outra vez."
+          subtitle="As boas-vindas e os passos do início, outra vez."
           trailing={chevron}
         />
       </Card>
@@ -140,7 +127,7 @@ export default function DefinicoesScreen() {
       </Card>
 
       <SectionHeader title="Aspeto" />
-      <Card style={styles.grupo}>
+      <Card style={styles.aspeto}>
         <ThemedText themeColor="textSecondary">
           O escuro segue o telemóvel, a não ser que escolhas um dos dois.
         </ThemedText>
@@ -159,23 +146,92 @@ export default function DefinicoesScreen() {
 
       {fonte === 'conta' ? (
         <>
-          <SectionHeader title="Rankings" />
+          <SectionHeader title="Privacidade" />
           <Card style={styles.grupo}>
             <LinhaGrupo
-              leading={<Icon name={icons.ranking} size={20} color={theme.accentInk} />}
-              title="Aparecer nos rankings"
-              subtitle="Com o teu nome e clube, nos tascos verificados e no barulhómetro. Nunca mostramos onde estás."
+              separador
+              leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}
+              title="Dizer aos meus grupos em que tasco estou"
+              subtitle="Quando fazes check-in, a conversa dos teus grupos recebe «estás no Tasco do Zé». Só o nome do tasco, nunca onde estás."
               trailing={
                 <Switch
-                  value={aparecerNosRankings}
-                  onValueChange={mudarVisibilidade}
+                  value={partilharCheckIns}
+                  onValueChange={(ligar) => partilha.mutate(ligar)}
                   disabled={!perfil.data}
                   trackColor={{ true: theme.accent, false: theme.border }}
                   thumbColor={theme.accentText}
                   ios_backgroundColor={theme.border}
-                  accessibilityLabel="Aparecer nos rankings"
+                  accessibilityLabel="Dizer aos meus grupos em que tasco estou"
+                  testID="interruptor-partilhar-checkins"
                 />
               }
+            />
+            <LinhaGrupo
+              onPress={() => router.push('/perfil/bloqueados')}
+              accessibilityLabel="Pessoas bloqueadas. Toca para abrir."
+              leading={<Icon name={icons.silencio} size={20} color={theme.accentInk} />}
+              title="Pessoas bloqueadas"
+              subtitle="Não vês o que escrevem e não te podem convidar"
+              trailing={chevron}
+            />
+          </Card>
+        </>
+      ) : null}
+
+      <SectionHeader title="Sobre o AwayDay" />
+      <Card style={styles.grupo}>
+        <LinhaGrupo
+          separador
+          onPress={() => router.push({ pathname: '/legal/[documento]', params: { documento: 'privacidade' } })}
+          leading={<Icon name={icons.password} size={20} color={theme.accentInk} />}
+          title="Política de privacidade"
+          trailing={chevron}
+        />
+        <LinhaGrupo
+          separador
+          onPress={() => router.push({ pathname: '/legal/[documento]', params: { documento: 'termos' } })}
+          leading={<Icon name={icons.lista} size={20} color={theme.accentInk} />}
+          title="Termos de utilização"
+          trailing={chevron}
+        />
+        <LinhaGrupo
+          onPress={() => router.push({ pathname: '/legal/[documento]', params: { documento: 'sobre' } })}
+          leading={<Icon name={icons.email} size={20} color={theme.accentInk} />}
+          title="Sobre e contactos"
+          subtitle="Quem faz a app, fontes dos dados e das imagens"
+          trailing={chevron}
+        />
+      </Card>
+
+      {perfil.data?.isAdmin ? (
+        <>
+          <SectionHeader title="Administração" />
+          <Card style={styles.grupo}>
+            <LinhaGrupo
+              separador
+              onPress={() => router.push('/perfil/pontos-de-encontro')}
+              accessibilityLabel="Pontos de encontro por confirmar. Toca para abrir."
+              leading={<Icon name={icons.pontoEncontro} size={20} color={theme.accentInk} />}
+              title="Pontos de encontro por confirmar"
+              subtitle="Encontrados nas notícias dos clubes"
+              trailing={chevron}
+            />
+            <LinhaGrupo
+              separador
+              onPress={() => router.push('/perfil/fotos-por-aprovar')}
+              accessibilityLabel="Fotos de tascos por aprovar. Toca para abrir."
+              leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}
+              title="Fotos de tascos por aprovar"
+              subtitle="Enviadas pelos adeptos"
+              trailing={chevron}
+            />
+            <LinhaGrupo
+              onPress={() => router.push('/perfil/denuncias')}
+              accessibilityLabel="Denúncias por rever. Toca para abrir."
+              leading={<Icon name={icons.aviso} size={20} color={theme.accentInk} />}
+              title="Denúncias por rever"
+              subtitle="Mensagens, pessoas e grupos denunciados"
+              trailing={chevron}
             />
           </Card>
         </>
@@ -201,6 +257,7 @@ export default function DefinicoesScreen() {
                   thumbColor={theme.accentText}
                   ios_backgroundColor={theme.border}
                   accessibilityLabel="Modo demo"
+                  testID="interruptor-modo-demo"
                 />
               }
             />
@@ -217,6 +274,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
+  },
+  aspeto: {
+    gap: Spacing.twoAndHalf,
   },
   grupo: {
     gap: 0,

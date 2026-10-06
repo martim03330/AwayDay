@@ -5,9 +5,10 @@
 
 begin;
 
--- As sessões que nasceram dos planos de teste (e tudo o que lá foi lançado).
+-- As sessões que nasceram dos planos de teste, e as viagens passadas do histórico (e tudo o que lá foi lançado).
 delete from public.trip_session
-where id in (select session_id from public.fixture_plan where id::text like 'a0000000-%' and session_id is not null);
+where id in (select session_id from public.fixture_plan where id::text like 'a0000000-%' and session_id is not null)
+   or id::text like 'a0000000-%';
 
 delete from public.fixture_plan where id::text like 'a0000000-%';
 delete from public.stay_plan where id::text like 'a0000000-%';

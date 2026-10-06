@@ -76,13 +76,18 @@ export function DestaquesMenu({ pratos, recomendados, jaContados, lembrete }: De
 
   const { maisRecomendado, maisBarato, maisRapido } = destaques;
   const itens: Destaque[] = [
-    {
-      ...maisRecomendado,
-      rotulo: 'Mais recomendado',
-      icon: icons.estrela,
-      tom: TONS.amarelo,
-      detalhes: [plural(maisRecomendado.recomendacoes, 'recomendação', 'recomendações')],
-    },
+    // «Mais recomendado» only when somebody actually recommended it.
+    ...(maisRecomendado.recomendacoes > 0
+      ? [
+          {
+            ...maisRecomendado,
+            rotulo: 'Mais recomendado',
+            icon: icons.estrela,
+            tom: TONS.amarelo,
+            detalhes: [plural(maisRecomendado.recomendacoes, 'recomendação', 'recomendações')],
+          },
+        ]
+      : []),
     ...(maisBarato
       ? [
           {

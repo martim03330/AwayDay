@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { TextInput } from 'react-native';
 
+import { ConsentimentoTermos } from '@/components/consentimento-termos';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useSignUp } from '@/features/auth/hooks/useAuthActions';
@@ -13,7 +15,7 @@ import {
   PASSWORD_MAX_LENGTH,
   passwordError,
 } from '@/features/auth/validation';
-import { useAppState } from '@/state/app-state';
+import { VERSAO_DOS_TERMOS } from '@/lib/legal';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { LinkTexto } from '@/ui/link-texto';
@@ -22,12 +24,14 @@ import { ThemedText } from '@/ui/themed-text';
 export default function CriarContaScreen() {
   const router = useRouter();
   const criar = useSignUp();
-  const { onboardingConcluido } = useAppState();
-  const fecharConta = useCloseAccountFlow(onboardingConcluido);
+  const fecharConta = useCloseAccountFlow();
   const [nome, setNome] = useState('');
+  const campoEmail = useRef<TextInput>(null);
+  const campoPassword = useRef<TextInput>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
+  const [aceitou, setAceitou] = useState(false);
   /** Email que já tem conta: em vez de pedir um código que nunca chega, propõe entrar. */
   const [emailComConta, setEmailComConta] = useState<string | null>(null);
 
@@ -35,6 +39,7 @@ export default function CriarContaScreen() {
     nome: tentou ? displayNameError(nome) : null,
     email: tentou ? emailError(email) : null,
     password: tentou ? passwordError(password) : null,
+    termos: tentou && !aceitou ? 'Para criar conta tens de aceitar os termos e a política de privacidade.' : null,
   };
   const erroPedido = criar.error
     ? authErrorMessage(criar.error)
@@ -49,12 +54,18 @@ export default function CriarContaScreen() {
 
   function submeter() {
     setTentou(true);
-    if (displayNameError(nome) || emailError(email) || passwordError(password) || criar.isPending) {
+    if (
+      displayNameError(nome) ||
+      emailError(email) ||
+      passwordError(password) ||
+      !aceitou ||
+      criar.isPending
+    ) {
       return;
     }
     const emailNormalizado = normalizeEmail(email);
     criar.mutate(
-      { email, password, displayName: nome },
+      { email, password, displayName: nome, termsVersion: VERSAO_DOS_TERMOS },
       {
         onSuccess: (resultado) => {
           if (resultado === 'already-registered') {
@@ -101,8 +112,10 @@ export default function CriarContaScreen() {
         autoComplete="name"
         textContentType="nickname"
         returnKeyType="next"
+        onSubmitEditing={() => campoEmail.current?.focus()}
       />
       <Campo
+        ref={campoEmail}
         label="Email"
         value={email}
         onChangeText={mudarEmail}
@@ -113,8 +126,10 @@ export default function CriarContaScreen() {
         autoComplete="email"
         textContentType="emailAddress"
         returnKeyType="next"
+        onSubmitEditing={() => campoPassword.current?.focus()}
       />
       <Campo
+        ref={campoPassword}
         label="Password"
         value={password}
         onChangeText={setPassword}
@@ -128,13 +143,14 @@ export default function CriarContaScreen() {
         returnKeyType="go"
         onSubmitEditing={submeter}
       />
+      <ConsentimentoTermos aceite={aceitou} onMudar={setAceitou} erro={erros.termos} />
       <Button
         label={criar.isPending ? 'A criar conta…' : 'Criar conta'}
         onPress={submeter}
         disabled={criar.isPending}
       />
       <ThemedText type="small" themeColor="textSecondary">
-        Os outros adeptos só veem o teu nome e o clube que apoias. O clube da terra fica só para ti.
+        Os outros adeptos só veem o teu nome, a foto e o clube que apoias.
       </ThemedText>
       <LinkTexto label="Já tens conta? Entra" onPress={() => router.replace('/conta/entrar')} />
     </AuthForm>

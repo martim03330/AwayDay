@@ -10,7 +10,8 @@ import { ThemedText } from '@/ui/themed-text';
 
 type OpcaoClubeProps = {
   clube: Clube;
-  detalhe: string;
+  /** A line under the name; nothing when there is nothing true to say. */
+  detalhe?: string | null;
   selecionado: boolean;
   onPress: () => void;
 };
@@ -33,7 +34,10 @@ const scarfBands = (() => {
 /** Scarf stripe in the club colours, down the left edge of the row. */
 function Cachecol({ clube }: { clube: Clube }) {
   return (
-    <View style={[styles.cachecol, { backgroundColor: clube.cores.secundaria }]}>
+    <View
+      style={[styles.cachecol, { backgroundColor: clube.cores.secundaria }]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants">
       <Svg width={SCARF_WIDTH} height={SCARF_HEIGHT} viewBox={`0 0 ${SCARF_WIDTH} ${SCARF_HEIGHT}`}>
         <Path d={scarfBands} fill={clube.cores.primaria} />
       </Svg>
@@ -49,12 +53,12 @@ export function OpcaoClube({ clube, detalhe, selecionado, onPress }: OpcaoClubeP
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ checked: selecionado }}
-      accessibilityLabel={`${clube.nomeCurto}, ${detalhe}`}
+      accessibilityLabel={detalhe ? `${clube.nomeCurto}, ${detalhe}` : clube.nomeCurto}
       onPress={onPress}
       style={({ pressed }) => [
         styles.linha,
         { backgroundColor: theme.backgroundElement },
-        selecionado && { boxShadow: `0 0 0 2px ${theme.accent}` },
+        selecionado && { boxShadow: `0 0 0 2px ${theme.accentInk}` },
         pressed && styles.pressed,
       ]}>
       {/* The shadow lives on the Pressable; this inner frame clips the scarf to the rounded corners. */}
@@ -66,9 +70,11 @@ export function OpcaoClube({ clube, detalhe, selecionado, onPress }: OpcaoClubeP
             <ThemedText type="section" style={styles.nome} numberOfLines={1}>
               {clube.nomeCurto}
             </ThemedText>
-            <ThemedText style={styles.detalhe} themeColor="textSecondary" numberOfLines={1}>
-              {detalhe}
-            </ThemedText>
+            {detalhe ? (
+              <ThemedText style={styles.detalhe} themeColor="textSecondary" numberOfLines={1}>
+                {detalhe}
+              </ThemedText>
+            ) : null}
           </View>
           {selecionado ? (
             <View style={[styles.visto, { backgroundColor: theme.accent }]}>

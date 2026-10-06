@@ -31,7 +31,11 @@ function CabecalhoEpoca({ dados }: { dados: SeasonRecap }) {
           <View key={left} style={[styles.risca, { left }]} />
         ))}
       </View>
-      <View style={styles.grandeArea} pointerEvents="none">
+      <View
+        style={styles.grandeArea}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants">
         <Svg width={510} height={300} viewBox="0 0 510 300" fill="none" stroke={Colors.accentText} strokeWidth={3}>
           <Rect x={80} y={40} width={350} height={300} />
           <Rect x={170} y={40} width={170} height={90} />
@@ -40,7 +44,7 @@ function CabecalhoEpoca({ dados }: { dados: SeasonRecap }) {
       </View>
 
       <View style={styles.titulos}>
-        <ThemedText type="eyebrow" style={{ color: Colors.highlight }}>
+        <ThemedText type="eyebrow" style={{ color: Colors.accentText }}>
           {`Época ${seasonLabel(dados.seasonId)}`}
         </ThemedText>
         <ThemedText type="title" style={styles.titulo} accessibilityRole="header">
@@ -201,7 +205,8 @@ const styles = StyleSheet.create({
   resumo: {
     fontSize: 16,
     lineHeight: 24,
-    color: 'rgba(255, 255, 255, 0.92)',
+    // Solid white: translucent white on the striped green fell under 4.5:1.
+    color: Colors.accentText,
   },
   conteudo: {
     width: '100%',

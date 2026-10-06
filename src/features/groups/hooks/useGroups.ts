@@ -10,10 +10,12 @@ import {
 } from '@/features/groups/api';
 import {
   fetchGroupFixturePlans,
+  fetchMyPlanConflicts,
   fetchPlanHouses,
   fetchPlanPeople,
   fetchPlans,
 } from '@/features/groups/plans';
+import { fetchGroupHistory } from '@/features/groups/history';
 import { supabase } from '@/lib/supabase';
 
 // Os ecrãs antigos dos grupos já invalidavam ['groups']: as chaves daqui continuam debaixo desse prefixo.
@@ -94,12 +96,23 @@ export function usePlans(planIds: string[]) {
   });
 }
 
+/** Os planos em que já vou a esse jogo com outro grupo: `{ planoId: nome do outro grupo }`. */
+export function usePlanConflicts(planIds: string[]) {
+  const ids = [...new Set(planIds)].sort();
+  return useQuery({
+    queryKey: [...plansKey(), 'conflicts', ids.join(',')],
+    queryFn: ids.length > 0 ? () => fetchMyPlanConflicts(ids) : skipToken,
+    staleTime: 10 * 1000,
+    meta: { persist: false },
+  });
+}
+
 export function usePlan(planId: string | null) {
   const planos = usePlans(planId ? [planId] : []);
   return { ...planos, plan: planos.data?.[0] ?? null };
 }
 
-/** Os planos em aberto de um grupo. */
+/** Os planos de um grupo. */
 export function useGroupFixturePlans(groupId: string | null) {
   return useQuery({
     queryKey: [...plansKey(), 'group', groupId],
@@ -124,6 +137,16 @@ export function usePlanHouses(planId: string | null) {
     queryKey: [...plansKey(), 'houses', planId],
     queryFn: planId ? () => fetchPlanHouses(planId) : skipToken,
     staleTime: 10 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** O histórico do grupo: as viagens já feitas, com pelo menos duas pessoas do grupo. */
+export function useGroupHistory(groupId: string | null) {
+  return useQuery({
+    queryKey: [GROUPS_KEY, 'history', groupId],
+    queryFn: groupId ? () => fetchGroupHistory(groupId) : skipToken,
+    staleTime: 60 * 1000,
     meta: { persist: false },
   });
 }

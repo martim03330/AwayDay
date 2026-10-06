@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JogoCard } from '@/components/jogo-card';
 import { ConvitesDeBoleia } from '@/components/convites-de-boleia';
 import { SessoesAbertas } from '@/components/sessoes-abertas';
+import { useMyOpenTripSessions } from '@/features/trips/hooks/useTrips';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ConviteTreinador } from '@/components/convite-treinador';
 import { CoachBanner } from '@/features/coach/components/CoachBanner';
 import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
-import { NewsTicker } from '@/features/nudges/components/NewsTicker';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
@@ -147,6 +148,10 @@ export default function JogosScreen() {
   const agora = useNow();
   const { clubeFavoritoId, clubeDaTerraId, avaliacaoDoJogo } = useAppState();
   const userId = useUserId();
+  const sessoesAbertas = useMyOpenTripSessions(userId !== null);
+  const boleiasComSessao = (sessoesAbertas.data ?? []).flatMap((sessao) =>
+    sessao.ride ? [sessao.ride.id] : []
+  );
   const { foste } = useJogosAQueFoste();
   const treinador = useAICoach();
   const destinoDaDica = treinador.destino;
@@ -291,13 +296,11 @@ export default function JogosScreen() {
           sobreRelvado
           onPress={destinoDaDica ? () => router.push(destinoDaDica) : undefined}
         />
+        <ConviteTreinador />
       </CabecalhoRelvado>
 
       <View style={styles.largura}>
         <View style={styles.filtros}>
-          <View style={styles.faixa}>
-            <NewsTicker userId={userId} onPress={() => router.push('/perfil/novidades')} />
-          </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -333,7 +336,7 @@ export default function JogosScreen() {
         <View style={styles.conteudo}>
           <SessoesAbertas />
           <ConvitesDeBoleia />
-          <AlertasBoleias />
+          <AlertasBoleias boleiasComSessao={boleiasComSessao} />
           {renderConteudo()}
         </View>
       </View>
@@ -362,9 +365,6 @@ const styles = StyleSheet.create({
   },
   chips: {
     gap: Spacing.two,
-    paddingHorizontal: MARGEM,
-  },
-  faixa: {
     paddingHorizontal: MARGEM,
   },
   escudos: {

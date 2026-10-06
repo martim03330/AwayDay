@@ -1,0 +1,32 @@
+# Jornada 12 — com conta, o caminho para apagar a conta até ao ecrã de confirmação, SEM confirmar: sem password
+# não apaga, e fechar deixa tudo como estava.
+appId: host.exp.Exponent
+name: 12 Apagar conta (sem confirmar)
+tags: [com-conta, conta]
+---
+- runFlow: comum/entrar-e2e.yaml
+- tapOn: "Apagar conta"
+- extendedWaitUntil:
+    visible: "Apagamos a conta, o nome, os clubes e o histórico guardados\\. Não dá para desfazer\\..*"
+    timeout: 10000
+- assertVisible: "Password.*"
+- assertVisible: "Fechar"
+# Sem password não apaga
+- tapOn:
+    text: "Apagar conta"
+    below: "Password.*"
+- assertVisible: "Password\\. Erro: Falta a password\\."
+- assertNotVisible: "A apagar a conta…"
+- assertNotVisible: "Conta apagada"
+# Fechar sem confirmar: a sessão continua
+- tapOn: "Fechar"
+- runFlow: comum/dispensar-guardar-password.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+- scrollUntilVisible:
+    element: "e2e@teste\\.awayday\\.invalid"
+    direction: DOWN
+    timeout: 20000
+- scrollUntilVisible:
+    element: "Terminar sessão"
+    direction: DOWN
+- assertVisible: "Apagar conta"

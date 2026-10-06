@@ -9,12 +9,11 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { fontFamily, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import {
   GroupRefused,
   markGroupMessagesRead,
@@ -31,15 +30,17 @@ import {
   useGroupChannel,
   useGroupFromInbox,
   useGroupMessages,
+  usePlanConflicts,
   usePlans,
   useRefreshGroups,
 } from '@/features/groups/hooks/useGroups';
+import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
-import { Avatar } from '@/ui/avatar';
+import { BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -65,7 +66,7 @@ function textoOnline(online: number) {
 
 /**
  * A conversa de um grupo. É aqui que a malta combina: escreve, diz em que tasco está e, a partir daqui, abre os
- * planos em aberto e o histórico das viagens.
+ * planos e o histórico das viagens.
  */
 export default function ConversaDoGrupoScreen() {
   const router = useRouter();
@@ -81,11 +82,14 @@ export default function ConversaDoGrupoScreen() {
   const cartoes = useProfileCards([
     ...new Set((mensagens.data ?? []).map((mensagem) => mensagem.profileId)),
   ]);
-  const planos = usePlans(
-    (mensagens.data ?? []).flatMap((mensagem) => (mensagem.planId ? [mensagem.planId] : []))
+  const idsDosPlanos = (mensagens.data ?? []).flatMap((mensagem) =>
+    mensagem.planId ? [mensagem.planId] : []
   );
+  const planos = usePlans(idsDosPlanos);
+  const conflitos = usePlanConflicts(idsDosPlanos);
   const queryClient = useQueryClient();
   const refrescar = useRefreshGroups();
+  const moderacao = useModeracao();
 
   const [texto, setTexto] = useState('');
   const [aEnviar, setAEnviar] = useState(false);
@@ -162,6 +166,23 @@ export default function ConversaDoGrupoScreen() {
       },
     ]);
 
+  // Long-press: your own message can be deleted; someone else's can be reported, or its author blocked (the group
+  // owner can still delete it too). A plan card is the group's, not a person's: only delete.
+  const aoCarregarSemLargar = (mensagem: GroupMessage) => {
+    if (mensagem.mine || mensagem.kind === 'plano') {
+      return mensagem.canRemove ? () => apagar(mensagem) : undefined;
+    }
+    return () =>
+      moderacao.abrirMensagem({
+        kind: 'message',
+        messageId: mensagem.id,
+        pessoa: { profileId: mensagem.profileId, nome: mensagem.displayName },
+        extras: mensagem.canRemove
+          ? [{ label: 'Apagar', destrutiva: true, onPress: () => apagar(mensagem) }]
+          : [],
+      });
+  };
+
   const abrirDefinicoes = () =>
     router.push({ pathname: '/grupos/[grupoId]/definicoes', params: { grupoId: grupo.id } });
 
@@ -197,6 +218,7 @@ export default function ConversaDoGrupoScreen() {
       />
 
       <FundoConversa fundo={grupo.fundo} />
+      {moderacao.elemento}
 
       <KeyboardAvoidingView
         style={styles.tudo}
@@ -207,9 +229,11 @@ export default function ConversaDoGrupoScreen() {
           <View style={[styles.tudo, styles.centro]}>
             {mensagens.isLoading ? null : (
               <View style={[styles.vazio, { backgroundColor: theme.backgroundElement }]}>
-                <ThemedText type="smallBold">A conversa ainda está a zeros</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Manda a primeira. Daqui saem os planos para os jogos, as boleias e as contas.
+                <ThemedText type="smallBold" style={styles.textoVazio}>
+                  A conversa ainda está a zeros
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.textoVazio}>
+                  Manda a primeira mensagem à malta.
                 </ThemedText>
               </View>
             )}
@@ -231,12 +255,16 @@ export default function ConversaDoGrupoScreen() {
               return (
                 <View>
                   {novoDia ? (
-                    <Pastilha escuro={escuro} texto={formatarDia(new Date(item.createdAt))} />
+                    <PastilhaDeConversa
+                      escuro={escuro}
+                      texto={formatarDia(new Date(item.createdAt))}
+                    />
                   ) : null}
                   {item.kind === 'plano' ? (
                     <MensagemPlano
                       mensagem={item}
                       plano={(planos.data ?? []).find((plano) => plano.id === item.planId) ?? null}
+                      vaisComOutroGrupo={item.planId ? conflitos.data?.[item.planId] : undefined}
                       escuro={escuro}
                       onAbrir={() => {
                         if (!item.planId) return;
@@ -248,7 +276,7 @@ export default function ConversaDoGrupoScreen() {
                       onRespondido={() =>
                         void queryClient.invalidateQueries({ queryKey: plansKey() })
                       }
-                      onLongPress={item.canRemove ? () => apagar(item) : undefined}
+                      onLongPress={aoCarregarSemLargar(item)}
                     />
                   ) : item.kind === 'local' ? (
                     <MensagemLocal
@@ -263,14 +291,17 @@ export default function ConversaDoGrupoScreen() {
                               })
                           : undefined
                       }
-                      onLongPress={item.canRemove ? () => apagar(item) : undefined}
+                      onLongPress={aoCarregarSemLargar(item)}
                     />
                   ) : (
-                    <Bolha
-                      mensagem={item}
+                    <BolhaDeConversa
+                      nome={item.displayName}
+                      texto={item.body}
+                      criadaEm={item.createdAt}
+                      minha={item.mine}
                       mostrarQuem={!mesmaPessoa}
                       fotoUrl={fotoDe(item.profileId)}
-                      onLongPress={item.canRemove ? () => apagar(item) : undefined}
+                      onLongPress={aoCarregarSemLargar(item)}
                     />
                   )}
                 </View>
@@ -291,7 +322,7 @@ export default function ConversaDoGrupoScreen() {
           <View style={styles.atalhos}>
             <Atalho
               icon={icons.calendario}
-              label="Planos em aberto"
+              label="Planos"
               onPress={() =>
                 router.push({ pathname: '/grupos/[grupoId]/planos', params: { grupoId: grupo.id } })
               }
@@ -314,106 +345,16 @@ export default function ConversaDoGrupoScreen() {
             </ThemedText>
           ) : null}
 
-          <View style={styles.escrever}>
-            <TextInput
-              value={texto}
-              onChangeText={setTexto}
-              placeholder="Escreve à malta…"
-              placeholderTextColor={theme.textMuted}
-              multiline
-              maxLength={500}
-              accessibilityLabel="Escrever ao grupo"
-              style={[
-                styles.caixa,
-                {
-                  backgroundColor: theme.background,
-                  borderColor: theme.border,
-                  color: theme.text,
-                },
-              ]}
-            />
-            <Pressable
-              onPress={() => void enviar()}
-              disabled={aEnviar || texto.trim().length === 0}
-              accessibilityRole="button"
-              accessibilityLabel="Enviar"
-              style={({ pressed }) => [
-                styles.enviar,
-                {
-                  backgroundColor: pressed ? theme.accentPressed : theme.accent,
-                  opacity: aEnviar || texto.trim().length === 0 ? 0.45 : 1,
-                },
-              ]}>
-              <Icon name={icons.partilhar} size={20} color={theme.accentText} />
-            </Pressable>
-          </View>
+          <CaixaDeEscrita
+            valor={texto}
+            onChange={setTexto}
+            onEnviar={() => void enviar()}
+            aEnviar={aEnviar}
+            placeholder="Escreve à malta…"
+            accessibilityLabel="Escrever ao grupo"
+          />
         </View>
       </KeyboardAvoidingView>
-    </View>
-  );
-}
-
-/** A data a meio da conversa. Por cima de um fundo escuro, a pastilha fica clara. */
-function Pastilha({ texto, escuro }: { texto: string; escuro: boolean }) {
-  const theme = useTheme();
-  return (
-    <View
-      style={[
-        styles.pastilha,
-        { backgroundColor: escuro ? 'rgba(255,255,255,0.85)' : theme.backgroundElement },
-      ]}>
-      <ThemedText type="small" style={{ color: escuro ? '#13241B' : theme.textSecondary }}>
-        {texto}
-      </ThemedText>
-    </View>
-  );
-}
-
-function Bolha({
-  mensagem,
-  mostrarQuem,
-  fotoUrl,
-  onLongPress,
-}: {
-  mensagem: GroupMessage;
-  mostrarQuem: boolean;
-  fotoUrl?: string | null;
-  onLongPress?: () => void;
-}) {
-  const theme = useTheme();
-  const minha = mensagem.mine;
-
-  return (
-    <View style={[styles.linhaBolha, minha ? styles.direita : styles.esquerda]}>
-      {!minha ? (
-        <View style={styles.lugarAvatar}>
-          {mostrarQuem ? <Avatar nome={mensagem.displayName} url={fotoUrl} size={30} /> : null}
-        </View>
-      ) : null}
-      <Pressable
-        onLongPress={onLongPress}
-        accessibilityHint={onLongPress ? 'Toca sem largar para apagar.' : undefined}
-        style={[
-          styles.bolha,
-          minha
-            ? { backgroundColor: theme.accent, borderBottomRightRadius: 6 }
-            : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
-          !mostrarQuem && styles.bolhaSeguida,
-        ]}>
-        {!minha && mostrarQuem ? (
-          <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
-            {mensagem.displayName}
-          </ThemedText>
-        ) : null}
-        <ThemedText style={minha ? { color: theme.accentText } : undefined}>
-          {mensagem.body}
-        </ThemedText>
-        <ThemedText
-          type="small"
-          style={[styles.hora, { color: minha ? theme.accentText : theme.textMuted }]}>
-          {formatarHora(new Date(mensagem.createdAt))}
-        </ThemedText>
-      </Pressable>
     </View>
   );
 }
@@ -422,6 +363,7 @@ function Bolha({
 function MensagemPlano({
   mensagem,
   plano,
+  vaisComOutroGrupo,
   escuro,
   onAbrir,
   onRespondido,
@@ -429,6 +371,7 @@ function MensagemPlano({
 }: {
   mensagem: GroupMessage;
   plano: FixturePlan | null;
+  vaisComOutroGrupo?: string;
   escuro: boolean;
   onAbrir: () => void;
   onRespondido: () => void;
@@ -438,7 +381,7 @@ function MensagemPlano({
   if (!plano) {
     // O plano foi cancelado (ou ainda está a carregar): fica só a linha.
     return (
-      <Pastilha
+      <PastilhaDeConversa
         escuro={escuro}
         texto={`${mensagem.mine ? 'Convidaste' : `${mensagem.displayName} convidou`} para ${mensagem.body}`}
       />
@@ -449,6 +392,7 @@ function MensagemPlano({
       <CartaoDoPlano
         plano={plano}
         quemConvidou={mensagem.mine ? 'eu' : mensagem.displayName.split(' ')[0]}
+        vaisComOutroGrupo={vaisComOutroGrupo}
         escuro={escuro}
         onAbrir={onAbrir}
         onRespondido={onRespondido}
@@ -507,11 +451,12 @@ function Atalho({ icon, label, onPress }: { icon: IconName; label: string; onPre
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      hitSlop={6}
       style={({ pressed }) => [
         styles.atalho,
         { backgroundColor: pressed ? theme.backgroundSelected : theme.background },
       ]}>
-      <Icon name={icon} size={16} color={theme.accentInk} />
+      <Icon name={icon} size={15} color={theme.accentInk} />
       <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
         {label}
       </ThemedText>
@@ -554,6 +499,9 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     flexGrow: 1,
   },
+  textoVazio: {
+    textAlign: 'center',
+  },
   vazio: {
     alignSelf: 'center',
     maxWidth: 300,
@@ -561,46 +509,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     borderCurve: 'continuous',
     gap: Spacing.one,
-  },
-  pastilha: {
-    alignSelf: 'center',
-    paddingHorizontal: Spacing.twoAndHalf,
-    paddingVertical: Spacing.one,
-    borderRadius: Radius.pill,
-    marginVertical: Spacing.two,
-  },
-  linhaBolha: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.two,
-  },
-  esquerda: {
-    justifyContent: 'flex-start',
-    paddingRight: Spacing.six,
-  },
-  direita: {
-    justifyContent: 'flex-end',
-    paddingLeft: Spacing.six,
-  },
-  lugarAvatar: {
-    width: 30,
-  },
-  bolha: {
-    flexShrink: 1,
-    paddingHorizontal: Spacing.twoAndHalf,
-    paddingVertical: Spacing.two,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    gap: 2,
-    marginTop: Spacing.one,
-  },
-  bolhaSeguida: {
-    marginTop: 0,
-  },
-  hora: {
-    alignSelf: 'flex-end',
-    fontSize: 11,
-    opacity: 0.75,
   },
   plano: {
     marginVertical: Spacing.two,
@@ -633,36 +541,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   atalho: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: Spacing.one,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.twoAndHalf,
+    paddingVertical: Spacing.one,
     borderRadius: Radius.pill,
-  },
-  escrever: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.two,
-  },
-  caixa: {
-    flex: 1,
-    minHeight: 42,
-    maxHeight: 120,
-    borderWidth: 1,
-    borderRadius: 21,
-    paddingHorizontal: Spacing.three,
-    paddingTop: 10,
-    paddingBottom: 10,
-    fontSize: 16,
-    fontFamily: fontFamily('body', 500),
-  },
-  enviar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

@@ -10,6 +10,9 @@ import { useAppState } from '@/state/app-state';
 import { useRelogio } from '@/state/relogio';
 import { useSons } from '@/state/sons';
 
+/** What the camera needs from a mission: the mocks' missions and the server's both fit. */
+type MissaoComFoto = Pick<Missao, 'id' | 'fotoComOutraPessoa'>;
+
 /**
  * Foto de prova de uma missão. Só câmara, nunca a galeria: a prova é tirada na hora.
  * Num aparelho sem câmara (o simulador) pode usar-se uma foto de exemplo, que nunca fica verificada.
@@ -19,7 +22,7 @@ export function useTirarFoto() {
   const { visitasLocais, adicionarFoto } = useAppState();
   const { tocarCarimbo } = useSons();
 
-  function guardar(missao: Missao, uri: string | null, mimeType: string | null = null) {
+  function guardar(missao: MissaoComFoto, uri: string | null, mimeType: string | null = null) {
     const agora = Date.now() + desvioMs;
     const contexto = contextoDaFoto({ agora, jogos, visitas: visitasLocais, obterLocal });
     const exemplo = uri === null;
@@ -36,7 +39,7 @@ export function useTirarFoto() {
     tocarCarimbo();
   }
 
-  function oferecerFotoDeExemplo(missao: Missao) {
+  function oferecerFotoDeExemplo(missao: MissaoComFoto) {
     Alert.alert(
       'Este aparelho não tem câmara',
       'O simulador não tira fotos. Para a demo, podes usar uma foto de exemplo: a missão fecha, mas a foto fica por verificar.',
@@ -47,7 +50,7 @@ export function useTirarFoto() {
     );
   }
 
-  async function abrirCamara(missao: Missao) {
+  async function abrirCamara(missao: MissaoComFoto) {
     if (!Device.isDevice) {
       oferecerFotoDeExemplo(missao);
       return;
@@ -79,7 +82,7 @@ export function useTirarFoto() {
     }
   }
 
-  return function tirarFoto(missao: Missao) {
+  return function tirarFoto(missao: MissaoComFoto) {
     if (!missao.fotoComOutraPessoa) {
       void abrirCamara(missao);
       return;

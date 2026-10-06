@@ -452,7 +452,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         'Precisamos da localização',
         'O check-in só conta quando estás mesmo no tasco. A localização serve só para confirmar isso e não fica guardada.',
         resultado.canAskAgain
-          ? [{ text: 'OK' }]
+          ? [{ text: 'Percebi' }]
           : [
               { text: 'Agora não', style: 'cancel' },
               { text: 'Abrir definições', onPress: () => void Linking.openSettings() },

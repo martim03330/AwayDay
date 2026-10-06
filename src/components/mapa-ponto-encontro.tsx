@@ -52,7 +52,7 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
           'Precisamos da localização',
           'Para te levar ao ponto de encontro, a app precisa de saber onde estás. A localização não fica guardada.',
           posicao.canAskAgain
-            ? [{ text: 'OK' }]
+            ? [{ text: 'Percebi' }]
             : [
                 { text: 'Agora não', style: 'cancel' },
                 { text: 'Abrir definições', onPress: () => void Linking.openSettings() },
@@ -210,11 +210,12 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
         </View>
       ) : null}
 
-      <ThemedText type="small" themeColor="textMuted">
-        {rota
-          ? `A tua localização só serviu para calcular o caminho e não fica guardada. ${rota.attribution}.`
-          : 'Toca em «Levar-me até lá» para veres o caminho a pé desde onde estás, sem sair da app.'}
-      </ThemedText>
+      {/* Before a route there is nothing to explain: the button says what it does. */}
+      {rota ? (
+        <ThemedText type="small" themeColor="textMuted">
+          {`A tua localização só serviu para calcular o caminho e não fica guardada. ${rota.attribution}.`}
+        </ThemedText>
+      ) : null}
     </Card>
   );
 }

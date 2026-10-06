@@ -11,7 +11,8 @@
 //
 // As notificações de boleias (pedidos de lugar, aceites, cancelamentos) vivem em `ride-notify`; esta função é para
 // tudo o resto. Cada notificação abre o sítio da app onde a coisa aconteceu, e nada é enviado a quem desligou este
-// tipo de aviso nem a quem não tem telemóvel registado.
+// tipo de aviso nem a quem não tem telemóvel registado. Quem bloqueou o autor de uma mensagem, de um convite ou de um
+// pedido de amizade também não recebe nada dele.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { hasCronSecret } from '../_shared/auth.ts';
@@ -92,6 +93,18 @@ async function tokensOf(
   return (data ?? []).map((row) => String(row.token));
 }
 
+/** Leaves out whoever blocked the person who caused the notification. */
+async function withoutBlockers(admin: SupabaseClient, recipients: string[], from?: string) {
+  if (!from) return recipients;
+  const { data } = await admin
+    .from('user_block')
+    .select('blocker_id')
+    .eq('blocked_id', from)
+    .in('blocker_id', recipients);
+  const bloquearam = new Set((data ?? []).map((row) => String(row.blocker_id)));
+  return recipients.filter((pessoa) => !bloquearam.has(pessoa));
+}
+
 /** Quem vai no carro: o condutor e quem foi aceite. */
 async function ridePeople(admin: SupabaseClient, rideId: string) {
   const [boleia, passageiros] = await Promise.all([
@@ -109,6 +122,8 @@ async function ridePeople(admin: SupabaseClient, rideId: string) {
 
 type Aviso = {
   recipients: string[];
+  /** Who caused it: anyone who blocked this person is left out. */
+  from?: string;
   preferencia: Preferencia;
   title: string;
   body: string;
@@ -130,6 +145,7 @@ async function construir(
     const nome = await nameOf(admin, autor);
     return {
       recipients: carro.people.filter((pessoa) => pessoa !== autor),
+      from: autor,
       preferencia: 'ride_message',
       title: `${nome} escreveu na conversa do carro`,
       body: resumir(mensagem),
@@ -155,6 +171,7 @@ async function construir(
       recipients: (membros.data ?? [])
         .map((row) => String(row.profile_id))
         .filter((pessoa) => pessoa !== autor),
+      from: autor,
       preferencia: 'group_message',
       title: nomeDoGrupo,
       body: plano
@@ -177,6 +194,7 @@ async function construir(
     const nome = quem ? await nameOf(admin, quem) : 'Um amigo';
     return {
       recipients: [convidado],
+      from: quem ?? undefined,
       preferencia: 'invites',
       title: `${nome} tem lugar para ti`,
       body: `Boleia para ${jogo}. O lugar é teu se aceitares.`,
@@ -194,6 +212,7 @@ async function construir(
     const nome = quem ? await nameOf(admin, quem) : 'Um amigo';
     return {
       recipients: [convidado],
+      from: quem ?? undefined,
       preferencia: 'invites',
       title: `${nome} convidou-te para um grupo`,
       body: `«${texto(grupo.data?.name) ?? 'Grupo'}» — entras se quiseres.`,
@@ -209,6 +228,7 @@ async function construir(
     if (kind === 'friend_request') {
       return {
         recipients: [addressee],
+        from: requester,
         preferencia: 'friends',
         title: `${await nameOf(admin, requester)} quer ser teu amigo`,
         body: 'Foram juntos a um jogo. Aceitas?',
@@ -303,7 +323,10 @@ Deno.serve(async (request) => {
   const aviso = await construir(admin, kind, body);
   if (!aviso || aviso.recipients.length === 0) return json(200, { sent: 0 });
 
-  const tokens = await tokensOf(admin, aviso.recipients, aviso.preferencia);
+  const recipients = await withoutBlockers(admin, aviso.recipients, aviso.from);
+  if (recipients.length === 0) return json(200, { sent: 0 });
+
+  const tokens = await tokensOf(admin, recipients, aviso.preferencia);
   const messages: PushMessage[] = tokens.map((token) => ({
     to: token,
     title: aviso.title,

@@ -1,0 +1,38 @@
+# Jornada 3b — as páginas legais a partir de Definições → Sobre o AwayDay, e um documento que não existe.
+appId: host.exp.Exponent
+name: 03b Páginas legais nas Definições
+tags: [sem-conta, legal]
+---
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+- runFlow: comum/concluir-introducao.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- scrollUntilVisible:
+    element: "Sobre e contactos.*"
+    direction: DOWN
+- assertVisible: "Sobre o AwayDay"
+- tapOn: "Política de privacidade"
+- extendedWaitUntil:
+    visible: "Em poucas palavras"
+    timeout: 10000
+- runFlow: comum/fechar-legal.yaml
+- tapOn: "Termos de utilização"
+- extendedWaitUntil:
+    visible: "Quem presta o serviço"
+    timeout: 10000
+- runFlow: comum/fechar-legal.yaml
+- tapOn: "Sobre e contactos.*"
+- extendedWaitUntil:
+    visible: "Quem faz o AwayDay"
+    timeout: 10000
+- assertVisible: "Nome: .*"
+- assertVisible: "NIF: .*"
+- assertVisible: "Email: .*@.*"
+- runFlow: comum/fechar-legal.yaml
+- assertVisible: "Rever a introdução|Sobre e contactos.*"
+
+# Um documento que não existe não rebenta
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /legal/nao-existe } }
+- extendedWaitUntil:
+    visible: "Não encontrámos este documento"
+    timeout: 10000
+- runFlow: comum/fechar-legal.yaml

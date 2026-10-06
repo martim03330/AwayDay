@@ -28,9 +28,11 @@ import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Etiqueta } from '@/ui/etiqueta';
 import { icons } from '@/ui/icon';
+import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
+import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 function mensagemDeRecusa(erro: unknown) {
@@ -66,70 +68,60 @@ function Carro({
   ocupado,
   onPedir,
   onCancelar,
+  separador,
 }: {
   carro: ReturnRide;
   ocupado: boolean;
   onPedir: () => void;
   onCancelar: () => void;
+  separador: boolean;
 }) {
   const theme = useTheme();
 
   return (
-    <View style={[styles.carro, { borderColor: theme.border }]}>
+    <View
+      style={[
+        styles.carro,
+        separador && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
+      ]}>
       <View style={styles.topo}>
-        <ThemedText style={styles.nome} numberOfLines={1}>
-          {carro.driverName}
-        </ThemedText>
+        <View style={styles.corpo}>
+          <ThemedText style={styles.nome} numberOfLines={1}>
+            {carro.driverName}
+          </ThemedText>
+          <LinhaDetalhes
+            partes={[
+              `volta para ${carro.originName}`,
+              carro.parkingName ? `carro no ${carro.parkingName}` : null,
+              plural(carro.seatsLeft, 'lugar livre', 'lugares livres'),
+              carro.driverCompleted === 0 && carro.driverFaults === 0
+                ? 'primeira boleia'
+                : `${plural(carro.driverCompleted, 'boleia', 'boleias')} · ${plural(carro.driverFaults, 'falta', 'faltas')}`,
+            ]}
+          />
+        </View>
         <ThemedText style={styles.preco}>{formatarCentimos(carro.priceCents)}</ThemedText>
-      </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        {carro.parkingName
-          ? `Carro no ${carro.parkingName} · volta para ${carro.originName}`
-          : `Volta para ${carro.originName}`}
-      </ThemedText>
-      <View style={styles.etiquetas}>
-        <Etiqueta
-          icon={icons.perfil}
-          label={plural(carro.seatsLeft, 'lugar livre', 'lugares livres')}
-          tone="positivo"
-        />
-        <Etiqueta
-          icon={icons.selecionado}
-          label={
-            carro.driverCompleted === 0 && carro.driverFaults === 0
-              ? 'Primeira boleia'
-              : `${plural(carro.driverCompleted, 'boleia', 'boleias')} · ${plural(carro.driverFaults, 'falta', 'faltas')}`
-          }
-          tone={carro.driverFaults > 0 ? 'aviso' : 'neutro'}
-        />
       </View>
 
       {carro.myStatus === 'accepted' ? (
-        <>
-          <ThemedText themeColor="textSecondary">
-            Tens lugar na volta. Vai ter ao carro e combina com o condutor.
-          </ThemedText>
-          <View style={styles.acoes}>
-            {carro.parking ? (
-              <LinkTexto
-                label="Como chegar ao carro"
-                onPress={() => carro.parking && abrirDirecoes(carro.parking, 'a-pe')}
-              />
-            ) : null}
-            <LinkTexto neutro label="Já não preciso" onPress={onCancelar} />
-          </View>
-        </>
+        <View style={styles.acoes}>
+          <Etiqueta icon={icons.checkInFeito} label="Tens lugar na volta" tone="positivo" />
+          {carro.parking ? (
+            <LinkTexto
+              label="Como chegar ao carro"
+              onPress={() => carro.parking && abrirDirecoes(carro.parking, 'a-pe')}
+            />
+          ) : null}
+          <LinkTexto neutro label="Já não preciso" onPress={onCancelar} />
+        </View>
       ) : carro.myStatus === 'pending' ? (
-        <>
-          <ThemedText themeColor="textSecondary">
-            Pedido enviado. O condutor foi avisado no telemóvel e sabe a que distância estás do
-            carro.
-          </ThemedText>
+        <View style={styles.acoes}>
+          <Etiqueta icon={icons.horario} label="Pedido enviado" tone="aviso" />
           <LinkTexto perigo label="Retirar o pedido" onPress={onCancelar} />
-        </>
+        </View>
       ) : (
         <Button
-          label="Pedir boleia de volta"
+          label="Pedir lugar na volta"
           icon={icons.carro}
           variant="secondary"
           disabled={ocupado}
@@ -147,6 +139,7 @@ function Carro({
  */
 export default function BoleiaDeVoltaScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const { jogoId } = useLocalSearchParams<{ jogoId?: string }>();
   const jogo = jogoId ? obterJogo(jogoId) : undefined;
   const userId = useUserId();
@@ -230,112 +223,116 @@ export default function BoleiaDeVoltaScreen() {
 
   const lista = carros.data ?? [];
 
+  const porDestino = [
+    ...lista
+      .reduce((grupos, carro) => {
+        const destino = carro.originCity ?? 'Sem destino indicado';
+        grupos.set(destino, [...(grupos.get(destino) ?? []), carro]);
+        return grupos;
+      }, new Map<string, ReturnRide[]>())
+      .entries(),
+  ];
+
   return (
     <Screen>
-      <SectionHeader title="Boleia de volta" />
-      <Card style={styles.card}>
-        <ThemedText themeColor="textSecondary">
-          Ficaste sem transporte? Estes carros voltam deste jogo e ainda têm lugar. Pagas a tua
-          parte da viagem de volta.
-        </ThemedText>
-        {!aberto ? (
+      <ThemedText themeColor="textSecondary">
+        Estes carros voltam deste jogo e ainda têm lugar. Pagas a tua parte da volta.
+      </ThemedText>
+
+      {!aberto ? (
+        <Card>
           <ThemedText themeColor="textSecondary">
             {agora < janela.abre.getTime()
               ? `Os pedidos abrem às ${formatarHora(janela.abre)}, por volta do intervalo.`
               : `Os pedidos fecharam às ${formatarHora(janela.fecha)}: a esta hora os carros já foram.`}
           </ThemedText>
-        ) : carros.isLoading ? (
-          <ThemedText themeColor="textSecondary">A procurar carros a voltar…</ThemedText>
-        ) : lista.length === 0 ? (
-          <ThemedText themeColor="textSecondary">
-            Ninguém tem lugar na volta neste momento. Vai vendo: os condutores ainda podem abrir
-            lugares até às {formatarHora(janela.fecha)}.
+        </Card>
+      ) : carros.isLoading ? (
+        <SkeletonCard lines={3} />
+      ) : lista.length === 0 ? (
+        <Card>
+          <ThemedText style={styles.destaque}>Ninguém tem lugar na volta, por agora</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {`Vai vendo: os condutores podem abrir lugares até às ${formatarHora(janela.fecha)}.`}
           </ThemedText>
-        ) : (
-          <View style={styles.lista}>
-            {[
-              ...lista
-                .reduce((grupos, carro) => {
-                  const destino = carro.originCity ?? 'Sem destino indicado';
-                  grupos.set(destino, [...(grupos.get(destino) ?? []), carro]);
-                  return grupos;
-                }, new Map<string, ReturnRide[]>())
-                .entries(),
-            ].map(([destino, doDestino]) => (
-              <View key={destino} style={styles.lista}>
-                <ThemedText type="eyebrow" themeColor="accentInk">
-                  {`Para ${destino}`}
-                </ThemedText>
-                {doDestino.map((carro) => (
-                  <Carro
-                    key={carro.rideId}
-                    carro={carro}
-                    ocupado={ocupado}
-                    onPedir={() => void pedir(carro.rideId)}
-                    onCancelar={() => void cancelar(carro.rideId)}
-                  />
-                ))}
-              </View>
-            ))}
+        </Card>
+      ) : (
+        porDestino.map(([destino, doDestino]) => (
+          <View key={destino} style={styles.grupo}>
+            <SectionHeader title={`Para ${destino}`} />
+            <Card style={styles.linhas}>
+              {doDestino.map((carro, indice) => (
+                <Carro
+                  key={carro.rideId}
+                  carro={carro}
+                  ocupado={ocupado}
+                  separador={indice < doDestino.length - 1}
+                  onPedir={() => void pedir(carro.rideId)}
+                  onCancelar={() => void cancelar(carro.rideId)}
+                />
+              ))}
+            </Card>
           </View>
-        )}
-        {erro ? <Aviso tone="erro" title="Não deu" message={erro} /> : null}
-      </Card>
+        ))
+      )}
 
-      <Aviso
-        tone="aviso"
-        title="Um lugar na volta é um compromisso"
-        message="Vale como qualquer outro lugar: se o condutor aceitar e não apareceres, conta como falta."
-      />
-      <ThemedText type="small" themeColor="textMuted">
-        O condutor só vê a que distância estás do carro, arredondada a 100 m. A tua localização não
-        é guardada nem mostrada a ninguém.
-      </ThemedText>
+      {erro ? <Aviso tone="erro" title="Não deu" message={erro} /> : null}
+
+      <View style={styles.rodape}>
+        <ThemedText type="small" style={{ color: theme.warningText }}>
+          Um lugar na volta é um compromisso: se o condutor aceitar e não apareceres, conta como
+          falta.
+        </ThemedText>
+        <ThemedText type="small" themeColor="textMuted">
+          O condutor só vê a que distância estás do carro, arredondada a 100 m.
+        </ThemedText>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: Spacing.three,
+  grupo: {
+    gap: Spacing.threeAndHalf,
   },
-  lista: {
-    gap: Spacing.two,
+  linhas: {
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
   carro: {
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
     paddingVertical: Spacing.twoAndHalf,
-    paddingHorizontal: Spacing.twoAndHalf,
-    borderWidth: 1,
-    borderRadius: 14,
-    borderCurve: 'continuous',
   },
   topo: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
+    alignItems: 'flex-start',
+    gap: Spacing.twoAndHalf,
+  },
+  corpo: {
+    flex: 1,
+    gap: Spacing.half,
   },
   nome: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 21,
     fontWeight: 800,
   },
   preco: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 17,
+    lineHeight: 22,
     fontWeight: 800,
     fontVariant: ['tabular-nums'],
   },
-  etiquetas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
+  destaque: {
+    fontWeight: 800,
   },
   acoes: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.two,
+  },
+  rodape: {
+    gap: Spacing.one,
   },
 });

@@ -1,0 +1,64 @@
+# Jornada 10 — com conta: o Ranking (desafios, divisão, tabela), as tabelas, as missões e «Quem vai à bola».
+appId: host.exp.Exponent
+name: 10 Ranking e missões
+tags: [com-conta, ranking]
+---
+- runFlow: comum/entrar-e2e.yaml
+- tapOn: "Ranking"
+# The tab keeps its stack: go back to the Ranking root if a previous run left a sub-screen open.
+- repeat:
+    times: 3
+    while:
+      visible:
+        id: "BackButton"
+    commands:
+      - runFlow: comum/voltar.yaml
+- extendedWaitUntil:
+    visible: "Desafios da semana|O ranking não carregou"
+    timeout: 20000
+- assertNotVisible: "O ranking precisa de conta"
+- assertNotVisible: "O ranking não carregou"
+- assertVisible: "Desafios da semana"
+
+# Missões
+- scrollUntilVisible:
+    element: "Missões e distintivos.*"
+    direction: DOWN
+- tapOn: "Missões e distintivos.*"
+- extendedWaitUntil:
+    visible: "Desafios da semana"
+    timeout: 15000
+- assertVisible: "Esta época"
+- assertVisible: ".*\\. 0 de 1\\. Mais [0-9]+ pontos\\."
+- scrollUntilVisible:
+    element: "Conquistas"
+    direction: DOWN
+- assertNotVisible: "As missões precisam de conta"
+- scrollUntilVisible:
+    element: "Como se ganham pontos"
+    direction: DOWN
+- tapOn: "Como se ganham pontos"
+- assertVisible: "Esconder"
+- tapOn: "Esconder"
+- runFlow: comum/voltar.yaml
+
+# Tabelas
+- scrollUntilVisible:
+    element: "Tabelas.*"
+    direction: DOWN
+- tapOn: "Tabelas.*"
+- waitForAnimationToEnd
+- assertNotVisible: "As tabelas precisam de conta"
+- assertVisible:
+    id: "BackButton"
+- runFlow: comum/voltar.yaml
+
+# Quem vai à bola
+- scrollUntilVisible:
+    element: "Quem vai à bola.*"
+    direction: DOWN
+- tapOn: "Quem vai à bola.*"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "BackButton"
+- runFlow: comum/voltar.yaml

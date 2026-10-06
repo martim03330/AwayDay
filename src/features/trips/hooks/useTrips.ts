@@ -15,6 +15,7 @@ import {
   fetchTripSettlements,
   fetchTripSession,
 } from '@/features/trips/api';
+import { fetchTripMemory, fetchTripPhotos } from '@/features/trips/memories';
 
 const TRIPS_KEY = 'trips';
 const STALE_MS = 15 * 1000;
@@ -184,4 +185,24 @@ export function useTripSessionCard(sessionId: string | null) {
     meta: { persist: false },
   });
   return { ...cartao, card: cartao.data?.[0] ?? null };
+}
+
+/** A viagem como recordação: quem foi, o dinheiro, a maior extravagância. */
+export function useTripMemory(sessionId: string | null) {
+  return useQuery({
+    queryKey: [TRIPS_KEY, 'memory', sessionId],
+    queryFn: sessionId ? () => fetchTripMemory(sessionId) : skipToken,
+    staleTime: 60 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** O álbum da viagem, com links assinados (duram uma hora; a consulta volta a pedir muito antes). */
+export function useTripPhotos(sessionId: string | null) {
+  return useQuery({
+    queryKey: [TRIPS_KEY, 'photos', sessionId],
+    queryFn: sessionId ? () => fetchTripPhotos(sessionId) : skipToken,
+    staleTime: 10 * 60 * 1000,
+    meta: { persist: false },
+  });
 }

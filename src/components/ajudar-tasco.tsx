@@ -43,7 +43,7 @@ export function AjudarTasco({ local }: { local: Local }) {
 
     setAEnviarFoto(true);
     try {
-      await suggestPlacePhoto(userId, local.id, foto.uri, foto.mimeType ?? 'image/jpeg');
+      await suggestPlacePhoto(local.id, foto.uri, foto.mimeType ?? 'image/jpeg');
       Alert.alert('Obrigado!', 'A foto aparece na ficha do tasco depois de ser confirmada.');
     } catch (erro: unknown) {
       Alert.alert(

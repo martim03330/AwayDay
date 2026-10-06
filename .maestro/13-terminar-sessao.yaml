@@ -1,0 +1,20 @@
+# Jornada 13 — terminar sessão: o perfil volta a pedir conta e a Malta volta a pedir conta. Deixa a app sem sessão.
+appId: host.exp.Exponent
+name: 13 Terminar sessão
+tags: [com-conta, conta]
+---
+- runFlow: comum/entrar-e2e.yaml
+- tapOn: "Terminar sessão"
+- extendedWaitUntil:
+    visible: "Guarda o teu progresso"
+    timeout: 15000
+- assertNotVisible: "e2e@teste\\.awayday\\.invalid"
+- assertNotVisible: "Apagar conta"
+- tapOn: "Malta"
+- extendedWaitUntil:
+    visible: "A malta precisa de conta"
+    timeout: 10000
+- tapOn: "Ranking"
+- extendedWaitUntil:
+    visible: "O ranking precisa de conta"
+    timeout: 10000

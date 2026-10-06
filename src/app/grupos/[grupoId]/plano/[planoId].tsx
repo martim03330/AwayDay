@@ -1,19 +1,23 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Switch, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { CartaoDoPlano, nomeDoJogo } from '@/features/groups/components/CartaoDoPlano';
+import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
+import { CartaoDaBoleia } from '@/features/groups/components/CartaoDaBoleia';
 import { CasasDoPlano } from '@/features/groups/components/CasasDoPlano';
+import { avisarConviteRepetido } from '@/features/groups/convite-repetido';
 import {
   plansKey,
   useGroupPlans,
   useMyGroupInbox,
   usePlan,
+  usePlanConflicts,
   usePlanPeople,
 } from '@/features/groups/hooks/useGroups';
 import {
+  joinPlanRide,
   PlanRefused,
   setPlanRide,
   setPlanStatus,
@@ -21,19 +25,18 @@ import {
   type FixturePlan,
 } from '@/features/groups/plans';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
-import { setRideReturnRequests, setRideVisibility } from '@/features/rides/api';
+import { leaveRide, setRideReturnRequests, setRideVisibility } from '@/features/rides/api';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
-import { Etiqueta } from '@/ui/etiqueta';
-import { icons } from '@/ui/icon';
+import { Icon, IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
@@ -50,6 +53,10 @@ function mensagemDeRecusa(erro: unknown) {
       return 'Essa boleia já não está disponível.';
     case 'rate_limited':
       return 'Já mandaste convites que cheguem por hoje.';
+    case 'ride_full':
+      return 'O carro encheu entretanto.';
+    case 'ride_closed':
+      return 'O carro já saiu.';
     default:
       return 'Não deu para fazer isso. Tenta outra vez.';
   }
@@ -72,7 +79,12 @@ export default function PlanoScreen() {
 
   const { plan: plano, isLoading } = usePlan(planoId ?? null);
   const pessoas = usePlanPeople(planoId ?? null);
-  const cartoes = useProfileCards((pessoas.data ?? []).map((pessoa) => pessoa.profileId));
+  const conflitos = usePlanConflicts(planoId ? [planoId] : []);
+  const vaisComOutroGrupo = planoId ? conflitos.data?.[planoId] : undefined;
+  const cartoes = useProfileCards([
+    ...(pessoas.data ?? []).map((pessoa) => pessoa.profileId),
+    ...(plano?.ride ? [plano.ride.driverId] : []),
+  ]);
   const inbox = useMyGroupInbox(userId !== null);
   const doGrupo = useGroupPlans(grupoId ?? null);
 
@@ -188,185 +200,174 @@ export default function PlanoScreen() {
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
 
+  const pessoasQueResponderam = [...vao, ...aPensar];
+  const podeAbrirAoPublico = aberto && souCondutor && plano.ride !== null && !plano.ride.publica;
+  const podeMandar = aberto && souQuemConvidou && outrosGrupos.length > 0;
+
   return (
     <Screen>
       <CartaoDoPlano
         plano={plano}
+        vaisComOutroGrupo={vaisComOutroGrupo}
         quemConvidou={souQuemConvidou ? 'eu' : plano.creatorName.split(' ')[0]}
+        dicaAoTocar="Toca para ver o jogo."
         onAbrir={() =>
           router.push({ pathname: '/jogos/[jogoId]', params: { jogoId: plano.fixtureId } })
         }
         onRespondido={() => void queryClient.invalidateQueries({ queryKey: plansKey() })}
       />
 
-      {plano.status === 'fechado' ? (
-        <Card style={styles.bloco}>
-          <ThemedText type="smallBold" themeColor="accentInk">
-            {plano.closedByFullCar ? 'O carro encheu: plano fechado' : 'Plano fechado'}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Na véspera do jogo abre a sessão da viagem, na página dos Jogos: quem vai, quem deu a
-            boleia e as despesas.
-          </ThemedText>
-          {souQuemConvidou ? (
-            <LinkTexto
-              label="Voltar a abrir o plano"
-              onPress={() => void tratar(() => setPlanStatus(plano.id, 'aberto'))}
-            />
-          ) : null}
-        </Card>
+      {pessoasQueResponderam.length > 0 ? (
+        <>
+          <SectionHeader
+            title="Quem vai"
+            trailing={vao.length > 0 ? String(vao.length) : undefined}
+          />
+          <Card style={styles.lista}>
+            {pessoasQueResponderam.map((pessoa, indice) => (
+              <LinhaGrupo
+                key={pessoa.profileId}
+                separador={indice < pessoasQueResponderam.length - 1}
+                leading={
+                  <Avatar nome={pessoa.displayName} url={fotoDe(pessoa.profileId)} size={36} />
+                }
+                title={pessoa.isMe ? `${pessoa.displayName} (tu)` : pessoa.displayName}
+                subtitle={
+                  pessoa.otherGroup
+                    ? `Vai com ${pessoa.otherGroup}`
+                    : pessoa.answer === 'vou'
+                      ? 'Vai'
+                      : 'A pensar'
+                }
+                trailing={
+                  pessoa.answer === 'vou' && !pessoa.otherGroup ? (
+                    <Icon name={icons.selecionado} size={20} color={theme.accentInk} />
+                  ) : undefined
+                }
+              />
+            ))}
+          </Card>
+        </>
       ) : null}
 
-      <SectionHeader title="Quem vai" trailing={vao.length > 0 ? String(vao.length) : undefined} />
-      <Card style={styles.bloco}>
-        {vao.length === 0 && aPensar.length === 0 ? (
-          <ThemedText themeColor="textSecondary">Ainda ninguém respondeu.</ThemedText>
-        ) : null}
-        {[...vao, ...aPensar].map((pessoa) => (
-          <View key={pessoa.profileId} style={styles.pessoa}>
-            <Avatar nome={pessoa.displayName} url={fotoDe(pessoa.profileId)} size={32} />
-            <ThemedText style={styles.flex} numberOfLines={1}>
-              {pessoa.isMe ? `${pessoa.displayName} (tu)` : pessoa.displayName}
-            </ThemedText>
-            <Etiqueta
-              icon={pessoa.answer === 'vou' ? icons.selecionado : icons.horario}
-              label={pessoa.answer === 'vou' ? 'Vai' : 'A pensar'}
-              tone={pessoa.answer === 'vou' ? 'positivo' : 'neutro'}
-            />
-          </View>
-        ))}
-      </Card>
-
       <SectionHeader title="Boleia" />
-      <Card style={styles.bloco}>
-        {plano.ride ? (
-          <>
-            <ThemedText style={styles.negrito}>
-              {souCondutor ? 'Levas tu o carro' : `Boleia de ${plano.ride.driverName}`}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {[
-                `sai ${formatarDiaEHora(new Date(plano.ride.departureAt)).toLowerCase()}`,
-                `${plano.ride.seatsTaken} de ${plano.ride.seatsOffered} lugares ocupados`,
-                `${formatarCentimos(plano.ride.shareNowCents)} cada`,
-              ].join(' · ')}
-            </ThemedText>
-            <View style={styles.etiquetas}>
-              <Etiqueta
-                icon={plano.ride.publica ? icons.partilhar : icons.perfil}
-                label={plano.ride.publica ? 'Aberta ao público' : 'Só da malta do plano'}
-                tone={plano.ride.publica ? 'positivo' : 'info'}
-              />
-              {livres === 0 ? (
-                <Etiqueta icon={icons.carro} label="Carro cheio" tone="positivo" />
-              ) : null}
-            </View>
-
-            {souCondutor ? (
-              <View style={styles.interruptores}>
-                <Interruptor
-                  titulo="Aberta ao público"
-                  descricao="Quem não é do grupo também pode pedir lugar."
-                  value={plano.ride.publica}
+      {plano.ride ? (
+        <CartaoDaBoleia
+          boleia={plano.ride}
+          fotoDoCondutor={fotoDe(plano.ride.driverId)}
+          souCondutor={souCondutor}
+          podeTirar={souQuemConvidou || souCondutor}
+          vaisComOutroGrupo={vaisComOutroGrupo}
+          aTratar={aTratar}
+          onEntrar={() => void tratar(() => joinPlanRide(plano.id))}
+          onSair={() => {
+            const rideId = plano.ride?.id;
+            if (rideId) void tratar(() => leaveRide(rideId));
+          }}
+          onPublica={(ligar) => {
+            const rideId = plano.ride?.id;
+            if (rideId) void tratar(() => setRideVisibility(rideId, ligar));
+          }}
+          onVolta={(ligar) => {
+            const rideId = plano.ride?.id;
+            if (rideId) void tratar(() => setRideReturnRequests(rideId, ligar));
+          }}
+          onVer={() => {
+            const rideId = plano.ride?.id;
+            if (rideId) {
+              router.push({
+                pathname: '/jogos/boleia',
+                params: { rideId, jogoId: plano.fixtureId },
+              });
+            }
+          }}
+          onTirar={() => void tratar(() => setPlanRide(plano.id, null))}
+        />
+      ) : boleiasDoGrupo.length > 0 ? (
+        // A ride of the group for this game already exists (e.g. it was taken out of the plan): offer it back first.
+        // Offering a new one would fail anyway, since a driver has one open ride per game.
+        <Card style={styles.lista}>
+          {boleiasDoGrupo.map((boleia, indice) => (
+            <LinhaGrupo
+              key={boleia.id}
+              separador={indice < boleiasDoGrupo.length - 1}
+              leading={<IconCircle name={icons.carro} />}
+              title={boleia.isMine ? 'A tua boleia' : `Boleia de ${boleia.ownerName}`}
+              subtitle={[
+                boleia.departureAt ? `Sai ${formatarDiaEHora(new Date(boleia.departureAt)).toLowerCase()}` : null,
+                plural(Math.max(0, boleia.seatsTotal - boleia.taken), 'lugar livre', 'lugares livres'),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              trailing={
+                <LinkTexto
+                  label="Pôr no plano"
                   disabled={aTratar}
-                  onValueChange={(ligar) => {
-                    const rideId = plano.ride?.id;
-                    if (rideId) void tratar(() => setRideVisibility(rideId, ligar));
-                  }}
+                  onPress={() => void tratar(() => setPlanRide(plano.id, boleia.id))}
                 />
-                {plano.ride.roundTrip ? (
-                  <Interruptor
-                    titulo="Volta aberta a quem precisar"
-                    descricao="Se alguém do jogo ficar sem transporte, pode pedir-te lugar no regresso."
-                    value={plano.ride.acceptsReturn}
-                    disabled={aTratar}
-                    onValueChange={(ligar) => {
-                      const rideId = plano.ride?.id;
-                      if (rideId) void tratar(() => setRideReturnRequests(rideId, ligar));
-                    }}
-                  />
-                ) : null}
-              </View>
-            ) : (
-              <ThemedText type="small" themeColor="textMuted">
-                {plano.ride.acceptsReturn
-                  ? 'A volta está aberta a quem precisar de boleia.'
-                  : 'Só o condutor abre a boleia ao público ou deixa a volta aberta.'}
-              </ThemedText>
-            )}
-
-            <LinkTexto
-              label="Ver a boleia"
-              onPress={() => {
-                const rideId = plano.ride?.id;
-                if (!rideId) return;
-                router.push({
-                  pathname: '/jogos/boleia',
-                  params: { rideId, jogoId: plano.fixtureId },
-                });
-              }}
-            />
-            {souQuemConvidou || souCondutor ? (
-              <LinkTexto
-                neutro
-                label="Tirar esta boleia do plano"
-                onPress={() => void tratar(() => setPlanRide(plano.id, null))}
-              />
-            ) : null}
-          </>
-        ) : (
-          <>
-            <ThemedText themeColor="textSecondary">
-              Ainda não há boleia. Quem levar o carro oferece-a para o grupo e ela entra aqui
-              sozinha.
-            </ThemedText>
-            <Button
-              label="Oferecer boleia"
-              icon={icons.carro}
-              onPress={() =>
-                router.push({
-                  pathname: '/jogos/oferecer-boleia',
-                  params: { jogoId: plano.fixtureId, grupoId: grupoId ?? plano.groupId },
-                })
               }
             />
-          </>
-        )}
-        {boleiasDoGrupo.map((boleia) => (
-          <LinkTexto
-            key={boleia.id}
-            label={`Usar a boleia de ${boleia.isMine ? 'ti' : boleia.ownerName}`}
-            onPress={() => void tratar(() => setPlanRide(plano.id, boleia.id))}
+          ))}
+        </Card>
+      ) : (
+        <Card style={styles.bloco}>
+          <ThemedText themeColor="textSecondary">
+            Ainda não há boleia. Quem levar o carro oferece-a aqui.
+          </ThemedText>
+          <Button
+            label="Oferecer boleia"
+            icon={icons.carro}
+            onPress={() =>
+              router.push({
+                pathname: '/jogos/oferecer-boleia',
+                params: { jogoId: plano.fixtureId, grupoId: grupoId ?? plano.groupId },
+              })
+            }
           />
-        ))}
-      </Card>
+        </Card>
+      )}
 
       <CasasDoPlano plano={plano} grupoId={grupoId ?? plano.groupId} />
 
-      {aberto && (souQuemConvidou || souCondutor) ? (
+      {podeAbrirAoPublico || podeMandar ? (
         <>
-          <SectionHeader title="Chamar mais malta" />
-          <Card style={styles.bloco}>
-            {souCondutor && plano.ride && !plano.ride.publica ? (
-              <Button
-                label="Abrir a boleia ao público"
-                variant="secondary"
-                icon={icons.partilhar}
-                disabled={aTratar}
-                onPress={abrirBoleiaAoPublico}
+          <SectionHeader
+            title="Chamar mais malta"
+            trailing={
+              plano.sharedGroups > 0
+                ? `mandado a ${plural(plano.sharedGroups, 'grupo', 'grupos')}`
+                : undefined
+            }
+          />
+          <Card style={styles.lista}>
+            {podeAbrirAoPublico ? (
+              <LinhaGrupo
+                separador={podeMandar}
+                leading={<IconCircle name={icons.partilhar} />}
+                title="Abrir a boleia ao público"
+                subtitle="Qualquer adepto pode pedir lugar."
+                onPress={aTratar ? undefined : abrirBoleiaAoPublico}
+                trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
               />
             ) : null}
-            {souQuemConvidou && outrosGrupos.length > 0 ? (
+            {podeMandar ? (
               <>
-                <Button
-                  label="Mandar a outro grupo"
-                  variant="secondary"
-                  icon={icons.perfil}
-                  disabled={aTratar}
+                <LinhaGrupo
+                  leading={<IconCircle name={icons.perfil} />}
+                  title="Mandar a outro grupo"
+                  subtitle="Quem recebe vê a boleia e pode pedir lugar."
                   onPress={() => setMostrarGrupos((atual) => !atual)}
+                  accessibilityLabel={`Mandar a outro grupo. ${mostrarGrupos ? 'Toca para esconder os grupos.' : 'Toca para escolher o grupo.'}`}
+                  trailing={
+                    <Icon
+                      name={mostrarGrupos ? icons.fechar : icons.seguinte}
+                      size={18}
+                      color={theme.textMuted}
+                    />
+                  }
                 />
                 {mostrarGrupos ? (
-                  <View style={styles.etiquetas}>
+                  <View style={[styles.etiquetas, styles.grupos]}>
                     {outrosGrupos.map((grupo) => (
                       <Chip
                         key={grupo.id}
@@ -375,8 +376,18 @@ export default function PlanoScreen() {
                         selected={mandadoPara.includes(grupo.id)}
                         onPress={() => {
                           if (mandadoPara.includes(grupo.id)) return;
-                          void tratar(() => sharePlan(plano.id, grupo.id)).then((feito) => {
-                            if (feito) setMandadoPara((atuais) => [...atuais, grupo.id]);
+                          void tratar(async () => {
+                            try {
+                              await sharePlan(plano.id, grupo.id);
+                            } catch (problema) {
+                              // That group already has an invite for this game: say so, don't post another.
+                              if (problema instanceof PlanRefused && problema.reason === 'plan_exists') {
+                                avisarConviteRepetido(router, grupo, problema.planId);
+                                return;
+                              }
+                              throw problema;
+                            }
+                            setMandadoPara((atuais) => [...atuais, grupo.id]);
                           });
                         }}
                       />
@@ -385,11 +396,6 @@ export default function PlanoScreen() {
                 ) : null}
               </>
             ) : null}
-            <ThemedText type="small" themeColor="textMuted">
-              {plano.sharedGroups > 0
-                ? `Este plano já foi mandado a ${plural(plano.sharedGroups, 'outro grupo', 'outros grupos')}. Misturar grupos é boa maneira de fazer amigos.`
-                : 'Misturar grupos é boa maneira de fazer amigos: quem recebe o plano vê a boleia e pode pedir lugar.'}
-            </ThemedText>
           </Card>
         </>
       ) : null}
@@ -405,83 +411,51 @@ export default function PlanoScreen() {
             onPress={fechar}
           />
           <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
-            O plano fecha sozinho quando o carro enche. Fechado o plano, a sessão da viagem abre na
-            véspera do jogo.
+            Também fecha sozinho quando o carro enche.
           </ThemedText>
           <LinkTexto perigo label="Desistir do plano" onPress={desistir} />
         </View>
       ) : null}
 
-      <ThemedText type="small" themeColor="textMuted">
-        {`Plano de ${nomeDoJogo(plano.fixtureId)}, criado por ${souQuemConvidou ? 'ti' : plano.creatorName} no grupo ${plano.groupName}.`}
+      {plano.status === 'fechado' ? (
+        <View style={styles.bloco}>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
+            A sessão da viagem abre na véspera do jogo, nos Jogos.
+          </ThemedText>
+          {souQuemConvidou ? (
+            <LinkTexto
+              neutro
+              label="Voltar a abrir o plano"
+              onPress={() => void tratar(() => setPlanStatus(plano.id, 'aberto'))}
+            />
+          ) : null}
+        </View>
+      ) : null}
+
+      <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
+        {`Criado por ${souQuemConvidou ? 'ti' : plano.creatorName} em «${plano.groupName}».`}
       </ThemedText>
     </Screen>
   );
 }
 
-function Interruptor({
-  titulo,
-  descricao,
-  value,
-  disabled,
-  onValueChange,
-}: {
-  titulo: string;
-  descricao: string;
-  value: boolean;
-  disabled: boolean;
-  onValueChange: (ligar: boolean) => void;
-}) {
-  const theme = useTheme();
-  return (
-    <View style={styles.interruptor}>
-      <View style={styles.flex}>
-        <ThemedText type="smallBold">{titulo}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {descricao}
-        </ThemedText>
-      </View>
-      <Switch
-        value={value}
-        disabled={disabled}
-        onValueChange={onValueChange}
-        trackColor={{ true: theme.accent, false: theme.border }}
-        ios_backgroundColor={theme.border}
-        accessibilityLabel={titulo}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   bloco: {
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
   },
-  negrito: {
-    fontWeight: 700,
+  lista: {
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
   centro: {
     textAlign: 'center',
-  },
-  flex: {
-    flex: 1,
-  },
-  pessoa: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
   },
   etiquetas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
   },
-  interruptores: {
-    gap: Spacing.twoAndHalf,
-  },
-  interruptor: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.twoAndHalf,
+  grupos: {
+    paddingBottom: Spacing.twoAndHalf,
   },
 });

@@ -1,12 +1,12 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import { LinhaQueAbre } from '@/components/linha-que-abre';
 import { Spacing } from '@/constants/theme';
 import type { OrigemPontoEncontro, PontoEncontro } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
-import { Etiqueta } from '@/ui/etiqueta';
 import { IconCircle, icons } from '@/ui/icon';
-import { ListRow } from '@/ui/list-row';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { ThemedText } from '@/ui/themed-text';
 
 const origens: Record<OrigemPontoEncontro, string> = {
@@ -15,6 +15,7 @@ const origens: Record<OrigemPontoEncontro, string> = {
   policia: 'Indicado pela polícia',
 };
 
+/** The official meeting point in one grouped card: where, when, how to get there, and who said so (on tap). */
 export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
   if (!ponto) {
     return (
@@ -22,7 +23,7 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
         <EmptyState
           icon={icons.pontoEncontro}
           title="Ainda sem ponto de encontro"
-          message="Ninguém marcou sítio para os visitantes: nem clube, nem câmara, nem polícia. Fica atento aos canais oficiais perto do jogo."
+          message="Nem clube, nem câmara, nem polícia marcaram sítio. Vê os canais oficiais perto do jogo."
         />
       </Card>
     );
@@ -30,26 +31,33 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
 
   return (
     <Card style={styles.card}>
-      <ListRow
+      <LinhaGrupo
         leading={<IconCircle name={icons.pontoEncontro} tone="yellow" />}
         title={ponto.nome}
         subtitle={ponto.morada}
+        separador
       />
-      <Etiqueta icon={icons.selecionado} label={origens[ponto.origem]} tone="positivo" />
-
-      <ListRow leading={<IconCircle name={icons.horario} />} title="Horário" subtitle={ponto.horario} />
-      <ListRow
+      <LinhaGrupo
+        leading={<IconCircle name={icons.horario} />}
+        title={ponto.horario}
+        subtitle="Horário"
+        separador
+      />
+      <LinhaGrupo
         leading={<IconCircle name={icons.autocarro} tone="sky" />}
-        title="Transporte"
-        subtitle={ponto.transporte}
+        title={ponto.transporte}
+        subtitle="Transporte"
+        separador
       />
-      {ponto.nota ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {ponto.nota}
-        </ThemedText>
-      ) : null}
-
-      <View style={styles.fonte}>
+      <LinhaQueAbre
+        leading={<IconCircle name={icons.selecionado} />}
+        title={origens[ponto.origem]}
+        subtitle={ponto.nota ? 'Nota e fonte' : 'Ver a fonte'}>
+        {ponto.nota ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {ponto.nota}
+          </ThemedText>
+        ) : null}
         <ThemedText type="smallBold" themeColor="textSecondary">
           {`Fonte: ${ponto.publicadoPor} · ${ponto.fonte.titulo}, ${ponto.fonte.publicadoEm}`}
         </ThemedText>
@@ -58,19 +66,17 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
             {`Publicado para o jogo ${ponto.fonte.jogoOriginal}.`}
           </ThemedText>
         ) : null}
-        <ThemedText type="small" themeColor="textSecondary" selectable numberOfLines={2}>
+        <ThemedText type="small" themeColor="textMuted" selectable numberOfLines={2}>
           {ponto.fonte.url}
         </ThemedText>
-      </View>
+      </LinhaQueAbre>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
-  },
-  fonte: {
-    gap: Spacing.half,
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
 });

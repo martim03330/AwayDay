@@ -1,6 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StyleSheet } from 'react-native';
 
 import { EstacionamentoEstadio } from '@/components/estacionamento-estadio';
+import { Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
 import { eJogoGrande } from '@/lib/classicos';
 import { abrirDirecoes } from '@/lib/direcoes';
@@ -11,7 +13,6 @@ import { Button } from '@/ui/button';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
-import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
 /** Chegar ao estádio e deixar o carro: a hora de sair, o caminho e os parques. */
@@ -38,19 +39,19 @@ export default function ChegarScreen() {
 
   const aDecorrer = estadoDoJogo(jogo, agora) === 'a-decorrer';
 
+  // The native header already says «Chegar e estacionar»: the screen opens straight on the one action.
   return (
     <Screen>
-      <SectionHeader title={aDecorrer ? 'Como voltar' : 'Como chegar'} />
       <Button
         label={aDecorrer ? 'Abrir o caminho de volta no mapa' : 'Abrir o caminho no mapa'}
         icon={icons.rota}
         onPress={() => abrirDirecoes(estadio.coordenadas, 'carro')}
       />
-      <ThemedText type="small" themeColor="textMuted">
-        Abre no mapa do teu telemóvel, com o trânsito e os transportes que ele conhece.
+      <ThemedText type="small" themeColor="textMuted" style={styles.ajuda}>
+        Abre no mapa do telemóvel, com o trânsito.
       </ThemedText>
 
-      <SectionHeader title="Estacionamento" />
+      {/* Draws its own «Estacionamento» title, and hides it while there is nothing to show. */}
       <EstacionamentoEstadio
         estadioId={estadio.id}
         jogoGrande={eJogoGrande(jogo)}
@@ -59,3 +60,10 @@ export default function ChegarScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  ajuda: {
+    marginTop: -Spacing.two,
+    textAlign: 'center',
+  },
+});

@@ -1,10 +1,10 @@
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
+import { LinhaQueAbre } from '@/components/linha-que-abre';
 import { Spacing } from '@/constants/theme';
 import type { SafetyNote } from '@/features/safety/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData } from '@/lib/datas';
-import type { Clube } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -14,6 +14,22 @@ const COR_ADEPTOS_CASA = '#E8590C';
 
 /** Red used for the areas to avoid, here and on the map (orange already marks home fans' places). */
 export const COR_ZONA_A_EVITAR = '#C92A2A';
+
+/** Display order and the one-line label each kind of note gets under its title. */
+const TIPOS: { kind: SafetyNote['kind']; rotulo: string; detalhe?: string }[] = [
+  { kind: 'percurso_visitantes', rotulo: 'Entrada dos visitantes' },
+  {
+    kind: 'zona_adeptos_casa',
+    rotulo: 'Zona dos adeptos da casa',
+    detalhe: 'Evita-a com as cores do teu clube.',
+  },
+  { kind: 'indicacao_oficial', rotulo: 'Como a PSP organizou os visitantes' },
+  {
+    kind: 'zona_a_evitar',
+    rotulo: 'Zona a evitar com as cores do clube',
+    detalhe: 'Está a vermelho no mapa.',
+  },
+];
 
 function Fontes({ nota }: { nota: SafetyNote }) {
   const theme = useTheme();
@@ -34,100 +50,60 @@ function Fontes({ nota }: { nota: SafetyNote }) {
   );
 }
 
-function Nota({ nota }: { nota: SafetyNote }) {
-  const theme = useTheme();
-  const zona = nota.kind === 'zona_a_evitar';
-  return (
-    <View style={[styles.nota, { borderTopColor: theme.backgroundSelected }]}>
-      <View style={styles.cabecalhoNota}>
-        {zona ? (
-          <View style={[styles.marcaZona, { backgroundColor: COR_ZONA_A_EVITAR }]}>
-            <Icon name={icons.aviso} size={16} color="#FFFFFF" />
-          </View>
-        ) : nota.kind === 'zona_adeptos_casa' ? (
-          <View style={[styles.marcaZona, { backgroundColor: COR_ADEPTOS_CASA }]}>
-            <Icon name={icons.aviso} size={16} color="#FFFFFF" />
-          </View>
-        ) : (
-          <IconCircle name={icons.pontoEncontro} tone="sky" />
-        )}
-        <ThemedText style={styles.titulo}>{nota.title}</ThemedText>
+function Marca({ kind }: { kind: SafetyNote['kind'] }) {
+  if (kind === 'zona_a_evitar' || kind === 'zona_adeptos_casa') {
+    return (
+      <View
+        style={[
+          styles.marcaZona,
+          { backgroundColor: kind === 'zona_a_evitar' ? COR_ZONA_A_EVITAR : COR_ADEPTOS_CASA },
+        ]}>
+        <Icon name={icons.aviso} size={18} color="#FFFFFF" />
       </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        {nota.description}
-      </ThemedText>
-      <Fontes nota={nota} />
-    </View>
+    );
+  }
+  return (
+    <IconCircle
+      name={kind === 'indicacao_oficial' ? icons.aviso : icons.pontoEncontro}
+      tone="sky"
+    />
   );
 }
 
 type CuidadosVisitantesProps = {
   notas: readonly SafetyNote[];
-  visitante: Clube;
 };
 
 /**
- * What visiting fans should know: the official route and entrance, stands and areas home supporters hold, how the
- * police organised visitors in derbies, and areas with incidents. Every note shows its sources.
+ * What visiting fans should know, one row per note: the official route and entrance, areas home supporters hold, how
+ * the police organised visitors in derbies, and areas with incidents. The description and the sources open on tap.
  */
-export function CuidadosVisitantes({ notas, visitante }: CuidadosVisitantesProps) {
-  const percursos = notas.filter((nota) => nota.kind === 'percurso_visitantes');
-  const adeptosCasa = notas.filter((nota) => nota.kind === 'zona_adeptos_casa');
-  const indicacoes = notas.filter((nota) => nota.kind === 'indicacao_oficial');
-  const zonas = notas.filter((nota) => nota.kind === 'zona_a_evitar');
-  if (notas.length === 0) return null;
+export function CuidadosVisitantes({ notas }: CuidadosVisitantesProps) {
+  const ordenadas = TIPOS.flatMap((tipo) =>
+    notas.filter((nota) => nota.kind === tipo.kind).map((nota) => ({ nota, tipo }))
+  );
+  if (ordenadas.length === 0) return null;
 
   return (
     <Card style={styles.card}>
-      <ThemedText type="eyebrow" themeColor="accentInk">
-        {`Para adeptos do ${visitante.nomeCurto}`}
-      </ThemedText>
-
-      {percursos.length > 0 ? (
-        <View style={styles.grupo}>
-          <ThemedText type="smallBold">Por onde entram os visitantes</ThemedText>
-          {percursos.map((nota) => (
-            <Nota key={nota.id} nota={nota} />
-          ))}
-        </View>
-      ) : null}
-
-      {adeptosCasa.length > 0 ? (
-        <View style={styles.grupo}>
-          <ThemedText type="smallBold">Zonas e bancadas dos adeptos da casa</ThemedText>
+      {ordenadas.map(({ nota, tipo }) => (
+        <LinhaQueAbre
+          key={nota.id}
+          leading={<Marca kind={nota.kind} />}
+          title={nota.title}
+          // The category only helps when the title does not already say it.
+          subtitle={
+            nota.title.toLowerCase().includes(tipo.rotulo.toLowerCase()) ? undefined : tipo.rotulo
+          }
+          separador>
           <ThemedText type="small" themeColor="textSecondary">
-            Evita estas zonas com as cores do teu clube. Perto do jogo, os adeptos também podem
-            assinalar no mapa onde estão muitos adeptos da casa.
+            {tipo.detalhe ? `${nota.description} ${tipo.detalhe}` : nota.description}
           </ThemedText>
-          {adeptosCasa.map((nota) => (
-            <Nota key={nota.id} nota={nota} />
-          ))}
-        </View>
-      ) : null}
-
-      {indicacoes.length > 0 ? (
-        <View style={styles.grupo}>
-          <ThemedText type="smallBold">Como a PSP tem organizado os visitantes</ThemedText>
-          {indicacoes.map((nota) => (
-            <Nota key={nota.id} nota={nota} />
-          ))}
-        </View>
-      ) : null}
-
-      {zonas.length > 0 ? (
-        <View style={styles.grupo}>
-          <ThemedText type="smallBold">Zonas a evitar com as cores do clube</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Houve incidentes nestas zonas nas últimas épocas. Estão marcadas a vermelho no mapa.
-          </ThemedText>
-          {zonas.map((nota) => (
-            <Nota key={nota.id} nota={nota} />
-          ))}
-        </View>
-      ) : null}
-
-      <ThemedText type="smallBold">
-        As indicações mudam de jogo para jogo. Segue sempre as indicações da PSP no dia do jogo.
+          <Fontes nota={nota} />
+        </LinhaQueAbre>
+      ))}
+      <ThemedText type="small" themeColor="textMuted" style={styles.rodape}>
+        Muda de jogo para jogo: segue sempre a PSP no dia.
       </ThemedText>
     </Card>
   );
@@ -135,38 +111,23 @@ export function CuidadosVisitantes({ notas, visitante }: CuidadosVisitantesProps
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
-  },
-  grupo: {
-    gap: Spacing.two,
-  },
-  nota: {
-    gap: Spacing.one,
-    paddingTop: Spacing.two,
-    borderTopWidth: 1,
-  },
-  cabecalhoNota: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
   marcaZona: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 41,
+    height: 41,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  titulo: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: 800,
   },
   fontes: {
     gap: 2,
   },
   fonte: {
     textDecorationLine: 'underline',
+  },
+  rodape: {
+    paddingVertical: Spacing.twoAndHalf,
   },
 });

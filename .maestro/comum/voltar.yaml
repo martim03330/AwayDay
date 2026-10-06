@@ -1,0 +1,6 @@
+# Goes back one screen in a stack (the iOS header back button).
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "BackButton"
+- waitForAnimationToEnd

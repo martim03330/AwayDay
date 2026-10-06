@@ -112,16 +112,19 @@ export async function suggestDish(suggestion: DishSuggestion) {
   throw error;
 }
 
-/** Uploads a photo of a place to the uploader's folder and records it as pending moderation. */
+/**
+ * Uploads a photo of a place and records it as pending moderation. The file goes to «anonimas/», never to a folder
+ * named after the sender: an approved photo is shown to everyone, and nobody may learn who took it. The server knows
+ * the sender from the file's owner.
+ */
 export async function suggestPlacePhoto(
-  userId: string,
   placeId: string,
   uri: string,
   mimeType: string
 ) {
   const bucket = client().storage.from('place-photos');
   const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/heic' ? 'heic' : 'jpg';
-  const path = `${userId}/${placeId}-${Date.now()}.${extension}`;
+  const path = `anonimas/${placeId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
 
   const upload = await bucket.upload(path, base64ParaBytes(await lerFicheiroEmBase64(uri)), {
     contentType: mimeType,
@@ -206,15 +209,12 @@ export async function moderatePlacePhoto(photoId: string, approve: boolean) {
   if (error) throw error;
 }
 
-/** How many of the user's photos of tascos were approved (for the photo mission). */
-export async function fetchMyApprovedPhotoCount(userId: string): Promise<number> {
-  const { count, error } = await client()
-    .from('place_photo')
-    .select('id', { count: 'exact', head: true })
-    .eq('submitted_by', userId)
-    .eq('status', 'approved');
+/** How many of the user's photos of tascos were approved (for the photo mission). Asked to the server: the sender
+ * column is not readable by clients. */
+export async function fetchMyApprovedPhotoCount(): Promise<number> {
+  const { data, error } = await client().rpc('my_approved_place_photo_count');
   if (error) throw error;
-  return count ?? 0;
+  return data;
 }
 
 export type NewPlace = {

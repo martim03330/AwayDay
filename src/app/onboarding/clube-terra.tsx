@@ -15,12 +15,13 @@ export default function OnboardingClubeDaTerraScreen() {
   const selecionado = selecionadoId ? obterClube(selecionadoId) : undefined;
 
   function seguir() {
-    router.push('/onboarding/permissoes');
+    router.push('/onboarding/avisos');
   }
 
   return (
     <OnboardingPasso
       passo={2}
+      total={3}
       frase="E ao pé de casa, quem é que joga?"
       rodape={
         <>

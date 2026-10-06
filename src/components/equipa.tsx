@@ -14,13 +14,17 @@ type EquipaProps = {
 
 /** A team with a big shield and its name underneath, for the fixture header. */
 export function Equipa({ clube, size = 44, sobreRelvado = false }: EquipaProps) {
+  // A one-word name («Moreirense») must never break mid-word: it shrinks to fit one line instead.
+  const umaPalavra = !/\s/.test(clube.nomeCurto.trim());
   return (
     <View style={styles.equipa}>
       <Escudo clube={clube} size={size} />
       <ThemedText
         type="section"
         style={[styles.nome, sobreRelvado && { color: Colors.accentText }]}
-        numberOfLines={2}>
+        numberOfLines={umaPalavra ? 1 : 2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}>
         {clube.nomeCurto}
       </ThemedText>
     </View>

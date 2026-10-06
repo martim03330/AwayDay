@@ -93,6 +93,8 @@ export default function FotosPorAprovarScreen() {
               source={{ uri: foto.url }}
               contentFit="cover"
               style={styles.foto}
+              accessible
+              accessibilityRole="image"
               accessibilityLabel={`Foto enviada de ${local?.nome ?? 'um tasco'}`}
             />
             <View style={styles.textos}>

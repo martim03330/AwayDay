@@ -19,16 +19,28 @@ export type PlanRefusal =
   | 'same_group'
   | 'ride_not_found'
   | 'stay_not_found'
+  | 'stay_not_locked'
+  | 'own_ride'
+  | 'ride_full'
+  | 'ride_closed'
+  | 'own_house'
+  | 'house_full'
+  | 'already_going'
+  /** The group already has an invite for this game: `planId` says which. */
+  | 'plan_exists'
   | 'rate_limited'
   | 'unknown';
 
 export class PlanRefused extends Error {
   readonly reason: PlanRefusal;
+  /** For 'plan_exists': the plan the group already has. */
+  readonly planId: string | null;
 
-  constructor(reason: PlanRefusal) {
+  constructor(reason: PlanRefusal, planId: string | null = null) {
     super(reason);
     this.name = 'PlanRefused';
     this.reason = reason;
+    this.planId = planId;
   }
 }
 
@@ -43,11 +55,21 @@ const RECUSAS: PlanRefusal[] = [
   'same_group',
   'ride_not_found',
   'stay_not_found',
+  'stay_not_locked',
+  'own_ride',
+  'ride_full',
+  'ride_closed',
+  'own_house',
+  'house_full',
+  'already_going',
+  'plan_exists',
   'rate_limited',
 ];
 
-function refusal(error: { message: string }) {
-  return new PlanRefused(RECUSAS.find((reason) => error.message === reason) ?? 'unknown');
+function refusal(error: { message: string; details?: string | null }) {
+  const reason = RECUSAS.find((candidate) => error.message === candidate) ?? 'unknown';
+  const planId = reason === 'plan_exists' && error.details ? error.details : null;
+  return new PlanRefused(reason, planId);
 }
 
 export type PlanAnswer = 'vou' | 'talvez';
@@ -187,7 +209,7 @@ export async function fetchPlans(planIds: string[]): Promise<FixturePlan[]> {
   return data.map(toPlan);
 }
 
-/** Os planos em aberto de um grupo (e os fechados cujo jogo ainda não passou), do jogo mais próximo para a frente. */
+/** Os planos de um grupo (os abertos, e os fechados cujo jogo ainda não passou), do jogo mais próximo para a frente. */
 export async function fetchGroupFixturePlans(groupId: string): Promise<FixturePlan[]> {
   const { data, error } = await client().rpc('group_fixture_plans', { p_group_id: groupId });
   if (error) throw error;
@@ -201,6 +223,8 @@ export type PlanPerson = {
   displayName: string;
   answer: PlanAnswer;
   isMe: boolean;
+  /** Já vai a este jogo com outro grupo (plano fechado lá). */
+  otherGroup: string | null;
 };
 
 export async function fetchPlanPeople(planId: string): Promise<PlanPerson[]> {
@@ -211,10 +235,24 @@ export async function fetchPlanPeople(planId: string): Promise<PlanPerson[]> {
     displayName: row.display_name ?? 'Um adepto',
     answer: row.answer === 'talvez' ? ('talvez' as const) : ('vou' as const),
     isMe: row.is_me === true,
+    otherGroup: row.other_group,
   }));
 }
 
-/** Convidar o grupo para um jogo: o cartão cai na conversa. Devolve o plano (novo, ou o que o grupo já tinha). */
+/** Para cada plano, o grupo com que já vou a esse jogo noutro plano fechado (só os que têm conflito). */
+export async function fetchMyPlanConflicts(planIds: string[]): Promise<Record<string, string>> {
+  if (planIds.length === 0) return {};
+  const { data, error } = await client().rpc('my_plan_conflicts', { p_plan_ids: planIds });
+  if (error) throw error;
+  return Object.fromEntries(
+    data.flatMap((row) => (row.plan_id && row.other_group ? [[row.plan_id, row.other_group]] : []))
+  );
+}
+
+/**
+ * Convidar o grupo para um jogo: o cartão cai na conversa. Se o grupo já tem convite para esse jogo, é recusado com
+ * 'plan_exists' e o `planId` desse convite.
+ */
 export async function inviteGroupToFixture(groupId: string, fixtureId: string): Promise<string> {
   const { data, error } = await client().rpc('invite_group_to_fixture', {
     p_group_id: groupId,
@@ -291,6 +329,10 @@ export type PlanHouse = {
   myVote: boolean;
   /** É a casa do plano. */
   chosen: boolean;
+  /** A escolha está fechada: a malta entra direto na casa do plano. */
+  locked: boolean;
+  /** Quem já está na casa, a começar por quem a propôs. */
+  peopleNames: string[];
 };
 
 /** As casas do plano: a escolhida primeiro, depois as mais preferidas. */
@@ -315,6 +357,8 @@ export async function fetchPlanHouses(planId: string): Promise<PlanHouse[]> {
     votes: row.votes ?? 0,
     myVote: row.my_vote === true,
     chosen: row.chosen === true,
+    locked: row.locked === true,
+    peopleNames: row.people_names ?? [],
   }));
 }
 
@@ -323,6 +367,27 @@ export async function voteForPlanHouse(planId: string, stayPlanId: string | null
   const { error } = await client().rpc('vote_fixture_plan_house', {
     p_plan_id: planId,
     p_stay_plan_id: stayPlanId ?? undefined,
+  });
+  if (error) throw refusal(error);
+}
+
+/** Dentro do grupo não se pede lugar: entra-se no carro do plano, se houver lugar. */
+export async function joinPlanRide(planId: string) {
+  const { error } = await client().rpc('join_plan_ride', { p_plan_id: planId });
+  if (error) throw refusal(error);
+}
+
+/** Com a escolha da casa fechada, entra-se direto na casa do plano. */
+export async function joinPlanStay(planId: string) {
+  const { error } = await client().rpc('join_plan_stay', { p_plan_id: planId });
+  if (error) throw refusal(error);
+}
+
+/** Fechar a escolha da casa (fica a casa do plano), ou voltar a abri-la. Só quem convidou. */
+export async function setPlanStayLocked(planId: string, locked: boolean) {
+  const { error } = await client().rpc('set_plan_stay_locked', {
+    p_plan_id: planId,
+    p_locked: locked,
   });
   if (error) throw refusal(error);
 }

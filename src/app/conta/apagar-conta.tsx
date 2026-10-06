@@ -5,15 +5,13 @@ import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorCode, authErrorMessage } from '@/features/auth/errors';
 import { useDeleteAccount } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
-import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { icons } from '@/ui/icon';
 
 export default function ApagarContaScreen() {
   const apagar = useDeleteAccount();
-  const { onboardingConcluido } = useAppState();
-  const fecharConta = useCloseAccountFlow(onboardingConcluido);
+  const fecharConta = useCloseAccountFlow();
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
   const aApagar = apagar.isPending || apagar.isSuccess;

@@ -1,6 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  type TextInput,
+} from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { addTripExpense, CATEGORIAS, type CategoriaDespesa } from '@/features/trips/api';
@@ -9,7 +16,6 @@ import { useRefreshTrips, useTripPeople } from '@/features/trips/hooks/useTrips'
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
 import { dividirCentimos } from '@/lib/acerto';
-import { plural } from '@/lib/formatos';
 import { formatarCentimos, lerPrecoEmCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { Button } from '@/ui/button';
@@ -17,10 +23,11 @@ import { Campo } from '@/ui/campo';
 import { Chip } from '@/ui/chip';
 import { icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 /**
- * Lançar uma despesa: o que foi, quanto custou, quem pagou e quem entra. Por omissão pagaste tu e entra a malta
- * toda — o caso da rodada. A divisão final é sempre a do servidor; aqui só se mostra antes de lançar.
+ * Add an expense: what it was, how much, its type, who paid and who is in. By default you paid and everyone is in —
+ * the round of drinks. The final split is always the server's; here it is only previewed before adding.
  */
 export default function NovaDespesaScreen() {
   const router = useRouter();
@@ -32,6 +39,7 @@ export default function NovaDespesaScreen() {
 
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
+  const campoValor = useRef<TextInput>(null);
   const [tipo, setTipo] = useState<CategoriaDespesa>('cerveja');
   const [quemPagou, setQuemPagou] = useState<string | null>(null);
   // `null` até alguém mexer: até lá, entra a malta toda.
@@ -83,18 +91,9 @@ export default function NovaDespesaScreen() {
         style={{ backgroundColor: theme.background }}
         contentContainerStyle={styles.conteudo}
         keyboardShouldPersistTaps="handled">
-        <ThemedText type="title">Nova despesa</ThemedText>
-
-        <View style={styles.chips}>
-          {CATEGORIAS.map((nome) => (
-            <Chip
-              key={nome}
-              label={CATEGORIA[nome].nome}
-              selected={tipo === nome}
-              onPress={() => setTipo(nome)}
-            />
-          ))}
-        </View>
+        <ThemedText type="subtitle" accessibilityRole="header">
+          Nova despesa
+        </ThemedText>
 
         <Campo
           label="O que foi"
@@ -102,63 +101,82 @@ export default function NovaDespesaScreen() {
           onChangeText={setDescricao}
           placeholder="Rodada no café da esquina"
           maxLength={80}
+          autoCapitalize="sentences"
+          returnKeyType="next"
+          onSubmitEditing={() => campoValor.current?.focus()}
         />
         <Campo
+          ref={campoValor}
           label="Quanto custou"
           value={valor}
           onChangeText={setValor}
           placeholder="12,50"
           keyboardType="decimal-pad"
+          returnKeyType="done"
           erro={valor.length > 0 && centimos === null ? 'Escreve um valor como 12,50.' : null}
         />
 
-        <ThemedText type="smallBold">Quem pagou</ThemedText>
-        <View style={styles.chips}>
-          {gente.map((pessoa) => (
-            <Chip
-              key={pessoa.profileId}
-              label={pessoa.isMe ? 'Eu' : pessoa.displayName}
-              selected={(quemPagou ?? userId) === pessoa.profileId}
-              onPress={() => setQuemPagou(pessoa.profileId)}
-            />
-          ))}
+        <View style={styles.bloco}>
+          <ThemedText type="smallBold">Tipo</ThemedText>
+          <View style={styles.chips}>
+            {CATEGORIAS.map((nome) => (
+              <Chip
+                key={nome}
+                label={CATEGORIA[nome].nome}
+                selected={tipo === nome}
+                onPress={() => setTipo(nome)}
+              />
+            ))}
+          </View>
         </View>
 
-        <ThemedText type="smallBold">Quem entra</ThemedText>
-        <View style={styles.chips}>
-          {gente.map((pessoa) => (
-            <Chip
-              key={pessoa.profileId}
-              label={pessoa.isMe ? 'Eu' : pessoa.displayName}
-              selected={escolhidos.includes(pessoa.profileId)}
-              accessibilityLabel={`${pessoa.displayName} entra nesta despesa`}
-              onPress={() =>
-                setQuemEntra(
-                  escolhidos.includes(pessoa.profileId)
-                    ? escolhidos.filter((id) => id !== pessoa.profileId)
-                    : [...escolhidos, pessoa.profileId]
-                )
-              }
-            />
-          ))}
+        <View style={styles.bloco}>
+          <ThemedText type="smallBold">Quem pagou</ThemedText>
+          <View style={styles.chips}>
+            {gente.map((pessoa) => (
+              <Chip
+                key={pessoa.profileId}
+                label={pessoa.isMe ? 'Eu' : pessoa.displayName}
+                selected={(quemPagou ?? userId) === pessoa.profileId}
+                onPress={() => setQuemPagou(pessoa.profileId)}
+              />
+            ))}
+          </View>
         </View>
-        {escolhidos.length === 0 ? (
-          <ThemedText type="small" themeColor="textMuted">
-            Escolhe pelo menos uma pessoa. Sem ninguém, a despesa não é de ninguém.
-          </ThemedText>
-        ) : partes ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            {Math.max(...partes) === Math.min(...partes)
-              ? `${formatarCentimos(partes[0])} para cada um dos ${escolhidos.length}.`
-              : `${formatarCentimos(Math.min(...partes))} cada, e ${plural(
-                  partes.filter((parte) => parte > Math.min(...partes)).length,
-                  'pessoa paga',
-                  'pessoas pagam'
-                )} mais um cêntimo — não dá divisão certa.`}
-          </ThemedText>
-        ) : null}
 
-        {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+        <View style={styles.bloco}>
+          <ThemedText type="smallBold">Quem entra</ThemedText>
+          <View style={styles.chips}>
+            {gente.map((pessoa) => (
+              <Chip
+                key={pessoa.profileId}
+                label={pessoa.isMe ? 'Eu' : pessoa.displayName}
+                selected={escolhidos.includes(pessoa.profileId)}
+                accessibilityLabel={`${pessoa.displayName} entra nesta despesa`}
+                onPress={() =>
+                  setQuemEntra(
+                    escolhidos.includes(pessoa.profileId)
+                      ? escolhidos.filter((id) => id !== pessoa.profileId)
+                      : [...escolhidos, pessoa.profileId]
+                  )
+                }
+              />
+            ))}
+          </View>
+          {escolhidos.length === 0 ? (
+            <ThemedText type="small" themeColor="textMuted">
+              Escolhe pelo menos uma pessoa.
+            </ThemedText>
+          ) : partes ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {Math.max(...partes) === Math.min(...partes)
+                ? `${formatarCentimos(partes[0])} para cada um`
+                : `Cerca de ${formatarCentimos(Math.min(...partes))} para cada um`}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        {erro ? <MensagemErro>{erro}</MensagemErro> : null}
 
         <Button
           label={aLancar ? 'A lançar…' : 'Lançar despesa'}
@@ -179,6 +197,9 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.four,
     paddingBottom: Spacing.six,
+  },
+  bloco: {
+    gap: Spacing.two,
   },
   chips: {
     flexDirection: 'row',

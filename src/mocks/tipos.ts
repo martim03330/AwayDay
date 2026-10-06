@@ -15,8 +15,6 @@ export type Clube = {
   cores: { primaria: string; secundaria: string };
   /** `null` para clubes estrangeiros. */
   divisao: Divisao | null;
-  /** Número de adeptos deste clube na app (valor mock). */
-  adeptosNaApp: number;
   /** `null` for foreign clubs that only visit Portugal (we do not keep their stadium). */
   estadioId: string | null;
 };

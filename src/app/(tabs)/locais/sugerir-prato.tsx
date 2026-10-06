@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, StyleSheet, View, type TextInput } from 'react-native';
 
 import { suggestDish, SuggestionRefused } from '@/features/places/api';
 import { lerPrecoEmCentimos } from '@/lib/money';
@@ -26,6 +26,8 @@ export default function SugerirPratoScreen() {
 
   const [nome, setNome] = useState('');
   const [preco, setPreco] = useState('');
+  const campoPreco = useRef<TextInput>(null);
+  const campoMinutos = useRef<TextInput>(null);
   const [minutos, setMinutos] = useState('');
   const [temperatura, setTemperatura] = useState<Temperatura>(null);
   const [aEnviar, setAEnviar] = useState(false);
@@ -83,7 +85,7 @@ export default function SugerirPratoScreen() {
         temperature: temperatura,
       });
       Alert.alert('Obrigado!', 'O prato aparece no menu depois de ser confirmado.', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'Voltar', onPress: () => router.back() },
       ]);
     } catch (erro: unknown) {
       if (erro instanceof SuggestionRefused) {
@@ -107,7 +109,9 @@ export default function SugerirPratoScreen() {
         <ThemedText type="eyebrow" themeColor="accentInk">
           {local.nome}
         </ThemedText>
-        <ThemedText type="section">Sugerir um prato</ThemedText>
+        <ThemedText type="section" accessibilityRole="header">
+          Sugerir um prato
+        </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.texto}>
           Só o que já provaste. A sugestão aparece no menu depois de ser confirmada.
         </ThemedText>
@@ -121,8 +125,11 @@ export default function SugerirPratoScreen() {
         maxLength={60}
         autoCapitalize="sentences"
         erro={tentouEnviar ? erroNome : null}
+        returnKeyType="next"
+        onSubmitEditing={() => campoPreco.current?.focus()}
       />
       <Campo
+        ref={campoPreco}
         label="Preço"
         value={preco}
         onChangeText={setPreco}
@@ -131,8 +138,11 @@ export default function SugerirPratoScreen() {
         maxLength={8}
         ajuda="Deixa em branco se não souberes."
         erro={erroPreco}
+        returnKeyType="next"
+        onSubmitEditing={() => campoMinutos.current?.focus()}
       />
       <Campo
+        ref={campoMinutos}
         label="Minutos até sair"
         value={minutos}
         onChangeText={setMinutos}
@@ -141,6 +151,7 @@ export default function SugerirPratoScreen() {
         maxLength={3}
         ajuda="Opcional. Ajuda quem tem o jogo já a seguir."
         erro={erroMinutos}
+        returnKeyType="done"
       />
 
       <View style={styles.temperatura}>

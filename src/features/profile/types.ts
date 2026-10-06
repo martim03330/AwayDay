@@ -17,6 +17,8 @@ export type MyProfile = {
   recapEnabled: boolean;
   /** Name and club in the rankings. Off unless the user turns it on. */
   showInRankings: boolean;
+  /** Dizer sozinho aos grupos em que tasco se fez check-in. `null`: ainda não se perguntou (e não se partilha). */
+  shareCheckinsWithGroups: boolean | null;
   /** Can confirm meeting point drafts. Only the owner sets it, never the app. */
   isAdmin: boolean;
 };
@@ -53,4 +55,24 @@ export type ProfileCard = {
   ridesCompleted: number;
   ridesFaults: number;
   isMe: boolean;
+};
+
+/** How someone usually gets to games. Puts first what matters to them (rides offered, or people asking). */
+export type UsualTransport = 'driver' | 'passenger' | 'public_transport';
+
+/** One of the 308 concelhos, with the centre used to sort rides by distance. Public reference data. */
+export type Municipality = {
+  id: string;
+  name: string;
+  /** The district, or «Açores» / «Madeira». */
+  district: string;
+  region: 'mainland' | 'madeira' | 'azores';
+  latitude: number;
+  longitude: number;
+};
+
+/** Where someone leaves for games from, and how they usually go. Only its owner ever reads it. */
+export type MyHome = {
+  municipalityId: string | null;
+  usualTransport: UsualTransport | null;
 };

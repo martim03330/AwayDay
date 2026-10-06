@@ -24,6 +24,8 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
           source={{ uri: venue.photoUrl }}
           contentFit="cover"
           transition={200}
+          accessible
+          accessibilityRole="image"
           accessibilityLabel={`Fotografia do ${venue.nome}`}
           style={StyleSheet.absoluteFill}
         />
@@ -32,7 +34,7 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
             onPress={() => Linking.openURL(credito.url)}
             accessibilityRole="link"
             accessibilityLabel={`${textoCredito}. Abrir a origem da fotografia`}
-            hitSlop={8}
+            hitSlop={14}
             style={styles.credito}>
             <ThemedText style={styles.creditoTexto} numberOfLines={1}>
               {textoCredito}
@@ -48,6 +50,7 @@ export function FotoEstadio({ venue }: { venue: Venue }) {
   return (
     <View
       accessible
+      accessibilityRole="image"
       accessibilityLabel={`Ilustração do ${venue.nome}. Ainda sem fotografia.`}
       style={[
         styles.foto,
@@ -97,10 +100,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   creditoTexto: {
-    color: 'rgba(255,255,255,0.9)',
+    color: '#FFFFFF',
     fontSize: 10,
     lineHeight: 14,
   },

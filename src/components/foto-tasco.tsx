@@ -29,6 +29,8 @@ export function MiniaturaTasco({ local, tamanho = 72 }: { local: Local; tamanho?
         source={{ uri: urlDoAdepto }}
         contentFit="cover"
         transition={150}
+        accessible
+        accessibilityRole="image"
         accessibilityLabel={`Foto do ${local.nome} enviada por um adepto`}
         style={[estilo, { backgroundColor: theme.backgroundSelected }]}
       />
@@ -51,6 +53,8 @@ export function MiniaturaTasco({ local, tamanho = 72 }: { local: Local; tamanho?
       source={{ uri: local.foto.url }}
       contentFit="cover"
       transition={150}
+      accessible
+      accessibilityRole="image"
       accessibilityLabel={`Foto do ${local.nome}`}
       style={[estilo, { backgroundColor: theme.backgroundSelected }]}
     />
@@ -69,6 +73,8 @@ export function FotoTasco({ local }: { local: Local }) {
           source={{ uri: url }}
           contentFit="cover"
           transition={200}
+          accessible
+          accessibilityRole="image"
           accessibilityLabel={`Foto do ${local.nome} enviada por um adepto`}
           style={StyleSheet.absoluteFill}
         />
@@ -87,6 +93,8 @@ export function FotoTasco({ local }: { local: Local }) {
         source={{ uri: foto.url }}
         contentFit="cover"
         transition={200}
+        accessible
+        accessibilityRole="image"
         accessibilityLabel={`Foto do ${local.nome}`}
         style={StyleSheet.absoluteFill}
       />
@@ -94,7 +102,7 @@ export function FotoTasco({ local }: { local: Local }) {
         onPress={() => Linking.openURL(foto.fonte)}
         accessibilityRole="link"
         accessibilityLabel={`${credito}. Abrir a origem da foto`}
-        hitSlop={8}
+        hitSlop={14}
         style={styles.credito}>
         <ThemedText style={styles.creditoTexto} numberOfLines={1}>
           {credito}
@@ -126,10 +134,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   creditoTexto: {
-    color: 'rgba(255,255,255,0.9)',
+    color: '#FFFFFF',
     fontSize: 10,
     lineHeight: 14,
   },

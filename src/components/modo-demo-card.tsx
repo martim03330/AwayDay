@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { getDemoFixture } from '@/features/fixtures/store';
 import { useNow } from '@/hooks/use-now';
 import { formatarDiaEHora } from '@/lib/datas';
 import { FASES_DIA_DE_JOGO, nomesFase } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
 import { JOGOS_DEMO } from '@/mocks/demo';
-import { obterJogo } from '@/mocks/jogos';
 import type { Jogo } from '@/mocks/tipos';
 import { useRelogio } from '@/state/relogio';
 import { Button } from '@/ui/button';
@@ -17,8 +17,10 @@ import { Chip } from '@/ui/chip';
 import { icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
+// The sample games live in the demo catalogue, which exists whatever mode is on. (Looking them up in the active
+// catalogue at load time found nothing: the real one is active then, and it has no sample games.)
 const jogosDemo: Jogo[] = JOGOS_DEMO.flatMap((id) => {
-  const jogo = obterJogo(id);
+  const jogo = getDemoFixture(id);
   return jogo ? [jogo] : [];
 });
 

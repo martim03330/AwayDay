@@ -2,8 +2,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { OpcaoClube } from '@/components/opcao-clube';
 import { Spacing } from '@/constants/theme';
-import { clubesMaisPerto } from '@/lib/clubes';
-import { formatarKm, formatarNumero } from '@/lib/formatos';
+import { useClubSupporterCounts } from '@/features/profile/hooks/useMyProfile';
+import { clubesMaisPerto, textoAdeptosNaApp } from '@/lib/clubes';
+import { formatarKm } from '@/lib/formatos';
 import { clubes, eClubeParaEscolher } from '@/mocks/clubes';
 import { estadios } from '@/mocks/estadios';
 import { localizacaoUtilizador } from '@/mocks/utilizador';
@@ -39,6 +40,7 @@ type ListaClubeDaTerraProps = {
 
 /** Sugestões pela localização simulada e restantes clubes. Nada vem pré-selecionado. */
 export function ListaClubeDaTerra({ selecionadoId, onSelecionar }: ListaClubeDaTerraProps) {
+  const adeptos = useClubSupporterCounts();
   return (
     <View style={styles.lista}>
       <CabecalhoGrupo title="Perto de ti" trailing="Localização simulada" />
@@ -46,7 +48,7 @@ export function ListaClubeDaTerra({ selecionadoId, onSelecionar }: ListaClubeDaT
         <OpcaoClube
           key={clube.id}
           clube={clube}
-          detalhe={`Estádio a ${formatarKm(km)} · ${formatarNumero(clube.adeptosNaApp)} adeptos`}
+          detalhe={[`Estádio a ${formatarKm(km)}`, textoAdeptosNaApp(adeptos.data?.[clube.id])].filter(Boolean).join(' · ')}
           selecionado={clube.id === selecionadoId}
           onPress={() => onSelecionar(clube.id)}
         />
@@ -58,7 +60,7 @@ export function ListaClubeDaTerra({ selecionadoId, onSelecionar }: ListaClubeDaT
         <OpcaoClube
           key={clube.id}
           clube={clube}
-          detalhe={`${formatarNumero(clube.adeptosNaApp)} adeptos na app`}
+          detalhe={textoAdeptosNaApp(adeptos.data?.[clube.id])}
           selecionado={clube.id === selecionadoId}
           onPress={() => onSelecionar(clube.id)}
         />

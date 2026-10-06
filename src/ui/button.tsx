@@ -12,15 +12,25 @@ type ButtonProps = {
   variant?: 'primary' | 'secondary' | 'highlight' | 'danger';
   icon?: IconName;
   disabled?: boolean;
+  /** For answer buttons (Sim / Não): tells the screen reader which one is the current answer. */
+  selected?: boolean;
 };
 
-export function Button({ label, onPress, variant = 'primary', icon, disabled = false }: ButtonProps) {
+export function Button({
+  label,
+  onPress,
+  variant = 'primary',
+  icon,
+  disabled = false,
+  selected,
+}: ButtonProps) {
   const theme = useTheme();
   const look = {
     primary: { background: theme.accent, pressed: theme.accentPressed, ink: theme.accentText },
     secondary: { background: theme.backgroundElement, pressed: theme.backgroundSelected, ink: theme.text },
     highlight: { background: theme.highlight, pressed: theme.highlight, ink: theme.highlightText },
-    danger: { background: theme.danger, pressed: theme.dangerText, ink: theme.accentText },
+    // The card colour as ink: white on the light red, near-black on the dark-mode salmon (white would fail contrast).
+    danger: { background: theme.danger, pressed: theme.dangerText, ink: theme.backgroundElement },
   }[variant];
 
   return (
@@ -28,7 +38,7 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled = f
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, selected }}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: pressed ? look.pressed : look.background },

@@ -1,0 +1,19 @@
+# Turns demo mode off if it is on. Expects the intro to be done (the tabs are reachable).
+appId: host.exp.Exponent
+---
+- runFlow: { file: abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- runFlow:
+    when:
+      visible: "Modo demo ligado: estás a ver dados de exemplo"
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "interruptor-modo-demo"
+          direction: DOWN
+          # Centred: at the top it sits under Expo Go's floating button.
+          centerElement: true
+      - tapOn:
+          id: "interruptor-modo-demo"
+      - extendedWaitUntil:
+          notVisible: "Modo demo ligado: estás a ver dados de exemplo"
+          timeout: 10000

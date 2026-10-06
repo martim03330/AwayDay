@@ -1,0 +1,14 @@
+# Closes up to three stacked modals (account forms, legal pages) left open by a previous flow.
+appId: host.exp.Exponent
+---
+- openLink: exp://127.0.0.1:8081
+- runFlow: dispensar-guardar-password.yaml
+- repeat:
+    times: 3
+    commands:
+      - runFlow:
+          when:
+            visible: "Fechar"
+          commands:
+            - tapOn: "Fechar"
+            - runFlow: dispensar-guardar-password.yaml

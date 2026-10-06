@@ -89,6 +89,8 @@ function NavegacaoRaiz() {
       </Stack.Protected>
       {/* Entrar e criar conta: abre por cima da introdução ou das tabs. */}
       <Stack.Screen name="conta" options={{ presentation: 'modal' }} />
+      {/* Privacidade, termos e contactos: em modal, de qualquer sítio. */}
+      <Stack.Screen name="legal" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

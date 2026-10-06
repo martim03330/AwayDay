@@ -25,6 +25,13 @@ export type ThemedTextProps = TextProps & {
   themeColor?: ThemeColor;
 };
 
+/**
+ * Display sizes are already big: they still grow with the system text size, but only up to this factor, so a
+ * 58 pt title does not push a header off the screen. Body text keeps scaling without a cap.
+ */
+const MAX_ESCALA_TITULOS = 1.4;
+const TIPOS_GRANDES: readonly TextType[] = ['title', 'subtitle', 'section', 'score'];
+
 const roles: Partial<Record<TextType, FontRole>> = {
   title: 'display',
   subtitle: 'display',
@@ -32,7 +39,13 @@ const roles: Partial<Record<TextType, FontRole>> = {
   score: 'stencil',
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({
+  style,
+  type = 'default',
+  themeColor,
+  maxFontSizeMultiplier = TIPOS_GRANDES.includes(type) ? MAX_ESCALA_TITULOS : undefined,
+  ...rest
+}: ThemedTextProps) {
   const theme = useTheme();
   const flat: TextStyle = StyleSheet.flatten([{ color: theme[themeColor ?? 'text'] }, styles[type], style]);
   // Each weight is a separate font file: pick it from the weight and drop `fontWeight`, so Android
@@ -41,7 +54,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
     ? null
     : { fontFamily: fontFamily(roles[type] ?? 'body', flat.fontWeight), fontWeight: 'normal' as const };
 
-  return <Text style={[flat, font]} {...rest} />;
+  return <Text style={[flat, font]} maxFontSizeMultiplier={maxFontSizeMultiplier} {...rest} />;
 }
 
 const styles = StyleSheet.create({

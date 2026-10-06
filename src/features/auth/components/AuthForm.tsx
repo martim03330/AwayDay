@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, type Ref } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +11,7 @@ import {
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAnunciarErro } from '@/ui/campo';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -91,21 +92,25 @@ type CampoCodigoProps = {
   erro?: string | null;
   /** How many digits the code has (one box each). */
   digitos: number;
+  ref?: Ref<TextInput>;
 } & Pick<TextInputProps, 'autoFocus' | 'maxLength' | 'onSubmitEditing' | 'returnKeyType'>;
 
 /**
  * One-time code field: a transparent TextInput on top of one box per digit. The input keeps the
  * raw text (paste, autofill), the boxes only mirror its digits.
  */
-export function CampoCodigo({ label, value, onChangeText, erro, digitos, ...input }: CampoCodigoProps) {
+export function CampoCodigo({ label, value, onChangeText, erro, digitos, ref, ...input }: CampoCodigoProps) {
   const theme = useTheme();
+  useAnunciarErro(label, erro);
   const [focado, setFocado] = useState(false);
   const algarismos = value.replace(/\D/g, '').slice(0, digitos);
   const metade = Math.floor(digitos / 2);
 
   return (
     <View style={styles.campo}>
-      <ThemedText style={styles.label}>{label}</ThemedText>
+      <ThemedText style={styles.label} importantForAccessibility="no" accessibilityElementsHidden>
+        {label}
+      </ThemedText>
       <View>
         <View
           style={styles.caixas}
@@ -146,7 +151,9 @@ export function CampoCodigo({ label, value, onChangeText, erro, digitos, ...inpu
           })}
         </View>
         <TextInput
+          submitBehavior={input.returnKeyType === 'next' ? 'submit' : undefined}
           {...input}
+          ref={ref}
           value={value}
           onChangeText={onChangeText}
           keyboardType="number-pad"
@@ -156,15 +163,15 @@ export function CampoCodigo({ label, value, onChangeText, erro, digitos, ...inpu
           caretHidden
           onFocus={() => setFocado(true)}
           onBlur={() => setFocado(false)}
-          accessibilityLabel={label}
-          accessibilityHint={erro ?? undefined}
+          accessibilityLabel={erro ? `${label}. Erro: ${erro}` : label}
           style={styles.inputInvisivel}
         />
       </View>
       {erro ? (
         <ThemedText
           style={[styles.mensagem, { color: theme.danger }]}
-          accessibilityLiveRegion="polite">
+          accessibilityLiveRegion="polite"
+          accessibilityElementsHidden>
           {erro}
         </ThemedText>
       ) : null}

@@ -151,7 +151,7 @@ export function useBarulhometro(onMedicaoValida: (nivel: number) => void) {
       'Vamos ouvir a bancada durante 10 segundos. Não gravamos nada: só calculamos o nível do som.',
       [
         { text: 'Agora não', style: 'cancel' },
-        { text: 'Continuar', onPress: () => void comecar() },
+        { text: 'Começar a ouvir', onPress: () => void comecar() },
       ]
     );
   }

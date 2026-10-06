@@ -8,8 +8,8 @@
 --       3. Lens x Sporting (França) — EM ABERTO, com duas casas propostas e preferências;
 --   · o grupo «Primos da bola (teste)», para experimentar «mandar a outro grupo».
 --
--- Corre com:  supabase db query --linked -f scripts/dados-de-teste/criar.sql
--- Apaga com:  supabase db query --linked -f scripts/dados-de-teste/apagar.sql
+-- Corre tudo (com o histórico e as fotos) com:  sh scripts/dados-de-teste/criar.sh
+-- Apaga tudo com:  sh scripts/dados-de-teste/apagar.sh
 --
 -- Tudo tem ids fixos (a0000000-…), para o apagar ser exato. Os avisos push ficam desligados enquanto isto corre, para
 -- o teu telemóvel não receber vinte notificações de mentira.

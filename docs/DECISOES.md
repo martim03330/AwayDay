@@ -2,6 +2,240 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-06 — Testes para as lojas, e o que eles apanharam
+
+**Quatro níveis de testes, cada um com o seu comando:**
+
+| Nível | Ferramenta | Comando | Hoje |
+|---|---|---|---|
+| Lógica pura | Vitest | `npm run test` | 229 testes |
+| Ecrãs e componentes | Jest + jest-expo + Testing Library (`*.ui.test.tsx`) | `npm run test:ecras` | 154 testes |
+| Acesso à base de dados (RLS e funções), por tipo de pessoa | SQL em transação sempre desfeita | `npm run test:sql` | 29 ficheiros, 1600 verificações |
+| Percursos completos no simulador | Maestro + Expo Go | `npm run test:e2e` | 15 percursos (`.maestro/LEIA-ME.md`) |
+
+Os testes de SQL cobrem as 79 tabelas para quem não tem conta, conta nova, dono, membro, alguém de fora,
+administrador e pessoa bloqueada. São a especificação: um erro encontrado fica com um teste a vermelho até ser
+corrigido.
+
+**O que apanharam e foi corrigido** (migração `security_fixes_from_tests` e app):
+- Um grupo ficava sem dono quando o dono apagava a conta. Agora passa ao membro mais antigo.
+- Funções auxiliares respondiam sobre outras pessoas (quem é amigo de quem, quem está em que grupo, com que grupo
+  alguém vai a um jogo). Ficaram só para o servidor. As regras das fotos usam funções novas que só perguntam pelo
+  próprio.
+- O nome podia mudar-se sem o limite semanal. O feedback sem conta não tinha limite (agora 30 por hora).
+- Boleias:
+  - Era possível pedir lugar na volta num carro só do grupo.
+  - A suspensão por faltas contornava-se por um plano ou por um convite.
+  - Convites e planos podiam encher a volta de um carro já cheio.
+- Os nomes de quem fica numa casa só do grupo viam-se com o id da casa. Uma versão antiga e partida de
+  `set_stay_plan` ainda existia.
+- Quem enviou uma foto de tasco, sugeriu um prato ou um tasco era legível. As fotos novas vão para `anonimas/`, e as
+  colunas de quem enviou deixaram de ser legíveis pela app.
+- As zonas e as ruas dos adeptos da casa publicavam-se com 3 pessoas. Passou a 5, como todos os agregados.
+- Carimbar o estádio aceitava até 1049 m. O limite de 1000 m passou a ser medido antes de arredondar.
+- Entrar a partir das boas-vindas ficava preso em «A entrar…». O modal passou a fechar logo.
+- O modo demo:
+  - mostrava «Jornada de descanso», porque os jogos de exemplo tinham datas passadas; agora são empurrados para os
+    próximos dias;
+  - não tinha jogos no seletor;
+  - o pedido de autorização das dicas escrevia na conta real.
+- «Termos» e «Privacidade» nas boas-vindas abriam a página da foto. A caixa de consentimento tinha as ligações lá
+  dentro. O menu de denunciar no Android fechava ao tocar entre opções. Os nomes de clube com uma só palavra
+  partiam-se a meio.
+
+## 2026-10-06 — Preparar as lojas: legal, denúncias, IA com autorização, dados verdadeiros, acessibilidade
+
+O estado e os riscos estão em `docs/LEGAL-E-LOJAS.md`. Aqui ficam as decisões.
+
+**Textos legais numa só fonte.** Política de privacidade, termos e «sobre e contactos» vivem em `src/lib/legal.ts`.
+A app mostra-os no modal `/legal/[documento]` e `npm run legal:paginas` gera as páginas públicas em `docs/legal/`.
+Assim a app e as páginas nunca dizem coisas diferentes.
+
+**18 anos ou mais**, declarado numa caixa obrigatória ao criar conta (nunca pré-marcada). A versão dos termos aceite e
+a data ficam guardadas na conta. A razão é haver boleias com desconhecidos e álcool.
+
+**Sem página de cookies nem de reembolsos.** A app móvel não usa cookies nem analítica, e a versão web não vai ser
+publicada. A app é gratuita e não processa pagamentos. Os termos dizem-no.
+
+**IA só com autorização explícita** (Apple 5.1.2(i), RGPD). A dica do treinador, os avisos e a retrospetiva são
+escritos pela Anthropic a partir de factos do dia de jogo, sem nome nem email. Passaram a vir desligados por omissão,
+também para as contas que já existiam. Nos Jogos, no lugar da dica, aparece o pedido com o que é enviado e para quem.
+
+**Denunciar e bloquear** (Apple 1.2):
+- Denuncia-se uma mensagem do grupo ou do carro, uma pessoa, a foto de alguém ou um grupo.
+- As denúncias vão para uma fila que só os administradores veem, sem saberem quem denunciou.
+- Bloquear esconde as mensagens dessa pessoa nas conversas e nas notificações, e acaba a amizade e os convites
+  pendentes. A pessoa bloqueada não fica a saber.
+- As mensagens bloqueadas desaparecem sem deixar marca.
+
+**Só dados verdadeiros fora do modo demo.**
+- Os adeptos por clube passaram a ser a contagem real (a partir de 5).
+- A sombra, o abrigo, os transportes e a meteorologia de exemplo ficaram só no catálogo demo.
+- O combustível deixou de ser atribuído à DGEG.
+- Saíram as frases que a app não podia provar e os avisos que ainda não são enviados.
+- No modo demo aparece sempre «Modo demo · dados de exemplo».
+
+**Acessibilidade (WCAG AA).** As cores do tema foram ajustadas até todas as combinações usadas passarem no contraste.
+As linhas pequenas por cima dos títulos nos cabeçalhos verdes passaram de amarelo a branco: o amarelo não chega ao
+contraste em letra pequena. Também:
+- As fotos têm descrição e os ícones decorativos estão escondidos do leitor de ecrã.
+- Os formulários passam ao campo seguinte com o teclado e anunciam os erros.
+- O texto grande respeita o tamanho de letra do telemóvel.
+
+## 2026-10-06 — Revisão do design: menos informação à vista
+
+**O problema.** Os menus principais estavam bem, mas os ecrãs de dentro (estádio, estacionamento, boleias, grupo,
+sessão) empilhavam cartões, etiquetas e parágrafos. Ficavam confusos e feios.
+
+**As regras que passam a valer em todos os ecrãs:**
+- O título fica no cabeçalho e não se repete no conteúdo.
+- Cada secção tem no máximo uma linha de explicação. O resto (regras, fontes, notas legais) abre-se ao tocar:
+  «Ver mais», ou uma linha que abre (`src/components/linha-que-abre.tsx`).
+- Coisas parecidas ficam num só cartão, em linhas, e não num cartão cada. Nada de cartão dentro de cartão. No máximo
+  2 ou 3 etiquetas por item.
+- Uma ação principal por secção (botão). As outras são ligações discretas.
+- Uma secção sem dados não aparece. O título também não.
+
+**Tirado:**
+- As Novidades: a faixa nos Jogos, a linha no Perfil e o ecrã. Fica só a dica do treinador. As dicas continuam a
+  chegar como notificação.
+- O campo «A tua terra»: fica só «De onde partes para os jogos», que é o que serve às boleias. A terra também deixou
+  de aparecer nas boleias.
+- Na página da boleia, o cartão para escolher ou criar um grupo: o grupo escolhe-se só ao oferecer a boleia.
+
+**Corrigido:** as iniciais das caras de grupo sem foto apareciam cortadas (a altura da linha não acompanhava a
+letra), como antes no perfil.
+
+## 2026-10-06 — Boas-vindas, passos do perfil e de onde partes para os jogos
+
+**Boas-vindas.** A app abre numa foto de estádio à noite, que ocupa o ecrã todo, com «Entrar ou criar conta» e
+«Explorar sem conta». A foto é de licença livre (Wikimedia Commons, «Mezokovesd Zsory stadion», de Zemszo, CC BY-SA
+4.0) e o crédito aparece no ecrã, com ligação para a página original, como a licença pede. Foi escolhida por não ter
+caras nem clube reconhecível. Está em `assets/images/boas-vindas-estadio.jpg` (1400 px, 366 KB).
+
+**Os passos.** Com conta: foto → clube → de onde partes → como vais → avisos. Sem conta: clube → avisos. Todos têm
+«Saltar por agora». A ordem vive em `src/lib/introducao.ts` (com testes). Os ecrãs antigos de permissões e de conta
+saíram. A localização deixou de se pedir na introdução: pede-se no check-in, quando se percebe para que serve.
+
+**De onde partes: só o concelho, e só o dono o vê.** Nova tabela `profile_home` (concelho e maneira de ir), com RLS
+só para o próprio. Não fica na tabela `profile`, porque essa é legível por quem tem conta. Os 308 concelhos estão
+em `municipality` (código INE, nome, distrito ou ilhas, e o centro), com os dados da CAOP via geoapi.pt. O centro do
+Funchal foi corrigido à mão: o da CAOP cai no mar, por causa das Selvagens.
+
+**Para que serve.** Nas boleias de cada jogo, as que saem mais perto do teu concelho aparecem primeiro, com «Sai a
+12 km de ti». As tuas, as que pediste e as de amigos ficam sempre em cima. Para quem diz que vai de carro, «Oferecer
+boleia» passa para o topo. A distância é em linha reta, entre o centro do concelho e o ponto de partida do carro,
+que já era público na boleia. A ordem está em `src/lib/boleias-perto.ts`, com testes.
+
+**Não se pede** data de nascimento, telefone nem género: nada na app os usa.
+
+## 2026-10-05 — Ranking: aba própria, pontos, níveis, missões, desafios da semana e divisões
+
+**Uma aba só para isto.** A barra de baixo passa a ter cinco abas: Jogos, Malta, Locais, Ranking e Perfil. Os
+rankings e as missões saíram do Perfil (o pódio, a linha «Rankings», a secção «Missões do passaporte», e os ecrãs
+`perfil/rankings` e `perfil/missoes`). O interruptor «Aparecer nos rankings» saiu das Definições e vive agora na aba,
+onde se percebe o que quer dizer. O Perfil fica só com uma linha («Nível 7 · Adepto») que abre a aba. O Passaporte e
+o Álbum continuam no Perfil, porque são a coleção de cada um.
+
+**Só conta o que a app confirmou.** Estádios carimbados no local, check-ins nos tascos, fotos de tasco aprovadas,
+avaliações de sítios onde se esteve (estádio carimbado nesse jogo, ou tasco com check-in) e fotos de prova
+verificadas pelo servidor. O que é só declarado fica de fora. As boleias não dão pontos: era fácil inventá-las entre
+amigos.
+
+**Os pontos (XP) não se guardam: calculam-se.** O plano previa uma tabela `xp_event` com triggers. Em vez disso,
+`ranking_activity()` lê as tabelas de origem e `ranking_xp()` dá os pontos. Assim, um check-in desfeito ou uma foto
+rejeitada saem sozinhos, o histórico não precisa de preenchimento inicial e uma regra mudada aplica-se a todos. Com
+o volume atual chega; se ficar lento, passa a vista materializada sem mudar a app. Tabela: carimbo 100, primeira vez
+nesse estádio +150, jogo fora +50, check-in 20 (até 2 por dia), foto aprovada 15, avaliação 10, missões o que valem.
+
+**Níveis para a vida.** Passar do nível L para o L+1 custa 100 + 50 × (L − 1): nível 5 aos 700, 10 aos 2 700, 20 aos
+10 450, 40 aos 40 950, máximo 99. Os títulos são genéricos (Estreante, Adepto, Habitual, Viajante, Bancada Fiel,
+Veterano, Lenda) e ficam na app (`src/features/ranks/labels.ts`); o número vem do servidor.
+
+**Missões no servidor** (`mission`): conquistas em bronze, prata e ouro, missões da época e desafios da semana. As 7
+missões do telemóvel passam para o servidor com os mesmos ids (as fotos do álbum continuam ligadas). Ficam de fora a
+«jogo à chuva» (a meteorologia ainda não está na base de dados) e a «cerveja com um rival» (obrigava a cruzar
+check-ins de outras pessoas). As conquistas antigas que contavam coisas declaradas passam a contar só as confirmadas.
+
+**Desafios da semana:** três por semana (um de jogo, um de tasco, um dos outros), escolhidos ao acaso pelo
+`plan_weekly_challenges()`, todos os dias às 03:07, para a semana atual e as duas seguintes, evitando repetir os da
+semana anterior. A app mostra os desta semana e os da próxima, para dar tempo de planear. As semanas sem jogos no
+calendário não têm desafios.
+
+**Série:** jornadas seguidas com um estádio carimbado. As semanas sem jogos (pausas para seleções) não contam nem a
+quebram, e a semana atual só conta como falhada quando acabar.
+
+**Divisões da época:** Distrital, Campeonato de Portugal, Liga 3, Liga 2 e Liga. Toda a gente começa na Distrital.
+Quando a época fecha (`close_finished_seasons()`, todos os dias às 04:27, só depois de existir a época seguinte em
+`season`): sobem os primeiros 20 % de cada divisão (arredondado para cima) com pelo menos 500 pontos, descem os
+últimos 20 % (arredondado para baixo, e só em divisões com 5 ou mais pessoas com pontos), e quem não fez pontos desce
+uma. As posições contam toda a gente da divisão; as tabelas só mostram quem escolheu aparecer.
+
+**Afluência:** quantos adeptos foram a cada estádio esta época e que clubes levam mais gente fora. São só totais e
+só aparecem a partir de 5 pessoas diferentes, como todos os agregados da app.
+
+**Testes:** a lógica do servidor tem testes em SQL (`supabase/tests/ranking.test.sql`, 246 verificações) que correm
+numa transação sempre desfeita: `supabase db query --linked -f supabase/tests/ranking.test.sql`. As palavras e
+contas de apresentação têm testes em Vitest (`src/features/ranks/labels.test.ts`).
+
+## 2026-09-18 — Histórico com álbum, um plano fechado por jogo, e a conversa do carro igual à do grupo
+
+**Histórico = recordação.** Passa a ter só viagens já feitas (jogo passado) em que foram pelo menos duas pessoas do
+grupo (`group_history`). Cada viagem é um cartão com capa (a primeira foto do álbum, ou o relvado com os escudos),
+o jogo, a data e a cidade, quem foi, as fotos e quanto se gastou. Abre a recordação: os números (quantos foram,
+quanto se gastou, quanto deu por cabeça), a maior extravagância (só cervejas, petiscos, refeições e «outro» — os
+bilhetes e as portagens não têm graça) e o álbum.
+
+**O álbum.** Nova tabela `trip_photo` e balde privado `trip-photos`, uma pasta por sessão. Só quem foi põe fotos;
+vêem-nas quem foi e a malta dos grupos que tiveram pelo menos duas pessoas na viagem (`can_see_trip_memories`) —
+quem ficou em casa vê o que perdeu.
+
+**Um plano fechado por pessoa e por jogo.** Quem já disse «vou» num plano fechado para um jogo não pode dizer que
+vai noutro plano para o mesmo jogo (`already_going`, também ao entrar direto no carro). Nesse outro plano o cartão
+diz «Já vais a este jogo com a Malta do café», e aos outros aparece «Vai com Malta do café».
+
+**«Planos em aberto» passa a «Planos».** Tinha abertos e fechados, e o nome enganava.
+
+**A conversa do carro fica igual à do grupo:** ecrã inteiro (fora dos separadores), bolhas, caixa de escrita em
+baixo. As peças comuns vivem em `src/ui/conversa.tsx`. O botão de enviar passa a ser um avião de papel e a entrada
+na conversa, na boleia, uma linha com o balão, a última mensagem e as por ler (o megafone saiu).
+
+**A boleia no plano** foi redesenhada como `CartaoDaBoleia`: condutor e preço por pessoa em cima, a hora de saída
+grande, os lugares desenhados como bancos, uma só ação principal, e o resto discreto.
+
+**Na página dos Jogos**, o aviso «Tens lugar na boleia de…» esconde-se quando a sessão dessa boleia já abriu: a
+informação passa para dentro da sessão, que ganhou «Ver a boleia». **Na sessão**, «Quem vai» passou a lista (uma
+pessoa por linha, quem leva o carro assinalado, «Não veio» alinhado à direita).
+
+## 2026-09-18 — Dentro do grupo não se pede, entra-se; e o jogo com o mais importante em cima
+
+**Boleia do plano: «Vou nesta boleia».** Pedir lugar e esperar resposta é para as boleias públicas, entre
+desconhecidos. No plano do grupo entra-se direto no carro (`join_plan_ride`), fica-se logo como «vou», e se a
+sessão já existir entra-se nas contas e na despesa do carro. Sai-se com «Sair do carro».
+
+**Casa do plano: escolher, fechar a escolha, entrar.** Com a escolha aberta a malta diz qual prefere; quem convidou
+fecha a escolha na casa do plano (`set_plan_stay_locked`). Fechada, só se vê essa casa, com quem já lá está e quanto
+fica a cada um agora e com a casa cheia — e cada um entra com um toque (`join_plan_stay`), vendo o preço descer. A
+escolha reabre-se se alguém encontrar melhor.
+
+**Na sessão, «Algum deles não veio?»** ao lado de «Veio mais alguém?». No grupo não há os cuidados das boleias
+públicas: quem estava na lista e não veio sai com um toque (se não tiver despesas lançadas).
+
+**O tasco do check-in, sozinho nos grupos — com um sim.** Pedido: aparecer em todos os grupos o tasco onde a pessoa
+está, sem ter de o dizer grupo a grupo, com opção para desligar. Fica assim: depois do primeiro check-in com conta,
+a app pergunta **uma vez** se a malta dos grupos deve passar a saber; a resposta fica no perfil
+(`share_checkins_with_groups`) e muda-se em Definições → Privacidade. Com o sim, é a Edge Function do check-in que
+põe «estou no Tasco do Zé» em cada grupo (não repete o mesmo tasco no mesmo grupo em três horas). Sem resposta, não
+se partilha nada: as regras de privacidade não deixam a localização de alguém chegar a outros sem essa pessoa o
+dizer, e a app continua sem ler check-ins. Com o sim, o cartão «Estás aqui? Diz à malta» sai da ficha do tasco.
+
+**A página do jogo por ordem de importância:** «Vou», depois **Com quem vais** (com «Combinar com a malta» num
+cartão em destaque), **Antes de ir**, o carimbo e o barulhómetro, e no fim as horas do plano e os avisos (a chuva
+por último). O relógio do dia de jogo continua colado ao cabeçalho.
+
+**Pontos do mapa:** a área de toque passa de 34 para 48 pontos (transparente) e o ponto cresce um pouco (18 → 22;
+selecionado 26 → 30), com uma sombra leve para se ver melhor sobre o mapa.
+
 ## 2026-09-18 — A sessão da viagem, e as despesas só lá dentro
 
 Terceira parte do plano de simplificação. As contas abriam-se de três maneiras (da boleia, do grupo, do nada) e

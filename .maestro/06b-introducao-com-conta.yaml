@@ -1,0 +1,61 @@
+# Jornada 6b — os passos da introdução com conta (foto, clube, de onde partes, como vais, avisos) e o perfil com conta.
+# Entra pelo Perfil e depois revê a introdução: com sessão, as boas-vindas seguem logo para os passos do perfil.
+appId: host.exp.Exponent
+name: 06b Introdução com conta
+tags: [com-conta]
+---
+- runFlow: comum/entrar-e2e.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- tapOn: "Rever a introdução"
+- extendedWaitUntil:
+    visible: "Passo 1 de 5"
+    timeout: 15000
+- assertVisible: "Mostra a cara à malta\\."
+- tapOn: "Faço isto depois"
+- extendedWaitUntil:
+    visible: "Passo 2 de 5"
+    timeout: 10000
+- assertVisible: "Primeiro o mais importante: de que clube és\\?"
+- tapOn: "Faço isto depois"
+- extendedWaitUntil:
+    visible: "Passo 3 de 5"
+    timeout: 10000
+- assertVisible: "De onde partes para os jogos\\?"
+- tapOn: "Faço isto depois"
+- extendedWaitUntil:
+    visible: "Passo 4 de 5"
+    timeout: 10000
+- assertVisible: "Como costumas ir à bola\\?"
+- tapOn: "Faço isto depois"
+- extendedWaitUntil:
+    visible: "Passo 5 de 5"
+    timeout: 10000
+# Com conta aparecem também os avisos das boleias e da malta
+- assertVisible: "As tuas boleias"
+- assertVisible: "A tua malta"
+- tapOn: "Agora não"
+- runFlow:
+    when:
+      visible: "Juntar à tua conta\\?"
+    commands:
+      - tapOn: "Agora não"
+- extendedWaitUntil:
+    visible: "Tab Bar"
+    timeout: 15000
+
+# O perfil mostra a conta
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+- assertVisible: "E2E \\(teste\\)|O teu perfil"
+- scrollUntilVisible:
+    element: "e2e@teste\\.awayday\\.invalid"
+    direction: DOWN
+    timeout: 20000
+- assertVisible: "Terminar sessão"
+- assertVisible: "Apagar conta"
+- assertNotVisible: "Guarda o teu progresso"
+# Com conta, a Malta e o Ranking já não pedem conta
+- tapOn: "Malta"
+- extendedWaitUntil:
+    visible: "Criar um grupo"
+    timeout: 15000
+- assertNotVisible: "A malta precisa de conta"

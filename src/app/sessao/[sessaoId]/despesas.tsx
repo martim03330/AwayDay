@@ -4,16 +4,15 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { nomeDoJogo } from '@/features/groups/components/CartaoDoPlano';
 import {
   addTripSettlement,
   confirmTripSettlement,
   removeTripExpense,
   removeTripSettlement,
-  type TripBalance,
   type TripExpense,
 } from '@/features/trips/api';
 import { CATEGORIA } from '@/features/trips/categorias';
+import { fecharContas } from '@/features/trips/fecharContas';
 import {
   useRefreshTrips,
   useTripBalances,
@@ -23,15 +22,19 @@ import {
 } from '@/features/trips/hooks/useTrips';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
-import { acertarContas, type Transferencia } from '@/lib/acerto';
 import { plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
+import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
+import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
-import { Icon, icons } from '@/ui/icon';
+import { Icon, IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
+import { SectionHeader } from '@/ui/section-header';
 import { Segmentado } from '@/ui/segmentado';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 type Vista = 'lista' | 'acertar';
 
@@ -41,34 +44,8 @@ const VISTAS = [
 ] as const;
 
 /**
- * As transferências que fecham as contas. Os saldos do servidor somam sempre zero; se algum dia não somarem, a app
- * diz que não consegue fechar em vez de rebentar.
- */
-function fecharContas(saldos: TripBalance[]): Transferencia[] | null {
-  try {
-    return acertarContas(
-      saldos.map((pessoa) => ({
-        profileId: pessoa.profileId,
-        nome: pessoa.displayName,
-        saldoCentimos: pessoa.balanceCents,
-      }))
-    );
-  } catch {
-    return null;
-  }
-}
-
-/** A frase de cabeçalho, conforme o que já se gastou. Com humor, que o dinheiro já dói que chegue. */
-function tituloComGraca(totalCentimos: number, despesas: number) {
-  if (despesas === 0) return 'Ainda ninguém abriu a carteira';
-  if (totalCentimos < 5000) return 'Por enquanto, só trocos';
-  if (totalCentimos < 20000) return 'A carteira já sentiu';
-  return 'A carteira já chora';
-}
-
-/**
- * As despesas da viagem, numa página só: em cima, quanto se gastou; depois duas vistas — a **lista** do que foi
- * lançado e **acertar contas** (quem paga a quem). Em baixo, fixo, o botão que interessa em cada vista.
+ * The trip's expenses: the total on top, then two views — the **list** of what was added and **settle up** (who pays
+ * whom). One fixed action at the bottom: add an expense.
  */
 export default function DespesasScreen() {
   const router = useRouter();
@@ -105,7 +82,6 @@ export default function DespesasScreen() {
   const lista = despesas.data ?? [];
   const acerto = fecharContas(saldos.data ?? []);
   const porConfirmar = (pagamentos.data ?? []).filter((pagamento) => !pagamento.confirmed);
-  const tudoAcertado = acerto !== null && acerto.length === 0 && lista.length > 0;
 
   async function tratar(chave: string, acao: () => Promise<void>) {
     setErro(null);
@@ -136,75 +112,89 @@ export default function DespesasScreen() {
 
   const quem = (id: string, nome: string) => (id === userId ? 'Tu' : nome.split(' ')[0]);
 
+  const pastilha = (
+    chave: string,
+    label: string,
+    acao: () => Promise<void>,
+    neutra = false,
+    accessibilityLabel?: string
+  ) => (
+    <Pressable
+      hitSlop={6}
+      disabled={aTratar !== null}
+      onPress={() => void tratar(chave, acao)}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={({ pressed }) => [
+        styles.pastilha,
+        { backgroundColor: neutra ? theme.backgroundSelected : theme.successBackground },
+        pressed && styles.apagado,
+      ]}>
+      <ThemedText
+        type="smallBold"
+        style={{ color: neutra ? theme.textSecondary : theme.accentInk }}>
+        {aTratar === chave ? '…' : label}
+      </ThemedText>
+    </Pressable>
+  );
+
   return (
     <View style={[styles.tudo, { backgroundColor: theme.background }]}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.conteudo}>
-        <View style={[styles.topo, { backgroundColor: theme.accent }]}>
-          <ThemedText type="eyebrow" style={{ color: theme.highlight }}>
-            {`Despesas · ${nomeDoJogo(sessao.fixtureId)}`}
+        <View style={styles.resumo}>
+          <ThemedText type="subtitle" style={styles.valor}>
+            {formatarCentimos(sessao.totalCents)}
           </ThemedText>
-          <ThemedText type="title" style={{ color: theme.accentText }}>
-            {tituloComGraca(sessao.totalCents, lista.length)}
-          </ThemedText>
-          <ThemedText style={{ color: theme.accentText }}>
-            {`${formatarCentimos(sessao.totalCents)} em ${plural(lista.length, 'despesa', 'despesas')} · ${plural(sessao.people, 'pessoa', 'pessoas')}`}
+          <ThemedText type="small" themeColor="textSecondary">
+            {`${plural(lista.length, 'despesa', 'despesas')} · ${plural(sessao.people, 'pessoa', 'pessoas')}`}
           </ThemedText>
         </View>
 
         <Segmentado opcoes={VISTAS} valor={vista} onChange={setVista} />
 
-        {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+        {erro ? <MensagemErro>{erro}</MensagemErro> : null}
 
         {vista === 'lista' ? (
           lista.length === 0 ? (
             <View style={[styles.vazio, { borderColor: theme.borderStrong }]}>
               <Icon name={icons.brinde} size={28} color={theme.textMuted} />
               <ThemedText themeColor="textSecondary" style={styles.centro}>
-                Nada lançado. A primeira rodada costuma vir já a seguir.
+                Ainda nada lançado.
               </ThemedText>
             </View>
           ) : (
-            <View style={[styles.lista, { backgroundColor: theme.backgroundElement }]}>
+            <Card style={styles.grupo}>
               {lista.map((despesa, indice) => (
                 <Pressable
                   key={despesa.id}
                   onLongPress={despesa.mine ? () => apagarDespesa(despesa) : undefined}
                   accessibilityHint={despesa.mine ? 'Toca sem largar para apagar.' : undefined}
-                  style={[
-                    styles.linhaDespesa,
-                    indice > 0 && {
-                      borderTopWidth: StyleSheet.hairlineWidth,
-                      borderTopColor: theme.border,
-                    },
-                    aTratar === despesa.id && styles.apagado,
-                  ]}>
-                  <View style={[styles.azulejo, { backgroundColor: theme.backgroundSelected }]}>
-                    <Icon
-                      name={CATEGORIA[despesa.category].icon}
-                      size={18}
-                      color={theme.textSecondary}
-                    />
-                  </View>
-                  <View style={styles.flex}>
-                    <ThemedText type="smallBold" numberOfLines={1}>
-                      {despesa.description}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                      {`${quem(despesa.payerId, despesa.payerName)} ${despesa.payerId === userId ? 'pagaste' : 'pagou'} · ${
-                        despesa.participants === sessao.people
-                          ? 'toda a malta'
-                          : plural(despesa.participants, 'pessoa', 'pessoas')
-                      }`}
-                    </ThemedText>
-                  </View>
-                  <ThemedText type="smallBold" style={styles.valor}>
-                    {formatarCentimos(despesa.cents)}
-                  </ThemedText>
+                  // The same delete as the long press, reachable from the screen reader's actions menu.
+                  accessibilityActions={despesa.mine ? [{ name: 'apagar', label: 'Apagar despesa' }] : undefined}
+                  onAccessibilityAction={(evento) => {
+                    if (despesa.mine && evento.nativeEvent.actionName === 'apagar') apagarDespesa(despesa);
+                  }}
+                  style={aTratar === despesa.id && styles.apagado}>
+                  <LinhaGrupo
+                    separador={indice < lista.length - 1}
+                    leading={<IconCircle name={CATEGORIA[despesa.category].icon} tone="neutral" />}
+                    title={despesa.description}
+                    subtitle={`${quem(despesa.payerId, despesa.payerName)} ${despesa.payerId === userId ? 'pagaste' : 'pagou'} · ${
+                      despesa.participants === sessao.people
+                        ? 'toda a malta'
+                        : plural(despesa.participants, 'pessoa', 'pessoas')
+                    }`}
+                    trailing={
+                      <ThemedText type="smallBold" style={styles.valor}>
+                        {formatarCentimos(despesa.cents)}
+                      </ThemedText>
+                    }
+                  />
                 </Pressable>
               ))}
-            </View>
+            </Card>
           )
         ) : acerto === null ? (
           <ThemedText themeColor="textSecondary">
@@ -218,124 +208,89 @@ export default function DespesasScreen() {
                 <ThemedText themeColor="textSecondary" style={styles.centro}>
                   {lista.length === 0
                     ? 'Sem despesas, não há contas para acertar.'
-                    : 'Ninguém deve nada a ninguém. Isto é que é amizade.'}
+                    : 'Ninguém deve nada a ninguém.'}
                 </ThemedText>
               </View>
             ) : (
-              <View style={[styles.lista, { backgroundColor: theme.backgroundElement }]}>
+              <Card style={styles.grupo}>
                 {acerto.map((transferencia, indice) => {
                   const pago = transferencia.deId === userId;
                   const recebo = transferencia.paraId === userId;
                   const chave = `${transferencia.deId}-${transferencia.paraId}`;
+                  const valor = formatarCentimos(transferencia.centimos);
+                  const de = transferencia.deNome.split(' ')[0];
+                  const para = transferencia.paraNome.split(' ')[0];
                   return (
-                    <View
+                    <LinhaGrupo
                       key={chave}
-                      style={[
-                        styles.linhaDespesa,
-                        indice > 0 && {
-                          borderTopWidth: StyleSheet.hairlineWidth,
-                          borderTopColor: theme.border,
-                        },
-                      ]}>
-                      <View style={styles.flex}>
-                        <ThemedText type="small" numberOfLines={2}>
-                          {pago
-                            ? 'Deves '
-                            : `${transferencia.deNome.split(' ')[0]} ${recebo ? 'deve-te' : 'deve'} `}
-                          <ThemedText type="smallBold">
-                            {formatarCentimos(transferencia.centimos)}
-                          </ThemedText>
-                          {recebo ? '' : ` a ${transferencia.paraNome.split(' ')[0]}`}
-                        </ThemedText>
-                      </View>
-                      {pago || recebo ? (
-                        <Pressable
-                          disabled={aTratar !== null}
-                          onPress={() =>
-                            void tratar(chave, () =>
-                              addTripSettlement(
-                                sessaoId,
-                                transferencia.paraId,
-                                transferencia.centimos,
-                                transferencia.deId
-                              ).then(() => undefined)
+                      separador={indice < acerto.length - 1}
+                      leading={
+                        <Avatar
+                          nome={pago ? transferencia.paraNome : transferencia.deNome}
+                          size={36}
+                        />
+                      }
+                      title={pago ? `Deves ${valor}` : recebo ? `${de} deve-te ${valor}` : `${de} deve ${valor}`}
+                      subtitle={pago ? `a ${para}` : recebo ? undefined : `a ${para}`}
+                      trailing={
+                        pago || recebo
+                          ? pastilha(
+                              chave,
+                              pago ? 'Já paguei' : 'Já recebi',
+                              () =>
+                                addTripSettlement(
+                                  sessaoId,
+                                  transferencia.paraId,
+                                  transferencia.centimos,
+                                  transferencia.deId
+                                ).then(() => undefined)
                             )
-                          }
-                          accessibilityRole="button"
-                          style={({ pressed }) => [
-                            styles.pastilha,
-                            { backgroundColor: theme.successBackground },
-                            pressed && styles.apagado,
-                          ]}>
-                          <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
-                            {aTratar === chave ? '…' : pago ? 'Já paguei' : 'Já recebi'}
-                          </ThemedText>
-                        </Pressable>
-                      ) : null}
-                    </View>
+                          : undefined
+                      }
+                    />
                   );
                 })}
-              </View>
+              </Card>
             )}
 
             {porConfirmar.length > 0 ? (
-              <View style={[styles.lista, { backgroundColor: theme.backgroundElement }]}>
-                {porConfirmar.map((pagamento, indice) => (
-                  <View
-                    key={pagamento.id}
-                    style={[
-                      styles.linhaDespesa,
-                      indice > 0 && {
-                        borderTopWidth: StyleSheet.hairlineWidth,
-                        borderTopColor: theme.border,
-                      },
-                    ]}>
-                    <Icon name={icons.horario} size={18} color={theme.warningText} />
-                    <ThemedText type="small" style={styles.flex}>
-                      {pagamento.iReceive
-                        ? `${pagamento.fromName.split(' ')[0]} diz que te pagou ${formatarCentimos(pagamento.cents)}`
-                        : `Pagaste ${formatarCentimos(pagamento.cents)} a ${pagamento.toName.split(' ')[0]} · falta confirmar`}
-                    </ThemedText>
-                    {pagamento.iReceive ? (
-                      <Pressable
-                        disabled={aTratar !== null}
-                        onPress={() =>
-                          void tratar(pagamento.id, () => confirmTripSettlement(pagamento.id))
-                        }
-                        accessibilityRole="button"
-                        style={({ pressed }) => [
-                          styles.pastilha,
-                          { backgroundColor: theme.successBackground },
-                          pressed && styles.apagado,
-                        ]}>
-                        <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
-                          Recebi
-                        </ThemedText>
-                      </Pressable>
-                    ) : pagamento.mine ? (
-                      <Pressable
-                        disabled={aTratar !== null}
-                        onPress={() =>
-                          void tratar(pagamento.id, () => removeTripSettlement(pagamento.id))
-                        }
-                        accessibilityRole="button"
-                        style={({ pressed }) => [
-                          styles.pastilha,
-                          { backgroundColor: theme.backgroundSelected },
-                          pressed && styles.apagado,
-                        ]}>
-                        <ThemedText type="smallBold" themeColor="textSecondary">
-                          Anular
-                        </ThemedText>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
+              <>
+                <SectionHeader title="Por confirmar" />
+                <Card style={styles.grupo}>
+                  {porConfirmar.map((pagamento, indice) => (
+                    <LinhaGrupo
+                      key={pagamento.id}
+                      separador={indice < porConfirmar.length - 1}
+                      leading={<IconCircle name={icons.horario} tone="yellow" />}
+                      title={
+                        pagamento.iReceive
+                          ? `${pagamento.fromName.split(' ')[0]} pagou-te ${formatarCentimos(pagamento.cents)}`
+                          : `Pagaste ${formatarCentimos(pagamento.cents)} a ${pagamento.toName.split(' ')[0]}`
+                      }
+                      subtitle={pagamento.iReceive ? 'Confirma que recebeste' : 'Falta confirmar'}
+                      trailing={
+                        pagamento.iReceive
+                          ? pastilha(pagamento.id, 'Recebi', () =>
+                              confirmTripSettlement(pagamento.id)
+                            )
+                          : pagamento.mine
+                            ? pastilha(
+                                pagamento.id,
+                                'Anular',
+                                () => removeTripSettlement(pagamento.id),
+                                true,
+                                'Anular este pagamento'
+                              )
+                            : undefined
+                      }
+                    />
+                  ))}
+                </Card>
+              </>
             ) : null}
 
             <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
-              A app não move dinheiro: diz quem paga a quem e guarda o que já foi pago.
+              A app não move dinheiro: só diz quem paga a quem.
             </ThemedText>
           </>
         )}
@@ -350,40 +305,16 @@ export default function DespesasScreen() {
             paddingBottom: Math.max(insets.bottom, Spacing.three),
           },
         ]}>
-        {vista === 'lista' ? (
-          <Button
-            label="Adicionar despesa"
-            icon={icons.preco}
-            onPress={() =>
-              router.push({
-                pathname: '/sessao/[sessaoId]/nova-despesa',
-                params: { sessaoId },
-              })
-            }
-          />
-        ) : (
-          <View
-            accessibilityRole="text"
-            style={[
-              styles.estado,
-              { backgroundColor: tudoAcertado ? theme.accent : theme.warningBackground },
-            ]}>
-            <Icon
-              name={tudoAcertado ? icons.selecionado : icons.horario}
-              size={20}
-              color={tudoAcertado ? theme.accentText : theme.warningText}
-            />
-            <ThemedText
-              type="smallBold"
-              style={{ color: tudoAcertado ? theme.accentText : theme.warningText }}>
-              {tudoAcertado
-                ? 'Contas acertadas'
-                : acerto && acerto.length > 0
-                  ? `Contas por acertar · ${plural(acerto.length, 'transferência', 'transferências')}`
-                  : 'Contas por acertar'}
-            </ThemedText>
-          </View>
-        )}
+        <Button
+          label="Juntar despesa"
+          icon={icons.preco}
+          onPress={() =>
+            router.push({
+              pathname: '/sessao/[sessaoId]/nova-despesa',
+              params: { sessaoId },
+            })
+          }
+        />
       </View>
     </View>
   );
@@ -401,34 +332,12 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingBottom: Spacing.five,
   },
-  topo: {
-    gap: Spacing.one,
-    padding: Spacing.threeAndHalf,
-    borderRadius: Radius.card,
-    borderCurve: 'continuous',
+  resumo: {
+    gap: Spacing.half,
   },
-  lista: {
-    borderRadius: Radius.card,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-  },
-  linhaDespesa: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.twoAndHalf,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.twoAndHalf,
-    minHeight: 56,
-  },
-  azulejo: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flex: {
-    flex: 1,
+  grupo: {
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
   valor: {
     fontVariant: ['tabular-nums'],
@@ -457,13 +366,5 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.twoAndHalf,
-  },
-  estado: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    minHeight: 52,
-    borderRadius: Radius.button,
   },
 });

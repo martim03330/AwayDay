@@ -12,14 +12,7 @@ import type { NotificationKind } from '@/features/profile/types';
 import { useTheme } from '@/hooks/use-theme';
 import { enablePushOnThisDevice, type PushPermission } from '@/lib/push';
 import { useUserId } from '@/lib/session';
-import {
-  definicoesNotificacao,
-  TIPOS_NOTIFICACAO,
-  type DefinicaoNotificacao,
-} from '@/mocks/notificacoes';
-import { useAppState } from '@/state/app-state';
 import { Card } from '@/ui/card';
-import { Icon } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
@@ -64,49 +57,8 @@ function LinhaInterruptor({
         trackColor={{ true: theme.accent, false: theme.border }}
         ios_backgroundColor={theme.border}
         accessibilityLabel={titulo}
+        testID={`interruptor-${titulo}`}
       />
-    </View>
-  );
-}
-
-function ExemploNotificacao({
-  exemplo,
-  ligada,
-}: {
-  exemplo: DefinicaoNotificacao['exemplo'];
-  ligada: boolean;
-}) {
-  const theme = useTheme();
-
-  return (
-    <View
-      accessible
-      accessibilityLabel={`Exemplo${ligada ? '' : ', desligada'}: ${exemplo.titulo}. ${exemplo.corpo}`}
-      style={[
-        styles.notificacao,
-        { backgroundColor: theme.background, borderColor: theme.border },
-        !ligada && styles.desligada,
-      ]}>
-      <View style={[styles.iconeApp, { backgroundColor: theme.accent }]}>
-        <ThemedText type="section" style={[styles.iconeAppTexto, { color: theme.accentText }]}>
-          AD
-        </ThemedText>
-      </View>
-      <View style={styles.corpoNotificacao}>
-        <View style={styles.topo}>
-          <ThemedText type="eyebrow" themeColor="textSecondary">
-            AwayDay
-          </ThemedText>
-          <ThemedText themeColor="textMuted" style={styles.quando}>
-            {exemplo.quando}
-          </ThemedText>
-        </View>
-        <View style={styles.tituloNotificacao}>
-          <Icon name={exemplo.icone} size={15} color={theme.accentInk} strokeWidth={2.4} />
-          <ThemedText style={styles.tituloExemplo}>{exemplo.titulo}</ThemedText>
-        </View>
-        <ThemedText style={styles.descricao}>{exemplo.corpo}</ThemedText>
-      </View>
     </View>
   );
 }
@@ -114,9 +66,9 @@ function ExemploNotificacao({
 function avisoDePermissao(permissao: PushPermission) {
   if (permissao === 'granted') return null;
   if (permissao === 'denied') {
-    return 'As notificações estão desligadas nas definições do telemóvel: as dicas ficam só nas Novidades.';
+    return 'As notificações estão desligadas nas definições do telemóvel: vês tudo quando abrires a app.';
   }
-  return 'Neste telemóvel não recebes notificações push: as dicas ficam nas Novidades.';
+  return 'Neste telemóvel não recebes notificações push: vês tudo quando abrires a app.';
 }
 
 /** Mensagens escritas pela AwayDay a partir da conta. Só aparece com sessão. */
@@ -145,7 +97,7 @@ function MensagensDaConta() {
       <Card style={styles.cartaoLinhas}>
         <LinhaInterruptor
           titulo="Dicas para dias de jogo"
-          descricao="No máximo uma por dia, a partir do calendário e do que já fizeste na app."
+          descricao="A dica do treinador e no máximo um aviso por dia. São escritas por IA (Claude, da Anthropic) com o teu clube, os jogos e o que fazes na app, sem o teu nome nem email."
           value={nudgesEnabled}
           disabled={guardar.isPending}
           onValueChange={(ligar) => void alternarSugestoes(ligar)}
@@ -153,7 +105,7 @@ function MensagensDaConta() {
         />
         <LinhaInterruptor
           titulo="Retrospetiva da época"
-          descricao="Um resumo em junho: jogos, estádios novos e o tasco onde mais voltaste."
+          descricao="Um resumo em junho: jogos, estádios novos e o tasco onde mais voltaste. Também escrito por IA, com os mesmos cuidados."
           value={recapEnabled}
           disabled={guardar.isPending}
           onValueChange={(ligar) => guardar.mutate({ recapEnabled: ligar })}
@@ -252,36 +204,18 @@ function AvisosDaMalta() {
 }
 
 export default function NotificacoesScreen() {
-  const { notificacoes, alternarNotificacao } = useAppState();
+  const userId = useUserId();
 
   return (
     <Screen>
       <MensagensDaConta />
       <AvisosDaMalta />
-
-      <SectionHeader title="Outros avisos" />
-      <ThemedText style={styles.descricao} themeColor="textSecondary">
-        Estes ainda não são enviados: escolhe o que queres receber e vê como fica.
-      </ThemedText>
-
-      {TIPOS_NOTIFICACAO.map((tipo) => {
-        const definicao = definicoesNotificacao[tipo];
-        const ligada = notificacoes[tipo];
-        return (
-          <Card key={tipo} style={styles.cartaoExemplo}>
-            <LinhaInterruptor
-              titulo={definicao.titulo}
-              descricao={definicao.descricao}
-              value={ligada}
-              onValueChange={() => alternarNotificacao(tipo)}
-            />
-            <ThemedText type="eyebrow" themeColor="textMuted">
-              Exemplo
-            </ThemedText>
-            <ExemploNotificacao exemplo={definicao.exemplo} ligada={ligada} />
-          </Card>
-        );
-      })}
+      {userId ? null : (
+        <ThemedText style={styles.descricao} themeColor="textSecondary">
+          Os lembretes de cada jogo ligas na página do jogo, em «O teu plano». Com conta, recebes também
+          os avisos das boleias e da malta.
+        </ThemedText>
+      )}
     </Screen>
   );
 }

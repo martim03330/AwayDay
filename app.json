@@ -8,7 +8,8 @@
     "scheme": "awayday",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.martimhenriques.awayday"
     },
     "android": {
       "allowBackup": false,
@@ -18,7 +19,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.martimhenriques.awayday"
     },
     "web": {
       "output": "static",
@@ -44,7 +46,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "O AwayDay usa a câmara para tirares a foto que prova cada missão.",
+          "cameraPermission": "O AwayDay usa a câmara para tirares a tua foto de perfil, a do grupo, fotos da viagem e de tascos, e as provas das missões.",
           "photosPermission": false,
           "microphonePermission": "O AwayDay usa o microfone durante 10 segundos para medir o barulho da bancada. Nada é gravado."
         }
@@ -53,7 +55,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "O AwayDay usa a tua localização só quando fazes check-in, para confirmar que estás no tasco. Não fica guardada.",
+          "locationWhenInUsePermission": "O AwayDay usa a tua localização no momento em que fazes check-in num tasco, carimbas o estádio, escolhes o ponto de partida de uma boleia ou procuras a casa de banho mais perto. A tua posição não fica guardada.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false
         }

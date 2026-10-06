@@ -17,17 +17,24 @@ function LinhaHora({
   rotulo,
   hora,
   destaque = false,
+  primeira = false,
 }: {
   rotulo: string;
   hora: string;
   destaque?: boolean;
+  /** The first row of the card: no hairline above it. */
+  primeira?: boolean;
 }) {
   const theme = useTheme();
   return (
     <View
       accessible
       accessibilityLabel={`${rotulo}: ${hora}`}
-      style={[styles.linhaHora, { borderTopColor: theme.backgroundSelected }]}>
+      style={[
+        styles.linhaHora,
+        !primeira && { paddingTop: Spacing.two, borderTopWidth: 1 },
+        { borderTopColor: theme.backgroundSelected },
+      ]}>
       <ThemedText style={styles.flex}>{rotulo}</ThemedText>
       <ThemedText type="score" style={[styles.hora, destaque && { color: theme.accentInk }]}>
         {hora}
@@ -58,35 +65,39 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
       ? avisosDoJogo(jogo, { casa: casa.nomeCurto, fora: fora.nomeCurto }, onde, agora)
       : [];
 
+  // Hours and alerts are one plan: one title, one card.
   return (
     <>
-      <SectionHeader title="As tuas horas" />
+      <SectionHeader title="O teu plano" />
       <Card style={styles.cartao}>
         {jogo.horaConfirmada ? (
           <>
             <LinhaHora
-              rotulo={onde ? `Sair do ${onde.nome} para o estádio` : 'Ir para o estádio'}
+              rotulo={onde ? `Sair do ${onde.nome}` : 'Ir para o estádio'}
               hora={formatarHora(horas.sairParaOEstadio)}
               destaque
+              primeira
             />
             <LinhaHora rotulo="Apito inicial" hora={formatarHora(inicio)} />
             <ThemedText type="small" themeColor="textMuted">
               {onde
-                ? `Estás no ${onde.nome}: conta com ${onde.minutosAPe} min a pé, 15 min para entrar e 10 de folga.`
-                : 'Conta com 15 min para entrar e 10 de folga. Faz check-in no sítio onde estiveres e acertamos a hora ao caminho a pé.'}
+                ? `Conta ${onde.minutosAPe} min a pé, 15 para entrar e 10 de folga.`
+                : 'Conta 15 min para entrar e 10 de folga. Com check-in, acertamos a partir daí.'}
             </ThemedText>
           </>
         ) : (
           <ThemedText themeColor="textSecondary">
-            As horas aparecem quando a hora do jogo for confirmada. Avisamos-te quando mudar.
+            As horas aparecem quando o jogo tiver hora marcada.
           </ThemedText>
         )}
-      </Card>
 
-      <SectionHeader title="Avisos deste jogo" />
-      <Card style={styles.cartao}>
-        <View style={styles.linha}>
-          <ThemedText style={styles.flex}>Avisar-me neste telemóvel</ThemedText>
+        <View style={[styles.linha, styles.separado, { borderTopColor: theme.backgroundSelected }]}>
+          <View style={styles.flex}>
+            <ThemedText style={styles.rotuloAvisos}>Avisar-me neste telemóvel</ThemedText>
+            <ThemedText type="small" themeColor="textMuted">
+              O primeiro chega 3 dias antes.
+            </ThemedText>
+          </View>
           <Switch
             value={avisosLigados(jogo.id)}
             onValueChange={() => alternarAvisos(jogo.id)}
@@ -97,17 +108,13 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
           />
         </View>
         {avisos.map((aviso) => (
-          <View key={aviso.id} style={[styles.aviso, { borderTopColor: theme.backgroundSelected }]}>
+          <View key={aviso.id} style={styles.aviso}>
             <ThemedText type="smallBold">{formatarDiaEHora(aviso.quando, agora)}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
               {aviso.titulo}
             </ThemedText>
           </View>
         ))}
-        <ThemedText type="small" themeColor="textMuted">
-          O aviso para planear chega 3 dias antes, nunca na véspera. Os do dia acertam-se ao sítio
-          onde estiveres.
-        </ThemedText>
       </Card>
     </>
   );
@@ -129,16 +136,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    paddingTop: Spacing.two,
+  },
+  separado: {
+    marginTop: Spacing.one,
+    paddingTop: Spacing.twoAndHalf,
     borderTopWidth: 1,
+  },
+  rotuloAvisos: {
+    fontWeight: 700,
   },
   hora: {
     fontSize: 26,
     lineHeight: 30,
   },
   aviso: {
-    gap: 2,
-    paddingTop: Spacing.two,
-    borderTopWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.two,
   },
 });

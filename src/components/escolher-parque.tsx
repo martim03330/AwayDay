@@ -65,7 +65,7 @@ function Opcao({
           </ThemedText>
         ) : null}
       </View>
-      {escolhido ? <Icon name={icons.selecionado} size={16} color={theme.accent} /> : null}
+      {escolhido ? <Icon name={icons.selecionado} size={16} color={theme.accentInk} /> : null}
     </Pressable>
   );
 }
@@ -89,8 +89,7 @@ export function EscolherParque({
   if (parques.length === 0) {
     return (
       <ThemedText type="small" themeColor="textSecondary">
-        Ainda não temos parques verificados perto deste estádio. Combina com a malta no ponto de
-        encontro.
+        Ainda sem parques verificados perto deste estádio. Combinem no caminho.
       </ThemedText>
     );
   }
@@ -98,12 +97,12 @@ export function EscolherParque({
   return (
     <>
       <ThemedText type="small" themeColor="textSecondary">
-        Quem vai contigo vê onde deixam o carro. A cor é a nossa estimativa de encontrar lugar.
+        Quem vai contigo vê onde fica o carro. A cor é a nossa estimativa de haver lugar.
       </ThemedText>
       <View style={styles.lista}>
         <Opcao
           nome="Ainda não sei"
-          detalhe="Decides no caminho e dizes à malta."
+          detalhe="Decides no caminho"
           cor={null}
           escolhido={escolhido === null}
           onPress={() => onEscolher(null)}
@@ -123,7 +122,12 @@ export function EscolherParque({
               detalhe={[minutos !== null ? `${minutos} min a pé do estádio` : null, motivo]
                 .filter(Boolean)
                 .join(' · ')}
-              nota={`Chega até às ${formatarHora(chegada)} para apanhares lugar`}
+              // Only on the chosen one: the list stays one line per car park.
+              nota={
+                escolhido === parque.id
+                  ? `Chega até às ${formatarHora(chegada)} para apanhares lugar`
+                  : undefined
+              }
               cor={corFacilidade(theme, nivel)}
               escolhido={escolhido === parque.id}
               onPress={() => onEscolher(parque.id)}

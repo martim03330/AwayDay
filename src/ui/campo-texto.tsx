@@ -19,7 +19,10 @@ export function CampoTexto({ label, value, onChangeText, maxLength, placeholder 
 
   return (
     <View style={styles.container}>
-      <ThemedText style={styles.label}>{label}</ThemedText>
+      {/* The input already says its label: read once, not twice. */}
+      <ThemedText style={styles.label} importantForAccessibility="no" accessibilityElementsHidden>
+        {label}
+      </ThemedText>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -28,6 +31,8 @@ export function CampoTexto({ label, value, onChangeText, maxLength, placeholder 
         placeholderTextColor={theme.textMuted}
         selectionColor={theme.accent}
         accessibilityLabel={label}
+        accessibilityHint={`Até ${maxLength} caracteres.`}
+        autoCapitalize="sentences"
         multiline
         textAlignVertical="top"
         onFocus={() => setFocado(true)}
@@ -35,10 +40,16 @@ export function CampoTexto({ label, value, onChangeText, maxLength, placeholder 
         style={[
           styles.input,
           { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          focado && [styles.focado, { borderColor: theme.accent }],
+          focado && [
+            styles.focado,
+            { borderColor: theme.accent, boxShadow: `0 0 0 4px ${theme.successBackground}` },
+          ],
         ]}
       />
-      <ThemedText style={styles.contador} themeColor="textMuted">
+      <ThemedText
+        style={styles.contador}
+        themeColor="textMuted"
+        accessibilityLabel={`${value.length} de ${maxLength} caracteres`}>
         {value.length}/{maxLength}
       </ThemedText>
     </View>
@@ -67,7 +78,6 @@ const styles = StyleSheet.create({
   },
   focado: {
     borderWidth: 2,
-    boxShadow: '0 0 0 4px #DDF2E3',
   },
   contador: {
     fontSize: 12,

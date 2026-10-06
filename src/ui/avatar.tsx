@@ -27,6 +27,8 @@ type AvatarProps = {
 export function Avatar({ nome, url, size = 40 }: AvatarProps) {
   const theme = useTheme();
   const raio = { width: size, height: size, borderRadius: size / 2 };
+  // The line height follows the letters: with the text style's fixed one, big initials were cut top and bottom.
+  const letra = Math.round(size * 0.36);
 
   if (url) {
     return (
@@ -36,6 +38,8 @@ export function Avatar({ nome, url, size = 40 }: AvatarProps) {
         contentFit="cover"
         transition={120}
         accessibilityIgnoresInvertColors
+        accessible
+        accessibilityRole="image"
         accessibilityLabel={`Foto de ${nome}`}
       />
     );
@@ -44,12 +48,14 @@ export function Avatar({ nome, url, size = 40 }: AvatarProps) {
   return (
     <View
       style={[raio, styles.iniciais, { backgroundColor: theme.backgroundSelected }]}
+      accessible
+      accessibilityRole="image"
       accessibilityLabel={`Sem foto de ${nome}`}>
       <ThemedText
         type="smallBold"
         allowFontScaling={false}
         themeColor="textSecondary"
-        style={{ fontSize: Math.round(size * 0.36) }}>
+        style={{ fontSize: letra, lineHeight: Math.round(letra * 1.25) }}>
         {iniciais(nome)}
       </ThemedText>
     </View>

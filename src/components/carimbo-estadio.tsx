@@ -120,16 +120,14 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
             ) : null}
           </View>
           <ThemedText type="small" themeColor="textSecondary">
-            Ficou no teu passaporte, confirmado no local. É este tipo de carimbo que conta para o
-            ranking.
+            Ficou no teu passaporte e conta para o ranking.
           </ThemedText>
         </>
       ) : (
         <>
           <ThemedText style={styles.destaque}>Estás no estádio?</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Carimba o {estadio.nome} no teu passaporte. A app confirma que estás lá pela localização
-            — não guardamos onde estás, só que cá estiveste.
+            Confirmamos pela localização, que não fica guardada.
           </ThemedText>
           <Button
             label={aCarimbar ? 'A confirmar…' : 'Carimbar o estádio'}

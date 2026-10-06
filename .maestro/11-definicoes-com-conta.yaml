@@ -1,0 +1,116 @@
+# Jornada 11 — com conta, Definições: a privacidade (partilhar o tasco com os grupos, desligado por omissão),
+# pessoas bloqueadas e as notificações (as mensagens escritas por IA vêm desligadas; os avisos da malta, ligados).
+appId: host.exp.Exponent
+name: 11 Definições com conta
+tags: [com-conta, privacidade]
+---
+- runFlow: comum/entrar-e2e.yaml
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- scrollUntilVisible:
+    element: "Pessoas bloqueadas.*"
+    direction: DOWN
+- assertVisible: "Privacidade"
+
+# Partilhar o tasco: desligado por omissão; liga, fica guardado, desliga
+- assertVisible:
+    id: "interruptor-partilhar-checkins"
+    text: "0"
+- tapOn:
+    id: "interruptor-partilhar-checkins"
+- extendedWaitUntil:
+    visible:
+      id: "interruptor-partilhar-checkins"
+      text: "1"
+    timeout: 10000
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
+- runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil/definicoes } }
+- scrollUntilVisible:
+    element:
+      id: "interruptor-partilhar-checkins"
+    direction: DOWN
+    # Centred: at the top it sits under Expo Go's floating button.
+    centerElement: true
+- extendedWaitUntil:
+    visible:
+      id: "interruptor-partilhar-checkins"
+      text: "1"
+    timeout: 10000
+- tapOn:
+    id: "interruptor-partilhar-checkins"
+- extendedWaitUntil:
+    visible:
+      id: "interruptor-partilhar-checkins"
+      text: "0"
+    timeout: 10000
+
+# Pessoas bloqueadas
+- tapOn: "Pessoas bloqueadas.*"
+- extendedWaitUntil:
+    visible: "Ninguém bloqueado"
+    timeout: 15000
+- runFlow: comum/voltar.yaml
+
+# Notificações
+- scrollUntilVisible:
+    element: "Notificações.*"
+    direction: UP
+- tapOn: "Notificações.*"
+- extendedWaitUntil:
+    visible: "Mensagens da AwayDay"
+    timeout: 15000
+- assertVisible: "Dicas para dias de jogo"
+- assertVisible: "A dica do treinador .*Claude, da Anthropic.*"
+- assertVisible:
+    id: "interruptor-Dicas para dias de jogo"
+    text: "0"
+- assertVisible:
+    id: "interruptor-Retrospetiva da época"
+    text: "0"
+- scrollUntilVisible:
+    element: "Avisos da malta"
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      id: "interruptor-Contas da viagem"
+    direction: DOWN
+    # Centred: at the top it sits under Expo Go's floating button.
+    centerElement: true
+- assertVisible:
+    id: "interruptor-Conversa do grupo"
+    text: "1"
+- assertVisible:
+    id: "interruptor-Contas da viagem"
+    text: "1"
+# Desligar a conversa do grupo fica guardado na conta
+- tapOn:
+    id: "interruptor-Conversa do grupo"
+- extendedWaitUntil:
+    visible:
+      id: "interruptor-Conversa do grupo"
+      text: "0"
+    timeout: 10000
+- runFlow: comum/voltar.yaml
+- tapOn: "Notificações.*"
+- scrollUntilVisible:
+    element:
+      id: "interruptor-Contas da viagem"
+    direction: DOWN
+    # Centred: at the top it sits under Expo Go's floating button.
+    centerElement: true
+- extendedWaitUntil:
+    visible:
+      id: "interruptor-Conversa do grupo"
+      text: "0"
+    timeout: 10000
+# Voltar a ligar (pode pedir autorização ao iOS)
+- tapOn:
+    id: "interruptor-Conversa do grupo"
+- runFlow: comum/permissao-ios.yaml
+- extendedWaitUntil:
+    visible:
+      id: "interruptor-Conversa do grupo"
+      text: "1"
+    timeout: 10000
+# A mensagem que aparece quando o telemóvel não recebe push não pode mandar para um ecrã que já não existe
+- assertNotVisible: ".*Novidades.*"
+- runFlow: comum/voltar.yaml

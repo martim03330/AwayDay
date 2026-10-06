@@ -1,0 +1,16 @@
+# From the Jogos tab, opens the first game card in the list (the fan's club or, if it is resting, any club).
+appId: host.exp.Exponent
+---
+- runFlow: { file: abrir.yaml, env: { ROTA: /jogos } }
+- extendedWaitUntil:
+    visible: ".* contra .*|Jornada de descanso"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Jornada de descanso"
+    commands:
+      - tapOn: "Espreitar a concorrência.*"
+- tapOn: ".* contra .*"
+- extendedWaitUntil:
+    visible: "Com quem vais"
+    timeout: 15000

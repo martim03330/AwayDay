@@ -6,7 +6,6 @@ import { obterJogo } from '@/mocks/jogos';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
-import { SectionHeader } from '@/ui/section-header';
 
 /** Dormir fora: quem propõe casa, quem se junta, e a pesquisa com as noites já preenchidas. */
 export default function DormirScreen() {
@@ -38,7 +37,6 @@ export default function DormirScreen() {
 
   return (
     <Screen>
-      <SectionHeader title="Onde dormir" />
       <DormidaCard
         jogo={jogo}
         estadio={estadio}

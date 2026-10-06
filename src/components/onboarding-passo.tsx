@@ -10,21 +10,22 @@ import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-const TOTAL_PASSOS = 3;
 /** Acima deste número de caracteres, a frase usa letra mais pequena para não ocupar o ecrã todo. */
 const LIMITE_FRASE_CURTA = 70;
 /** Mowing stripes: 36 px wide, every 72 px. */
 const STRIPES = Array.from({ length: 16 }, (_, index) => index * 72 + 36);
 
 type OnboardingPassoProps = {
-  passo: 1 | 2 | 3 | 4;
+  passo: number;
+  /** Com conta há mais passos (foto, de onde partes, como vais) do que sem ela. */
+  total: number;
   /** Uma frase por ecrã: é o que dá o tom à app. */
   frase: string;
   children: ReactNode;
   rodape: ReactNode;
 };
 
-export function OnboardingPasso({ passo, frase, children, rodape }: OnboardingPassoProps) {
+export function OnboardingPasso({ passo, total, frase, children, rodape }: OnboardingPassoProps) {
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();
@@ -32,7 +33,11 @@ export function OnboardingPasso({ passo, frase, children, rodape }: OnboardingPa
 
   return (
     <View style={styles.ecra}>
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <View
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants">
         {STRIPES.map((left) => (
           <View key={left} style={[styles.risca, { left }]} />
         ))}
@@ -59,8 +64,8 @@ export function OnboardingPasso({ passo, frase, children, rodape }: OnboardingPa
           <View
             style={styles.progresso}
             accessible
-            accessibilityLabel={`Passo ${passo} de ${TOTAL_PASSOS}`}>
-            {Array.from({ length: TOTAL_PASSOS }, (_, indice) => (
+            accessibilityLabel={`Passo ${passo} de ${total}`}>
+            {Array.from({ length: total }, (_, indice) => (
               <View
                 key={indice}
                 style={[

@@ -268,6 +268,93 @@ export type Database = {
         }
         Relationships: []
       }
+      content_report: {
+        Row: {
+          content_snapshot: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          kind: string
+          note: string | null
+          reason: string
+          reported_profile_id: string | null
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          ride_id: string | null
+          status: string
+          target_id: string
+        }
+        Insert: {
+          content_snapshot?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          reason: string
+          reported_profile_id?: string | null
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id?: string | null
+          status?: string
+          target_id: string
+        }
+        Update: {
+          content_snapshot?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          reason?: string
+          reported_profile_id?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id?: string | null
+          status?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_report_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_report_reported_profile_id_fkey"
+            columns: ["reported_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_report_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_report_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_report_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_token: {
         Row: {
           created_at: string
@@ -740,6 +827,7 @@ export type Database = {
           ride_id: string | null
           session_id: string | null
           status: string
+          stay_locked_at: string | null
           stay_plan_id: string | null
           updated_at: string
         }
@@ -754,6 +842,7 @@ export type Database = {
           ride_id?: string | null
           session_id?: string | null
           status?: string
+          stay_locked_at?: string | null
           stay_plan_id?: string | null
           updated_at?: string
         }
@@ -768,6 +857,7 @@ export type Database = {
           ride_id?: string | null
           session_id?: string | null
           status?: string
+          stay_locked_at?: string | null
           stay_plan_id?: string | null
           updated_at?: string
         }
@@ -1025,6 +1115,8 @@ export type Database = {
           body: string
           created_at: string
           group_id: string
+          hidden_at: string | null
+          hidden_by: string | null
           id: string
           kind: string
           place_id: string | null
@@ -1035,6 +1127,8 @@ export type Database = {
           body: string
           created_at?: string
           group_id: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
           kind?: string
           place_id?: string | null
@@ -1045,6 +1139,8 @@ export type Database = {
           body?: string
           created_at?: string
           group_id?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
           kind?: string
           place_id?: string | null
@@ -1057,6 +1153,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "fan_group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
             referencedColumns: ["id"]
           },
           {
@@ -1273,6 +1376,60 @@ export type Database = {
           },
         ]
       }
+      mission: {
+        Row: {
+          active: boolean
+          badge: string | null
+          created_at: string
+          description: string
+          family: string
+          icon: string
+          id: string
+          kind: string
+          metric: string
+          proof_hint: string | null
+          sort: number
+          target: number
+          tier: number | null
+          title: string
+          xp: number
+        }
+        Insert: {
+          active?: boolean
+          badge?: string | null
+          created_at?: string
+          description: string
+          family: string
+          icon: string
+          id: string
+          kind: string
+          metric: string
+          proof_hint?: string | null
+          sort?: number
+          target: number
+          tier?: number | null
+          title: string
+          xp: number
+        }
+        Update: {
+          active?: boolean
+          badge?: string | null
+          created_at?: string
+          description?: string
+          family?: string
+          icon?: string
+          id?: string
+          kind?: string
+          metric?: string
+          proof_hint?: string | null
+          sort?: number
+          target?: number
+          tier?: number | null
+          title?: string
+          xp?: number
+        }
+        Relationships: []
+      }
       mission_photo: {
         Row: {
           fixture_id: string | null
@@ -1324,6 +1481,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      municipality: {
+        Row: {
+          created_at: string
+          district: string
+          id: string
+          latitude: number | null
+          location: unknown
+          longitude: number | null
+          name: string
+          region: string
+        }
+        Insert: {
+          created_at?: string
+          district: string
+          id: string
+          latitude?: number | null
+          location: unknown
+          longitude?: number | null
+          name: string
+          region: string
+        }
+        Update: {
+          created_at?: string
+          district?: string
+          id?: string
+          latitude?: number | null
+          location?: unknown
+          longitude?: number | null
+          name?: string
+          region?: string
+        }
+        Relationships: []
       }
       noise_measurement: {
         Row: {
@@ -1993,6 +2183,7 @@ export type Database = {
           is_admin: boolean
           nudges_enabled: boolean
           recap_enabled: boolean
+          share_checkins_with_groups: boolean | null
           show_in_rankings: boolean
           updated_at: string
         }
@@ -2005,6 +2196,7 @@ export type Database = {
           is_admin?: boolean
           nudges_enabled?: boolean
           recap_enabled?: boolean
+          share_checkins_with_groups?: boolean | null
           show_in_rankings?: boolean
           updated_at?: string
         }
@@ -2017,6 +2209,7 @@ export type Database = {
           is_admin?: boolean
           nudges_enabled?: boolean
           recap_enabled?: boolean
+          share_checkins_with_groups?: boolean | null
           show_in_rankings?: boolean
           updated_at?: string
         }
@@ -2061,37 +2254,40 @@ export type Database = {
           },
         ]
       }
-      profile_photo_report: {
+      profile_home: {
         Row: {
           created_at: string
+          municipality_id: string | null
           profile_id: string
-          reason: string | null
-          reported_by: string
+          updated_at: string
+          usual_transport: string | null
         }
         Insert: {
           created_at?: string
+          municipality_id?: string | null
           profile_id: string
-          reason?: string | null
-          reported_by: string
+          updated_at?: string
+          usual_transport?: string | null
         }
         Update: {
           created_at?: string
+          municipality_id?: string | null
           profile_id?: string
-          reason?: string | null
-          reported_by?: string
+          updated_at?: string
+          usual_transport?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "profile_photo_report_profile_id_fkey"
-            columns: ["profile_id"]
+            foreignKeyName: "profile_home_municipality_id_fkey"
+            columns: ["municipality_id"]
             isOneToOne: false
-            referencedRelation: "profile"
+            referencedRelation: "municipality"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "profile_photo_report_reported_by_fkey"
-            columns: ["reported_by"]
-            isOneToOne: false
+            foreignKeyName: "profile_home_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profile"
             referencedColumns: ["id"]
           },
@@ -2484,6 +2680,8 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
           id: string
           profile_id: string
           ride_id: string
@@ -2491,6 +2689,8 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
           profile_id: string
           ride_id: string
@@ -2498,11 +2698,20 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
           profile_id?: string
           ride_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ride_message_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ride_message_profile_id_fkey"
             columns: ["profile_id"]
@@ -2707,6 +2916,68 @@ export type Database = {
           starts_on?: string
         }
         Relationships: []
+      }
+      season_closing: {
+        Row: {
+          closed_at: string
+          season_id: string
+        }
+        Insert: {
+          closed_at?: string
+          season_id: string
+        }
+        Update: {
+          closed_at?: string
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_closing_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: true
+            referencedRelation: "season"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_division: {
+        Row: {
+          created_at: string
+          division: number
+          movement: number
+          profile_id: string
+          season_id: string
+        }
+        Insert: {
+          created_at?: string
+          division: number
+          movement?: number
+          profile_id: string
+          season_id: string
+        }
+        Update: {
+          created_at?: string
+          division?: number
+          movement?: number
+          profile_id?: string
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_division_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_division_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "season"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       season_recap: {
         Row: {
@@ -3050,6 +3321,48 @@ export type Database = {
           },
         ]
       }
+      trip_photo: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          session_id: string
+          storage_path: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          session_id: string
+          storage_path: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          session_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_photo_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_photo_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "trip_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_session: {
         Row: {
           created_at: string
@@ -3224,6 +3537,39 @@ export type Database = {
           {
             foreignKeyName: "trip_settlement_to_profile_id_fkey"
             columns: ["to_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_block: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_block_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_block_blocker_id_fkey"
+            columns: ["blocker_id"]
             isOneToOne: false
             referencedRelation: "profile"
             referencedColumns: ["id"]
@@ -3477,6 +3823,35 @@ export type Database = {
           },
         ]
       }
+      weekly_challenge: {
+        Row: {
+          created_at: string
+          mission_id: string
+          slot: number
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          mission_id: string
+          slot: number
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          mission_id?: string
+          slot?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_challenge_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -3502,6 +3877,10 @@ export type Database = {
       add_trip_person: {
         Args: { p_profile_id: string; p_session_id: string }
         Returns: undefined
+      }
+      add_trip_photo: {
+        Args: { p_caption?: string; p_path: string; p_session_id: string }
+        Returns: string
       }
       add_trip_settlement: {
         Args: {
@@ -3546,6 +3925,16 @@ export type Database = {
         Args: { p_one: string; p_other: string }
         Returns: boolean
       }
+      block_user: { Args: { p_profile_id: string }; Returns: undefined }
+      caller_in_group_folder: { Args: { p_folder: string }; Returns: boolean }
+      caller_is_trip_member: {
+        Args: { p_session_id: string }
+        Returns: boolean
+      }
+      caller_sees_trip_memories: {
+        Args: { p_session_id: string }
+        Returns: boolean
+      }
       can_see_fixture_plan: {
         Args: { p_plan_id: string; p_profile_id: string }
         Returns: boolean
@@ -3558,14 +3947,35 @@ export type Database = {
         Args: { p_group_id: string; p_profile_id: string; p_stay_id: string }
         Returns: boolean
       }
+      can_see_profile: {
+        Args: { p_profile_id: string; p_viewer: string }
+        Returns: boolean
+      }
+      can_see_trip_memories: {
+        Args: { p_profile_id: string; p_session_id: string }
+        Returns: boolean
+      }
       can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
       can_use_group_topic: { Args: { p_topic: string }; Returns: boolean }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       clear_profile_photo: { Args: never; Returns: undefined }
+      close_finished_seasons: { Args: never; Returns: number }
       close_plans_with_full_ride: {
         Args: { p_ride_id: string }
         Returns: undefined
+      }
+      closed_plan_elsewhere: {
+        Args: { p_plan_id: string; p_profile_id: string }
+        Returns: string
+      }
+      club_away_support: {
+        Args: never
+        Returns: {
+          club_id: string
+          people: number
+          visits: number
+        }[]
       }
       club_supporter_counts: {
         Args: never
@@ -3594,12 +4004,18 @@ export type Database = {
         Returns: undefined
       }
       create_group: { Args: { p_name: string }; Returns: string }
+      current_season_id: { Args: never; Returns: string }
       decline_group_invite: { Args: { p_group_id: string }; Returns: undefined }
       decline_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
       delete_cancelled_rides: { Args: never; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
       delete_old_stay_plans: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
+      division_promotion_min_xp: { Args: never; Returns: number }
+      division_spots: {
+        Args: { p_active: number }
+        Returns: Record<string, unknown>
+      }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean
@@ -3629,12 +4045,14 @@ export type Database = {
           id: string
           is_mine: boolean
           listing_url: string
+          locked: boolean
           my_status: string
           my_vote: boolean
           nights: number
           note: string
           owner_id: string
           owner_name: string
+          people_names: string[]
           share_full_cents: number
           share_now_cents: number
           spare_places: number
@@ -3650,6 +4068,7 @@ export type Database = {
           answer: string
           display_name: string
           is_me: boolean
+          other_group: string
           profile_id: string
         }[]
       }
@@ -3736,6 +4155,20 @@ export type Database = {
         }[]
       }
       group_fixture_plans: { Args: { p_group_id: string }; Returns: string[] }
+      group_history: {
+        Args: { p_group_id: string }
+        Returns: {
+          companions: string[]
+          companions_count: number
+          cover_path: string
+          fixture_id: string
+          kickoff_at: string
+          people: number
+          photos: number
+          session_id: string
+          total_cents: number
+        }[]
+      }
       group_members: {
         Args: { p_group_id: string }
         Returns: {
@@ -3747,6 +4180,13 @@ export type Database = {
           rides_faults: number
           role: string
         }[]
+      }
+      group_message_visible: {
+        Args: {
+          p_message: Database["public"]["Tables"]["group_message"]["Row"]
+          p_reader: string
+        }
+        Returns: boolean
       }
       group_messages: {
         Args: { p_before?: string; p_group_id: string; p_limit?: number }
@@ -3762,6 +4202,10 @@ export type Database = {
           plan_id: string
           profile_id: string
         }[]
+      }
+      group_plan_for_fixture: {
+        Args: { p_fixture_id: string; p_group_id: string }
+        Returns: string
       }
       group_plans: {
         Args: { p_group_id: string }
@@ -3792,6 +4236,10 @@ export type Database = {
           seats_taken: number
           total_cents: number
         }[]
+      }
+      has_blocked: {
+        Args: { p_blocked: string; p_blocker: string }
+        Returns: boolean
       }
       have_crossed_paths: {
         Args: { p_one: string; p_other: string }
@@ -3847,6 +4295,8 @@ export type Database = {
         Returns: boolean
       }
       join_group_with_code: { Args: { p_code: string }; Returns: string }
+      join_plan_ride: { Args: { p_plan_id: string }; Returns: undefined }
+      join_plan_stay: { Args: { p_plan_id: string }; Returns: undefined }
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
@@ -3865,6 +4315,16 @@ export type Database = {
       moderate_place_photo: {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
+      }
+      my_approved_place_photo_count: { Args: never; Returns: number }
+      my_blocked_people: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          blocked_at: string
+          display_name: string
+          profile_id: string
+        }[]
       }
       my_friend_requests: {
         Args: never
@@ -3943,7 +4403,58 @@ export type Database = {
           total_cents: number
         }[]
       }
+      my_missions: {
+        Args: never
+        Returns: {
+          badge: string
+          completed_at: string
+          description: string
+          family: string
+          icon: string
+          kind: string
+          metric: string
+          mission_id: string
+          progress: number
+          proof_hint: string
+          sort: number
+          target: number
+          tier: number
+          title: string
+          week_start: string
+          xp: number
+        }[]
+      }
       my_open_trip_sessions: { Args: never; Returns: string[] }
+      my_plan_conflicts: {
+        Args: { p_plan_ids: string[] }
+        Returns: {
+          other_group: string
+          plan_id: string
+        }[]
+      }
+      my_ranking: {
+        Args: never
+        Returns: {
+          best_streak_weeks: number
+          division: number
+          division_movement: number
+          division_position: number
+          division_size: number
+          level: number
+          level_xp: number
+          next_level_xp: number
+          promotion_min_xp: number
+          promotion_spots: number
+          relegation_spots: number
+          season_id: string
+          season_xp: number
+          show_in_rankings: boolean
+          stadium_visits: number
+          stadiums: number
+          streak_weeks: number
+          total_xp: number
+        }[]
+      }
       my_ride_alerts: {
         Args: never
         Returns: {
@@ -4050,7 +4561,27 @@ export type Database = {
         Args: { p_fixture_id: string; p_group_id: string }
         Returns: string
       }
+      pending_content_reports: {
+        Args: never
+        Returns: {
+          content: string
+          content_gone: boolean
+          context: string
+          first_reported_at: string
+          hidden: boolean
+          kind: string
+          last_reported_at: string
+          notes: string[]
+          reasons: string[]
+          report_id: string
+          reported_name: string
+          reported_profile_id: string
+          reports: number
+          target_id: string
+        }[]
+      }
       place_name_key: { Args: { p_name: string }; Returns: string }
+      place_open_for_my_vote: { Args: { p_place_id: string }; Returns: boolean }
       place_scores: {
         Args: { p_venue_id: string }
         Returns: {
@@ -4071,6 +4602,7 @@ export type Database = {
           score: number
         }[]
       }
+      plan_weekly_challenges: { Args: never; Returns: number }
       post_plan_message: {
         Args: { p_group_id: string; p_plan_id: string; p_profile_id: string }
         Returns: undefined
@@ -4098,6 +4630,60 @@ export type Database = {
           p_specialty?: string
         }
         Returns: undefined
+      }
+      ranking_activity: {
+        Args: { p_profile_id?: string }
+        Returns: {
+          at: string
+          key: string
+          metric: string
+          profile_id: string
+        }[]
+      }
+      ranking_division: {
+        Args: { p_profile_id: string; p_season_id: string }
+        Returns: number
+      }
+      ranking_leaderboard: {
+        Args: { p_limit?: number; p_period?: string; p_scope?: string }
+        Returns: {
+          club_id: string
+          display_name: string
+          division: number
+          is_me: boolean
+          level: number
+          rank_position: number
+          xp: number
+        }[]
+      }
+      ranking_level: { Args: { p_xp: number }; Returns: number }
+      ranking_level_floor: { Args: { p_level: number }; Returns: number }
+      ranking_progress: {
+        Args: { p_profile_id?: string }
+        Returns: {
+          completed_at: string
+          mission_id: string
+          profile_id: string
+          progress: number
+          window_start: string
+          xp: number
+        }[]
+      }
+      ranking_totals: {
+        Args: { p_profile_id?: string; p_season_id?: string }
+        Returns: {
+          profile_id: string
+          season_xp: number
+          total_xp: number
+        }[]
+      }
+      ranking_xp: {
+        Args: { p_profile_id?: string }
+        Returns: {
+          at: string
+          points: number
+          profile_id: string
+        }[]
       }
       record_noise_measurement: {
         Args: { p_fixture_id: string; p_level: number }
@@ -4143,6 +4729,7 @@ export type Database = {
         Args: { p_profile_id: string; p_session_id: string }
         Returns: undefined
       }
+      remove_trip_photo: { Args: { p_photo_id: string }; Returns: string }
       remove_trip_session: {
         Args: { p_session_id: string }
         Returns: undefined
@@ -4158,6 +4745,15 @@ export type Database = {
       rename_trip_session: {
         Args: { p_name: string; p_session_id: string }
         Returns: undefined
+      }
+      report_content: {
+        Args: {
+          p_kind: string
+          p_note?: string
+          p_reason: string
+          p_target_id: string
+        }
+        Returns: string
       }
       report_home_fans: {
         Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
@@ -4199,6 +4795,10 @@ export type Database = {
         Returns: undefined
       }
       request_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      resolve_content_report: {
+        Args: { p_action: string; p_report_id: string }
+        Returns: undefined
+      }
       ride_ban_until: { Args: { p_profile_id: string }; Returns: string }
       ride_board: {
         Args: { p_fixture_id: string }
@@ -4333,6 +4933,7 @@ export type Database = {
         Args: { p_profile_id: string; p_ride_id: string }
         Returns: string
       }
+      ride_seats_full: { Args: { p_ride_id: string }; Returns: boolean }
       ride_session_id: { Args: { p_ride_id: string }; Returns: string }
       ride_share_cents: {
         Args: { p_people: number; p_total_cents: number }
@@ -4349,6 +4950,14 @@ export type Database = {
       }
       roll_up_home_fan_reports: { Args: never; Returns: number }
       rotate_group_invite: { Args: { p_group_id: string }; Returns: string }
+      season_attendance: {
+        Args: never
+        Returns: {
+          people: number
+          venues: number
+          visits: number
+        }[]
+      }
       season_recap_candidates: {
         Args: { p_season_id: string }
         Returns: {
@@ -4404,6 +5013,10 @@ export type Database = {
         Returns: undefined
       }
       set_home_city: { Args: { p_city: string }; Returns: undefined }
+      set_plan_stay_locked: {
+        Args: { p_locked: boolean; p_plan_id: string }
+        Returns: undefined
+      }
       set_profile_photo: { Args: { p_path: string }; Returns: undefined }
       set_ride_group: {
         Args: { p_group_id?: string; p_ride_id: string }
@@ -4417,40 +5030,35 @@ export type Database = {
         Args: { p_public: boolean; p_ride_id: string }
         Returns: undefined
       }
+      set_share_checkins_with_groups: {
+        Args: { p_share: boolean }
+        Returns: undefined
+      }
       set_stay_group: {
         Args: { p_group_id?: string; p_plan_id: string }
         Returns: undefined
       }
-      set_stay_plan:
-        | {
-            Args: {
-              p_cents_per_person: number
-              p_commitment?: string
-              p_fixture_id: string
-              p_kind: string
-              p_nights: number
-              p_note?: string
-              p_spare_places?: number
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_commitment: string
-              p_fixture_id: string
-              p_listing_url?: string
-              p_nights: number
-              p_note?: string
-              p_spare_places: number
-              p_total_cents: number
-            }
-            Returns: string
-          }
+      set_stay_plan: {
+        Args: {
+          p_commitment: string
+          p_fixture_id: string
+          p_listing_url?: string
+          p_nights: number
+          p_note?: string
+          p_spare_places: number
+          p_total_cents: number
+        }
+        Returns: string
+      }
       set_stay_visibility: {
         Args: { p_plan_id: string; p_public: boolean }
         Returns: undefined
       }
       settle_rides: { Args: never; Returns: number }
+      share_checkin_with_groups: {
+        Args: { p_place_id: string; p_profile_id: string }
+        Returns: number
+      }
       share_fixture_plan: {
         Args: { p_group_id: string; p_plan_id: string }
         Returns: undefined
@@ -4561,6 +5169,23 @@ export type Database = {
           source: string
         }[]
       }
+      trip_folder_session: { Args: { p_folder: string }; Returns: string }
+      trip_memory: {
+        Args: { p_session_id: string }
+        Returns: {
+          biggest_cents: number
+          biggest_description: string
+          expenses: number
+          fixture_id: string
+          i_went: boolean
+          kickoff_at: string
+          name: string
+          people_names: string[]
+          photos: number
+          session_id: string
+          total_cents: number
+        }[]
+      }
       trip_people: {
         Args: { p_session_id: string }
         Returns: {
@@ -4575,6 +5200,18 @@ export type Database = {
           display_name: string
           profile_id: string
           reason: string
+        }[]
+      }
+      trip_photos: {
+        Args: { p_session_id: string }
+        Returns: {
+          caption: string
+          created_at: string
+          display_name: string
+          id: string
+          mine: boolean
+          profile_id: string
+          storage_path: string
         }[]
       }
       trip_session_cards: {
@@ -4644,6 +5281,15 @@ export type Database = {
       trips_together: {
         Args: { p_one: string; p_other: string }
         Returns: number
+      }
+      unblock_user: { Args: { p_profile_id: string }; Returns: undefined }
+      venue_attendance: {
+        Args: never
+        Returns: {
+          people: number
+          venue_id: string
+          visits: number
+        }[]
       }
       verified_places_ranking: {
         Args: { p_limit?: number }

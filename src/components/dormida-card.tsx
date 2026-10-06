@@ -46,6 +46,7 @@ import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 const NOITES = [1, 2, 3];
 const LUGARES = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -452,7 +453,7 @@ export function DormidaCard({
           Procurar casa
         </ThemedText>
         <ThemedText themeColor="textSecondary">
-          {`Jogo ${estadio.regiao === 'estrangeiro' ? 'fora do país' : 'numa ilha'}: quem vai dorme em ${estadio.cidade}. Entrada a ${formatarData(new Date(estadia.checkin))}, saída a ${formatarData(new Date(estadia.checkout))}.`}
+          {`Em ${estadio.cidade}: entrada a ${formatarData(new Date(estadia.checkin))}, saída a ${formatarData(new Date(estadia.checkout))}.`}
         </ThemedText>
 
         <ThemedText style={styles.rotulo}>Quantas noites</ThemedText>
@@ -503,7 +504,7 @@ export function DormidaCard({
               ))}
             </View>
             <ThemedText type="small" themeColor="textSecondary">
-              Pela dormida toda. O tamanho da casa sai daí: quanto mais gente, mais cara pode ser.
+              Pela dormida toda.
             </ThemedText>
             <View style={styles.pesquisas}>
               {pesquisas.map((pesquisa) => (
@@ -538,8 +539,7 @@ export function DormidaCard({
           </>
         )}
         <ThemedText type="small" themeColor="textMuted">
-          Abre o Airbnb com a cidade, as datas e o preço já preenchidos. Encontraste uma boa? Volta
-          aqui e propõe-na à malta.
+          Abre o Airbnb já com a cidade, as datas e o preço.
         </ThemedText>
       </Card>
 
@@ -580,7 +580,7 @@ export function DormidaCard({
       <Aviso
         tone="aviso"
         title="Dividir casa é entre vocês"
-        message="A app não trata de dinheiro nem reserva nada. Paga sempre pelo Airbnb e nunca faças transferências a quem não conheces antes de a reserva existir e de veres a confirmação."
+        message="A app não reserva nem trata de dinheiro. Paga pelo Airbnb e não transfiras nada antes de veres a reserva confirmada."
       />
 
       {/* Propor uma casa: cartão próprio, para não ser mais uma secção de uma parede. */}
@@ -595,9 +595,8 @@ export function DormidaCard({
           />
         ) : !podePartilhar ? (
           <ThemedText type="small" themeColor="textSecondary">
-            Para propor uma casa ou entrar numa, é preciso ter conta há mais de uma semana ou já ter
-            feito uma boleia com a malta. É pouco, mas evita que uma conta criada agora ande a
-            juntar dinheiro de gente.
+            Para propor ou entrar numa casa, precisas de conta há mais de uma semana ou de já teres
+            feito uma boleia.
           </ThemedText>
         ) : aberto ? (
           <View style={styles.form}>
@@ -707,6 +706,10 @@ export function DormidaCard({
               onChangeText={setLink}
               placeholder="https://www.airbnb.pt/rooms/…"
               autoCapitalize="none"
+              keyboardType="url"
+              autoComplete="url"
+              textContentType="URL"
+              returnKeyType="done"
               maxLength={500}
             />
             <Campo
@@ -715,8 +718,10 @@ export function DormidaCard({
               onChangeText={setNota}
               placeholder="Ex.: a 10 min do estádio, dois quartos e sofá-cama"
               maxLength={200}
+              autoCapitalize="sentences"
+              returnKeyType="done"
             />
-            {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+            {erro ? <MensagemErro>{erro}</MensagemErro> : null}
             <Button
               label={aTratar ? 'A guardar…' : 'Guardar'}
               disabled={aTratar}
@@ -731,8 +736,7 @@ export function DormidaCard({
         ) : (
           <>
             <ThemedText type="small" themeColor="textSecondary">
-              Propõe-na à malta: dizes quanto custa ao todo e quantos lugares tem, e a app mostra a
-              cada um quanto fica a pagar.
+              Diz quanto custa e quantos lugares tem: a app mostra quanto paga cada um.
             </ThemedText>
             <Button
               label="Propor uma casa"

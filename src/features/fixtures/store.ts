@@ -1,13 +1,16 @@
+import { aproximarDoPresente } from '@/features/fixtures/demo-datas';
 import { buildFixtureCatalog, type FixtureCatalog } from '@/features/fixtures/mappers';
 import { bundledCatalogRows } from '@/features/fixtures/snapshot';
 import type { FixtureCatalogRows } from '@/features/fixtures/types';
-import { extrasClubes } from '@/mocks/extras-clubes';
 import { extrasEstadios } from '@/mocks/extras-estadios';
 import { extrasJogos } from '@/mocks/extras-jogos';
 
 type Listener = (catalog: FixtureCatalog) => void;
 
-const extras = { fixtures: extrasJogos, venues: extrasEstadios, clubs: extrasClubes };
+/** Sample weather, shade, shelter, transport and meeting points: invented, so only ever for the demo catalogue. */
+const demoExtras = { fixtures: extrasJogos, venues: extrasEstadios };
+/** The real catalogue shows only what the database has; screens hide what is unknown. */
+const realExtras = { fixtures: {}, venues: {} };
 // Lists keep the order people already know from the bundled catalogue.
 const order = {
   venues: bundledCatalogRows.venues.map((row) => row.id),
@@ -15,9 +18,14 @@ const order = {
 };
 
 /** Demo mode: the bundled catalogue, with its sample fixtures and simulated weather. */
-const demoCatalog = buildFixtureCatalog(bundledCatalogRows, extras, order);
+const demoCatalog = buildFixtureCatalog(
+  // Sample games moved forward to the coming days, so demo mode always has games to show.
+  { ...bundledCatalogRows, fixtures: aproximarDoPresente(bundledCatalogRows.fixtures, Date.now()) },
+  demoExtras,
+  order
+);
 /** Real mode before the first answer from Supabase: bundled clubs and stadiums, and no sample fixtures. */
-let realCatalog = buildFixtureCatalog({ ...bundledCatalogRows, fixtures: [] }, extras, order);
+let realCatalog = buildFixtureCatalog({ ...bundledCatalogRows, fixtures: [] }, realExtras, order);
 let hasRealCatalog = false;
 let demoActive = false;
 const listeners = new Set<Listener>();
@@ -66,7 +74,7 @@ export function hasAppliedRealFixtures() {
  * Returns whether the catalogue changed.
  */
 export function applyFixtureCatalogRows(rows: FixtureCatalogRows) {
-  const next = buildFixtureCatalog(rows, extras, order);
+  const next = buildFixtureCatalog(rows, realExtras, order);
   if (next.venues.length === 0 || next.clubs.length === 0) return false;
   realCatalog = next;
   hasRealCatalog = true;

@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { TextInput } from 'react-native';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorCode, authErrorMessage } from '@/features/auth/errors';
 import { useResendSignUpCode, useSignIn } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
 import { emailError, normalizeEmail } from '@/features/auth/validation';
-import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { LinkTexto } from '@/ui/link-texto';
@@ -17,10 +17,10 @@ export default function EntrarScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
   const entrar = useSignIn();
   const reenviarCodigo = useResendSignUpCode();
-  const { onboardingConcluido } = useAppState();
-  const fecharConta = useCloseAccountFlow(onboardingConcluido);
+  const fecharConta = useCloseAccountFlow();
   const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
+  const campoPassword = useRef<TextInput>(null);
   const [tentou, setTentou] = useState(false);
 
   const erroEmail = tentou ? emailError(email) : null;
@@ -59,8 +59,10 @@ export default function EntrarScreen() {
         autoComplete="email"
         textContentType="emailAddress"
         returnKeyType="next"
+        onSubmitEditing={() => campoPassword.current?.focus()}
       />
       <Campo
+        ref={campoPassword}
         label="Password"
         value={password}
         onChangeText={setPassword}

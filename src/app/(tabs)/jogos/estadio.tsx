@@ -20,8 +20,8 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 
 /**
- * O estádio deste jogo: a ficha, o ponto de encontro (nas europeias), os cuidados para quem vai de fora, o WC mais
- * próximo e o tempo que se espera.
+ * O estádio deste jogo: a ficha, o tempo que se espera, o ponto de encontro (nas europeias), os cuidados para quem
+ * vai de fora e o WC mais próximo.
  *
  * Vive numa página à parte porque é informação que se lê uma vez antes de sair de casa — não tem de estar no
  * caminho de quem abre o jogo só para ver a que horas é.
@@ -55,14 +55,24 @@ export default function EstadioScreen() {
     (nota: { kind: string }) => classico || nota.kind === 'percurso_visitantes'
   );
 
+  // The native header already says «O estádio»: the card opens the screen, without a second title on top.
   return (
     <Screen>
-      <SectionHeader title="O estádio" />
       <EstadioCard venue={estadio} nota={notaDoEstadio(avaliacoes, estadio.id)} />
+
+      {jogo.meteorologia ? (
+        <>
+          <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
+          <MeteorologiaCard meteorologia={jogo.meteorologia} />
+        </>
+      ) : null}
 
       {eCompeticaoEuropeia(jogo.competicao) ? (
         <>
-          <SectionHeader title="Ponto de encontro oficial" />
+          <SectionHeader
+            title="Ponto de encontro"
+            trailing={jogo.pontoEncontro ? 'Oficial' : undefined}
+          />
           <PontoEncontroCard ponto={jogo.pontoEncontro} />
           {jogo.pontoEncontro?.coordenadas ? (
             <MapaPontoEncontro
@@ -76,20 +86,12 @@ export default function EstadioScreen() {
 
       {notasVisitante.length > 0 ? (
         <>
-          <SectionHeader title="Cuidados para adeptos visitantes" />
-          <CuidadosVisitantes notas={notasVisitante} visitante={fora} />
+          <SectionHeader title="Cuidados a ter" trailing={`Adeptos do ${fora.nomeCurto}`} />
+          <CuidadosVisitantes notas={notasVisitante} />
         </>
       ) : null}
 
-      <SectionHeader title="WC mais próximo" />
-      <WcMaisProximo origem={estadio.coordenadas} estadioId={estadio.id} />
-
-      {jogo.meteorologia ? (
-        <>
-          <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
-          <MeteorologiaCard meteorologia={jogo.meteorologia} />
-        </>
-      ) : null}
+      <WcMaisProximo origem={estadio.coordenadas} estadioId={estadio.id} titulo="WC mais próximo" />
     </Screen>
   );
 }

@@ -13,8 +13,6 @@ import { Button } from '@/ui/button';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
-import { SectionHeader } from '@/ui/section-header';
-import { ThemedText } from '@/ui/themed-text';
 
 /**
  * O mapa à volta do estádio: tascos, parques e WC, com o estádio ao centro.
@@ -61,9 +59,9 @@ export default function MapaScreen() {
 
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
 
+  // The native header already says «Mapa», and the map card carries its own hint: no title or help text on top.
   return (
     <Screen>
-      <SectionHeader title="Mapa" />
       <MapaJogo
         inicio="estadio"
         venue={estadio}
@@ -87,11 +85,6 @@ export default function MapaScreen() {
         icon={icons.locais}
         onPress={() => router.navigate({ pathname: '/locais', params: { estadio: estadio.id } })}
       />
-
-      <ThemedText type="small" themeColor="textMuted">
-        Toca num ponto para veres as notas, os preços e quanto se demora a pé. O mapa nasce preso:
-        carrega em «Mexer no mapa» para o arrastares.
-      </ThemedText>
     </Screen>
   );
 }

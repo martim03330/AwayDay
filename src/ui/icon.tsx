@@ -274,6 +274,15 @@ const glyphs = {
   treinador: { paths: ['M3 13a5.5 5.5 0 1 0 11 0v-1.5h7V8H9', circle(8.5, 13, 1.6), 'M13 8V5'] },
   calendario: { paths: [rect(3.5, 5, 17, 15, 2), 'M3.5 10h17M8 3v4M16 3v4'] },
   partilhar: { paths: ['M12 3v12M7 8l5-5 5 5M5 13v7h14v-7'] },
+  /** Avião de papel: mandar uma mensagem. */
+  enviar: { paths: ['M21.5 2.5L10.5 13.5', 'M21.5 2.5l-7 19-4-8-8-4z'] },
+  /** Balão de conversa. */
+  conversa: {
+    paths: [
+      'M20.5 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.3A8.5 8.5 0 1 1 20.5 11.5z',
+      'M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01',
+    ],
+  },
   email: { paths: [rect(3, 5, 18, 14, 2.5), 'M3.8 6.8L12 13l8.2-6.2'] },
   password: { paths: [rect(5, 11, 14, 10, 2), 'M8 11V8a4 4 0 0 1 8 0v3'] },
   apagar: { paths: ['M4 7h16M10 3h4M6 7l1 14h10l1-14M10 11v6M14 11v6'] },
@@ -300,7 +309,10 @@ export function Icon({ name, size = 20, color, strokeWidth = 2 }: IconProps) {
   const ink = color ?? theme.text;
 
   return (
+    // Icons never speak: the button or text next to them carries the meaning.
     <Svg
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
       width={size}
       height={size}
       viewBox="0 0 24 24"

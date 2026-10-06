@@ -9,6 +9,9 @@ export default function SessaoLayout() {
       <Stack.Screen name="[sessaoId]/despesas">
         <Stack.Screen.Title>Despesas</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="[sessaoId]/recordacao">
+        <Stack.Screen.Title>Recordação</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen
         name="[sessaoId]/nova-despesa"
         options={{

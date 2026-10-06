@@ -97,11 +97,12 @@ export default function EntrarNoGrupoScreen() {
         <Card style={styles.grupo}>
           <ThemedText type="title">{grupo.name}</ThemedText>
           <ThemedText themeColor="textSecondary">
-            {`${plural(grupo.members, 'pessoa', 'pessoas')} neste grupo.`}
+            {grupo.alreadyIn
+              ? `${plural(grupo.members, 'pessoa', 'pessoas')} · já estás cá dentro`
+              : plural(grupo.members, 'pessoa', 'pessoas')}
           </ThemedText>
           {grupo.alreadyIn ? (
             <>
-              <ThemedText>Já estás neste grupo.</ThemedText>
               <Button
                 label="Abrir o grupo"
                 onPress={() =>
@@ -118,8 +119,7 @@ export default function EntrarNoGrupoScreen() {
                 onPress={() => void entrar()}
               />
               <ThemedText type="small" themeColor="textMuted">
-                Ao entrares, a malta do grupo passa a ver o teu nome e o que a app sabe de ti: desde
-                quando tens conta, quantas boleias fizeste e quantas faltas tens.
+                O grupo passa a ver o teu nome, há quanto tempo tens conta, as boleias e as faltas.
               </ThemedText>
             </>
           )}
@@ -133,6 +133,6 @@ export default function EntrarNoGrupoScreen() {
 
 const styles = StyleSheet.create({
   grupo: {
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
   },
 });

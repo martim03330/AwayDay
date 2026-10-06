@@ -22,6 +22,7 @@ import {
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { AmostraDeFundo, NOMES_DOS_FUNDOS } from '@/features/groups/components/FundoConversa';
 import { useGroupFromInbox, useGroupMembers } from '@/features/groups/hooks/useGroups';
+import { BotaoMais, useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
@@ -31,7 +32,6 @@ import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
-import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
@@ -95,6 +95,7 @@ export default function DefinicoesDoGrupoScreen() {
   const membros = useGroupMembers(grupo ? grupo.id : null);
   const amigos = useMyFriends(userId !== null);
   const cartoes = useProfileCards((membros.data ?? []).map((pessoa) => pessoa.profileId));
+  const moderacao = useModeracao();
 
   const [convidados, setConvidados] = useState<string[]>([]);
   const [nome, setNome] = useState('');
@@ -194,6 +195,11 @@ export default function DefinicoesDoGrupoScreen() {
     );
   };
 
+  const guardarNome = () =>
+    void tratar(() => renameGroup(grupo.id, nome)).then((mudou) => {
+      if (mudou) setAMudarNome(false);
+    });
+
   return (
     <Screen>
       <View style={styles.topo}>
@@ -207,13 +213,143 @@ export default function DefinicoesDoGrupoScreen() {
             <Icon name={icons.camara} size={16} color={theme.accentText} />
           </View>
         </Pressable>
-        <ThemedText type="title" style={styles.centrado}>
-          {grupo.name}
-        </ThemedText>
-        <ThemedText themeColor="textSecondary">
-          {plural(grupo.members, 'pessoa', 'pessoas')}
-        </ThemedText>
+        {aMudarNome ? (
+          <View style={styles.novoNome}>
+            <Campo
+              label="Nome do grupo"
+              value={nome}
+              onChangeText={setNome}
+              placeholder={grupo.name}
+              maxLength={60}
+              autoFocus
+              onSubmitEditing={guardarNome}
+            />
+            <View style={styles.botoesNome}>
+              <LinkTexto neutro label="Deixa estar" onPress={() => setAMudarNome(false)} />
+              <LinkTexto label="Guardar" disabled={aTratar} onPress={guardarNome} />
+            </View>
+          </View>
+        ) : (
+          <>
+            <ThemedText type="title" style={styles.centrado}>
+              {grupo.name}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary">
+              {plural(grupo.members, 'pessoa', 'pessoas')}
+            </ThemedText>
+            {souDono ? (
+              <LinkTexto
+                label="Mudar o nome"
+                onPress={() => {
+                  setNome(grupo.name);
+                  setAMudarNome(true);
+                }}
+              />
+            ) : null}
+          </>
+        )}
       </View>
+
+      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+
+      <SectionHeader title="Quem está no grupo" trailing={String(lista.length)} />
+      <Card style={styles.lista}>
+        {lista.map((pessoa, indice) => {
+          const cartao = (cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId);
+          return (
+            <LinhaGrupo
+              key={pessoa.profileId}
+              separador={indice < lista.length - 1}
+              leading={<Avatar nome={pessoa.displayName} url={cartao?.avatarUrl} />}
+              title={pessoa.isMine ? `${pessoa.displayName} (tu)` : pessoa.displayName}
+              subtitle={[pessoa.role === 'owner' ? 'Dono' : null, sinais(pessoa)].filter(Boolean).join(' · ') || undefined}
+              trailing={
+                pessoa.isMine ? undefined : (
+                  // Everything about someone else sits behind one discreet «⋯»: report, block and, for the
+                  // owner, taking them out of the group.
+                  <BotaoMais
+                    nome={pessoa.displayName}
+                    onPress={() =>
+                      moderacao.abrirPessoa({
+                        pessoa: { profileId: pessoa.profileId, nome: pessoa.displayName },
+                        temFoto: Boolean(cartao?.avatarUrl),
+                        extras: souDono
+                          ? [
+                              {
+                                label: 'Tirar do grupo',
+                                destrutiva: true,
+                                onPress: () =>
+                                  Alert.alert(`Tirar ${pessoa.displayName} do grupo?`, undefined, [
+                                    { text: 'Deixa estar', style: 'cancel' },
+                                    {
+                                      text: 'Tirar',
+                                      style: 'destructive',
+                                      onPress: () =>
+                                        void tratar(() =>
+                                          removeGroupMember(grupo.id, pessoa.profileId)
+                                        ),
+                                    },
+                                  ]),
+                              },
+                            ]
+                          : [],
+                      })
+                    }
+                  />
+                )
+              }
+            />
+          );
+        })}
+      </Card>
+
+      <SectionHeader title="Convidar" />
+      <Button label="Partilhar o link do grupo" icon={icons.partilhar} onPress={() => void convidar()} />
+      {porConvidar.length > 0 ? (
+        <Card style={styles.lista}>
+          {porConvidar.map((amigo, indice) => (
+            <LinhaGrupo
+              key={amigo.profileId}
+              separador={indice < porConvidar.length - 1}
+              leading={<IconCircle name={icons.perfil} tone="neutral" />}
+              title={amigo.displayName}
+              subtitle={
+                amigo.tripsTogether > 0
+                  ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
+                  : 'Teu amigo'
+              }
+              trailing={
+                <LinkTexto
+                  label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
+                  onPress={() => {
+                    if (convidados.includes(amigo.profileId)) return;
+                    void tratar(() => inviteFriendToGroup(grupo.id, amigo.profileId)).then(
+                      (feito) => {
+                        if (feito) setConvidados((atuais) => [...atuais, amigo.profileId]);
+                      }
+                    );
+                  }}
+                />
+              }
+            />
+          ))}
+        </Card>
+      ) : null}
+      <ThemedText type="small" themeColor="textMuted">
+        Quem abrir o link entra no grupo: manda-o só a quem queres lá dentro. Os amigos recebem um
+        convite e escolhem se entram.
+      </ThemedText>
+      {souDono ? (
+        <LinkTexto
+          neutro
+          label="Trocar o link (o antigo deixa de servir)"
+          onPress={() =>
+            void tratar(async () => {
+              await rotateGroupInvite(grupo.id);
+            })
+          }
+        />
+      ) : null}
 
       <SectionHeader title="Fundo da conversa" />
       <ScrollView
@@ -266,145 +402,18 @@ export default function DefinicoesDoGrupoScreen() {
           </ThemedText>
         </Pressable>
       </ScrollView>
-      <ThemedText type="small" themeColor="textMuted">
-        O fundo é do grupo: muda para toda a malta.
-      </ThemedText>
 
-      <SectionHeader title="Convidar" />
-      <Card style={styles.grupo}>
-        <ThemedText themeColor="textSecondary">
-          Manda o link a quem quiseres. Quem o abrir entra no grupo — por isso manda-o só a quem
-          queres mesmo lá dentro.
-        </ThemedText>
-        <Button
-          label="Partilhar o link do grupo"
-          icon={icons.partilhar}
-          onPress={() => void convidar()}
-        />
-        {souDono ? (
-          <LinkTexto
-            label="Trocar o link (o antigo deixa de servir)"
-            onPress={() =>
-              void tratar(async () => {
-                await rotateGroupInvite(grupo.id);
-              })
-            }
-          />
-        ) : null}
-      </Card>
-
-      {porConvidar.length > 0 ? (
-        <>
-          <SectionHeader title="Convidar amigos" />
-          <Card style={styles.grupo}>
-            <ThemedText themeColor="textSecondary">
-              O convite fica à espera que a pessoa aceite — ninguém entra num grupo sem querer.
-            </ThemedText>
-            {porConvidar.map((amigo) => (
-              <LinhaGrupo
-                key={amigo.profileId}
-                leading={<IconCircle name={icons.perfil} tone="neutral" />}
-                title={amigo.displayName}
-                subtitle={
-                  amigo.tripsTogether > 0
-                    ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
-                    : 'ainda sem viagens juntos'
-                }
-                trailing={
-                  <LinkTexto
-                    label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
-                    onPress={() => {
-                      if (convidados.includes(amigo.profileId)) return;
-                      void tratar(() => inviteFriendToGroup(grupo.id, amigo.profileId)).then(
-                        (feito) => {
-                          if (feito) setConvidados((atuais) => [...atuais, amigo.profileId]);
-                        }
-                      );
-                    }}
-                  />
-                }
-              />
-            ))}
-          </Card>
-        </>
-      ) : null}
-
-      <SectionHeader title="Quem está no grupo" trailing={String(lista.length)} />
-      {lista.map((pessoa) => {
-        const cartao = (cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId);
-        return (
-          <Card key={pessoa.profileId} style={styles.grupo}>
-            <View style={styles.linha}>
-              <Avatar nome={pessoa.displayName} url={cartao?.avatarUrl} />
-              <View style={styles.flex}>
-                <ThemedText style={styles.nome} numberOfLines={1}>
-                  {pessoa.isMine ? `${pessoa.displayName} (tu)` : pessoa.displayName}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textMuted">
-                  {[cartao?.homeCity, sinais(pessoa)].filter(Boolean).join(' · ')}
-                </ThemedText>
-              </View>
-              {pessoa.role === 'owner' ? (
-                <Etiqueta icon={icons.selecionado} label="Dono" tone="neutro" />
-              ) : null}
-            </View>
-            {souDono && !pessoa.isMine ? (
-              <LinkTexto
-                perigo
-                label="Tirar do grupo"
-                onPress={() => void tratar(() => removeGroupMember(grupo.id, pessoa.profileId))}
-              />
-            ) : null}
-          </Card>
-        );
-      })}
-
-      {souDono ? (
-        <>
-          <SectionHeader title="Nome do grupo" />
-          <Card style={styles.grupo}>
-            {aMudarNome ? (
-              <>
-                <Campo
-                  label="Novo nome"
-                  value={nome}
-                  onChangeText={setNome}
-                  placeholder={grupo.name}
-                  maxLength={60}
-                />
-                <Button
-                  label="Guardar"
-                  disabled={aTratar}
-                  onPress={() =>
-                    void tratar(() => renameGroup(grupo.id, nome)).then((mudou) => {
-                      if (mudou) setAMudarNome(false);
-                    })
-                  }
-                />
-                <LinkTexto neutro label="Deixa estar" onPress={() => setAMudarNome(false)} />
-              </>
-            ) : (
-              <LinkTexto
-                label="Mudar o nome"
-                onPress={() => {
-                  setNome(grupo.name);
-                  setAMudarNome(true);
-                }}
-              />
-            )}
-          </Card>
-        </>
-      ) : null}
-
-      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
-
-      <Card style={styles.grupo}>
+      <View style={styles.sair}>
         <LinkTexto perigo label="Sair do grupo" onPress={sair} />
-      </Card>
-
-      <ThemedText type="small" themeColor="textMuted">
-        A foto e o fundo só são vistos por quem está no grupo. A app não move dinheiro nenhum: só
-        diz quem paga a quem.
+        <LinkTexto
+          neutro
+          label="Denunciar o grupo"
+          onPress={() => moderacao.denunciarGrupo(grupo.id, grupo.name)}
+        />
+      </View>
+      {moderacao.elemento}
+      <ThemedText type="small" themeColor="textMuted" style={styles.centrado}>
+        A foto e o fundo só são vistos por quem está no grupo.
       </ThemedText>
     </Screen>
   );
@@ -448,19 +457,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  grupo: {
+  lista: {
+    gap: 0,
+    paddingVertical: Spacing.one,
+  },
+  novoNome: {
+    alignSelf: 'stretch',
     gap: Spacing.two,
   },
-  linha: {
+  botoesNome: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.four,
+  },
+  sair: {
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  flex: {
-    flex: 1,
-    gap: 2,
-  },
-  nome: {
-    fontWeight: 700,
+    paddingTop: Spacing.three,
   },
 });

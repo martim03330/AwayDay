@@ -1,0 +1,52 @@
+# Jornada 9 — com conta e um grupo (corre depois da 08): combinar um jogo com a malta, e o aviso de convite repetido
+# quando se convida o mesmo grupo para o mesmo jogo.
+appId: host.exp.Exponent
+name: 09 Combinar um jogo
+tags: [com-conta, malta]
+---
+- runFlow: comum/entrar-e2e.yaml
+- runFlow: comum/abrir-um-jogo.yaml
+- scrollUntilVisible:
+    element: "Combinar com a malta\\..*"
+    direction: UP
+- tapOn: "Combinar com a malta\\..*"
+- extendedWaitUntil:
+    visible: "Escolhe o grupo\\. O convite cai na conversa e a malta responde se vai\\."
+    timeout: 15000
+- tapOn: "Convidar E2E Malta do café"
+
+# O convite aparece na conversa do grupo
+- extendedWaitUntil:
+    visible: "E2E Malta do café, .*"
+    timeout: 20000
+- extendedWaitUntil:
+    visible: ".*: .* x .*, .*"
+    timeout: 15000
+
+# Segunda vez, o mesmo grupo e o mesmo jogo: aviso, sem segundo convite
+- runFlow: comum/abrir-um-jogo.yaml
+- scrollUntilVisible:
+    element: "Combinar com a malta\\..*"
+    direction: UP
+- tapOn: "Combinar com a malta\\..*"
+- extendedWaitUntil:
+    visible: "Escolhe o grupo\\..*"
+    timeout: 15000
+- tapOn: "Convidar E2E Malta do café"
+- extendedWaitUntil:
+    visible: "Calma, que este jogo já está convocado"
+    timeout: 15000
+- assertVisible: "A malta do «E2E Malta do café» já tem convite para este jogo\\..*"
+- assertVisible: "Ver o convite"
+- tapOn: "Deixa estar"
+- assertNotVisible: "Calma, que este jogo já está convocado"
+
+# «Ver o convite» abre o plano
+- tapOn: "Convidar E2E Malta do café"
+- extendedWaitUntil:
+    visible: "Calma, que este jogo já está convocado"
+    timeout: 15000
+- tapOn: "Ver o convite"
+- waitForAnimationToEnd
+- assertNotVisible: "Calma, que este jogo já está convocado"
+- assertNotVisible: "Escolhe o grupo\\..*"

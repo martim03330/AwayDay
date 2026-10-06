@@ -14,7 +14,7 @@ import {
   useMyFriends,
   useRefreshFriends,
 } from '@/features/friends/hooks/useFriends';
-import { useTheme } from '@/hooks/use-theme';
+import { BotaoMais, useModeracao } from '@/features/moderation/components/Moderacao';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { Button } from '@/ui/button';
@@ -26,6 +26,7 @@ import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof FriendRefused)) return 'Não deu para fazer isso. Tenta outra vez.';
@@ -57,11 +58,11 @@ function sinais(amigo: Pick<Friend, 'tripsTogether'>) {
  */
 export default function AmigosScreen() {
   const router = useRouter();
-  const theme = useTheme();
   const userId = useUserId();
   const refrescar = useRefreshFriends();
   const amigos = useMyFriends(userId !== null);
   const pedidos = useMyFriendRequests(userId !== null);
+  const moderacao = useModeracao();
 
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -117,7 +118,19 @@ export default function AmigosScreen() {
           <SectionHeader title="Pedidos de amizade" trailing={String(recebidos.length)} />
           {recebidos.map((pedido) => (
             <Card key={pedido.profileId} style={styles.cartao}>
-              <ThemedText style={styles.nome}>{pedido.displayName}</ThemedText>
+              <View style={styles.linha}>
+                <ThemedText style={[styles.nome, styles.flex]} numberOfLines={1}>
+                  {pedido.displayName}
+                </ThemedText>
+                <BotaoMais
+                  nome={pedido.displayName}
+                  onPress={() =>
+                    moderacao.abrirPessoa({
+                      pessoa: { profileId: pedido.profileId, nome: pedido.displayName },
+                    })
+                  }
+                />
+              </View>
               <ThemedText type="small" themeColor="textMuted">
                 {sinais(pedido)}
               </ThemedText>
@@ -154,15 +167,26 @@ export default function AmigosScreen() {
                 {amigo.displayName}
               </ThemedText>
               <Etiqueta icon={icons.perfil} label="Amigo" tone="positivo" />
+              {/* Unfriend, report and block sit behind one discreet «⋯». */}
+              <BotaoMais
+                nome={amigo.displayName}
+                onPress={() =>
+                  moderacao.abrirPessoa({
+                    pessoa: { profileId: amigo.profileId, nome: amigo.displayName },
+                    extras: [
+                      {
+                        label: 'Deixar de ser amigo',
+                        destrutiva: true,
+                        onPress: () => desfazer(amigo.profileId, amigo.displayName),
+                      },
+                    ],
+                  })
+                }
+              />
             </View>
             <ThemedText type="small" themeColor="textMuted">
               {sinais(amigo)}
             </ThemedText>
-            <LinkTexto
-              perigo
-              label="Deixar de ser amigo"
-              onPress={() => desfazer(amigo.profileId, amigo.displayName)}
-            />
           </Card>
         ))
       )}
@@ -186,7 +210,8 @@ export default function AmigosScreen() {
         </>
       ) : null}
 
-      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+      {erro ? <MensagemErro>{erro}</MensagemErro> : null}
+      {moderacao.elemento}
 
       <ThemedText type="small" themeColor="textMuted">
         Ser amigo serve para três coisas: convidar direto para uma boleia ou para um grupo, ver as

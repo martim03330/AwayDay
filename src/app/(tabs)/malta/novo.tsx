@@ -10,6 +10,7 @@ import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+import { MensagemErro } from '@/ui/mensagem-erro';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof GroupRefused)) return 'Não deu para criar o grupo. Tenta outra vez.';
@@ -56,11 +57,13 @@ export default function NovoGrupoScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentContainerStyle={styles.conteudo}
-      keyboardShouldPersistTaps="handled">
-      <ThemedText type="title">Novo grupo</ThemedText>
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets>
+      <ThemedText type="title" accessibilityRole="header">
+        Novo grupo
+      </ThemedText>
       <ThemedText themeColor="textSecondary">
-        A malta do café, os do autocarro da claque, os primos que vão sempre. Dá-lhe um nome — o
-        resto trata-se lá dentro.
+        Dá-lhe um nome. Depois partilhas o link e quem o abrir entra.
       </ThemedText>
       <Campo
         label="Nome do grupo"
@@ -69,17 +72,16 @@ export default function NovoGrupoScreen() {
         placeholder="Ex.: A malta do café"
         maxLength={60}
         autoFocus
+        autoCapitalize="sentences"
+        returnKeyType="done"
       />
-      {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
+      {erro ? <MensagemErro>{erro}</MensagemErro> : null}
       <Button
         label={aCriar ? 'A criar…' : 'Criar grupo'}
         icon={icons.perfil}
         disabled={aCriar}
         onPress={() => void criar()}
       />
-      <ThemedText type="small" themeColor="textMuted">
-        Depois de criado, partilhas um link e quem o abrir entra no grupo.
-      </ThemedText>
     </ScrollView>
   );
 }

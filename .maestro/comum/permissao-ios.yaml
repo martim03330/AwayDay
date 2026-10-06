@@ -1,0 +1,8 @@
+# Answers an iOS permission alert (notifications) if one is showing.
+appId: host.exp.Exponent
+---
+- runFlow:
+    when:
+      visible: "Permitir|Allow"
+    commands:
+      - tapOn: "Permitir|Allow"

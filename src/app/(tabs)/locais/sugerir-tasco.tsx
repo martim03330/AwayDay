@@ -132,7 +132,9 @@ export default function SugerirTascoScreen() {
 
   return (
     <Screen>
-      <ThemedText type="title">Sugerir um tasco</ThemedText>
+      <ThemedText type="title" accessibilityRole="header">
+        Sugerir um tasco
+      </ThemedText>
       <ThemedText themeColor="textSecondary">
         Conheces um sítio que não está na app? Mete-o aqui. Aparece logo como «por confirmar» e fica
         confirmado quando 5 adeptos disserem que é bom.
@@ -144,6 +146,8 @@ export default function SugerirTascoScreen() {
         onChangeText={setNome}
         placeholder="Ex.: Tasca do Zé"
         maxLength={60}
+        autoCapitalize="words"
+        returnKeyType="done"
       />
 
       <ThemedText style={styles.rotulo}>Que tipo de sítio é</ThemedText>
@@ -194,6 +198,8 @@ export default function SugerirTascoScreen() {
         onChangeText={setNota}
         placeholder="Ex.: bifanas boas e servem rápido antes do jogo"
         maxLength={200}
+        autoCapitalize="sentences"
+        returnKeyType="done"
       />
 
       {erro ? (

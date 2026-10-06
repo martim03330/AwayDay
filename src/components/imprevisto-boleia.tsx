@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Chip } from '@/ui/chip';
+import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 
 export const MOTIVOS: Record<IncidentReason, string> = {
@@ -42,12 +43,12 @@ export function ImprevistoBoleia({ visivel, aEnviar, onEnviar, onFechar }: Impre
         style={{ backgroundColor: theme.background }}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.conteudo, { paddingBottom: insets.bottom + Spacing.four }]}>
-        <ThemedText type="title" style={styles.titulo}>
+        <ThemedText type="title" style={styles.titulo} accessibilityRole="header">
           Tive um imprevisto
         </ThemedText>
         <ThemedText themeColor="textSecondary">
-          Quem ia na boleia vê o motivo e decide se aceita. Se aceitarem, ou se ninguém votar
-          contra, não fica falta. Sê honesto: a malta percebe.
+          Quem ia na boleia vê o motivo e vota. Se aceitarem, ou ninguém votar contra, não fica
+          falta.
         </ThemedText>
         <View style={styles.chips}>
           {(Object.keys(MOTIVOS) as IncidentReason[]).map((chave) => (
@@ -65,13 +66,15 @@ export function ImprevistoBoleia({ visivel, aEnviar, onEnviar, onFechar }: Impre
           onChangeText={setNota}
           placeholder="Ex.: o carro não pegou de manhã"
           maxLength={280}
+          autoCapitalize="sentences"
+          returnKeyType="done"
         />
         <Button
           label={aEnviar ? 'A enviar…' : 'Enviar à malta da boleia'}
           disabled={!motivo || aEnviar}
           onPress={() => motivo && onEnviar(motivo, nota.trim())}
         />
-        <Button label="Voltar" variant="secondary" onPress={onFechar} />
+        <LinkTexto neutro label="Voltar" onPress={onFechar} />
       </ScrollView>
     </Modal>
   );
@@ -89,6 +92,6 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
 });

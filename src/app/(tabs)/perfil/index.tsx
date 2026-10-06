@@ -7,28 +7,23 @@ import Svg, { Circle, Defs, Path, Pattern, Rect } from 'react-native-svg';
 
 import { AlbumResumo } from '@/components/album-resumo';
 import { HistoricoTascos } from '@/components/historico-tascos';
-import { MissoesCard } from '@/components/missoes-card';
 import { PassaporteCard } from '@/components/passaporte-card';
-import { RankingCard } from '@/components/ranking-card';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AccountCard } from '@/features/auth/components/AccountCard';
-import { useMyNudges } from '@/features/nudges/hooks/useMyNudges';
-import { useVerifiedPlacesRanking } from '@/features/presence/hooks/usePresence';
-import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
+import { useClubSupporterCounts, useMyProfile } from '@/features/profile/hooks/useMyProfile';
 import { useLatestRecap } from '@/features/recap/hooks/useLatestRecap';
 import { seasonLabel } from '@/features/recap/stats';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData } from '@/lib/datas';
-import { formatarNumero, plural } from '@/lib/formatos';
+import { plural } from '@/lib/formatos';
+import { textoAdeptosNaApp } from '@/lib/clubes';
 import { useMyFriendRequests } from '@/features/friends/hooks/useFriends';
 import { useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
-import { contarTascosVerificados, ID_UTILIZADOR, montarRanking } from '@/lib/tascos';
-import { MOSTRAR_CLUBE_DA_TERRA, nomesDivisao, obterClube } from '@/mocks/clubes';
-import { obterEstadio } from '@/mocks/estadios';
-import { rankingMock } from '@/mocks/ranking';
+import { contarTascosVerificados } from '@/lib/tascos';
+import { MOSTRAR_CLUBE_DA_TERRA, obterClube } from '@/mocks/clubes';
 import type { Clube } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
 import { useRelogio } from '@/state/relogio';
@@ -76,7 +71,6 @@ export default function PerfilScreen() {
     avaliacoes,
     visitasLocais,
     fotosMissoes,
-    fonte,
   } = useAppState();
   const { historico } = useJogosAQueFoste();
   const ultimoJogo = historico[0];
@@ -86,33 +80,14 @@ export default function PerfilScreen() {
     (pedido) => pedido.direction === 'recebido'
   ).length;
   const perfilDaConta = useMyProfile(userId);
-  const novidades = useMyNudges(userId);
-  const porLer = novidades.data?.filter((nudge) => nudge.readAt === null).length ?? 0;
+  const adeptos = useClubSupporterCounts();
   const retrospetiva = useLatestRecap(userId);
-  const rankingDaConta = useVerifiedPlacesRanking(fonte === 'conta' ? userId : null);
 
   const clube = obterClube(clubeFavoritoId);
-  const estadioDoClube = clube?.estadioId ? obterEstadio(clube.estadioId) : undefined;
   const clubeDaTerra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
   const tascosVerificados = contarTascosVerificados(visitasLocais);
-  const eu = { id: ID_UTILIZADOR, nome: 'Tu', clubeId: clubeFavoritoId, tascosVerificados };
-  // Demo: sample fans. With an account: the server's ranking (others only if they opted in). Without: just you.
-  const ranking =
-    fonte === 'demo'
-      ? montarRanking(rankingMock, eu)
-      : fonte === 'conta' && rankingDaConta.data
-        ? rankingDaConta.data.map((linha) => ({
-            id: linha.isMe ? ID_UTILIZADOR : `adepto-${linha.position}`,
-            nome: linha.isMe ? 'Tu' : linha.displayName,
-            clubeId: (linha.isMe ? clubeFavoritoId : linha.clubId) ?? '',
-            tascosVerificados: linha.value,
-            posicao: linha.position,
-          }))
-        : montarRanking([], eu);
   const nome = perfilDaConta.data?.displayName ?? 'Adepto AwayDay';
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
-  const mostrarNovidades = Boolean(userId);
-  const mostrarRetrospetiva = Boolean(retrospetiva.data);
 
   function tocarNoPerfil() {
     const agora = Date.now();
@@ -135,6 +110,7 @@ export default function PerfilScreen() {
         onPress={tocarNoPerfil}
         accessibilityRole="button"
         accessibilityLabel="O teu perfil"
+        testID="cabecalho-perfil"
         style={[styles.relvado, { paddingTop: insets.top + Spacing.five }]}>
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           {RISCAS_RELVADO.map((left) => (
@@ -160,6 +136,20 @@ export default function PerfilScreen() {
             <ThemedText type="title" style={styles.nome} numberOfLines={2}>
               {nome}
             </ThemedText>
+            <Pressable
+              onPress={() => router.push('/perfil/clube')}
+              accessibilityRole="button"
+              accessibilityLabel={
+                clube ? `Clube que apoio: ${clube.nomeCurto}. Toca para mudar.` : 'Escolher o clube que apoio'
+              }
+              hitSlop={6}
+              style={({ pressed }) => [styles.clubePilula, pressed && styles.premido]}>
+              {clube ? <Escudo clube={clube} size={22} /> : null}
+              <ThemedText style={styles.clubePilulaTexto} numberOfLines={1}>
+                {clube ? clube.nomeCurto : 'Escolhe o teu clube'}
+              </ThemedText>
+              <Icon name={icons.seguinte} size={14} color="rgba(255, 255, 255, 0.88)" strokeWidth={2.6} />
+            </Pressable>
             <View style={styles.verificados}>
               <Icon name={icons.checkInFeito} size={16} color={theme.highlight} strokeWidth={2.6} />
               <ThemedText style={styles.verificadosTexto}>
@@ -176,105 +166,6 @@ export default function PerfilScreen() {
       </Pressable>
 
       <View style={styles.conteudo}>
-        {supabase ? (
-          <>
-            <SectionHeader title="Conta" />
-            <AccountCard displayName={perfilDaConta.data?.displayName ?? null} />
-            {mostrarNovidades || mostrarRetrospetiva ? (
-              <Card style={styles.grupo}>
-                {userId ? (
-                  <LinhaGrupo
-                    onPress={() => router.push('/perfil/novidades')}
-                    accessibilityLabel={`Novidades${porLer > 0 ? `: ${plural(porLer, 'dica por ler', 'dicas por ler')}` : ''}. Toca para abrir.`}
-                    separador={mostrarRetrospetiva}
-                    leading={
-                      <Azulejo
-                        icon={icons.notificacoes}
-                        fundo={theme.warningBackground}
-                        tinta={theme.warning}
-                      />
-                    }
-                    title="Novidades"
-                    subtitle={
-                      porLer > 0
-                        ? plural(porLer, 'dica por ler', 'dicas por ler')
-                        : 'Dicas para os teus dias de jogo'
-                    }
-                    trailing={
-                      <View style={styles.trailing}>
-                        {porLer > 0 ? <Badge label={String(porLer)} tone="highlight" /> : null}
-                        {chevron}
-                      </View>
-                    }
-                  />
-                ) : null}
-                {retrospetiva.data ? (
-                  <LinhaGrupo
-                    onPress={() => router.push('/perfil/retrospetiva')}
-                    accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}
-                    leading={
-                      <Azulejo
-                        icon={icons.ranking}
-                        fundo={theme.successBackground}
-                        tinta={theme.accentInk}
-                      />
-                    }
-                    title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
-                    subtitle={retrospetiva.data.headline}
-                    trailing={chevron}
-                  />
-                ) : null}
-              </Card>
-            ) : null}
-          </>
-        ) : null}
-
-        <SectionHeader title="Clube que apoio" />
-        {clube ? (
-          <CartaoClube
-            clube={clube}
-            onPress={() => router.push('/perfil/clube')}
-            accessibilityLabel={`Clube que apoio: ${clube.nomeCurto}, ${formatarNumero(clube.adeptosNaApp)} adeptos na app. Toca para mudar.`}
-            subtitle={[
-              clube.divisao ? nomesDivisao[clube.divisao] : null,
-              estadioDoClube?.nome ?? null,
-              `${formatarNumero(clube.adeptosNaApp)} adeptos na app`,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            chevron={chevron}
-          />
-        ) : null}
-
-        {MOSTRAR_CLUBE_DA_TERRA ? (
-          <>
-            <SectionHeader title="Clube da terra" />
-            {clubeDaTerra ? (
-              <CartaoClube
-                clube={clubeDaTerra}
-                onPress={() => router.push('/perfil/clube-terra')}
-                accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
-                subtitle={`${formatarNumero(clubeDaTerra.adeptosNaApp)} adeptos na app`}
-                chevron={chevron}
-              />
-            ) : (
-              <Card style={styles.semClube}>
-                <ListRow
-                  leading={<IconCircle name={icons.casa} />}
-                  title="Ainda sem clube da terra"
-                  subtitle="Diz-nos de onde és. Nós sugerimos, tu confirmas."
-                />
-                <Button
-                  label="Escolher clube da terra"
-                  variant="secondary"
-                  icon={icons.localizacao}
-                  onPress={() => router.push('/perfil/clube-terra')}
-                />
-              </Card>
-            )}
-          </>
-        ) : null}
-
         <SectionHeader title="Passaporte de estádios" />
         <PassaporteCard estadiosVisitados={estadiosVisitados} avaliacoes={avaliacoes} limite={3} />
         <Button
@@ -284,8 +175,16 @@ export default function PerfilScreen() {
           onPress={() => router.push('/perfil/passaporte')}
         />
 
-        <SectionHeader title="Missões do passaporte" />
-        <MissoesCard />
+        <SectionHeader
+          title="Tascos visitados"
+          trailing={plural(tascosVerificados, 'verificado', 'verificados')}
+        />
+        <HistoricoTascos
+          visitas={visitasLocais}
+          onAbrirLocal={(localId) =>
+            router.push({ pathname: '/locais/[localId]', params: { localId } })
+          }
+        />
 
         <SectionHeader
           title="Álbum de recordações"
@@ -294,69 +193,6 @@ export default function PerfilScreen() {
           }
         />
         <AlbumResumo fotos={fotosMissoes} onAbrir={() => router.push('/perfil/album')} />
-
-        {userId ? (
-          <>
-            <SectionHeader title="O teu perfil" />
-            <Card style={styles.grupo}>
-              <LinhaGrupo
-                onPress={() => router.push('/perfil/editar')}
-                accessibilityLabel="O teu perfil: foto, nome e terra. Toca para abrir."
-                leading={
-                  <Azulejo
-                    icon={icons.camara}
-                    fundo={theme.highlight}
-                    tinta={theme.highlightText}
-                  />
-                }
-                title="Foto, nome e terra"
-                subtitle={
-                  perfilDaConta.data?.avatarUrl
-                    ? (perfilDaConta.data?.homeCity ?? 'A tua cara nas boleias e nos grupos')
-                    : 'Põe uma foto: ajuda quem vai contigo'
-                }
-                trailing={chevron}
-              />
-            </Card>
-
-            <SectionHeader title="A tua malta" />
-            <Card style={styles.grupo}>
-              <LinhaGrupo
-                onPress={() => router.push('/perfil/amigos')}
-                accessibilityLabel="Os teus amigos. Toca para abrir."
-                leading={
-                  <Azulejo
-                    icon={icons.perfil}
-                    fundo={theme.successBackground}
-                    tinta={theme.successText}
-                  />
-                }
-                title="Os teus amigos"
-                subtitle={
-                  pedidosDeAmizade > 0
-                    ? plural(pedidosDeAmizade, 'pedido por responder', 'pedidos por responder')
-                    : 'Quem já foi contigo a um jogo'
-                }
-                trailing={chevron}
-                separador
-              />
-              <LinhaGrupo
-                onPress={() => router.push('/perfil/rankings')}
-                accessibilityLabel="Rankings públicos. Toca para abrir."
-                leading={
-                  <Azulejo
-                    icon={icons.ranking}
-                    fundo={theme.highlight}
-                    tinta={theme.highlightText}
-                  />
-                }
-                title="Rankings"
-                subtitle="Estádios carimbados e tascos verificados"
-                trailing={chevron}
-              />
-            </Card>
-          </>
-        ) : null}
 
         <SectionHeader
           title="Os teus jogos"
@@ -387,42 +223,103 @@ export default function PerfilScreen() {
           />
         </Card>
 
-        <SectionHeader title="Tascos visitados" trailing={`${tascosVerificados} pontos`} />
-        <HistoricoTascos
-          visitas={visitasLocais}
-          onAbrirLocal={(localId) =>
-            router.push({ pathname: '/locais/[localId]', params: { localId } })
-          }
-        />
-
-        <SectionHeader title="Ranking de tascos verificados" />
-        <RankingCard ranking={ranking} />
-        {fonte === 'demo' ? null : (
-          <ThemedText type="small" themeColor="textMuted">
-            {fonte === 'conta'
-              ? 'Só aparecem adeptos que aceitaram mostrar o nome. Escolhe nas Definições.'
-              : 'Cria conta para entrares no ranking com os outros adeptos.'}
-          </ThemedText>
-        )}
-
-        {perfilDaConta.data?.isAdmin ? (
+        {MOSTRAR_CLUBE_DA_TERRA ? (
           <>
-            <SectionHeader title="Administração" />
+            <SectionHeader title="Clube da terra" />
+            {clubeDaTerra ? (
+              <CartaoClube
+                clube={clubeDaTerra}
+                onPress={() => router.push('/perfil/clube-terra')}
+                accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
+                subtitle={textoAdeptosNaApp(adeptos.data?.[clubeDaTerra.id]) ?? 'Toca para mudar'}
+                chevron={chevron}
+              />
+            ) : (
+              <Card style={styles.semClube}>
+                <ListRow
+                  leading={<IconCircle name={icons.casa} />}
+                  title="Ainda sem clube da terra"
+                  subtitle="Diz-nos de onde és. Nós sugerimos, tu confirmas."
+                />
+                <Button
+                  label="Escolher clube da terra"
+                  variant="secondary"
+                  icon={icons.localizacao}
+                  onPress={() => router.push('/perfil/clube-terra')}
+                />
+              </Card>
+            )}
+          </>
+        ) : null}
+
+        {userId ? (
+          <>
+            <SectionHeader title="O teu perfil" />
             <Card style={styles.grupo}>
               <LinhaGrupo
-                onPress={() => router.push('/perfil/pontos-de-encontro')}
-                accessibilityLabel="Pontos de encontro por confirmar. Toca para abrir."
-                leading={<Icon name={icons.pontoEncontro} size={20} color={theme.accentInk} />}
-                title="Pontos de encontro por confirmar"
-                subtitle="Encontrados nas notícias dos clubes"
+                onPress={() => router.push('/perfil/editar')}
+                accessibilityLabel="O teu perfil: foto, nome e de onde partes. Toca para abrir."
+                leading={
+                  <Azulejo
+                    icon={icons.camara}
+                    fundo={theme.highlight}
+                    tinta={theme.highlightText}
+                  />
+                }
+                title="Foto, nome e de onde partes"
+                subtitle={
+                  perfilDaConta.data?.avatarUrl
+                    ? 'A tua cara nas boleias e nos grupos'
+                    : 'Põe uma foto: ajuda quem vai contigo'
+                }
                 trailing={chevron}
+                separador
               />
               <LinhaGrupo
-                onPress={() => router.push('/perfil/fotos-por-aprovar')}
-                accessibilityLabel="Fotos de tascos por aprovar. Toca para abrir."
-                leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}
-                title="Fotos de tascos por aprovar"
-                subtitle="Enviadas pelos adeptos"
+                onPress={() => router.push('/perfil/amigos')}
+                accessibilityLabel="Os teus amigos. Toca para abrir."
+                leading={
+                  <Azulejo
+                    icon={icons.perfil}
+                    fundo={theme.successBackground}
+                    tinta={theme.successText}
+                  />
+                }
+                title="Os teus amigos"
+                subtitle={
+                  pedidosDeAmizade > 0
+                    ? plural(pedidosDeAmizade, 'pedido por responder', 'pedidos por responder')
+                    : 'Quem já foi contigo a um jogo'
+                }
+                trailing={
+                  <View style={styles.trailing}>
+                    {pedidosDeAmizade > 0 ? (
+                      <Badge label={String(pedidosDeAmizade)} tone="highlight" />
+                    ) : null}
+                    {chevron}
+                  </View>
+                }
+              />
+            </Card>
+          </>
+        ) : null}
+
+        {retrospetiva.data ? (
+          <>
+            <SectionHeader title="A tua época" />
+            <Card style={styles.grupo}>
+              <LinhaGrupo
+                onPress={() => router.push('/perfil/retrospetiva')}
+                accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}
+                leading={
+                  <Azulejo
+                    icon={icons.ranking}
+                    fundo={theme.successBackground}
+                    tinta={theme.accentInk}
+                  />
+                }
+                title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
+                subtitle={retrospetiva.data.headline}
                 trailing={chevron}
               />
             </Card>
@@ -433,13 +330,20 @@ export default function PerfilScreen() {
         <Card style={styles.grupo}>
           <LinhaGrupo
             onPress={() => router.push('/perfil/definicoes')}
-            accessibilityLabel="Definições: sons, notificações, localização e introdução. Toca para abrir."
+            accessibilityLabel="Definições: sons, notificações, aspeto e privacidade. Toca para abrir."
             leading={<Icon name={icons.definicoes} size={20} color={theme.accentInk} />}
             title="Definições"
-            subtitle="Sons, notificações, localização e introdução"
+            subtitle="Sons, notificações, aspeto e privacidade"
             trailing={chevron}
           />
         </Card>
+
+        {supabase ? (
+          <>
+            <SectionHeader title="Conta" />
+            <AccountCard displayName={perfilDaConta.data?.displayName ?? null} />
+          </>
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -597,6 +501,27 @@ const styles = StyleSheet.create({
     fontSize: 38,
     lineHeight: 40,
     color: Colors.accentText,
+  },
+  clubePilula: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingVertical: 4,
+    paddingLeft: 6,
+    paddingRight: 10,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  clubePilulaTexto: {
+    flexShrink: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: 700,
+    color: Colors.accentText,
+  },
+  premido: {
+    opacity: 0.7,
   },
   verificados: {
     flexDirection: 'row',

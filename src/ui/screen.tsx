@@ -21,6 +21,10 @@ export function Screen({ children, refreshing = false, onRefresh, cabecalhoFixo 
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      // iOS: the keyboard becomes a bottom inset, so the focused field and the button under it can scroll into
+      // view. Android resizes the window for the keyboard on its own.
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
       contentContainerStyle={styles.content}
       stickyHeaderIndices={cabecalhoFixo ? [0] : undefined}
       refreshControl={

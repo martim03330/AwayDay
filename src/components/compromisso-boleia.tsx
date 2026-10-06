@@ -52,7 +52,10 @@ export function CompromissoBoleia({ visivel, papel, onAceitar, onFechar }: Compr
         contentContainerStyle={[styles.conteudo, { paddingBottom: insets.bottom + Spacing.four }]}>
         <View style={[styles.alerta, { backgroundColor: theme.dangerBackground }]}>
           <Icon name={icons.aviso} size={40} color={theme.dangerText} />
-          <ThemedText type="title" style={[styles.titulo, { color: theme.dangerText }]}>
+          <ThemedText
+            type="title"
+            style={[styles.titulo, { color: theme.dangerText }]}
+            accessibilityRole="header">
             {condutor ? 'Vais levar pessoas reais' : 'Alguém conta contigo'}
           </ThemedText>
           <ThemedText style={{ color: theme.dangerText }}>
@@ -63,7 +66,9 @@ export function CompromissoBoleia({ visivel, papel, onAceitar, onFechar }: Compr
         </View>
 
         <View style={styles.regras}>
-          <ThemedText type="section">As regras</ThemedText>
+          <ThemedText type="section" accessibilityRole="header">
+            As regras
+          </ThemedText>
           <Regra
             texto={`Podes cancelar sem problema até ${PEDIDOS_FECHAM_HORAS_ANTES} h antes da saída.`}
           />

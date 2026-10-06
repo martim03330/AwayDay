@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   },
   opcao: {
     flex: 1,
-    height: 50,
+    minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,

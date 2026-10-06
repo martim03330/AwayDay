@@ -1,0 +1,23 @@
+# Maestro workspace: the flows at the top of .maestro/ (the subflows in comum/ only run from inside them).
+# Order matters: the flows without account first, then the ones with the E2E account. 06a needs the account freshly
+# created (no club saved yet), so it runs first among the signed-in ones.
+flows:
+  - "*"
+executionOrder:
+  continueOnFailure: true
+  flowsOrder:
+    - 01 Primeira abertura sem conta
+    - 02 Navegar sem conta
+    - 03a Páginas legais nas boas-vindas
+    - 03b Páginas legais nas Definições
+    - 04 Validação de criar conta e entrar
+    - 05 Modo demo
+    - 06a Entrar nas boas-vindas
+    - 06b Introdução com conta
+    - 07 Editar o perfil
+    - 08 Criar um grupo
+    - 09 Combinar um jogo
+    - 10 Ranking e missões
+    - 11 Definições com conta
+    - 12 Apagar conta (sem confirmar)
+    - 13 Terminar sessão

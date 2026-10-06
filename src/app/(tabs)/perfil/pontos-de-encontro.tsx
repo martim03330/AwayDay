@@ -123,6 +123,7 @@ function Rascunho({ rascunho }: { rascunho: MeetingPointDraft }) {
       ) : null}
 
       <Pressable
+        hitSlop={8}
         onPress={() => void Linking.openURL(rascunho.sourceUrl).catch(() => undefined)}
         accessibilityRole="link"
         accessibilityLabel={`Abrir a notícia: ${rascunho.sourceTitle}`}>

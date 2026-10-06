@@ -1,0 +1,42 @@
+# Jornada 6a — entrar a partir das boas-vindas com a conta de testes E2E (sem clube guardado): password errada
+# primeiro, depois a certa. Com a certa, o modal tem de fechar sozinho e seguir para os passos do perfil.
+appId: host.exp.Exponent
+name: 06a Entrar nas boas-vindas
+tags: [com-conta]
+---
+- runFlow: comum/boas-vindas.yaml
+- tapOn: "Já tenho conta"
+- extendedWaitUntil:
+    visible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+    timeout: 10000
+- tapOn: "Email.*"
+- inputText: ${MAESTRO_E2E_EMAIL}
+- tapOn: "Password.*"
+- inputText: "PasswordErrada123"
+- tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+- tapOn:
+    text: "Entrar"
+    below: "Password.*"
+- extendedWaitUntil:
+    visible: "Email ou password errados\\."
+    timeout: 15000
+- tapOn: "Fechar"
+- runFlow: comum/dispensar-guardar-password.yaml
+# Da introdução, com a password certa, segue para os passos do perfil (foto, clube, de onde partes, como vais, avisos)
+- tapOn: "Já tenho conta"
+- tapOn: "Email.*"
+- inputText: ${MAESTRO_E2E_EMAIL}
+- tapOn: "Password.*"
+- inputText: ${MAESTRO_E2E_PASSWORD}
+- tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+- tapOn:
+    text: "Entrar"
+    below: "Password.*"
+- extendedWaitUntil:
+    notVisible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+    timeout: 20000
+- runFlow: comum/dispensar-guardar-password.yaml
+- extendedWaitUntil:
+    visible: "Passo 1 de 5"
+    timeout: 10000
+- assertVisible: "Mostra a cara à malta\\."

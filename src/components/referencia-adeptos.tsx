@@ -36,6 +36,7 @@ export function ReferenciaAdeptos({
         </ThemedText>
         {referencia.fontes.map((fonte) => (
           <Pressable
+            hitSlop={8}
             key={fonte.url}
             onPress={() => Linking.openURL(fonte.url)}
             accessibilityRole="link"

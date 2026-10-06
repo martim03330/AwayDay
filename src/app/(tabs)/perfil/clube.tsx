@@ -4,12 +4,14 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { OpcaoClube } from '@/components/opcao-clube';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarNumero } from '@/lib/formatos';
+import { useClubSupporterCounts } from '@/features/profile/hooks/useMyProfile';
+import { textoAdeptosNaApp } from '@/lib/clubes';
 import { clubesParaEscolher, nomesDivisao } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { ThemedText } from '@/ui/themed-text';
 
 export default function EscolherClubeScreen() {
+  const adeptos = useClubSupporterCounts();
   const router = useRouter();
   const theme = useTheme();
   const { clubeFavoritoId, escolherClube } = useAppState();
@@ -35,7 +37,7 @@ export default function EscolherClubeScreen() {
             <OpcaoClube
               key={clube.id}
               clube={clube}
-              detalhe={`${formatarNumero(clube.adeptosNaApp)} adeptos na app`}
+              detalhe={textoAdeptosNaApp(adeptos.data?.[clube.id])}
               selecionado={clube.id === clubeFavoritoId}
               onPress={() => {
                 escolherClube(clube.id);

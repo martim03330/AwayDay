@@ -1,17 +1,18 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { fetchMyRideAlerts, type RideAlert } from '@/features/rides/api';
+import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
 import { Card } from '@/ui/card';
-import { IconCircle, icons } from '@/ui/icon';
-import { ListRow } from '@/ui/list-row';
+import { Icon, IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 
 function nomeDoJogo(fixtureId: string) {
   const jogo = obterJogo(fixtureId);
@@ -85,8 +86,16 @@ function conteudo(alerta: RideAlert) {
  * What needs attention about rides, at the top of the games list: requests to answer first (with the deadline), then
  * confirmed seats, declined or unanswered requests and cancelled rides. Tapping opens the ride. Refreshes every minute.
  */
-export function AlertasBoleias() {
+export function AlertasBoleias({
+  boleiasComSessao = [],
+}: {
+  /**
+   * Boleias cuja sessão da viagem já abriu: aí o «tens lugar na boleia» vive dentro da sessão, e aqui só repetia.
+   */
+  boleiasComSessao?: string[];
+}) {
   const router = useRouter();
+  const theme = useTheme();
   const userId = useUserId();
   const alertas = useQuery({
     queryKey: ['rides', 'alerts', userId],
@@ -95,15 +104,17 @@ export function AlertasBoleias() {
     meta: { persist: false },
   });
 
-  const lista = alertas.data ?? [];
+  const lista = (alertas.data ?? []).filter(
+    (alerta) => !(alerta.kind === 'aceite' && boleiasComSessao.includes(alerta.rideId))
+  );
   if (lista.length === 0) return null;
 
   return (
-    <View style={styles.lista}>
-      {lista.map((alerta) => {
+    <Card style={styles.cartao}>
+      {lista.map((alerta, indice) => {
         const { tom, icon, titulo, texto } = conteudo(alerta);
         return (
-          <Card
+          <LinhaGrupo
             key={`${alerta.kind}-${alerta.rideId}`}
             onPress={() =>
               router.push(
@@ -117,21 +128,23 @@ export function AlertasBoleias() {
                     }
               )
             }
-            accessibilityLabel={`${titulo}. ${texto}. Toca para abrir a boleia.`}>
-            <ListRow
-              leading={<IconCircle name={icon} tone={tom} />}
-              title={titulo}
-              subtitle={texto}
-            />
-          </Card>
+            accessibilityLabel={`${titulo}. ${texto}. Toca para abrir a boleia.`}
+            leading={<IconCircle name={icon} tone={tom} />}
+            title={titulo}
+            subtitle={texto}
+            trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
+            separador={indice < lista.length - 1}
+          />
         );
       })}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  lista: {
-    gap: Spacing.two,
+  // One card for every alert, a row each: a stack of cards read as a wall.
+  cartao: {
+    gap: 0,
+    paddingVertical: Spacing.one,
   },
 });
