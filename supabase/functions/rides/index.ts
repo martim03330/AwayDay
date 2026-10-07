@@ -5,7 +5,9 @@
 // - action "search": streets and places for the meeting point (OpenStreetMap Nominatim), when the driver searches.
 // A driver has at most one open ride per game.
 // Routes come from the public Valhalla router of the FOSSGIS / OpenStreetMap community (no key, fair use), so the
-// app never calls it. The meeting point is a public place the driver picks; it is not logged.
+// app never calls it. Routes and place searches are cached in Postgres
+// (route_cache, place_search_cache), so the same trip or search is asked once a month or once a week, not every
+// time: that keeps us inside the fair use of free services. The meeting point is a public place the driver picks.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { authenticatedCaller } from '../_shared/auth.ts';
@@ -18,7 +20,8 @@ import {
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
-const REVERSE_GEOCODER = 'https://nominatim.openstreetmap.org/reverse';
+/** Fallback geocoder (Photon, by Komoot, on OpenStreetMap data). */
+const FALLBACK_GEOCODER = 'https://photon.komoot.io/api/';
 const USER_AGENT = 'AwayDay/1.0 (match-day app for football fans)';
 const QUOTE_LIMIT = { bucket: 'ride-quote', limit: 30, window: '1 hour' } as const;
 const CREATE_LIMIT = { bucket: 'ride-create', limit: 10, window: '1 day' } as const;
@@ -95,7 +98,7 @@ function motorwayOf(names: unknown) {
   return 'default';
 }
 
-async function route(from: Point, to: Point, useTolls: number): Promise<Route | null> {
+async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<Route | null> {
   try {
     const response = await fetch(ROUTER, {
       method: 'POST',
@@ -141,8 +144,57 @@ async function route(from: Point, to: Point, useTolls: number): Promise<Route | 
   }
 }
 
-/** Streets and places matching the driver's words, closest to `near` first. Names are shortened to their first parts. */
-async function searchPlaces(query: string, near: Point | null) {
+/** ~100 m: two meeting points this close share a route. */
+const coord = (value: number) => value.toFixed(3);
+
+/**
+ * A route from cache, or from Valhalla, then cached for 30 days. There is no fallback router on purpose: the free
+ * ones (OSRM) know nothing about tolls, and a ride price without tolls would be wrong money for real people.
+ */
+async function route(admin: SupabaseClient, from: Point, to: Point, useTolls: number): Promise<Route | null> {
+  const key = `${coord(from.latitude)},${coord(from.longitude)}>${coord(to.latitude)},${coord(to.longitude)}:${useTolls}`;
+  const cached = await admin
+    .from('route_cache')
+    .select('distance_m, duration_s, toll_segments')
+    .eq('key', key)
+    .gte('created_at', new Date(Date.now() - 30 * DAY_MS).toISOString())
+    .maybeSingle();
+  if (cached.data) {
+    const segments = Array.isArray(cached.data.toll_segments) ? (cached.data.toll_segments as TollSegment[]) : [];
+    return {
+      distanceM: Number(cached.data.distance_m),
+      durationS: Number(cached.data.duration_s),
+      tollM: segments.reduce((total, segment) => total + segment.tollM, 0),
+      tollSegments: segments,
+    };
+  }
+  const found = await routeValhalla(from, to, useTolls);
+  if (found) {
+    await admin.from('route_cache').upsert({
+      key,
+      distance_m: found.distanceM,
+      duration_s: found.durationS,
+      toll_segments: found.tollSegments,
+      created_at: new Date().toISOString(),
+    });
+  }
+  return found;
+}
+
+type PlaceResult = { name: string; detail: string; latitude: number; longitude: number; distance_m: number | null };
+
+function placeResult(name: string, detail: string, point: Point, near: Point | null): PlaceResult {
+  return {
+    name: name.slice(0, 80),
+    detail,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    distance_m: near ? Math.round(straightLineM(near, point)) : null,
+  };
+}
+
+/** Streets and places matching the driver's words, from Nominatim. `null` when Nominatim did not answer. */
+async function searchNominatim(query: string, near: Point | null): Promise<PlaceResult[] | null> {
   const params = new URLSearchParams({
     q: query,
     format: 'jsonv2',
@@ -161,7 +213,7 @@ async function searchPlaces(query: string, near: Point | null) {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(10_000),
     });
-    if (!response.ok) return [];
+    if (!response.ok) return null;
     const results: unknown = await response.json();
     return (Array.isArray(results) ? results : []).flatMap((item) => {
       const result = asRecord(item);
@@ -169,19 +221,64 @@ async function searchPlaces(query: string, near: Point | null) {
       const label = typeof result?.display_name === 'string' ? result.display_name : '';
       if (!point || !label) return [];
       const parts = label.split(',').map((part) => part.trim());
-      return [
-        {
-          name: parts.slice(0, 2).join(', ').slice(0, 80),
-          detail: parts.slice(2, 4).join(', '),
-          latitude: point.latitude,
-          longitude: point.longitude,
-          distance_m: near ? Math.round(straightLineM(near, point)) : null,
-        },
-      ];
+      return [placeResult(parts.slice(0, 2).join(', '), parts.slice(2, 4).join(', '), point, near)];
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** The same search on Photon, when Nominatim is down or busy. */
+async function searchPhoton(query: string, near: Point | null): Promise<PlaceResult[]> {
+  const params = new URLSearchParams({ q: query, limit: '6' });
+  if (near) {
+    params.set('lat', String(near.latitude));
+    params.set('lon', String(near.longitude));
+  }
+  try {
+    const response = await fetch(`${FALLBACK_GEOCODER}?${params}`, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return [];
+    const features = asRecord(await response.json())?.features;
+    return (Array.isArray(features) ? features : []).flatMap((item) => {
+      const feature = asRecord(item);
+      const coords = asRecord(feature?.geometry)?.coordinates;
+      const props = asRecord(feature?.properties);
+      if (!Array.isArray(coords) || !props) return [];
+      const point = toPoint({ latitude: Number(coords[1]), longitude: Number(coords[0]) });
+      const name = [props.name, props.street].find((value) => typeof value === 'string');
+      if (!point || typeof name !== 'string') return [];
+      const detail = [props.city, props.county].filter((value) => typeof value === 'string').join(', ');
+      return [placeResult(name, detail, point, near)];
     });
   } catch {
     return [];
   }
+}
+
+/** A place search from cache (7 days), or Nominatim (Photon if it fails), then cached. */
+async function searchPlaces(admin: SupabaseClient, query: string, near: Point | null) {
+  const area = near ? `${near.latitude.toFixed(1)},${near.longitude.toFixed(1)}` : 'pt';
+  const key = `${query.toLowerCase().replace(/\s+/g, ' ')}@${area}`;
+  const cached = await admin
+    .from('place_search_cache')
+    .select('results')
+    .eq('key', key)
+    .gte('created_at', new Date(Date.now() - 7 * DAY_MS).toISOString())
+    .maybeSingle();
+  if (Array.isArray(cached.data?.results)) {
+    // Distances depend on where this driver is: work them out again.
+    return (cached.data.results as PlaceResult[]).map((place) =>
+      placeResult(place.name, place.detail, { latitude: place.latitude, longitude: place.longitude }, near)
+    );
+  }
+  const results = (await searchNominatim(query, near)) ?? (await searchPhoton(query, near));
+  if (results.length > 0) {
+    await admin.from('place_search_cache').upsert({ key, results, created_at: new Date().toISOString() });
+  }
+  return results;
 }
 
 async function tollRates(admin: SupabaseClient): Promise<TollRate[] | null> {
@@ -211,26 +308,13 @@ async function takeLimit(
   return allowed.data === true ? 'ok' : 'limited';
 }
 
-/** O concelho de um ponto, como o Nominatim o escreve. `null` quando não se sabe: nunca inventa. */
-async function reverseCity(ponto: { latitude: number; longitude: number }): Promise<string | null> {
-  try {
-    const parametros = new URLSearchParams({
-      format: 'jsonv2',
-      lat: String(ponto.latitude),
-      lon: String(ponto.longitude),
-      zoom: '10',
-    });
-    const resposta = await fetch(`${REVERSE_GEOCODER}?${parametros}`, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
-    if (!resposta.ok) return null;
-    const corpo = await resposta.json();
-    const morada = corpo?.address ?? {};
-    const nome = morada.city ?? morada.town ?? morada.municipality ?? morada.county ?? null;
-    return typeof nome === 'string' && nome.length >= 2 ? nome.slice(0, 80) : null;
-  } catch {
-    return null;
-  }
+/** O concelho de um ponto: o concelho mais próximo, calculado na base de dados. `null` quando não se sabe. */
+async function reverseCity(admin: SupabaseClient, ponto: Point): Promise<string | null> {
+  const { data, error } = await admin.rpc('nearest_municipality_name', {
+    p_latitude: ponto.latitude,
+    p_longitude: ponto.longitude,
+  });
+  return !error && typeof data === 'string' && data.length >= 2 ? data.slice(0, 80) : null;
 }
 
 Deno.serve(async (request) => {
@@ -256,7 +340,7 @@ Deno.serve(async (request) => {
     const limited = await takeLimit(admin, caller.user.id, SEARCH_LIMIT);
     if (limited === 'failed') return json(500, { error: 'rate_limit_failed' });
     if (limited === 'limited') return json(429, { error: 'rate_limited' });
-    return json(200, { results: await searchPlaces(query, near) });
+    return json(200, { results: await searchPlaces(admin, query, near) });
   }
   const fixtureId = typeof body?.fixtureId === 'string' ? body.fixtureId : null;
   const origin = toPoint(body?.origin);
@@ -322,7 +406,7 @@ Deno.serve(async (request) => {
     const routes = await Promise.all(
       OPTIONS.map(async ({ option, useTolls }) => ({
         option,
-        found: await route(origin, stadium, useTolls),
+        found: await route(admin, origin, stadium, useTolls),
       }))
     );
     const quotes: Record<string, unknown>[] = [];
@@ -422,13 +506,13 @@ Deno.serve(async (request) => {
   if (limited === 'limited') return json(429, { error: 'rate_limited' });
 
   const useTolls = OPTIONS.find((candidate) => candidate.option === option)?.useTolls ?? 1;
-  const found = await route(origin, stadium, useTolls);
+  const found = await route(admin, origin, stadium, useTolls);
   if (!found) return json(404, { error: 'no_route' });
   const cost = costOf(found);
 
   // Para onde a boleia volta: o concelho de onde saiu. É o que deixa a app mostrar «quem volta para Viseu» no fim
-  // do jogo. Se o Nominatim não responder, a boleia entra na mesma sem destino — é só uma etiqueta.
-  const originCity = await reverseCity(origin);
+  // do jogo. Se não se souber, a boleia entra na mesma sem destino — é só uma etiqueta.
+  const originCity = await reverseCity(admin, origin);
 
   const inserted = await admin
     .from('ride')

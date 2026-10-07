@@ -2,6 +2,29 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-07 — Aguentar muitos utilizadores sem pagar
+
+Antes do teste com pessoas reais (15 de outubro), três pontos que podiam obrigar a pagar ou partir com carga. Tudo
+fica no plano gratuito. Migração `20261007203402_free_scaling.sql` e função `rides`:
+- **43 índices em chaves estrangeiras** que não tinham. Sem eles, as políticas RLS e os `delete` em cascata leem a
+  tabela inteira, o que se nota quando há muitos utilizadores.
+- **Cache de rotas** (`route_cache`, 30 dias): a chave junta as coordenadas arredondadas a 3 casas (~100 m) e se
+  evita portagens. Dois pedidos iguais dão o mesmo preço e só o primeiro chega ao Valhalla. **Sem router de
+  reserva de propósito:** o servidor público do OSRM não sabe nada de portagens (dá 0 km de portagem
+  Lisboa–Braga e recusa `exclude=toll`), por isso dava preços errados. Se o Valhalla falhar, a boleia mostra o erro.
+- **Cache de pesquisas de locais** (`place_search_cache`, 7 dias), e o **Photon** (komoot, gratuito) entra
+  quando o Nominatim falha.
+- **Cidade de partida sem serviço externo:** `nearest_municipality_name` procura o centro de concelho mais
+  próximo na tabela `municipality` (PostGIS). Deixou de se chamar o reverse geocoding do Nominatim.
+- As tabelas de cache têm RLS ligado, não têm políticas e não dão acesso a `anon`/`authenticated`. Só a Edge
+  Function lá chega. Uma tarefa `pg_cron` (03:47) apaga as entradas que passaram do prazo.
+- **O projeto não adormece:** o plano gratuito pausa um projeto depois de 7 dias sem pedidos. O GitHub Actions
+  (`.github/workflows/manter-supabase-acordado.yml`, gratuito) lê uma linha pública de `competition` todos os dias.
+  Os segredos `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` são os valores públicos que já vão dentro da app. O
+  workflow só corre quando estiver no `main`.
+- Limites do plano gratuito a vigiar: 500 MB de base de dados (41 MB usados), 1 GB de Storage, 50 mil utilizadores
+  ativos por mês, 200 ligações Realtime em simultâneo.
+
 ## 2026-10-07 — Mandar um plano a outro grupo, às claras, e voltar atrás
 
 «Mandar a outro grupo» serve para encher os lugares que sobram com gente conhecida (outro grupo meu) sem abrir a
