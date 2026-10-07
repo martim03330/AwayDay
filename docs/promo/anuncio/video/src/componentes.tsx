@@ -277,7 +277,7 @@ export function Carimbo({ tamanho, cor, nome, data }: { tamanho: number; cor: st
     <svg width={tamanho} height={tamanho} viewBox="0 0 200 200">
       <circle cx="100" cy="100" r="92" fill="rgba(255,255,255,0.9)" stroke={cor} strokeWidth="9" />
       <circle cx="100" cy="100" r="76" fill="none" stroke={cor} strokeWidth="3.5" strokeDasharray="9 7" />
-      <text x="100" y="104" textAnchor="middle" fontFamily={LETRA_TITULO} fontWeight={900} fontSize="52" fill={cor} transform="rotate(-8 100 100)">
+      <text x="100" y="104" textAnchor="middle" fontFamily={LETRA_TITULO} fontWeight={900} fontSize={Math.min(52, 270 / Math.max(nome.length, 1))} fill={cor} transform="rotate(-8 100 100)">
         {nome}
       </text>
       <text x="100" y="134" textAnchor="middle" fontFamily={LETRA_TEXTO} fontWeight={800} fontSize="17" letterSpacing="2" fill={cor}>

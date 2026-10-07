@@ -10,8 +10,8 @@ Tudo o que é preciso para as lojas e para as redes sociais. Os textos das ficha
 | **Plano de Instagram (6 semanas, legendas, horários)** | [`instagram/PLANO-INSTAGRAM.md`](instagram/PLANO-INSTAGRAM.md) | |
 | Campanha de Instagram: posts, 7 carrosséis e Stories (48 imagens) | `instagram/campanha/` | 1080 × 1350 · 1080 × 1920 |
 | Posts simples do Instagram (10) | `instagram/` | 1080 × 1350 |
-| Anúncio para Reels, TikTok, Stories, Shorts | `anuncio/awayday-reels-9x16.mp4` | 1080 × 1920, 25 s |
-| Anúncio para o feed do Instagram e do Facebook | `anuncio/awayday-feed-4x5.mp4` | 1080 × 1350, 25 s |
+| Anúncio para Reels, TikTok, Stories, Shorts | `anuncio/awayday-reels-9x16.mp4` | 1080 × 1920, 29 s |
+| Anúncio para o feed do Instagram e do Facebook | `anuncio/awayday-feed-4x5.mp4` | 1080 × 1350, 29 s |
 | Vídeo completo: tudo o que a app faz, em 11 capítulos | `anuncio/awayday-completo-9x16.mp4`, `anuncio/awayday-completo-4x5.mp4` | 89 s |
 | Um Reel por capítulo (11) | `anuncio/reels/` | 1080 × 1920, 12 a 18 s |
 | Capas dos anúncios | `anuncio/capa-reels.png`, `anuncio/capa-feed.png` | |
@@ -64,10 +64,10 @@ Os títulos e a ordem estão em `loja/capturas.html` (lista `CAPTURAS`). Precisa
 Feito em [Remotion](https://www.remotion.dev) (gratuito para particulares e empresas até 3 pessoas), num projeto à
 parte com o seu próprio `package.json`: não entra na app.
 
-- `src/Anuncio.tsx` — o anúncio de 25 s: futebol desde o primeiro segundo (o relvado, a bola, «Jogo fora no sábado?»),
-  «A app de quem vai à bola.» na batida, e depois o que só a AwayDay faz, uma ideia por cena com o telemóvel inteiro ao lado: a boleia ao cêntimo (143,52 € ÷ 4), o tasco
-  ao vivo (27 pessoas), quem deve a quem, o carimbo que só conta lá dentro e a memória da viagem. A capa (fotograma 0)
-  é o fecho já assente.
+- `src/Anuncio.tsx` — o anúncio de 29 s: o relvado e «Jogo fora no sábado?», «A app de quem vai à bola.» na batida,
+  e depois uma ideia por cena com o telemóvel inteiro: a boleia ao cêntimo (a única cena com dinheiro), o tasco ao
+  vivo, seis carimbos a cair no passaporte, a subida no ranking, as missões da semana e a memória da viagem. Sem
+  frases de rodapé. A capa (fotograma 0) é o fecho já assente.
 - `src/longo/` — o vídeo completo: os capítulos (texto, gravações, recortes e tempos) estão em `capitulos.ts`.
   O telemóvel aparece sempre inteiro; cada plano mostra um ecrã parado ou um toque curto (os momentos parados foram
   encontrados com o `freezedetect` do ffmpeg), sem scroll comprido.
@@ -82,7 +82,7 @@ parte com o seu próprio `package.json`: não entra na app.
 cd docs/promo/anuncio/video
 npm install
 python3 musica.py curto public/musica-bruta.wav
-ffmpeg -i public/musica-bruta.wav -af "afade=t=out:st=23.6:d=1.4,loudnorm=I=-14:TP=-1.0:LRA=9" -ar 48000 public/musica.wav
+ffmpeg -i public/musica-bruta.wav -af "afade=t=out:st=27.6:d=1.4,loudnorm=I=-14:TP=-1.0:LRA=9" -ar 48000 public/musica.wav
 python3 musica.py longo public/musica-longo-bruta.wav     # e normalizar como acima, com o fade no fim (88 s)
 npm run render                 # o anúncio curto e as capas, em docs/promo/anuncio/
 npm run render -- longo        # o vídeo completo (9:16 e 4:5) e os 11 Reels de capítulo

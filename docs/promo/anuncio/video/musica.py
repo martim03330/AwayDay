@@ -28,7 +28,7 @@ BAR = 4 * BEAT
 # of 2 s, are the same as CAPITULOS in src/longo/capitulos.ts: change them in both places.
 MODO = sys.argv[1] if len(sys.argv) > 2 else 'curto'
 BARRAS_LONGO = [2, 4, 4, 5, 2, 3, 3, 5, 3, 3, 3, 4, 3]
-LENGTH = 25.0 if MODO == 'curto' else sum(BARRAS_LONGO) * 2.0 + 1.0
+LENGTH = 29.0 if MODO == 'curto' else sum(BARRAS_LONGO) * 2.0 + 1.0
 N = int(SR * LENGTH)
 rng = np.random.default_rng(7)
 
@@ -211,26 +211,27 @@ def app_sound(name):
 
 if MODO == 'curto':
     # Same moments as src/tempos.ts (seconds).
-    ACABOU, BOLEIA, TASCO, CONTAS, CARIMBO, MEMORIA, FECHO = 2.5, 3.5, 7.5, 11.5, 15.5, 18.5, 21.5
+    ACABOU, BOLEIA, TASCO, CARIMBOS, RANKING, MISSOES, MEMORIA, FECHO = 2.5, 3.5, 7.0, 10.5, 14.5, 18.5, 22.5, 25.5
 
-    # The chat chaos: a pluck per message, ticking faster, tension rising to the drop.
-    for i in range(7):
-        place(music, pluck(['A4', 'C5', 'E5', 'A5', 'C6', 'E6', 'A6'][i], 0.25), (4 + i * 8) / 30 + 0.05, 0.45)
+    # The hook: the ball rolls in on a riser, a pluck per question.
+    for t in (0.93, 1.2, 1.47):
+        place(music, pluck('E5', 0.25), t, 0.4)
     for i in range(16):
         place(drums, HC, 0.5 + i * 0.125, 0.15 + 0.4 * i / 16)
     place(music, pad(['A3', 'C4', 'E4'], ACABOU), 0, 0.3)
     place(fx, riser(ACABOU - 0.2), 0.2, 0.7)
 
-    # «Acabou a confusão.»: silence for an instant, then the hit.
+    # «A app de quem vai à bola.»: the hit.
     place(fx, impact(), ACABOU, 1.0)
     place(drums, K, ACABOU, 1.0)
     place(drums, CL, ACABOU, 0.9)
     place(music, stab(['A3', 'C4', 'E4', 'A4'], 0.6), ACABOU, 0.7)
 
-    # The features: full beat from the ride to the stamp.
-    for bar in range(int((CARIMBO - BOLEIA) / BAR)):
+    # Full beat from the ride to the memory; the stamps scene keeps the kick but drops the claps under the stamps.
+    for bar in range(int((MEMORIA - BOLEIA) / BAR)):
         t0 = BOLEIA + bar * BAR
         chord, root, arp = CHORDS[bar % 4]
+        nos_carimbos = CARIMBOS <= t0 < RANKING
         for b in range(4):
             place(drums, K, t0 + b * BEAT, 1.0)
             sidechain(t0 + b * BEAT)
@@ -241,25 +242,32 @@ if MODO == 'curto':
                 place(drums, HC, t0 + b * BEAT + sub * BEAT / 4, 0.22 if sub % 2 else 0.1)
                 if bar >= 2:
                     place(music, pluck(arp[(b + sub) % 4]), t0 + b * BEAT + sub * BEAT / 4, 0.13)
-        place(drums, CL, t0 + BEAT, 0.75)
-        place(drums, CL, t0 + 3 * BEAT, 0.75)
+        if not nos_carimbos:
+            place(drums, CL, t0 + BEAT, 0.75)
+            place(drums, CL, t0 + 3 * BEAT, 0.75)
 
-    # Each scene change: a swell into it and a soft hit on it; the big numbers get a tick.
-    for t in (TASCO, CONTAS):
+    # Scene changes: a swell into each and a soft hit on it.
+    for t in (TASCO, CARIMBOS, RANKING, MISSOES, MEMORIA):
         place(fx, swell(), t - 0.6, 1.0)
         place(fx, impact(), t, 0.3)
-    for t in (BOLEIA + 0.73, BOLEIA + 1.33, BOLEIA + 1.93, CONTAS + 1.0, CONTAS + 1.4, CONTAS + 1.8):
+    for t in (BOLEIA + 0.6, BOLEIA + 1.07, BOLEIA + 1.53):
         place(fx, tick(), t, 0.6)
-    place(fx, app_sound('check-in.wav'), TASCO + 2.0, 0.7)
+    place(fx, app_sound('check-in.wav'), TASCO + 1.9, 0.7)
 
-    # The stamp: the app's own sound on a kick, then half-time.
-    place(fx, swell(), CARIMBO - 0.6, 1.0)
-    place(fx, app_sound('carimbo.wav'), CARIMBO + 0.2, 1.6)
-    place(drums, K, CARIMBO + 0.2, 1.0)
-    place(fx, impact(), CARIMBO + 0.2, 0.4)
-    for b in range(2, 6):
-        place(drums, K, CARIMBO + b * BEAT, 0.7)
-    place(music, pad(CHORDS[1][0], MEMORIA - CARIMBO), CARIMBO, 0.4)
+    # Six stamps, one every 10 frames, each landing 5 frames after it starts to fall (Carimbos in Anuncio.tsx).
+    for i in range(6):
+        place(fx, app_sound('carimbo.wav'), CARIMBOS + (14 + i * 10 + 5) / 30, 1.3)
+
+    # Ranking: a rising run while the place climbs, a bright chord on «Subiste de nível!».
+    for i, nm in enumerate(['A4', 'C5', 'E5', 'A5']):
+        place(music, pluck(nm, 0.3), RANKING + (22 + i * 9) / 30, 0.45)
+    place(music, stab(['C5', 'E5', 'G5', 'C6'], 0.5), RANKING + 82 / 30, 0.6)
+    place(fx, app_sound('check-in.wav'), RANKING + 82 / 30, 0.8)
+
+    # Missions: a tick and a note per mission ticked off.
+    for t, nm in zip((34, 52, 70), ('E5', 'G5', 'C6')):
+        place(fx, tick(), MISSOES + t / 30, 0.7)
+        place(music, pluck(nm, 0.3), MISSOES + t / 30, 0.5)
 
     # The memory: softer, chords and a pluck line, a riser into the end.
     place(music, pad(CHORDS[2][0], BAR), MEMORIA, 0.5)

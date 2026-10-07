@@ -119,12 +119,6 @@ function Numero({ de, valor, legenda, destaque = false }: { de: number; valor: R
   );
 }
 
-function Nota({ de, children }: { de: number; children: ReactNode }) {
-  const m = useMedidas();
-  const e = useEntrada(de, 120, 18);
-  return <div style={{ fontFamily: LETRA_TEXTO, fontWeight: 700, fontSize: 30 * m.u, lineHeight: 1.3, color: COR.tintaSuave, opacity: e, transform: `translateY(${(1 - e) * 20}px)` }}>{children}</div>;
-}
-
 // --- 1. Football, from the first frame -----------------------------------------------------------------------------
 
 /** The pitch: mown stripes, and the halfway line and centre circle drawing themselves in. */
@@ -241,7 +235,7 @@ function Acabou() {
   );
 }
 
-// --- 3. The ride, to the cent --------------------------------------------------------------------------------------
+// --- 3. The ride, to the cent (the only money scene) -----------------------------------------------------------
 
 function Boleia() {
   return (
@@ -249,10 +243,9 @@ function Boleia() {
       <Cabeca linhas={[[{ texto: 'Boleia', de: 0 }, { texto: 'ao', de: 4 }, { texto: 'cêntimo.', de: 8, cor: COR.relva }]]} />
       <Telefone largura={useMedidas().telefoneW} clipe="clipes-longo/05-boleias.mp4" inicio={4.3} />
       <Lado>
-        <Numero de={22} valor="143,52 €" legenda="combustível e portagens" />
-        <Numero de={40} valor="÷ 4" legenda="quem vai no carro" />
-        <Numero de={58} valor="35,88 €" legenda="cada um" destaque />
-        <Nota de={80}>Sem lucro: só os custos.</Nota>
+        <Numero de={18} valor="143,52 €" legenda="combustível e portagens" />
+        <Numero de={32} valor="÷ 4" legenda="quem vai no carro" />
+        <Numero de={46} valor="35,88 €" legenda="cada um" destaque />
       </Lado>
     </Cena>
   );
@@ -263,10 +256,10 @@ function Boleia() {
 function Tasco() {
   const frame = useCurrentFrame();
   const m = useMedidas();
-  const n = Math.round(interpolate(frame, [20, 62], [0, 27], { ...clamp, easing: Easing.out(Easing.cubic) }));
-  const e = useEntrada(18, 160, 14);
+  const n = Math.round(interpolate(frame, [18, 56], [0, 27], { ...clamp, easing: Easing.out(Easing.cubic) }));
+  const e = useEntrada(16, 160, 14);
   return (
-    <Cena duracao={T.contas - T.tasco}>
+    <Cena duracao={T.carimbos - T.tasco}>
       <Cabeca linhas={[[{ texto: 'O', de: 0 }, { texto: 'tasco,', de: 4 }, { texto: 'ao', de: 8, cor: COR.relva }, { texto: 'vivo.', de: 12, cor: COR.relva }]]} />
       <Telefone largura={m.telefoneW} clipe="clipes-longo/10-tasco.mp4" inicio={0.4} />
       <Lado>
@@ -274,80 +267,176 @@ function Tasco() {
           <div style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: m.numero * 2.4, lineHeight: 0.9, color: COR.relva, fontVariantNumeric: 'tabular-nums' }}>{n}</div>
           <div style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: m.numero * 0.5, lineHeight: 1, textTransform: 'uppercase', color: COR.tinta }}>pessoas lá agora</div>
         </div>
-        <Nota de={70}>Só aparece a partir de 5 pessoas, e ninguém vê onde estás.</Nota>
       </Lado>
     </Cena>
   );
 }
 
-// --- 5. Who owes whom: done ------------------------------------------------------------------------------------------
+// --- 5. Stamps raining onto the passport ----------------------------------------------------------------------------
 
-function Divida({ de, quem, valor }: { de: number; quem: string; valor: string }) {
-  const m = useMedidas();
-  const e = useEntrada(de, 200, 15);
+const CARIMBOS = [
+  { nome: 'LUZ', cor: '#D8262E', data: '17·08·26', roda: -12 },
+  { nome: 'DRAGÃO', cor: '#1D4E9E', data: '30·08·26', roda: 8 },
+  { nome: 'ALVALADE', cor: '#187C44', data: '13·09·26', roda: -5 },
+  { nome: 'BRAGA', cor: '#B3202A', data: '09·10·26', roda: 10 },
+  { nome: 'LENS', cor: '#B07A00', data: '13·10·26', roda: -9 },
+  { nome: 'FUNCHAL', cor: '#13241B', data: '01·11·26', roda: 6 },
+];
+
+/** One stamp that drops from above, hits, rings with ink, and settles a little crooked. */
+function CarimboQueCai({ de, nome, cor, data, roda, tamanho }: { de: number; nome: string; cor: string; data: string; roda: number; tamanho: number }) {
+  const frame = useCurrentFrame() - de;
+  if (frame < 0) return <div style={{ width: tamanho, height: tamanho }} />;
+  const queda = interpolate(frame, [0, 5], [2.4, 1], { ...clamp, easing: Easing.in(Easing.quad) });
+  const ressalto = frame >= 5 ? 1 + 0.07 * Math.exp(-(frame - 5) / 3) * Math.cos((frame - 5) * 1.7) : queda;
+  const tinta = interpolate(frame, [5, 16], [0, 1], clamp);
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 20 * m.u, background: COR.branco, borderRadius: 24 * m.u, padding: `${20 * m.u}px ${26 * m.u}px`, boxShadow: '0 16px 40px rgba(19,36,27,0.10)', opacity: Math.min(1, e * 1.5), transform: `translateX(${(1 - e) * 120}px)` }}>
-      <span style={{ fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 32 * m.u, color: COR.tinta }}>{quem}</span>
-      <span style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 54 * m.u, color: COR.relva, whiteSpace: 'nowrap' }}>{valor}</span>
+    <div style={{ position: 'relative', width: tamanho, height: tamanho, display: 'grid', placeItems: 'center' }}>
+      {[...Array(8)].map((_, i) => {
+        const ang = (i / 8) * Math.PI * 2 + roda;
+        const dist = tamanho * (0.42 + 0.22 * tinta);
+        return (
+          <div key={i} style={{ position: 'absolute', width: 10 + (i % 3) * 5, height: 10 + (i % 3) * 5, borderRadius: '50%', background: cor, opacity: frame >= 5 ? (1 - tinta) * 0.7 : 0, transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist}px)` }} />
+        );
+      })}
+      <div style={{ transform: `scale(${ressalto}) rotate(${roda}deg)`, opacity: interpolate(frame, [0, 2], [0, 1], clamp), filter: `drop-shadow(0 12px 24px ${cor}40)` }}>
+        <Carimbo tamanho={tamanho} cor={cor} nome={nome} data={data} />
+      </div>
     </div>
   );
 }
 
-function Contas() {
+function Carimbos() {
+  const frame = useCurrentFrame();
   const m = useMedidas();
-  const ok = useEntrada(76, 220, 12);
+  const passo = 10;
+  const inicio = 14;
+  const caidos = CARIMBOS.filter((_, i) => frame >= inicio + i * passo + 5).length;
+  // The page shakes a little on every hit.
+  const desde = (frame - inicio) % passo;
+  const abanao = frame >= inicio && frame < inicio + CARIMBOS.length * passo && desde >= 5 && desde < 9 ? Math.sin(frame * 3.3) * (9 - desde) * 1.4 : 0;
+  const tamanho = (m.vertical ? 290 : 200) * m.u;
+  const contador = useEntrada(inicio + 6, 160, 15);
   return (
-    <Cena duracao={T.carimbo - T.contas}>
-      <Cabeca linhas={[[{ texto: 'Quem', de: 0 }, { texto: 'deve', de: 4 }, { texto: 'a', de: 7 }, { texto: 'quem?', de: 10 }], [{ texto: 'Já', de: 22, cor: COR.relva }, { texto: 'está.', de: 26, cor: COR.relva }]]} />
-      <Telefone largura={m.telefoneW} clipe="clipes-longo/11-contas.mp4" inicio={4.5} />
+    <Cena duracao={T.ranking - T.carimbos}>
+      <AbsoluteFill style={{ transform: `translate(${abanao}px, ${abanao * 0.5}px)` }}>
+        <Cabeca linhas={[[{ texto: 'Carimba', de: 0 }], [{ texto: 'cada', de: 4 }, { texto: 'estádio.', de: 8, cor: COR.relva }]]} />
+        <div style={{ position: 'absolute', left: 0, right: 0, top: m.vertical ? 640 : 380, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 34 * m.u }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(3, ${tamanho}px)`, gap: 18 * m.u, padding: 30 * m.u, background: COR.branco, borderRadius: 36 * m.u, boxShadow: '0 30px 70px rgba(19,36,27,0.14)' }}>
+            {CARIMBOS.map((c, i) => (
+              <CarimboQueCai key={c.nome} de={inicio + i * passo} tamanho={tamanho} {...c} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 * m.u, opacity: Math.min(1, contador * 1.5), transform: `scale(${0.8 + 0.2 * contador})` }}>
+            <span style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: m.numero * 1.3, color: COR.relva, fontVariantNumeric: 'tabular-nums' }}>{caidos}</span>
+            <span style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: m.numero * 0.5, textTransform: 'uppercase', color: COR.tinta }}>estádios no passaporte</span>
+          </div>
+        </div>
+      </AbsoluteFill>
+    </Cena>
+  );
+}
+
+// --- 6. Climbing the table ------------------------------------------------------------------------------------------
+
+function Ranking() {
+  const frame = useCurrentFrame();
+  const m = useMedidas();
+  const lugar = Math.round(interpolate(frame, [22, 58], [7, 3], { ...clamp, easing: Easing.inOut(Easing.cubic) }));
+  const seta = useEntrada(20, 180, 12);
+  const barra = interpolate(frame, [54, 82], [0.55, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
+  const subiu = useEntrada(82, 220, 11);
+  const nivel = frame >= 82 ? 5 : 4;
+  return (
+    <Cena duracao={T.missoes - T.ranking}>
+      <Cabeca linhas={[[{ texto: 'Sobe', de: 0 }, { texto: 'no', de: 4 }], [{ texto: 'ranking.', de: 8, cor: COR.relva }]]} />
+      <Telefone largura={m.telefoneW} clipe="clipes-longo/13-ranking.mp4" inicio={1.6} />
       <Lado>
-        <Divida de={30} quem="Zé → Rui" valor="49,88 €" />
-        <Divida de={42} quem="Ana → Rui" valor="25,88 €" />
-        <Divida de={54} quem="Tu → Rui" valor="3,88 €" />
-        <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 14 * m.u, background: COR.relva, color: COR.branco, borderRadius: 999, padding: `${14 * m.u}px ${26 * m.u}px`, fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 32 * m.u, opacity: ok, transform: `scale(${0.6 + 0.4 * ok})`, transformOrigin: 'left center' }}>
-          <svg width={34 * m.u} height={34 * m.u} viewBox="0 0 24 24" fill="none" stroke={COR.branco} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-          Contas feitas
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 * m.u, opacity: Math.min(1, seta * 1.5) }}>
+          <svg width={m.numero * 0.9} height={m.numero * 0.9} viewBox="0 0 24 24" style={{ transform: `translateY(${(1 - seta) * 40}px)` }}>
+            <path d="M12 3l8 9h-5v9h-6v-9H4z" fill={COR.relva} />
+          </svg>
+          <div>
+            <div style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: m.numero * 1.6, lineHeight: 0.9, color: COR.tinta, fontVariantNumeric: 'tabular-nums' }}>{`${lugar}.º`}</div>
+            <div style={{ fontFamily: LETRA_TEXTO, fontWeight: 700, fontSize: 28 * m.u, color: COR.tintaSuave }}>na tabela dos tascos</div>
+          </div>
+        </div>
+        <div style={{ background: COR.branco, borderRadius: 28 * m.u, padding: `${22 * m.u}px ${26 * m.u}px`, boxShadow: '0 18px 44px rgba(19,36,27,0.10)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 * m.u }}>
+            <div style={{ width: 70 * m.u, height: 70 * m.u, borderRadius: 18 * m.u, background: COR.amarelo, display: 'grid', placeItems: 'center', fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 44 * m.u, color: COR.tinta }}>{nivel}</div>
+            <div>
+              <div style={{ fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 22 * m.u, letterSpacing: '0.08em', color: COR.relva }}>{`NÍVEL ${nivel}`}</div>
+              <div style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 44 * m.u, color: COR.tinta }}>{nivel === 5 ? 'Adepto' : 'Estreante'}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 16 * m.u, height: 14 * m.u, borderRadius: 999, background: COR.linha, overflow: 'hidden' }}>
+            <div style={{ width: `${(frame >= 82 ? 0.08 : barra) * 100}%`, height: '100%', background: COR.relva }} />
+          </div>
+        </div>
+        <div style={{ alignSelf: 'flex-start', background: COR.amarelo, color: COR.tinta, borderRadius: 999, padding: `${12 * m.u}px ${24 * m.u}px`, fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 30 * m.u, opacity: subiu, transform: `scale(${0.5 + 0.5 * subiu}) rotate(${(1 - subiu) * -8}deg)`, transformOrigin: 'left center', boxShadow: '0 14px 30px rgba(255,206,58,0.45)' }}>
+          Subiste de nível!
         </div>
       </Lado>
     </Cena>
   );
 }
 
-// --- 6. The stamp: only counts if you were there --------------------------------------------------------------------
+// --- 7. The week's missions -----------------------------------------------------------------------------------------
 
-function Estadio() {
+const MISSOES: { nome: string; pontos: number; icone: 'bola' | 'carro' | 'tasco' }[] = [
+  { nome: 'Prova uma especialidade', pontos: 75, icone: 'tasco' },
+  { nome: 'Acompanha o teu clube fora', pontos: 125, icone: 'carro' },
+  { nome: 'Experimenta um tasco novo', pontos: 75, icone: 'bola' },
+];
+
+function Missao({ nome, pontos, icone, feitaEm, de }: { nome: string; pontos: number; icone: 'bola' | 'carro' | 'tasco'; feitaEm: number; de: number }) {
   const frame = useCurrentFrame();
   const m = useMedidas();
-  const queda = interpolate(frame, [0, 6], [2.6, 1], { ...clamp, easing: Easing.in(Easing.quad) });
-  const ressalto = frame >= 6 ? 1 + 0.06 * Math.exp(-(frame - 6) / 3) * Math.cos((frame - 6) * 1.6) : queda;
-  const abanao = frame >= 6 && frame < 14 ? Math.sin(frame * 3.1) * (14 - frame) * 1.8 : 0;
-  const tinta = interpolate(frame, [6, 20], [0, 1], clamp);
-  const tamanho = m.vertical ? 620 : 440;
+  const e = useEntrada(de, 180, 15);
+  const feita = useEntrada(feitaEm, 260, 12);
+  const sobe = interpolate(frame, [feitaEm, feitaEm + 20], [0, 1], clamp);
   return (
-    <Cena duracao={T.memoria - T.carimbo}>
-      <AbsoluteFill style={{ transform: `translate(${abanao}px, ${abanao * 0.4}px)` }}>
-        <Cabeca linhas={[[{ texto: 'Só', de: 10 }, { texto: 'conta', de: 13 }, { texto: 'se', de: 16 }], [{ texto: 'lá', de: 19, cor: COR.relva }, { texto: 'estiveres.', de: 22, cor: COR.relva }]]} />
-        <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', top: m.vertical ? 380 : 220 }}>
-          {[...Array(12)].map((_, i) => {
-            const ang = (i / 12) * Math.PI * 2;
-            const dist = tamanho * (0.5 + 0.3 * tinta);
-            return (
-              <div key={i} style={{ position: 'absolute', width: 16 + (i % 3) * 9, height: 16 + (i % 3) * 9, borderRadius: '50%', background: '#D8262E', opacity: frame >= 6 ? (1 - tinta) * 0.8 : 0, transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist}px)` }} />
-            );
-          })}
-          <div style={{ transform: `scale(${frame < 6 ? queda : ressalto}) rotate(-10deg)`, opacity: interpolate(frame, [0, 3], [0, 1], clamp), filter: 'drop-shadow(0 20px 40px rgba(216,38,46,0.25))' }}>
-            <Carimbo tamanho={tamanho} cor="#D8262E" nome="BRAGA" data="09·10·26" />
-          </div>
-          <div style={{ marginTop: 40 * m.u, fontFamily: LETRA_TEXTO, fontWeight: 700, fontSize: 32 * m.u, color: COR.tintaSuave, opacity: interpolate(frame, [30, 44], [0, 1], clamp) }}>
-            Um carimbo por estádio, lá dentro e no dia do jogo.
-          </div>
-        </AbsoluteFill>
-      </AbsoluteFill>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 16 * m.u, background: feita > 0.5 ? COR.relva : COR.branco, borderRadius: 24 * m.u, padding: `${18 * m.u}px ${20 * m.u}px`, boxShadow: '0 16px 40px rgba(19,36,27,0.10)', opacity: Math.min(1, e * 1.5), transform: `translateX(${(1 - e) * 120}px) scale(${1 + 0.05 * Math.sin(Math.min(feita, 1) * Math.PI)})` }}>
+      <div style={{ width: 56 * m.u, height: 56 * m.u, borderRadius: '50%', flex: 'none', background: feita > 0.5 ? COR.amarelo : COR.linha, display: 'grid', placeItems: 'center' }}>
+        {feita > 0.5 ? (
+          <svg width={32 * m.u} height={32 * m.u} viewBox="0 0 24 24" fill="none" stroke={COR.tinta} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ transform: `scale(${feita})` }}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        ) : (
+          <Icone nome={icone} tamanho={30 * m.u} cor={COR.tintaSuave} />
+        )}
+      </div>
+      <div style={{ flex: 1, fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 27 * m.u, lineHeight: 1.2, color: feita > 0.5 ? COR.branco : COR.tinta }}>{nome}</div>
+      <div style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 40 * m.u, color: feita > 0.5 ? COR.amarelo : COR.relva }}>{`+${pontos}`}</div>
+      {sobe > 0 && sobe < 1 ? (
+        <div style={{ position: 'absolute', right: 20 * m.u, top: -10 * m.u, fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 46 * m.u, color: COR.amarelo, opacity: 1 - sobe, transform: `translateY(${-sobe * 70}px)`, textShadow: '0 4px 12px rgba(19,36,27,0.3)' }}>{`+${pontos}`}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function Missoes() {
+  const frame = useCurrentFrame();
+  const m = useMedidas();
+  const feitas = [34, 52, 70];
+  const total = MISSOES.reduce((soma, missao, i) => soma + (frame >= feitas[i] ? missao.pontos : 0), 0);
+  const pill = useEntrada(74, 200, 13);
+  return (
+    <Cena duracao={T.memoria - T.missoes}>
+      <Cabeca linhas={[[{ texto: 'Missões', de: 0 }, { texto: 'novas', de: 4 }], [{ texto: 'toda', de: 8 }, { texto: 'a', de: 10 }, { texto: 'semana.', de: 12, cor: COR.relva }]]} />
+      <Telefone largura={m.telefoneW} clipe="clipes-longo/14-missoes.mp4" inicio={0.2} />
+      <Lado>
+        {MISSOES.map((missao, i) => (
+          <Missao key={missao.nome} {...missao} de={14 + i * 6} feitaEm={feitas[i]} />
+        ))}
+        <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'baseline', gap: 12 * m.u, background: COR.amarelo, borderRadius: 999, padding: `${12 * m.u}px ${26 * m.u}px`, opacity: pill, transform: `scale(${0.6 + 0.4 * pill})`, transformOrigin: 'left center' }}>
+          <span style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 52 * m.u, color: COR.tinta, fontVariantNumeric: 'tabular-nums' }}>{`+${total}`}</span>
+          <span style={{ fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 26 * m.u, color: COR.tinta }}>pontos esta semana</span>
+        </div>
+      </Lado>
     </Cena>
   );
 }
 
-// --- 7. The memory of the trip ---------------------------------------------------------------------------------------
+// --- 8. The memory of the trip ---------------------------------------------------------------------------------------
 
 function Memoria() {
   const m = useMedidas();
@@ -357,14 +446,13 @@ function Memoria() {
       <Telefone largura={m.telefoneW} imagem="recordacao.png" />
       <Lado>
         <Numero de={24} valor="4" legenda="foram ao jogo" />
-        <Numero de={36} valor="140,00 €" legenda="gastos na viagem" />
-        <Numero de={48} valor="35,00 €" legenda="por cabeça" destaque />
+        <Numero de={36} valor="1 jantar" legenda="de vitória" destaque />
       </Lado>
     </Cena>
   );
 }
 
-// --- 8. End card -----------------------------------------------------------------------------------------------------
+// --- 9. End card -----------------------------------------------------------------------------------------------------
 
 export function Fecho() {
   const frame = useCurrentFrame();
@@ -425,9 +513,10 @@ const CENAS: [number, number, () => ReactNode][] = [
   [T.caos, T.acabou, () => <Caos />],
   [T.acabou, T.boleia, () => <Acabou />],
   [T.boleia, T.tasco, () => <Boleia />],
-  [T.tasco, T.contas, () => <Tasco />],
-  [T.contas, T.carimbo, () => <Contas />],
-  [T.carimbo, T.memoria, () => <Estadio />],
+  [T.tasco, T.carimbos, () => <Tasco />],
+  [T.carimbos, T.ranking, () => <Carimbos />],
+  [T.ranking, T.missoes, () => <Ranking />],
+  [T.missoes, T.memoria, () => <Missoes />],
   [T.memoria, T.fecho, () => <Memoria />],
 ];
 
