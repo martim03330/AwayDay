@@ -8,6 +8,7 @@ import {
   type FixturePlan,
   type PlanAnswer,
 } from '@/features/groups/plans';
+import { conviteDoCartao, origemDoPlano } from '@/features/groups/partilha';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
@@ -79,6 +80,8 @@ type CartaoDoPlanoProps = {
   quemConvidou?: string;
   /** Por cima de um fundo escuro, o cartão ganha contorno. */
   escuro?: boolean;
+  /** O grupo onde o cartão aparece: se o plano for de outro grupo, o cartão diz de qual. */
+  grupoAtualId?: string | null;
   /** Já vais a este jogo com outro grupo (plano fechado lá): aqui não dá para dizer que vais. */
   vaisComOutroGrupo?: string | null;
   onAbrir: () => void;
@@ -95,6 +98,7 @@ export function CartaoDoPlano({
   plano,
   quemConvidou,
   escuro = false,
+  grupoAtualId = null,
   vaisComOutroGrupo = null,
   onAbrir,
   onRespondido,
@@ -108,12 +112,8 @@ export function CartaoDoPlano({
   const [erro, setErro] = useState<string | null>(null);
 
   const aberto = plano.status === 'aberto';
-  const convite =
-    quemConvidou === 'eu'
-      ? 'Convidaste a malta'
-      : quemConvidou
-        ? `${quemConvidou} convida`
-        : 'Convite para o jogo';
+  const convite = conviteDoCartao(quemConvidou, plano, grupoAtualId);
+  const origem = origemDoPlano(plano, grupoAtualId);
 
   async function responder(resposta: PlanAnswer) {
     setErro(null);
@@ -156,6 +156,12 @@ export function CartaoDoPlano({
         </ThemedText>
         <Icon name={icons.seguinte} size={16} color={theme.textMuted} />
       </View>
+
+      {origem ? (
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+          {origem}
+        </ThemedText>
+      ) : null}
 
       <View style={styles.equipas}>
         {casa && fora ? (

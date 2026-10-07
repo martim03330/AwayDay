@@ -278,10 +278,11 @@ function paraFundo(valor: string | null, url: string | null): FundoConversa {
  * 'texto': uma mensagem escrita. 'local': «estou aqui», num tasco — o corpo é «no Tasco do Zé». 'plano': o convite
  * para um jogo — o corpo é «Benfica x Porto».
  */
-export type MessageKind = 'texto' | 'local' | 'plano';
+/** 'aviso': a system notice about a plan (sent to another group, or taken back), written by the server. */
+export type MessageKind = 'texto' | 'local' | 'plano' | 'aviso';
 
 function toKind(valor: string | null): MessageKind {
-  return valor === 'local' || valor === 'plano' ? valor : 'texto';
+  return valor === 'local' || valor === 'plano' || valor === 'aviso' ? valor : 'texto';
 }
 
 /** Um grupo na lista da Malta. */

@@ -1,0 +1,47 @@
+import { render, screen } from '@testing-library/react-native';
+
+import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
+import type { FixturePlan } from '@/features/groups/plans';
+import { AvisoDeConversa } from '@/ui/conversa';
+
+const PLANO: FixturePlan = {
+  id: 'plano-1',
+  groupId: 'malta',
+  groupName: 'Malta do café',
+  fixtureId: 'jogo-que-nao-existe',
+  kickoffAt: '2026-10-13T16:45:00.000Z',
+  createdBy: 'ana',
+  creatorName: 'Ana Ribeiro',
+  isMine: false,
+  status: 'aberto',
+  closedByFullCar: false,
+  going: 2,
+  maybe: 0,
+  myAnswer: null,
+  sharedGroups: 1,
+  ride: null,
+  stay: null,
+};
+
+describe('CartaoDoPlano, for a plan sent to another group', () => {
+  it('in the group that received it, says which group it comes from', () => {
+    render(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="primos" onAbrir={() => undefined} />);
+    expect(screen.getByText('Ana · Malta do café convida')).toBeTruthy();
+    expect(screen.getByText('Plano de «Malta do café», aberto a este grupo')).toBeTruthy();
+  });
+
+  it('in its own group, stays as it was', () => {
+    render(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="malta" onAbrir={() => undefined} />);
+    expect(screen.getByText('Ana convida')).toBeTruthy();
+    expect(screen.queryByText(/aberto a este grupo/)).toBeNull();
+  });
+});
+
+describe('AvisoDeConversa', () => {
+  it('shows the notice in full and reads it as a notice', () => {
+    const texto = 'Ana mandou o plano Lens x Sporting ao grupo «Primos da bola». Eles veem a boleia e a casa e podem pedir lugar.';
+    render(<AvisoDeConversa texto={texto} />);
+    expect(screen.getByText(texto)).toBeTruthy();
+    expect(screen.getByLabelText(`Aviso: ${texto}`)).toBeTruthy();
+  });
+});

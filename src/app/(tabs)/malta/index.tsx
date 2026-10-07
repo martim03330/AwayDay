@@ -36,6 +36,7 @@ function quando(iso: string) {
 function resumo(grupo: GroupInboxItem) {
   if (!grupo.last) return `${plural(grupo.members, 'pessoa', 'pessoas')} · ainda ninguém escreveu`;
   const quem = grupo.last.mine ? 'Tu' : grupo.last.name.split(' ')[0];
+  if (grupo.last.kind === 'aviso') return grupo.last.body;
   if (grupo.last.kind === 'plano') {
     return `${grupo.last.mine ? 'Convidaste' : `${quem} convidou`} para ${grupo.last.body}`;
   }

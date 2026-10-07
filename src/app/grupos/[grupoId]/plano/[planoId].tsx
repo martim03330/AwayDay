@@ -15,6 +15,7 @@ import {
   usePlan,
   usePlanConflicts,
   usePlanPeople,
+  usePlanSharedGroups,
 } from '@/features/groups/hooks/useGroups';
 import {
   joinPlanRide,
@@ -22,8 +23,11 @@ import {
   setPlanRide,
   setPlanStatus,
   sharePlan,
+  unsharePlan,
   type FixturePlan,
+  type SharedGroup,
 } from '@/features/groups/plans';
+import { partilhadoCom } from '@/features/groups/partilha';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { leaveRide, setRideReturnRequests, setRideVisibility } from '@/features/rides/api';
 import { useTheme } from '@/hooks/use-theme';
@@ -57,6 +61,8 @@ function mensagemDeRecusa(erro: unknown) {
       return 'O carro encheu entretanto.';
     case 'ride_closed':
       return 'O carro já saiu.';
+    case 'not_shared':
+      return 'Esse grupo já não tinha o plano.';
     default:
       return 'Não deu para fazer isso. Tenta outra vez.';
   }
@@ -79,6 +85,7 @@ export default function PlanoScreen() {
 
   const { plan: plano, isLoading } = usePlan(planoId ?? null);
   const pessoas = usePlanPeople(planoId ?? null);
+  const partilhas = usePlanSharedGroups(planoId ?? null);
   const conflitos = usePlanConflicts(planoId ? [planoId] : []);
   const vaisComOutroGrupo = planoId ? conflitos.data?.[planoId] : undefined;
   const cartoes = useProfileCards([
@@ -90,7 +97,6 @@ export default function PlanoScreen() {
 
   const [aTratar, setATratar] = useState(false);
   const [mostrarGrupos, setMostrarGrupos] = useState(false);
-  const [mandadoPara, setMandadoPara] = useState<string[]>([]);
   const [erro, setErro] = useState<string | null>(null);
 
   if (!plano) {
@@ -117,6 +123,8 @@ export default function PlanoScreen() {
   const vao = (pessoas.data ?? []).filter((pessoa) => pessoa.answer === 'vou');
   const aPensar = (pessoas.data ?? []).filter((pessoa) => pessoa.answer === 'talvez');
   const outrosGrupos = (inbox.data ?? []).filter((grupo) => grupo.id !== plano.groupId);
+  const partilhados = partilhas.data ?? [];
+  const mandadoPara = partilhados.map((grupo) => grupo.groupId);
   const boleiasDoGrupo = (doGrupo.data ?? []).filter(
     (item) =>
       item.kind === 'boleia' &&
@@ -142,6 +150,22 @@ export default function PlanoScreen() {
       setATratar(false);
     }
   }
+  /** Take the plan back from a group: confirm first, it leaves their chat. */
+  function deixarDeAbrir(grupo: SharedGroup) {
+    Alert.alert(
+      `Deixar de abrir a «${grupo.groupName}»?`,
+      'O plano sai da conversa deles e quem de lá disse que ia deixa de contar. Os lugares já aceites na boleia e na casa ficam como estão. Os dois grupos são avisados.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Deixar de abrir',
+          style: 'destructive',
+          onPress: () => void tratar(() => unsharePlan(plano!.id, grupo.groupId)),
+        },
+      ]
+    );
+  }
+
 
   const abrirBoleiaAoPublico = () => {
     const rideId = plano.ride?.id;
@@ -209,6 +233,7 @@ export default function PlanoScreen() {
       <CartaoDoPlano
         plano={plano}
         vaisComOutroGrupo={vaisComOutroGrupo}
+        grupoAtualId={grupoId ?? null}
         quemConvidou={souQuemConvidou ? 'eu' : plano.creatorName.split(' ')[0]}
         dicaAoTocar="Toca para ver o jogo."
         onAbrir={() =>
@@ -331,14 +356,7 @@ export default function PlanoScreen() {
 
       {podeAbrirAoPublico || podeMandar ? (
         <>
-          <SectionHeader
-            title="Chamar mais malta"
-            trailing={
-              plano.sharedGroups > 0
-                ? `mandado a ${plural(plano.sharedGroups, 'grupo', 'grupos')}`
-                : undefined
-            }
-          />
+          <SectionHeader title="Chamar mais malta" />
           <Card style={styles.lista}>
             {podeAbrirAoPublico ? (
               <LinhaGrupo
@@ -387,7 +405,6 @@ export default function PlanoScreen() {
                               }
                               throw problema;
                             }
-                            setMandadoPara((atuais) => [...atuais, grupo.id]);
                           });
                         }}
                       />
@@ -396,6 +413,33 @@ export default function PlanoScreen() {
                 ) : null}
               </>
             ) : null}
+          </Card>
+        </>
+      ) : null}
+
+      {partilhados.length > 0 ? (
+        <>
+          <SectionHeader title={partilhadoCom(partilhados.map((grupo) => grupo.groupName)) ?? ''} />
+          <Card style={styles.lista}>
+            {partilhados.map((grupo, indice) => (
+              <LinhaGrupo
+                key={grupo.groupId}
+                separador={indice < partilhados.length - 1}
+                leading={<IconCircle name={icons.perfil} />}
+                title={grupo.groupName}
+                subtitle="Veem a boleia e a casa e podem pedir lugar."
+                trailing={
+                  souQuemConvidou ? (
+                    <LinkTexto
+                      perigo
+                      label="Deixar de abrir"
+                      disabled={aTratar}
+                      onPress={() => deixarDeAbrir(grupo)}
+                    />
+                  ) : undefined
+                }
+              />
+            ))}
           </Card>
         </>
       ) : null}

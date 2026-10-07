@@ -13,6 +13,7 @@ import {
   fetchMyPlanConflicts,
   fetchPlanHouses,
   fetchPlanPeople,
+  fetchPlanSharedGroups,
   fetchPlans,
 } from '@/features/groups/plans';
 import { fetchGroupHistory } from '@/features/groups/history';
@@ -126,6 +127,16 @@ export function usePlanPeople(planId: string | null) {
   return useQuery({
     queryKey: [...plansKey(), 'people', planId],
     queryFn: planId ? () => fetchPlanPeople(planId) : skipToken,
+    staleTime: 10 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** A que grupos o plano foi mandado (vazio para quem não é do grupo de origem). */
+export function usePlanSharedGroups(planId: string | null) {
+  return useQuery({
+    queryKey: [...plansKey(), 'shared', planId],
+    queryFn: planId ? () => fetchPlanSharedGroups(planId) : skipToken,
     staleTime: 10 * 1000,
     meta: { persist: false },
   });

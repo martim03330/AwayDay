@@ -38,6 +38,7 @@ import { useUserId } from '@/lib/session';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import type { Jogo, Venue } from '@/mocks/tipos';
 import { VoosCard } from '@/components/voos-card';
+import { rotuloDeOutroGrupo } from '@/features/groups/partilha';
 import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
@@ -164,6 +165,7 @@ function PessoasDaCasa({
 /** Uma casa proposta: o que custa, quanto fica a cada um agora, quem já está dentro e como se entra. */
 function CasaProposta({
   casa,
+  deOutroGrupo,
   podeEntrar,
   aTratar,
   onPedir,
@@ -175,6 +177,8 @@ function CasaProposta({
   onApagar,
 }: {
   casa: StayHouse;
+  /** The house is a group's the viewer is not in: they see it because a plan was sent to their group. */
+  deOutroGrupo: boolean;
   podeEntrar: boolean;
   aTratar: boolean;
   onPedir: () => void;
@@ -231,7 +235,13 @@ function CasaProposta({
         {casa.visibility === 'grupo' ? (
           <Etiqueta
             icon={icons.perfil}
-            label={casa.groupName ? `Só do grupo ${casa.groupName}` : 'Só para um grupo'}
+            label={
+              !casa.groupName
+                ? 'Só para um grupo'
+                : deOutroGrupo
+                  ? rotuloDeOutroGrupo('casa', casa.groupName)
+                  : `Só do grupo ${casa.groupName}`
+            }
             tone="info"
           />
         ) : null}
@@ -562,6 +572,7 @@ export function DormidaCard({
         <CasaProposta
           key={casa.id}
           casa={casa}
+          deOutroGrupo={casa.groupId !== null && !(meusGrupos.data ?? []).some((grupo) => grupo.id === casa.groupId)}
           podeEntrar={podePartilhar}
           aTratar={aTratar}
           onPedir={() =>

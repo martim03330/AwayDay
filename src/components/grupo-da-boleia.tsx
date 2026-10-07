@@ -1,8 +1,11 @@
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { fetchMyGroups } from '@/features/groups/api';
+import { rotuloDeOutroGrupo } from '@/features/groups/partilha';
 import { setRideVisibility, type RideSummary } from '@/features/rides/api';
 import { useRefreshRides } from '@/features/rides/hooks/useRides';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,10 +26,18 @@ export function GrupoDaBoleia({ boleia, participante }: { boleia: RideSummary; p
   const atualizar = useRefreshRides();
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState(false);
+  const meusGrupos = useQuery({
+    queryKey: ['groups', userId],
+    queryFn: userId ? fetchMyGroups : skipToken,
+    meta: { persist: false },
+  });
 
   if (!userId || !participante || !boleia.groupId || !boleia.groupName) return null;
   const grupoId = boleia.groupId;
   const soDoGrupo = boleia.visibility === 'grupo';
+  // A car of a group I am not in: I see it because a plan was sent to one of my groups.
+  const deOutroGrupo = meusGrupos.data !== undefined && !meusGrupos.data.some((grupo) => grupo.id === grupoId);
+  const titulo = deOutroGrupo ? rotuloDeOutroGrupo('boleia', boleia.groupName) : `Boleia do grupo ${boleia.groupName}`;
 
   async function abrirATodos() {
     setErro(false);
@@ -44,18 +55,18 @@ export function GrupoDaBoleia({ boleia, participante }: { boleia: RideSummary; p
   return (
     <Card style={styles.card}>
       <Pressable
-        onPress={() => router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } })}
-        accessibilityRole="button"
-        accessibilityLabel={`Boleia do grupo ${boleia.groupName}. ${soDoGrupo ? 'Só a malta do grupo a vê' : 'Aberta a toda a gente'}. Toca para abrir o grupo.`}
+        onPress={deOutroGrupo ? undefined : () => router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } })}
+        accessibilityRole={deOutroGrupo ? 'text' : 'button'}
+        accessibilityLabel={`${titulo}. ${soDoGrupo ? 'Só a malta do grupo a vê' : 'Aberta a toda a gente'}.${deOutroGrupo ? '' : ' Toca para abrir o grupo.'}`}
         style={({ pressed }) => [styles.linha, pressed && styles.premido]}>
         <Icon name={icons.perfil} size={20} color={theme.accentInk} />
         <View style={styles.flex}>
-          <ThemedText type="smallBold">{`Boleia do grupo ${boleia.groupName}`}</ThemedText>
+          <ThemedText type="smallBold">{titulo}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {soDoGrupo ? 'Só a malta do grupo a vê' : 'Aberta a toda a gente'}
           </ThemedText>
         </View>
-        <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
+        {deOutroGrupo ? null : <Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
       </Pressable>
       {boleia.isMine && soDoGrupo ? (
         <LinkTexto

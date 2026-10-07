@@ -4072,6 +4072,14 @@ export type Database = {
           profile_id: string
         }[]
       }
+      fixture_plan_shared_groups: {
+        Args: { p_plan_id: string }
+        Returns: {
+          group_id: string
+          group_name: string
+          shared_at: string
+        }[]
+      }
       fixture_plan_summaries: {
         Args: { p_plan_ids: string[] }
         Returns: {
@@ -4605,6 +4613,15 @@ export type Database = {
       plan_weekly_challenges: { Args: never; Returns: number }
       post_plan_message: {
         Args: { p_group_id: string; p_plan_id: string; p_profile_id: string }
+        Returns: undefined
+      }
+      post_plan_notice: {
+        Args: {
+          p_body: string
+          p_group_id: string
+          p_plan_id: string
+          p_profile_id: string
+        }
         Returns: undefined
       }
       profile_cards: {
@@ -5287,6 +5304,10 @@ export type Database = {
         Returns: number
       }
       unblock_user: { Args: { p_profile_id: string }; Returns: undefined }
+      unshare_fixture_plan: {
+        Args: { p_group_id: string; p_plan_id: string }
+        Returns: undefined
+      }
       venue_attendance: {
         Args: never
         Returns: {

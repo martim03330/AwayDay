@@ -167,6 +167,15 @@ async function construir(
     const nomeDoGrupo = texto(grupo.data?.name) ?? 'Grupo';
     const local = body.message_kind === 'local';
     const plano = body.message_kind === 'plano';
+    const aviso = body.message_kind === 'aviso';
+    // A plan sent from another group says which group it comes from, so nobody takes it for one of theirs.
+    let deOutroGrupo: string | null = null;
+    const planId = texto(body.plan_id);
+    if (plano && planId) {
+      const origem = await admin.from('fixture_plan').select('group_id, fan_group(name)').eq('id', planId).maybeSingle();
+      const grupoDeOrigem = origem.data as { group_id: string; fan_group: { name: string } | null } | null;
+      if (grupoDeOrigem && grupoDeOrigem.group_id !== groupId) deOutroGrupo = texto(grupoDeOrigem.fan_group?.name);
+    }
     return {
       recipients: (membros.data ?? [])
         .map((row) => String(row.profile_id))
@@ -174,11 +183,15 @@ async function construir(
       from: autor,
       preferencia: 'group_message',
       title: nomeDoGrupo,
-      body: plano
-        ? `${nome} convida-te para ${mensagem}. Vais?`
-        : local
-          ? `${nome} está ${mensagem}`
-          : `${nome}: ${resumir(mensagem)}`,
+      body: aviso
+        ? resumir(mensagem)
+        : plano
+          ? deOutroGrupo
+            ? `${nome} (${deOutroGrupo}) convida-vos para ${mensagem}. Vão?`
+            : `${nome} convida-te para ${mensagem}. Vais?`
+          : local
+            ? `${nome} está ${mensagem}`
+            : `${nome}: ${resumir(mensagem)}`,
       data: { type: 'grupo', groupId },
     };
   }

@@ -2,6 +2,23 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-07 — Mandar um plano a outro grupo, às claras, e voltar atrás
+
+«Mandar a outro grupo» serve para encher os lugares que sobram com gente conhecida (outro grupo meu) sem abrir a
+boleia a desconhecidos. Estava confuso: no outro grupo o cartão dizia só «Ana convida», como se o plano fosse de lá,
+e o grupo de origem não sabia de nada. Migração `20261007134650_shared_plan_notices.sql`:
+- **Avisos de sistema na conversa** (`group_message.kind = 'aviso'`, sempre com plano, só escritos pelo servidor): o
+  grupo de origem é avisado quando o plano é mandado e quando deixa de o ser; o outro grupo é avisado quando lho tiram.
+- **Voltar atrás** (`unshare_fixture_plan`, só quem convidou): o cartão sai da conversa do outro grupo, quem deixa de
+  ver o plano perde o «vou»/«talvez», e os lugares já aceites na boleia e na casa ficam como estão.
+- **A que grupos foi mandado** (`fixture_plan_shared_groups`): só quem é do grupo de origem vê a lista.
+- **Notificações**: o convite que chega de outro grupo diz de onde vem («A Ana (Malta do café) convida-vos para…»).
+
+Na app: o cartão no outro grupo diz «Ana · Malta do café convida» e «Plano de «Malta do café», aberto a este grupo»;
+o plano mostra «Também aberto a «Primos da bola»» com «Deixar de abrir»; a boleia e a casa de um grupo que não é o
+meu dizem «Boleia/Casa de «X», aberta ao teu grupo». Testes: `supabase/tests/acesso_planos_partilha.test.sql` (21),
+`src/features/groups/partilha.test.ts` e `cartao-do-plano.ui.test.tsx`.
+
 ## 2026-10-07 — A casa entra sozinha nas contas, e voos no Google Flights
 
 **A casa nas contas da viagem** (migração `20261007122059_house_trip_expense.sql`), com o mesmo mecanismo da boleia:

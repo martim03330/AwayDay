@@ -25,6 +25,38 @@ export function PastilhaDeConversa({ texto, escuro = false }: { texto: string; e
   );
 }
 
+/**
+ * A notice from the app in the middle of the conversation (a plan sent to another group, or taken back): centred,
+ * with an info icon, in full — it is not a person's message.
+ */
+export function AvisoDeConversa({
+  texto,
+  escuro = false,
+  onLongPress,
+}: {
+  texto: string;
+  escuro?: boolean;
+  onLongPress?: () => void;
+}) {
+  const theme = useTheme();
+  const cor = escuro ? '#13241B' : theme.textSecondary;
+  return (
+    <Pressable
+      onLongPress={onLongPress}
+      accessibilityRole="text"
+      accessibilityLabel={`Aviso: ${texto}`}
+      style={[
+        styles.aviso,
+        { backgroundColor: escuro ? 'rgba(255,255,255,0.9)' : theme.backgroundElement, borderColor: theme.border },
+      ]}>
+      <Icon name={icons.aviso} size={16} color={cor} />
+      <ThemedText type="small" style={[styles.avisoTexto, { color: cor }]}>
+        {texto}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 type BolhaProps = {
   nome: string;
   texto: string;
@@ -143,6 +175,22 @@ export function CaixaDeEscrita({
 }
 
 const styles = StyleSheet.create({
+  aviso: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.one,
+    maxWidth: '88%',
+    paddingHorizontal: Spacing.twoAndHalf,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.field,
+    borderWidth: 1,
+    marginVertical: Spacing.two,
+  },
+  avisoTexto: {
+    flexShrink: 1,
+    textAlign: 'center',
+  },
   pastilha: {
     alignSelf: 'center',
     paddingHorizontal: Spacing.twoAndHalf,

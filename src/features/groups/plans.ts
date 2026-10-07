@@ -28,6 +28,8 @@ export type PlanRefusal =
   | 'already_going'
   /** The group already has an invite for this game: `planId` says which. */
   | 'plan_exists'
+  /** Taking a plan back from a group it was never sent to. */
+  | 'not_shared'
   | 'rate_limited'
   | 'unknown';
 
@@ -63,6 +65,7 @@ const RECUSAS: PlanRefusal[] = [
   'house_full',
   'already_going',
   'plan_exists',
+  'not_shared',
   'rate_limited',
 ];
 
@@ -269,6 +272,25 @@ export async function sharePlan(planId: string, groupId: string) {
     p_group_id: groupId,
   });
   if (error) throw refusal(error);
+}
+
+/** Deixar de abrir o plano a um grupo a quem foi mandado. Os lugares já aceites ficam; os dois grupos são avisados. */
+export async function unsharePlan(planId: string, groupId: string) {
+  const { error } = await client().rpc('unshare_fixture_plan', {
+    p_plan_id: planId,
+    p_group_id: groupId,
+  });
+  if (error) throw refusal(error);
+}
+
+/** Um grupo a quem o plano foi mandado. */
+export type SharedGroup = { groupId: string; groupName: string };
+
+/** A que grupos o plano foi mandado. Só responde a quem é do grupo de origem; para os outros vem vazio. */
+export async function fetchPlanSharedGroups(planId: string): Promise<SharedGroup[]> {
+  const { data, error } = await client().rpc('fixture_plan_shared_groups', { p_plan_id: planId });
+  if (error) throw error;
+  return data.map((row) => ({ groupId: row.group_id, groupName: row.group_name ?? 'Grupo' }));
 }
 
 /** «Vou», «Estou a pensar», ou `null` para tirar a resposta. */

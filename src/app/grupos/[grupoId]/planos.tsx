@@ -43,6 +43,7 @@ export default function PlanosDoGrupoScreen() {
             key={plano.id}
             plano={plano}
             vaisComOutroGrupo={conflitos.data?.[plano.id]}
+            grupoAtualId={grupoId ?? null}
             quemConvidou={plano.createdBy === userId ? 'eu' : plano.creatorName.split(' ')[0]}
             onAbrir={() =>
               grupoId

@@ -40,7 +40,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
-import { BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
+import { AvisoDeConversa, BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -167,9 +167,9 @@ export default function ConversaDoGrupoScreen() {
     ]);
 
   // Long-press: your own message can be deleted; someone else's can be reported, or its author blocked (the group
-  // owner can still delete it too). A plan card is the group's, not a person's: only delete.
+  // owner can still delete it too). A plan card or a notice is the group's, not a person's: only delete.
   const aoCarregarSemLargar = (mensagem: GroupMessage) => {
-    if (mensagem.mine || mensagem.kind === 'plano') {
+    if (mensagem.mine || mensagem.kind === 'plano' || mensagem.kind === 'aviso') {
       return mensagem.canRemove ? () => apagar(mensagem) : undefined;
     }
     return () =>
@@ -266,6 +266,7 @@ export default function ConversaDoGrupoScreen() {
                       plano={(planos.data ?? []).find((plano) => plano.id === item.planId) ?? null}
                       vaisComOutroGrupo={item.planId ? conflitos.data?.[item.planId] : undefined}
                       escuro={escuro}
+                      grupoAtualId={grupo.id}
                       onAbrir={() => {
                         if (!item.planId) return;
                         router.push({
@@ -276,6 +277,12 @@ export default function ConversaDoGrupoScreen() {
                       onRespondido={() =>
                         void queryClient.invalidateQueries({ queryKey: plansKey() })
                       }
+                      onLongPress={aoCarregarSemLargar(item)}
+                    />
+                  ) : item.kind === 'aviso' ? (
+                    <AvisoDeConversa
+                      escuro={escuro}
+                      texto={item.body}
                       onLongPress={aoCarregarSemLargar(item)}
                     />
                   ) : item.kind === 'local' ? (
@@ -365,12 +372,14 @@ function MensagemPlano({
   plano,
   vaisComOutroGrupo,
   escuro,
+  grupoAtualId,
   onAbrir,
   onRespondido,
   onLongPress,
 }: {
   mensagem: GroupMessage;
   plano: FixturePlan | null;
+  grupoAtualId: string;
   vaisComOutroGrupo?: string;
   escuro: boolean;
   onAbrir: () => void;
@@ -392,6 +401,7 @@ function MensagemPlano({
       <CartaoDoPlano
         plano={plano}
         quemConvidou={mensagem.mine ? 'eu' : mensagem.displayName.split(' ')[0]}
+        grupoAtualId={grupoAtualId}
         vaisComOutroGrupo={vaisComOutroGrupo}
         escuro={escuro}
         onAbrir={onAbrir}
