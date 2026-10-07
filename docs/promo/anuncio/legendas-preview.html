@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Legendas da pré-visualização</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;700;800&family=Big+Shoulders:wght@800;900&display=swap">
+
+<!--
+  As legendas da pré-visualização da App Store (886 x 1920), uma por cena, como PNG transparentes. As cenas e os textos
+  estão em scripts/gerar-preview-app-store.mjs (CENAS).
+
+  Gerar:  node scripts/gerar-preview-app-store.mjs
+-->
+
+<style>
+  :root {
+    --relva: #187C44;
+    --relva-clara: #1C8A4D;
+    --amarelo: #FFCE3A;
+    --branco: #FFFFFF;
+    --moldura: #0B0F0D;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: transparent; font-family: 'Figtree', system-ui, sans-serif; }
+  .camada { position: relative; width: var(--w); height: var(--h); overflow: hidden; margin-bottom: 40px; }
+
+  #fundo {
+    background: repeating-linear-gradient(90deg, var(--relva) 0 calc(var(--w) / 8), var(--relva-clara) calc(var(--w) / 8) calc(var(--w) / 4));
+  }
+  #fundo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(14, 85, 48, 0) 40%, rgba(14, 85, 48, 0.6) 100%);
+  }
+
+  /* The bezel is a thick border with a transparent middle: the recording goes underneath, in the screen's place. */
+  .telefone {
+    position: absolute;
+    left: calc((var(--w) - var(--telefone)) / 2);
+    top: var(--topo-telefone);
+    width: var(--telefone);
+    border: calc(var(--telefone) * 0.028) solid var(--moldura);
+    border-radius: calc(var(--telefone) * 0.155);
+    box-shadow: 0 0 0 calc(var(--telefone) * 0.004) #2B3530;
+  }
+  .ecra { aspect-ratio: 1320 / 2868; }
+  .ilha {
+    position: absolute;
+    top: calc(var(--telefone) * 0.024);
+    left: 50%;
+    width: 31%;
+    height: calc(var(--telefone) * 0.082);
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: #000;
+  }
+  /* Mask for the recording: white where the screen shows, with the screen's rounded corners. */
+  #mascara { background: #000; }
+  #mascara .telefone { border-color: transparent; box-shadow: none; }
+  #mascara .ecra { background: #fff; border-radius: calc(var(--telefone) * 0.127); }
+  /* Soft shadow under the phone, on its own layer so it sits between the pitch and the recording. */
+  #sombra .telefone {
+    border-color: transparent;
+    box-shadow: 0 calc(var(--w) * 0.03) calc(var(--w) * 0.09) rgba(0, 0, 0, 0.45);
+  }
+
+  .texto {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--topo-texto);
+    padding: 0 calc(var(--w) * 0.07);
+    text-align: center;
+    color: var(--branco);
+  }
+  .titulo {
+    margin: 0;
+    font-family: 'Big Shoulders', 'Arial Narrow', sans-serif;
+    font-weight: 900;
+    font-size: var(--tamanho-titulo);
+    line-height: 0.95;
+    text-transform: uppercase;
+    text-wrap: balance;
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  }
+  .titulo em { font-style: normal; color: var(--amarelo); }
+  .sub {
+    margin: calc(var(--w) * 0.025) auto 0;
+    max-width: 24ch;
+    font-size: calc(var(--w) * 0.04);
+    line-height: 1.3;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    text-wrap: balance;
+  }
+
+  /* App Store preview: the recording fills the screen, so the caption is a pill near the bottom. */
+  .legenda {
+    position: absolute;
+    left: 50%;
+    bottom: 300px;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 800px;
+    padding: 22px 34px;
+    border-radius: 28px;
+    background: rgba(24, 124, 68, 0.94);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    color: var(--branco);
+    text-align: center;
+    font-family: 'Big Shoulders', 'Arial Narrow', sans-serif;
+    font-weight: 900;
+    font-size: 64px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .legenda em { font-style: normal; color: var(--amarelo); }
+
+  .centro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--w) * 0.04);
+    color: var(--branco);
+    text-align: center;
+    padding: 0 calc(var(--w) * 0.08);
+  }
+  .icone { width: calc(var(--w) * 0.32); height: calc(var(--w) * 0.32); border-radius: 22.37%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+  .marca { margin: 0; font-weight: 800; font-size: calc(var(--w) * 0.035); letter-spacing: 0.16em; text-transform: uppercase; color: var(--amarelo); }
+  .grande { margin: 0; font-family: 'Big Shoulders', sans-serif; font-weight: 900; font-size: calc(var(--w) * 0.16); line-height: 1; text-transform: uppercase; }
+  .grande em { font-style: normal; color: var(--amarelo); }
+  .botao {
+    margin-top: calc(var(--w) * 0.02);
+    padding: calc(var(--w) * 0.025) calc(var(--w) * 0.06);
+    border-radius: 999px;
+    background: var(--amarelo);
+    color: #13241B;
+    font-weight: 800;
+    font-size: calc(var(--w) * 0.045);
+  }
+  .nota { margin: 0; font-size: calc(var(--w) * 0.03); font-weight: 700; color: rgba(255, 255, 255, 0.85); }
+</style>
+</head>
+<body>
+<script>
+  const formato = new URLSearchParams(location.search).get('formato') ?? 'reels';
+  // Phone width and the top of the phone and of the text, per format. The phone runs off the bottom on purpose.
+  const FORMATOS = {
+    reels: { w: 1080, h: 1920, telefone: 720, topoTelefone: 640, topoTexto: 250, titulo: 112 },
+    feed: { w: 1080, h: 1350, telefone: 560, topoTelefone: 400, topoTexto: 80, titulo: 96 },
+    preview: { w: 886, h: 1920, telefone: 0, topoTelefone: 0, topoTexto: 0, titulo: 0 },
+  };
+  const f = FORMATOS[formato];
+  const raiz = document.documentElement.style;
+  raiz.setProperty('--w', `${f.w}px`);
+  raiz.setProperty('--h', `${f.h}px`);
+  raiz.setProperty('--telefone', `${f.telefone}px`);
+  raiz.setProperty('--topo-telefone', `${f.topoTelefone}px`);
+  raiz.setProperty('--topo-texto', `${f.topoTexto}px`);
+  raiz.setProperty('--tamanho-titulo', `${f.titulo}px`);
+
+  const escapar = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  // Words inside *…* are painted yellow; a line break in the text forces one on screen.
+  const destacar = (s) => escapar(s).replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+
+  function camada(id, html, classe = '') {
+    const el = document.createElement('section');
+    el.className = `camada ${classe}`;
+    el.id = id;
+    el.innerHTML = html;
+    document.body.appendChild(el);
+  }
+
+  /** Called by the script with the scenes, so the texts live in one place. */
+  window.montar = (cenas) => {
+    camada('fundo', '');
+    if (formato !== 'preview') {
+      camada('sombra', '<div class="telefone"><div class="ecra"></div></div>');
+      camada('mascara', '<div class="telefone"><div class="ecra"></div></div>');
+      camada('moldura', '<div class="telefone"><div class="ecra"></div><span class="ilha"></span></div>');
+      cenas.forEach((cena, i) =>
+        camada(`texto-${i}`, `<div class="texto"><h1 class="titulo">${destacar(cena.titulo)}</h1><p class="sub">${escapar(cena.sub)}</p></div>`)
+      );
+      camada('abertura-icone', '<div class="centro"><img class="icone" src="../../../assets/images/icon.png" alt=""></div>');
+      camada('abertura-texto', `<div class="centro" style="padding-top: calc(var(--w) * 0.86)"><p class="grande">${destacar('Vamos\n*à bola?*')}</p></div>`);
+      camada('fecho', `
+        <div class="centro">
+          <img class="icone" src="../../../assets/images/icon.png" alt="">
+          <p class="marca">AwayDay</p>
+          <p class="grande">${destacar('Vamos\n*à bola?*')}</p>
+          <p class="nota">Boleias, tascos e contas do dia de jogo.</p>
+          <span class="botao">Descarrega grátis</span>
+        </div>`);
+    } else {
+      cenas.forEach((cena, i) => camada(`legenda-${i}`, `<div class="legenda">${destacar(cena.legenda)}</div>`));
+    }
+  };
+</script>
+</body>
+</html>

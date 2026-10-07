@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Campanha de Instagram da AwayDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;700;800&family=Big+Shoulders:wght@800;900&display=swap">
+
+<!--
+  As imagens da campanha de Instagram (o plano está em PLANO-INSTAGRAM.md). Cada publicação é uma lista de diapositivos
+  em PUBLICACOES, mais abaixo: 1080 × 1350 no feed, 1080 × 1920 nas Stories. Os recortes vêm de recortes/ (tirados das
+  gravações reais da app) e os ecrãs inteiros de ../capturas-reais/.
+
+  Gerar:  node scripts/gerar-instagram.mjs
+-->
+
+<style>
+  :root {
+    --relva: #187C44; --relva-clara: #1C8A4D; --relva-escura: #0E5530;
+    --amarelo: #FFCE3A; --papel: #F8F7F2; --tinta: #13241B; --tinta-suave: #56675D; --branco: #FFFFFF;
+    --titulo: 'Big Shoulders', 'Arial Narrow', sans-serif;
+    --texto: 'Figtree', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #555; font-family: var(--texto); display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px 0; }
+  .slide { position: relative; width: 1080px; height: 1350px; overflow: hidden; background: var(--papel); color: var(--tinta); display: flex; flex-direction: column; }
+  .slide.story { height: 1920px; }
+  .slide.verde { color: var(--branco); background: repeating-linear-gradient(90deg, var(--relva) 0 135px, var(--relva-clara) 135px 270px); }
+  .slide.verde::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,85,48,0) 40%, rgba(14,85,48,0.55) 100%); pointer-events: none; }
+  .slide:not(.verde)::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 50% at 50% 115%, rgba(28,138,77,0.22), rgba(248,247,242,0) 70%); pointer-events: none; }
+  .slide > * { position: relative; z-index: 1; }
+
+  .topo { display: flex; justify-content: space-between; align-items: center; padding: 56px 72px 0; font-weight: 800; font-size: 26px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .topo .marca { display: flex; align-items: center; gap: 16px; }
+  .topo img { width: 52px; height: 52px; border-radius: 22.37%; }
+  .topo .pagina { letter-spacing: 0.04em; font-size: 26px; opacity: 0.7; }
+  .verde .topo .marca span { color: var(--amarelo); }
+  .slide:not(.verde) .topo .marca span { color: var(--relva); }
+
+  .corpo { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 80px; gap: 30px; }
+  .kicker { align-self: flex-start; background: var(--amarelo); color: var(--tinta); font-weight: 800; font-size: 30px; padding: 10px 24px; border-radius: 999px; }
+  .centro .kicker { align-self: center; }
+  h1 { margin: 0; font-family: var(--titulo); font-weight: 900; font-size: 132px; line-height: 0.93; text-transform: uppercase; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--relva); }
+  .verde h1 em { color: var(--amarelo); }
+  .medio h1 { font-size: 104px; }
+  .sub { margin: 0; font-size: 42px; line-height: 1.3; font-weight: 700; color: var(--tinta-suave); max-width: 26ch; text-wrap: balance; }
+  .verde .sub { color: rgba(255,255,255,0.92); }
+  .centro .corpo { align-items: center; text-align: center; }
+  .centro .sub { margin: 0 auto; }
+
+  .recorte { align-self: center; width: 100%; border-radius: 30px; overflow: hidden; background: var(--branco); outline: 6px solid var(--amarelo); box-shadow: 0 40px 90px rgba(19,36,27,0.25), 0 10px 24px rgba(19,36,27,0.1); }
+  .recorte img { display: block; width: 100%; }
+  /* Tall crops: as big as fits, never wider than the text column, so the yellow frame shows all round. */
+  .recorte.alto { width: auto; max-width: 100%; }
+  .recorte.alto img { width: auto; height: auto; max-width: 100%; max-height: 700px; }
+
+  .icone-grande { width: 220px; height: 220px; border-radius: 56px; background: var(--amarelo); display: grid; place-items: center; box-shadow: 0 24px 60px rgba(0,0,0,0.25); transform: rotate(-6deg); margin-bottom: 10px; }
+  .icone-grande svg { width: 140px; height: 140px; }
+  /* Whole-phone slides: text on the left, the whole phone on the right. */
+  .slide.lado .corpo { display: grid; grid-template-columns: 1fr 440px; grid-template-rows: 1fr auto auto auto 1fr; column-gap: 50px; row-gap: 26px; }
+  .slide.lado .corpo > .kicker { grid-column: 1; grid-row: 2; justify-self: start; }
+  .slide.lado .corpo > h1 { grid-column: 1; grid-row: 3; font-size: 96px; }
+  .slide.lado .corpo > .sub { grid-column: 1; grid-row: 4; }
+  .slide.lado .corpo > .telefone { grid-column: 2; grid-row: 1 / 6; width: 440px; }
+  .slide.lado .telefone .ecra { max-height: none; }
+  .telefone { align-self: center; width: 470px; padding: 14px; border-radius: 74px; background: #0B0F0D; box-shadow: 0 40px 90px rgba(19,36,27,0.3); }
+  .telefone .ecra { position: relative; border-radius: 60px; overflow: hidden; aspect-ratio: 1320 / 2868; max-height: 760px; }
+  .telefone img { display: block; width: 100%; }
+  .telefone .ilha { position: absolute; top: 12px; left: 50%; width: 31%; height: 34px; transform: translateX(-50%); border-radius: 999px; background: #000; }
+
+  .numeros { display: grid; gap: 22px; }
+  .numero { background: var(--branco); border-radius: 30px; padding: 30px 40px; box-shadow: 0 20px 50px rgba(19,36,27,0.10); display: flex; align-items: baseline; justify-content: space-between; gap: 30px; }
+  .numero b { font-family: var(--titulo); font-weight: 900; font-size: 104px; line-height: 1; color: var(--relva); white-space: nowrap; }
+  .numero span { font-size: 34px; font-weight: 700; color: var(--tinta-suave); text-align: right; }
+  .numero.destaque { background: var(--amarelo); }
+  .numero.destaque b, .numero.destaque span { color: var(--tinta); }
+
+  .desliza { position: absolute; right: 72px; bottom: 64px; display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 30px; }
+  .desliza i { font-style: normal; font-size: 46px; }
+
+  .cta-icone { width: 240px; height: 240px; border-radius: 22.37%; box-shadow: 0 30px 70px rgba(0,0,0,0.35); }
+  .botao { background: var(--amarelo); color: var(--tinta); font-weight: 800; font-size: 44px; padding: 26px 60px; border-radius: 999px; box-shadow: 0 16px 40px rgba(0,0,0,0.25); }
+  .nota { font-size: 30px; font-weight: 700; opacity: 0.85; margin: 0; }
+
+  .opcoes { display: grid; gap: 24px; width: 100%; }
+  .opcao { background: var(--branco); color: var(--tinta); border-radius: 26px; padding: 34px 40px; font-size: 44px; font-weight: 800; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
+  .espaco { border: 4px dashed rgba(255,255,255,0.6); border-radius: 30px; padding: 40px; font-size: 30px; font-weight: 700; text-align: center; opacity: 0.85; }
+  .slide:not(.verde) .espaco { border-color: rgba(19,36,27,0.3); }
+</style>
+</head>
+<body>
+<script>
+  const RECORTE = (n) => `recortes/${n}.png`;
+  const ECRA = (n) => `../capturas-reais/${n}.png`;
+
+  /**
+   * Each publication: `id` (file name), `tipo` ('feed' or 'story') and its slides. A slide is one of:
+   *   capa      kicker, titulo, sub, verde?, centro?, desliza?
+   *   recorte   kicker, titulo, texto, img (recortes/), alto?
+   *   telefone  kicker, titulo, texto, img (capturas-reais/)
+   *   numeros   kicker, titulo, linhas [[valor, legenda, destaque?]]
+   *   cta       titulo, sub, botao, nota
+   *   opcoes    kicker, titulo, opcoes[], nota (Stories: poll and quiz; the real sticker goes over it)
+   * Words inside *…* are highlighted. No club names in the copy: the app is for every fan.
+   */
+  const PUBLICACOES = [
+    { id: 't1-jogo-fora', tipo: 'feed', slides: [{ t: 'capa', verde: true, centro: true, kicker: 'Em breve', titulo: 'Jogo fora *no sábado?*', sub: 'Vem aí uma app para o dia de jogo, do princípio ao fim.' }] },
+    { id: 't2-quem-leva-o-carro', tipo: 'feed', slides: [{ t: 'capa', verde: true, centro: true, kicker: 'Em breve', titulo: 'Quem leva *o carro?*', sub: 'E quanto paga cada um? Já falta pouco para deixar de ser conversa.' }] },
+    { id: 't3-quem-deve-a-quem', tipo: 'feed', slides: [{ t: 'capa', verde: true, centro: true, kicker: 'Em breve', titulo: 'No fim, quem deve *a quem?*', sub: 'As contas da viagem, sem papel nem discussões.' }] },
+    { id: 'l1-lancamento', tipo: 'feed', slides: [{ t: 'cta', titulo: 'A AwayDay *chegou.*', sub: 'Boleias, tascos e contas do dia de jogo, com a tua malta.', botao: 'Descarrega grátis', nota: 'App Store e Google Play · link na bio' }] },
+
+    { id: 'c1-o-dia-de-jogo', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Apresentação', titulo: 'O dia de jogo, *numa app*', sub: 'Tudo o que a AwayDay faz, em cinco imagens.', desliza: true },
+      { t: 'recorte', kicker: '1 · Combinar', titulo: 'Combina *com a malta*', texto: 'Cria o grupo, lança o jogo e cada um diz se vai.', img: 'malta-plano' },
+      { t: 'recorte', kicker: '2 · Boleia', titulo: 'Boleia *a meias*', texto: 'Combustível e portagens a dividir por quem vai, ao cêntimo.', img: 'boleia-custo' },
+      { t: 'recorte', kicker: '3 · Tasco', titulo: 'O tasco *antes do jogo*', texto: 'Quem lá está agora e o que pedir. Ninguém vê onde estás.', img: 'tasco-agora' },
+      { t: 'recorte', kicker: '4 · Chegar', titulo: 'Chega *a horas*', texto: 'O parque certo e a hora a que ainda há lugar.', img: 'estacionar' },
+      { t: 'recorte', kicker: '5 · Contas', titulo: 'Contas *certas no fim*', texto: 'Cada um junta o que pagou. A app diz quem deve a quem.', img: 'contas-quem-deve' },
+      { t: 'cta', titulo: 'Vamos *à bola?*', sub: 'A AwayDay é grátis.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 'c2-boleia-a-meias', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Boleias', titulo: 'Quanto custa ir *à bola de carro?*', sub: 'E porque fica mais barato a cada lugar ocupado.', desliza: true },
+      { t: 'recorte', kicker: 'Passo 1', titulo: 'Quem leva o carro *publica a boleia*', texto: 'De onde sai, a que horas e quantos lugares tem.', img: 'boleia-lista' },
+      { t: 'recorte', kicker: 'Passo 2', titulo: 'A app *faz as contas*', texto: 'Combustível e portagens do percurso, ida e volta. Ninguém inventa o preço.', img: 'boleia-custo' },
+      { t: 'numeros', kicker: 'Exemplo: de Lisboa a Braga', titulo: 'Cada lugar *baixa o preço*', linhas: [['143,52 €', 'ida e volta, combustível e portagens'], ['35,88 €', 'cada um, com 4 no carro', true], ['28,71 €', 'cada um, com o carro cheio']] },
+      { t: 'recorte', kicker: 'Passo 3', titulo: 'Combina *no carro*', texto: 'Só quem vai no carro escreve na conversa dele.', img: 'boleia-conversa', alto: true },
+      { t: 'capa', centro: true, kicker: 'Importante', titulo: 'Sem lucro, *só custos*', sub: 'A AwayDay só divide o combustível e as portagens. Ninguém ganha dinheiro com a boleia.' },
+      { t: 'cta', titulo: 'Quem leva *o carro?*', sub: 'Encontra boleia para o próximo jogo.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 'c3-tascos', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Tascos', titulo: 'Onde é que *a malta se junta?*', sub: 'Os tascos à volta do estádio, avaliados por quem lá foi.', desliza: true },
+      { t: 'recorte', kicker: 'O mapa', titulo: 'Tudo *a menos de 20 min*', texto: 'Tascos, WC e adeptos da casa, num mapa à volta do estádio.', img: 'tascos-mapa', alto: true },
+      { t: 'recorte', kicker: 'Agora', titulo: 'Quem lá está *agora*', texto: 'O número só aparece a partir de 5 pessoas, e ninguém vê onde estás.', img: 'tasco-agora' },
+      { t: 'recorte', kicker: 'Pratos', titulo: 'O que *pedir*', texto: 'O mais recomendado, o mais barato e o mais rápido, votados pela malta.', img: 'tasco-pratos' },
+      { t: 'cta', titulo: 'Qual é *o teu tasco?*', sub: 'Faz check-in e ajuda quem vem a seguir.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 'c4-contas', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Contas', icone: 'cerveja', titulo: 'Quem pagou *a cerveja?*', sub: 'As contas da viagem, sem papel nem discussões.', desliza: true },
+      { t: 'telefone', kicker: 'A viagem', titulo: 'Tudo *num sítio*', texto: 'Quem vai, a que horas sai o carro e quanto deves.', img: '07-sessao' },
+      { t: 'recorte', kicker: 'As contas', titulo: 'Quem deve *a quem*', texto: 'A app faz as contas com tudo o que cada um pagou.', img: 'contas-quem-deve' },
+      { t: 'recorte', kicker: 'Pagamentos', titulo: 'Já pagaste? *Fica registado*', texto: 'Quem recebe confirma. A app não mexe em dinheiro.', img: 'contas-por-confirmar' },
+      { t: 'cta', titulo: 'Ninguém *discute contas*', sub: 'Abre a viagem antes do próximo jogo fora.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 'c5-passaporte-e-ranking', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Passaporte', titulo: 'Quantos estádios *já carimbaste?*', sub: 'Cada jogo onde vais fica no teu passaporte.', desliza: true },
+      { t: 'recorte', kicker: 'Carimbos', titulo: 'Um carimbo *por estádio*', texto: 'Só lá dentro e só no dia do jogo.', img: 'passaporte-carimbos', alto: true },
+      { t: 'recorte', kicker: 'Ranking', titulo: 'Sobe *no ranking*', texto: 'Pontos pelo que a app confirma: estádios, tascos e fotos.', img: 'ranking-podio', alto: true },
+      { t: 'recorte', kicker: 'Missões', titulo: 'Desafios *todas as semanas*', texto: 'Prova uma especialidade, acompanha o clube fora, experimenta um tasco novo.', img: 'missoes' },
+      { t: 'cta', titulo: 'Começa *a coleção*', sub: 'O primeiro carimbo é no próximo jogo.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 'c6-chegar-ao-estadio', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Estádio', titulo: 'Chegar ao estádio *sem stress*', sub: 'Onde deixar o carro, quando chegar e os cuidados a ter.', desliza: true },
+      { t: 'recorte', kicker: 'Estacionar', titulo: 'O parque *certo*', texto: 'E a hora a que ainda apanhas lugar.', img: 'estacionar' },
+      { t: 'recorte', kicker: 'No estádio', titulo: 'O WC *mais perto*', texto: 'Se está aberto, se é grátis e quanto tempo levas a pé.', img: 'estadio-wc' },
+      { t: 'recorte', kicker: 'Segurança', titulo: 'Cuidados *a ter*', texto: 'Por onde entram os visitantes nesse jogo. No dia, segue sempre a PSP.', img: 'estadio-cuidados' },
+      { t: 'cta', titulo: 'Chega *a horas*', sub: 'Tudo o que precisas para o próximo jogo.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 'c7-dormir-fora', tipo: 'feed', slides: [
+      { t: 'capa', verde: true, kicker: 'Jogos longe', titulo: 'Jogo longe? *Dorme com a malta*', sub: 'Nas ilhas ou fora do país, a casa também se combina.', desliza: true },
+      { t: 'recorte', kicker: 'O plano', titulo: 'Quem vai, *num toque*', texto: 'Cada um diz se vai, e o grupo vê logo quantos são.', img: 'dormir-plano' },
+      { t: 'recorte', kicker: 'A casa', titulo: 'Mais barato *a cada pessoa*', texto: 'Alguém propõe a casa com o preço total, e cada um vê quanto paga.', img: 'dormir-casa' },
+      { t: 'cta', titulo: 'Para onde *vai a malta?*', sub: 'As reservas fazem-se fora da app: a AwayDay junta o grupo.', botao: 'Descarrega grátis', nota: 'Link na bio' },
+    ] },
+
+    { id: 's1-sondagem-boleia', tipo: 'story', slides: [{ t: 'opcoes', verde: true, kicker: 'Sondagem', titulo: 'No teu grupo, quem *trata da boleia?*', opcoes: ['Sou eu, sempre', 'Ninguém, à última hora'], nota: 'Põe aqui o autocolante de sondagem' }] },
+    { id: 's2-contagem', tipo: 'story', slides: [{ t: 'opcoes', verde: true, kicker: 'Em breve', titulo: 'Falta *pouco*', opcoes: [], nota: 'Põe aqui o autocolante de contagem decrescente, com lembrete' }] },
+    { id: 's3-quiz-boleia', tipo: 'story', slides: [{ t: 'opcoes', kicker: 'Quiz', titulo: 'Lisboa → Braga de carro, ida e volta, *4 pessoas.*', sub: 'Quanto paga cada um?', opcoes: ['Uns 20 €', 'Uns 36 €', 'Uns 60 €'], nota: 'Põe aqui o autocolante de quiz (certa: uns 36 €)' }] },
+    { id: 's4-resposta-quiz', tipo: 'story', slides: [{ t: 'numeros', kicker: 'A resposta', titulo: '35,88 € *cada*', linhas: [['143,52 €', 'combustível e portagens, ida e volta'], ['÷ 4', 'quem vai no carro'], ['28,71 €', 'cada um, com o carro cheio', true]] }] },
+    { id: 's5-ja-esta-nas-lojas', tipo: 'story', slides: [{ t: 'cta', titulo: 'Já está *nas lojas*', sub: 'Boleias, tascos e contas do dia de jogo.', botao: 'Descarrega grátis', nota: 'Põe aqui o autocolante de link', espaco: true }] },
+    { id: 's6-manda-ao-grupo', tipo: 'story', slides: [{ t: 'opcoes', verde: true, kicker: 'Partilha', titulo: 'Manda isto *ao teu grupo*', sub: 'Quem é que organiza o próximo jogo fora?', opcoes: [], nota: 'Põe aqui o autocolante de menção' }] },
+  ];
+
+  // The app's own icons (src/ui/icon.tsx), drawn big on some covers.
+  const ICONES = {
+    cerveja: '<svg viewBox="0 0 24 24" fill="none" stroke="#13241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h10v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path d="M15 11.5h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M5.5 9C5 6.8 6.6 5.2 8.5 5.6 9.4 3.9 12.3 3.8 13.2 5.6c1.8-.2 2.8 1.6 2 3.4"/></svg>',
+  };
+
+  const escapar = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const destacar = (s) => escapar(s).replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  function topo(i, n, story) {
+    return `<div class="topo"><div class="marca"><img src="../../../assets/images/icon.png" alt=""><span>AwayDay</span></div>${n > 1 && !story ? `<div class="pagina">${i + 1}/${n}</div>` : ''}</div>`;
+  }
+
+  function corpo(s) {
+    const k = s.kicker ? `<div class="kicker">${escapar(s.kicker)}</div>` : '';
+    switch (s.t) {
+      case 'capa':
+        return `<div class="corpo">${s.icone ? `<div class="icone-grande">${ICONES[s.icone]}</div>` : ''}${k}<h1>${destacar(s.titulo)}</h1>${s.sub ? `<p class="sub">${escapar(s.sub)}</p>` : ''}</div>${s.desliza ? '<div class="desliza">Desliza <i>→</i></div>' : ''}`;
+      case 'recorte':
+        return `<div class="corpo">${k}<h1>${destacar(s.titulo)}</h1><div class="recorte${s.alto ? ' alto' : ''}"><img src="${RECORTE(s.img)}" alt=""></div><p class="sub">${escapar(s.texto)}</p></div>`;
+      case 'telefone':
+        return `<div class="corpo">${k}<h1>${destacar(s.titulo)}</h1><div class="telefone"><div class="ecra"><img src="${ECRA(s.img)}" alt=""><span class="ilha"></span></div></div><p class="sub">${escapar(s.texto)}</p></div>`;
+      case 'numeros':
+        return `<div class="corpo">${k}<h1>${destacar(s.titulo)}</h1><div class="numeros">${s.linhas.map(([v, l, d]) => `<div class="numero${d ? ' destaque' : ''}"><b>${escapar(v)}</b><span>${escapar(l)}</span></div>`).join('')}</div></div>`;
+      case 'cta':
+        return `<div class="corpo"><img class="cta-icone" src="../../../assets/images/icon.png" alt=""><h1>${destacar(s.titulo)}</h1><p class="sub">${escapar(s.sub)}</p><div class="botao">${escapar(s.botao)}</div>${s.espaco ? `<div class="espaco">${escapar(s.nota)}</div>` : `<p class="nota">${escapar(s.nota)}</p>`}</div>`;
+      case 'opcoes':
+        return `<div class="corpo">${k}<h1>${destacar(s.titulo)}</h1>${s.sub ? `<p class="sub">${escapar(s.sub)}</p>` : ''}${s.opcoes.length ? `<div class="opcoes">${s.opcoes.map((o) => `<div class="opcao">${escapar(o)}</div>`).join('')}</div>` : ''}<div class="espaco">${escapar(s.nota)}</div></div>`;
+    }
+  }
+
+  for (const p of PUBLICACOES) {
+    p.slides.forEach((s, i) => {
+      const el = document.createElement('section');
+      const story = p.tipo === 'story';
+      const verde = s.verde || s.t === 'cta';
+      const centro = s.centro || s.t === 'cta' || story;
+      el.className = ['slide', story ? 'story' : '', verde ? 'verde' : '', centro ? 'centro' : '', s.t === 'recorte' || s.t === 'numeros' ? 'medio' : '', s.t === 'telefone' ? 'lado' : ''].join(' ');
+      el.dataset.nome = p.slides.length > 1 ? `${p.id}/${String(i + 1).padStart(2, '0')}` : p.id;
+      el.innerHTML = topo(i, p.slides.length, story) + corpo(s);
+      document.body.appendChild(el);
+    });
+  }
+</script>
+</body>
+</html>

@@ -45,3 +45,14 @@ example
 /android
 
 .maestro/env
+
+# Google Play service account key for eas submit: secret, never in git
+google-service-account.json
+
+# Task Observer: local skill observation logs
+skill-observations/
+
+# Rendered promo videos (~170 MB): regenerated with `npm run render` in docs/promo/anuncio/video. The source
+# recordings in clipes/ and clipes-longo/ stay in git.
+docs/promo/anuncio/*.mp4
+docs/promo/anuncio/reels/*.mp4

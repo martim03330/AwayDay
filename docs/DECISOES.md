@@ -2,6 +2,60 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-07 — Pacotes do Expo, expo-asset e EAS
+
+- **Pacotes do Expo atualizados** para as versões que o SDK 57 espera (`npx expo install --fix`): só versões de
+  correção, sem dependências novas.
+- **`expo-asset` adicionado** (com autorização): o `expo-audio` exige-o, e sem ele a app pode rebentar fora do Expo
+  Go. O `expo-doctor` passa agora as 18 verificações.
+- **`eas.json` criado** (com autorização), com os perfis `preview` e `production`. Os passos para compilar estão em
+  `docs/LEGAL-E-LOJAS.md`. As variáveis do Supabase vão para os ambientes do EAS, nunca as de demo nem de capturas.
+- **Conta de capturas apagada** da base de dados depois de gerado o material; recria-se com os scripts
+  `capturas-*.sql` se for preciso tirar capturas novas.
+
+## 2026-10-06 — Material para as lojas e anúncio
+
+- **Capturas reais, não maquetas.** As capturas das lojas e o vídeo usam a app a correr no simulador. A Apple pede
+  capturas da app verdadeira, e as maquetas de setembro já não batem com o design. Ficam em `docs/promo/capturas-reais/`
+  e `docs/promo/anuncio/clipes/`; tudo o resto é gerado a partir delas (ver `docs/promo/LEIA-ME.md`).
+- **`EXPO_PUBLIC_CAPTURAS`** (`src/lib/capturas.ts`): numa compilação feita com esta variável, o modo demo não mostra
+  as notas que só o explicam (a etiqueta «Modo demo · dados de exemplo» e a nota do ranking). Serve só para as
+  capturas; as compilações das lojas nunca a têm, por isso as pessoas veem sempre a etiqueta.
+- **Conta de capturas** com dados inventados (`capturas@teste.awayday.invalid` e dez pessoas fictícias, ids
+  `c0000000-…`), para mostrar boleias, Malta, sessão e contas, que pedem conta. Os custos das boleias vieram da Edge
+  Function `rides` (cotação real), não foram inventados. Apaga-se com `scripts/dados-de-teste/capturas-apagar.sql`.
+- **O anúncio é feito em Remotion**, num projeto à parte (`docs/promo/anuncio/video/`, com o seu `package.json`),
+  para não juntar dependências à app. A música é composta por código (`musica.py`), para não haver licenças de
+  terceiros. A pré-visualização da App Store continua só com gravações da app, como a Apple exige.
+- **Ficha das lojas** em `docs/promo/loja/FICHA.md`: sem nomes de clubes nas palavras-chave (marcas registadas).
+- **Os detalhes aumentados nos vídeos e no Instagram são cortes exatos das gravações**, medidos na captura de
+  1320 × 2868 num momento em que o ecrã está parado, e aparecem por cima do sítio de onde saem. Antes eram caixas
+  postas à vista, que ficavam desencontradas do ecrã. O ecrã mostra-se sempre com a largura toda.
+- **Vídeo completo (89 s, 11 capítulos) e um Reel por capítulo**, com a mesma música em modo `longo`. Plano de
+  Instagram de 6 semanas em `docs/promo/instagram/PLANO-INSTAGRAM.md`.
+- **Nada de meteorologia no material promocional.** A previsão na ficha do estádio só existe no modo demo («Previsão
+  simulada»), e a preferência de aviso «weather» existe nas notificações mas nenhuma função a envia. Fica por fazer:
+  ir buscar a previsão a uma API no servidor (regra 3) e enviar o aviso quando muda. Só depois entra na publicidade.
+- **O anúncio curto passou a 25 s:** futebol desde o primeiro segundo (relvado, bola, «A app de quem vai à bola.») e depois uma ideia forte por cena, com
+  o telemóvel inteiro. O vídeo completo também mostra sempre o telemóvel inteiro e sem scroll comprido.
+- **Os geradores usam o `chrome-headless-shell` do Puppeteer:** o Chrome completo deixa de desenhar quando o ecrã
+  do Mac adormece, e as capturas ficam penduradas.
+
+## 2026-10-06 — Ícone da app: «A caminho do jogo»
+
+Escolhida a proposta A de quatro: a bola branca da app sobre o relvado às riscas (`#187C44` / `#1C8A4D`),
+com um caminho amarelo (`#FFCE3A`) pontilhado a sair para longe. Diz o que o nome diz (ir ver o clube
+fora) e não usa escudos, cores ou nomes de nenhum clube. Lê-se bem até aos 29 pt.
+
+- **iOS** usa o `assets/expo.icon` (Icon Composer, Liquid Glass): fundo verde sólido e duas camadas,
+  `relvado.png` (riscas claras) e `bola.png` (bola e caminho), sem translucidez, para manter o desenho plano.
+- **`icon.png`** 1024 × 1024 sem canal alfa, como a App Store pede.
+- **Android adaptativo**: fundo às riscas; a bola e o caminho reduzidos a 66 % para caberem na zona segura
+  de qualquer máscara (círculo, gota, quadrado). O monocromático é o mesmo desenho só em branco.
+- **Ecrã de abertura**: a bola e o caminho sobre verde `#187C44` (era o azul do modelo do Expo), 200 pt de largura.
+
+Os PNG foram desenhados em SVG e convertidos com o `sips` do macOS, sem dependências novas.
+
 ## 2026-10-06 — Testes para as lojas, e o que eles apanharam
 
 **Quatro níveis de testes, cada um com o seu comando:**

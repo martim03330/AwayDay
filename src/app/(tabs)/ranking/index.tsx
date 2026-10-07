@@ -19,6 +19,7 @@ import {
 import { segundaFeiraDe, tituloDoNivel } from '@/features/ranks/labels';
 import { seasonLabel } from '@/features/recap/stats';
 import { useTheme } from '@/hooks/use-theme';
+import { BUILD_DE_CAPTURAS } from '@/lib/capturas';
 import { chaveDoDia } from '@/lib/datas';
 import { formatarNumero } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
@@ -103,10 +104,12 @@ export default function RankingScreen() {
       <View style={[styles.largura, styles.conteudo]}>
         {fonte === 'demo' ? (
           <View style={styles.bloco}>
-            <ThemedText themeColor="textSecondary">
-              No modo demo, o ranking mostra adeptos de exemplo. Com conta, os pontos vêm do que a
-              app confirmou: carimbos no estádio, check-ins nos tascos e fotos aprovadas.
-            </ThemedText>
+            {BUILD_DE_CAPTURAS ? null : (
+              <ThemedText themeColor="textSecondary">
+                No modo demo, o ranking mostra adeptos de exemplo. Com conta, os pontos vêm do que a
+                app confirmou: carimbos no estádio, check-ins nos tascos e fotos aprovadas.
+              </ThemedText>
+            )}
             <SectionHeader title="Tascos verificados" />
             <RankingCard
               ranking={montarRanking(rankingMock, {

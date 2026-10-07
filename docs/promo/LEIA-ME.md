@@ -1,37 +1,99 @@
-# Material para o vídeo
+# Material promocional
 
-- **`AwayDay-ecras.pdf`** — os 18 ecrãs, um por página, com uma linha a dizer o que cada um mostra.
-- **`ecras/*.png`** — os mesmos ecrãs em imagem solta, 1170 × 2532 (o triplo de um iPhone), prontos para o editor.
-- **`ecras.html`** — a fonte. Muda-se o texto aqui e volta-se a gerar.
+Tudo o que é preciso para as lojas e para as redes sociais. Os textos das fichas das lojas estão em
+[`loja/FICHA.md`](loja/FICHA.md).
 
-Gerar outra vez (depois de mexer no HTML):
+| O quê | Onde | Tamanho |
+|---|---|---|
+| Capturas da App Store (10) | `loja/app-store/` | 1320 × 2868 (iPhone 6,9") |
+| Capturas do Google Play (10) e imagem de destaque | `loja/google-play/` | 1080 × 1920 · 1024 × 500 |
+| **Plano de Instagram (6 semanas, legendas, horários)** | [`instagram/PLANO-INSTAGRAM.md`](instagram/PLANO-INSTAGRAM.md) | |
+| Campanha de Instagram: posts, 7 carrosséis e Stories (48 imagens) | `instagram/campanha/` | 1080 × 1350 · 1080 × 1920 |
+| Posts simples do Instagram (10) | `instagram/` | 1080 × 1350 |
+| Anúncio para Reels, TikTok, Stories, Shorts | `anuncio/awayday-reels-9x16.mp4` | 1080 × 1920, 25 s |
+| Anúncio para o feed do Instagram e do Facebook | `anuncio/awayday-feed-4x5.mp4` | 1080 × 1350, 25 s |
+| Vídeo completo: tudo o que a app faz, em 11 capítulos | `anuncio/awayday-completo-9x16.mp4`, `anuncio/awayday-completo-4x5.mp4` | 89 s |
+| Um Reel por capítulo (11) | `anuncio/reels/` | 1080 × 1920, 12 a 18 s |
+| Capas dos anúncios | `anuncio/capa-reels.png`, `anuncio/capa-feed.png` | |
+| Pré-visualização da App Store | `anuncio/app-store-preview.mp4` | 886 × 1920, 26 s |
+| Texto para publicar com o anúncio | `anuncio/texto-para-publicar.txt` | |
+
+Tudo o que aparece nestas imagens e vídeos é a app a sério, com dados de exemplo. Se um ecrã mudar, refaz-se a
+captura: senão o material promete o que a app já não cumpre.
+
+## 1. As capturas reais (`capturas-reais/`) e as gravações (`anuncio/clipes/`)
+
+Tiradas no simulador do iPhone 17 Pro Max (1320 × 2868), no Expo Go, com a barra de estado às 9:41.
+
+- **Metro numa compilação de capturas:** `EXPO_PUBLIC_CAPTURAS=true EXPO_PUBLIC_DEMO_MODE=true npx expo start --no-dev --minify --clear`.
+  `EXPO_PUBLIC_CAPTURAS` esconde as notas que só explicam o modo demo (a etiqueta «Modo demo · dados de exemplo» e
+  a nota do ranking, ver `src/lib/capturas.ts`). Nunca se põe em `.env` nem nas compilações das lojas.
+- **No Expo Go:** menu de programador → desligar «Tools button» (senão o botão aparece nas imagens).
+- **Barra de estado:** `xcrun simctl status_bar booted override --time 9:41 --batteryState discharging --batteryLevel 100 --cellularBars 4 --wifiBars 3`.
+- **Dados:** os ecrãs de tascos, passaporte e ranking vêm do modo demo; os de boleias, Malta, sessão, contas e dormida
+  vêm de uma conta de capturas com dados inventados na base de dados (`capturas@teste.awayday.invalid`, «Tiago
+  Fonseca», e dez pessoas fictícias à volta). Criar e apagar:
+
+  ```bash
+  # criar (CAPTURAS_PASSWORD é uma password à escolha, para entrar na app com esta conta)
+  sed "s/'__CAPTURAS_PASSWORD__'/'$CAPTURAS_PASSWORD'/" scripts/dados-de-teste/capturas-contas.sql > /tmp/c.sql
+  supabase db query --linked -f /tmp/c.sql; rm /tmp/c.sql
+  supabase db query --linked -f scripts/dados-de-teste/capturas-dados.sql
+  # apagar tudo (só toca nos ids c0000000-…)
+  supabase db query --linked -f scripts/dados-de-teste/capturas-apagar.sql
+  ```
+
+  Os jogos usados são Braga x Sporting (9 out) e Lens x Sporting (13 out). Depois dessas datas, a sessão e os planos
+  continuam a abrir pela ligação direta, mas para capturas novas convém mudar os jogos para os próximos.
+- **Gravações:** `xcrun simctl io booted recordVideo --codec=h264 clipe.mp4` enquanto se usa a app; depois corta-se o
+  trecho útil para `anuncio/clipes/` (30 fps, 1320 × 2868).
+
+## 2. Capturas das lojas e posts
 
 ```bash
-npx puppeteer browsers install chrome       # uma vez
-npm --prefix /tmp/ferramentas i puppeteer-core
-PUPPETEER_CORE=/tmp/ferramentas/node_modules/puppeteer-core/lib/esm/puppeteer/puppeteer-core.js \
-  node scripts/gerar-ecras.mjs
+npx puppeteer browsers install chrome                 # uma vez
+npm --prefix /tmp/ferramentas i puppeteer-core        # uma vez, fora do package.json da app
+PUPPETEER_CORE=/tmp/ferramentas/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js \
+  node scripts/gerar-capturas-loja.mjs
 ```
 
-O `puppeteer-core` fica de fora do `package.json`: é uma ferramenta de bastidores, não faz parte da app.
+Os títulos e a ordem estão em `loja/capturas.html` (lista `CAPTURAS`). Precisa do `ffmpeg` (os PNG saem sem alfa).
 
-## O que isto é, e o que não é
+## 3. O anúncio (`anuncio/video/`)
 
-São **maquetas** dos ecrãs — HTML com as cores, os tipos de letra e os textos verdadeiros do projeto —, não
-fotografias da app a correr. Os dados são exemplos inventados: nomes, horas e valores. Os escudos são os genéricos
-que a app desenha (cores e sigla do clube), nunca os oficiais.
+Feito em [Remotion](https://www.remotion.dev) (gratuito para particulares e empresas até 3 pessoas), num projeto à
+parte com o seu próprio `package.json`: não entra na app.
 
-Tudo o que aparece nestas imagens é coisa que a app faz mesmo. Se um dia se mudar um ecrã, muda-se aqui também —
-senão o vídeo promete o que a app já não cumpre.
-
-## Posts para Instagram
-
-- **`posts/*.png`** — 14 publicações (as três últimas são o carrossel de apresentação), 1080 × 1350 (o formato que o Instagram mostra maior no feed): o telemóvel ao
-  centro e as bolas à volta a apontar o que ali se faz.
-- **`posts.html`** — a fonte. Usa as imagens de `ecras/`, por isso gera primeiro os ecrãs.
+- `src/Anuncio.tsx` — o anúncio de 25 s: futebol desde o primeiro segundo (o relvado, a bola, «Jogo fora no sábado?»),
+  «A app de quem vai à bola.» na batida, e depois o que só a AwayDay faz, uma ideia por cena com o telemóvel inteiro ao lado: a boleia ao cêntimo (143,52 € ÷ 4), o tasco
+  ao vivo (27 pessoas), quem deve a quem, o carimbo que só conta lá dentro e a memória da viagem. A capa (fotograma 0)
+  é o fecho já assente.
+- `src/longo/` — o vídeo completo: os capítulos (texto, gravações, recortes e tempos) estão em `capitulos.ts`.
+  O telemóvel aparece sempre inteiro; cada plano mostra um ecrã parado ou um toque curto (os momentos parados foram
+  encontrados com o `freezedetect` do ffmpeg), sem scroll comprido.
+  As gravações estão em `anuncio/clipes-longo/`. Os recortes amarelos são cortes exatos das gravações, medidos na
+  captura de 1320 × 2868 num momento em que o ecrã está parado, e aparecem por cima do sítio de onde saem.
+- `src/tempos.ts` e `musica.py` — a linha do tempo, igual nos dois: a música é a 120 BPM, por isso uma batida são
+  15 fotogramas e os cortes caem em cima da batida.
+- `musica.py` — a música, composta por código (sem licenças de terceiros), com os sons da própria app no carimbo e no
+  fecho. Precisa de `numpy` e `scipy` (num ambiente à parte).
 
 ```bash
-PUPPETEER_CORE=<caminho>/puppeteer-core.js node scripts/gerar-posts.mjs
+cd docs/promo/anuncio/video
+npm install
+python3 musica.py curto public/musica-bruta.wav
+ffmpeg -i public/musica-bruta.wav -af "afade=t=out:st=23.6:d=1.4,loudnorm=I=-14:TP=-1.0:LRA=9" -ar 48000 public/musica.wav
+python3 musica.py longo public/musica-longo-bruta.wav     # e normalizar como acima, com o fade no fim (88 s)
+npm run render                 # o anúncio curto e as capas, em docs/promo/anuncio/
+npm run render -- longo        # o vídeo completo (9:16 e 4:5) e os 11 Reels de capítulo
+npm run estudio                # para ver e afinar no browser
 ```
 
-As legendas e a ordem de publicação estão no plano que acompanha estas imagens.
+A pré-visualização da App Store é diferente: a Apple quer só a app, por isso são as gravações de ponta a ponta com
+uma legenda curta (`scripts/gerar-preview-app-store.mjs`, legendas em `anuncio/legendas-preview.html`).
+
+## Material antigo
+
+`ecras/`, `AwayDay-ecras.pdf`, `posts/` e os HTML que os geram (`scripts/gerar-ecras.mjs`, `scripts/gerar-posts.mjs`)
+são **maquetas de setembro**, anteriores à revisão do design: não mostram a app como ela é hoje. Ficam só como
+histórico; para publicar, usar o material acima.

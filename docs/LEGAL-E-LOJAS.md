@@ -75,3 +75,24 @@ descrevem o que a app faz de facto, mas devem ser revistos por um jurista antes 
   (só a declaração ao criar conta), o que é o habitual.
 - **Carregamento artificial.** `src/hooks/use-simulated-loading.ts` ainda junta um atraso falso de 0,6–0,9 s em alguns
   ecrãs (do tempo dos dados de exemplo). Não é um problema legal; vale a pena tirar.
+
+## Compilar e submeter (EAS)
+
+O `eas.json` tem dois perfis: `preview` (instalação interna, para testar no telemóvel) e `production` (lojas, com o
+número da compilação a subir sozinho). A sessão no EAS é a conta `martim03330`.
+
+1. **Variáveis do Supabase no EAS** (uma vez). O `.env.local` não vai para a compilação, por estar fora do git:
+   ```bash
+   npx eas-cli env:create --environment production --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value "<o valor do .env.local>" --visibility plaintext
+   npx eas-cli env:create --environment production --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value "<o valor do .env.local>" --visibility plaintext
+   ```
+   **Nunca** criar `EXPO_PUBLIC_DEMO_MODE` nem `EXPO_PUBLIC_CAPTURAS` nestes ambientes.
+2. **Compilar para iOS** (a primeira vez pede a conta Apple Developer, para criar os certificados):
+   ```bash
+   npx eas-cli build --platform ios --profile production
+   ```
+3. **Enviar para o App Store Connect** (TestFlight e depois revisão):
+   ```bash
+   npx eas-cli submit --platform ios --latest
+   ```
+4. **Android**, quando houver conta Google Play: `npx eas-cli build --platform android --profile production`.

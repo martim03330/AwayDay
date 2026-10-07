@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Capturas da AwayDay para as lojas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;700;800&family=Big+Shoulders:wght@800;900&display=swap">
+
+<!--
+  Capturas para a App Store e o Google Play. Cada uma é uma captura real da app (docs/promo/capturas-reais/),
+  dentro de um telemóvel, com um título por cima. Os títulos e a ordem estão em CAPTURAS, mais abaixo.
+
+  ?formato=app-store  1320 x 2868 (iPhone 6,9", o único tamanho que a Apple exige)
+  ?formato=google-play 1080 x 1920
+  ?formato=instagram   1080 x 1350 (posts do feed)
+
+  Gerar:  node scripts/gerar-capturas-loja.mjs
+-->
+
+<style>
+  :root {
+    --relva: #187C44;
+    --relva-clara: #1C8A4D;
+    --relva-escura: #0E5530;
+    --amarelo: #FFCE3A;
+    --branco: #FFFFFF;
+    --moldura: #0B0F0D;
+    /* Set per format by the script below. */
+    --w: 1320px;
+    --h: 2868px;
+    --telefone: 940px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #444; font-family: 'Figtree', system-ui, sans-serif; display: flex; flex-direction: column; gap: 40px; align-items: center; padding: 40px 0; }
+
+  .captura {
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    overflow: hidden;
+    /* The icon's pitch: stripes of a mown lawn. */
+    background: repeating-linear-gradient(90deg, var(--relva) 0 calc(var(--w) / 8), var(--relva-clara) calc(var(--w) / 8) calc(var(--w) / 4));
+    color: var(--branco);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .captura::after {
+    /* Darker at the bottom, so the phone sits on the pitch. */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(14, 85, 48, 0) 45%, rgba(14, 85, 48, 0.55) 100%);
+    pointer-events: none;
+  }
+
+  .texto {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: calc(var(--w) * 0.1) calc(var(--w) * 0.07) 0;
+  }
+  .titulo {
+    font-family: 'Big Shoulders', 'Arial Narrow', sans-serif;
+    font-weight: 900;
+    font-size: calc(var(--w) * 0.105);
+    line-height: 0.92;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .titulo em { font-style: normal; color: var(--amarelo); }
+  .sub {
+    margin: calc(var(--w) * 0.03) auto 0;
+    max-width: 22ch;
+    font-size: calc(var(--w) * 0.038);
+    line-height: 1.3;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-wrap: balance;
+  }
+
+  .telefone {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    margin-top: auto;
+    margin-bottom: calc(var(--h) * 0.035);
+    width: var(--telefone);
+    padding: calc(var(--telefone) * 0.028);
+    border-radius: calc(var(--telefone) * 0.155);
+    background: var(--moldura);
+    box-shadow:
+      0 0 0 calc(var(--telefone) * 0.004) #2B3530,
+      0 calc(var(--w) * 0.03) calc(var(--w) * 0.08) rgba(0, 0, 0, 0.35);
+  }
+  .ecra {
+    position: relative;
+    border-radius: calc(var(--telefone) * 0.13);
+    overflow: hidden;
+    aspect-ratio: 1320 / 2868;
+    background: #000;
+  }
+  .ecra img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .destaque { flex-direction: row; align-items: center; justify-content: center; gap: 56px; padding: 0 64px; }
+  .destaque > * { position: relative; z-index: 1; }
+  .destaque .icone { width: 260px; height: 260px; border-radius: 22.37%; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3); }
+  .destaque .marca { margin: 0 0 6px; font-weight: 800; font-size: 26px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amarelo); }
+  .destaque .titulo { font-size: 96px; line-height: 1.04; text-align: left; }
+  .destaque .sub { margin: 14px 0 0; max-width: 20ch; font-size: 30px; text-align: left; }
+  .ilha {
+    /* Simulator captures leave the Dynamic Island out: draw it back where it is on the phone. */
+    position: absolute;
+    top: 1.15%;
+    left: 50%;
+    width: 31%;
+    height: 3.9%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: #000;
+  }
+</style>
+</head>
+<body>
+<script>
+  // Title words inside *…* are painted yellow.
+  const CAPTURAS = [
+    { nome: 'dia-de-jogo', img: '01-jogo.png', titulo: 'O teu *dia de jogo*, numa app', sub: 'Com quem vais, a boleia, o estádio e os tascos à volta.' },
+    { nome: 'boleias', img: '02-boleias.png', titulo: 'Boleia para a bola, *a meias*', sub: 'O custo sai do combustível e das portagens, e baixa a cada lugar.' },
+    { nome: 'tascos', img: '03-tasco.png', titulo: 'O tasco certo *antes do jogo*', sub: 'Quem lá está agora, o que pedir e como lá chegar a pé.' },
+    { nome: 'contas', img: '04-contas.png', titulo: 'No fim, ninguém *discute contas*', sub: 'As despesas da viagem divididas, e quem deve a quem.' },
+    { nome: 'malta', img: '05-malta.png', titulo: 'Combina o jogo *com a malta*', sub: 'Grupos, convites e conversa para cada viagem.' },
+    { nome: 'estacionar', img: '06-estacionar.png', titulo: 'Sabe *onde estacionar*', sub: 'E a que horas chegar para ainda apanhares lugar.' },
+    { nome: 'viagem', img: '07-sessao.png', titulo: 'A viagem toda *num sítio*', sub: 'Quem vai, a que horas sai o carro e quanto deves.' },
+    { nome: 'passaporte', img: '08-passaporte.png', titulo: 'Carimba *cada estádio*', sub: 'Só lá dentro e só no dia do jogo. Junta-os todos.' },
+    { nome: 'ranking', img: '09-ranking.png', titulo: 'Sobe *no ranking*', sub: 'Pontos pelo que a app confirma: estádios, tascos e fotos.' },
+    { nome: 'dormir', img: '10-dormir.png', titulo: 'Dorme fora *com a malta*', sub: 'Jogo longe? Alguém propõe a casa e o grupo junta-se.' },
+  ];
+
+  const formato = new URLSearchParams(location.search).get('formato') ?? 'app-store';
+  const TAMANHOS = {
+    'app-store': { w: 1320, h: 2868, telefone: 1000 },
+    'google-play': { w: 1080, h: 1920, telefone: 640 },
+    // Instagram feed post: the phone is bigger than fits, and runs off the bottom.
+    instagram: { w: 1080, h: 1350, telefone: 560 },
+    // Google Play feature graphic: one image, no phone.
+    destaque: { w: 1024, h: 500, telefone: 0 },
+  };
+  const t = TAMANHOS[formato];
+  document.documentElement.style.setProperty('--w', `${t.w}px`);
+  document.documentElement.style.setProperty('--h', `${t.h}px`);
+  document.documentElement.style.setProperty('--telefone', `${t.telefone}px`);
+
+  const escapar = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const destacar = (s) => escapar(s).replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  if (formato === 'destaque') {
+    const el = document.createElement('section');
+    el.className = 'captura destaque';
+    el.dataset.nome = 'destaque';
+    el.innerHTML = `
+      <img class="icone" src="../../../assets/images/icon.png" alt="">
+      <div>
+        <p class="marca">AwayDay</p>
+        <h1 class="titulo">${destacar('Vamos *à bola?*')}</h1>
+        <p class="sub">Boleias, tascos e contas do dia de jogo, com a tua malta.</p>
+      </div>`;
+    document.body.appendChild(el);
+  }
+
+  for (const c of formato === 'destaque' ? [] : CAPTURAS) {
+    const el = document.createElement('section');
+    el.className = 'captura';
+    el.dataset.nome = c.nome;
+    el.innerHTML = `
+      <div class="texto">
+        <h1 class="titulo">${destacar(c.titulo)}</h1>
+        <p class="sub">${escapar(c.sub)}</p>
+      </div>
+      <div class="telefone"><div class="ecra"><img src="../capturas-reais/${c.img}" alt=""><span class="ilha"></span></div></div>`;
+    document.body.appendChild(el);
+  }
+</script>
+</body>
+</html>

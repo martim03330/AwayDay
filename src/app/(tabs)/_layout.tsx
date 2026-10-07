@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors as colors } from '@/constants/theme';
+import { BUILD_DE_CAPTURAS } from '@/lib/capturas';
 import { useAppState } from '@/state/app-state';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -66,7 +67,7 @@ export default function TabsLayout() {
           />
         </NativeTabs.Trigger>
       </NativeTabs>
-      {modoDemo ? <EtiquetaDemo /> : null}
+      {modoDemo && !BUILD_DE_CAPTURAS ? <EtiquetaDemo /> : null}
     </View>
   );
 }
