@@ -37,6 +37,7 @@ import { formatarCentimos, formatarCentimosCurto, lerPrecoEmCentimos } from '@/l
 import { useUserId } from '@/lib/session';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import type { Jogo, Venue } from '@/mocks/tipos';
+import { VoosCard } from '@/components/voos-card';
 import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
@@ -542,6 +543,9 @@ export function DormidaCard({
           Abre o Airbnb já com a cidade, as datas e o preço.
         </ThemedText>
       </Card>
+
+      {/* Voos, para jogos do outro lado do mar ou da fronteira: as mesmas datas da casa. */}
+      <VoosCard estadio={estadio} estadia={estadia} />
 
       {lista.length > 0 ? (
         <ThemedText style={styles.destaque}>

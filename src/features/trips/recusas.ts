@@ -22,6 +22,8 @@ export function mensagemDeRecusaDasContas(erro: unknown) {
       return 'Um pagamento é sempre de uma pessoa para outra, com um valor.';
     case 'ride_expense':
       return 'A despesa da boleia não se apaga: ela acompanha quem vai no carro.';
+    case 'stay_expense':
+      return 'A despesa da casa não se apaga: ela acompanha quem tem cama e sai se a casa deixar de estar reservada.';
     case 'cannot_add':
       return 'Só podes acrescentar amigos, malta dos teus grupos ou quem vai no carro.';
     case 'has_money':

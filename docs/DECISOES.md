@@ -2,6 +2,26 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-07 — A casa entra sozinha nas contas, e voos no Google Flights
+
+**A casa nas contas da viagem** (migração `20261007122059_house_trip_expense.sql`), com o mesmo mecanismo da boleia:
+- Quando a casa do plano está **reservada** e o plano tem a sessão aberta, entra uma despesa «Casa de …» com o
+  preço total. Paga quem propôs a casa (foi quem reservou), se estiver na sessão; senão a despesa não entra.
+- **Divide quem tem cama:** quem propôs a casa e as pessoas da sessão com lugar aceite. Se a casa não tiver nenhuma
+  cama aceite, divide a sessão toda. Conta-se as camas da casa e não só as da sessão: quem tem cama e sai da viagem
+  não faz a casa passar a ser de toda a gente (caso apanhado pelos testes).
+- **Segue a casa:** gatilhos refazem-na quando muda a reserva, o preço ou o dono da casa, a casa do plano, as pessoas
+  da sessão ou as camas. Não se apaga à mão (`stay_expense`), tal como a da boleia (`ride_expense`).
+- Na app aparece com «· segue a casa» (e a boleia com «· segue o carro»). Se também houver uma despesa de casa
+  lançada à mão, um aviso diz que a casa está duas vezes.
+- Testes: `supabase/tests/acesso_casa_contas.test.sql` (26 verificações) e `src/features/trips/origem.test.ts`.
+
+**Procurar voos** (`src/lib/voos.ts`, `src/components/voos-card.tsx`): nos jogos com mar ou fronteira pelo meio
+(ilhas ou estrangeiro, de um lado ou do outro), a página da dormida tem «Procurar no Google Flights». Abre uma
+pesquisa de ida e volta com o aeroporto de partida (o mais perto do concelho, ou Lisboa), a cidade do estádio e as
+mesmas datas da dormida. Como nas casas, a app não mostra preços nem diz qual é o voo mais barato: o Google Flights
+não tem API pública, e mostrar preços na app exigiria uma API de voos paga numa Edge Function (fica para depois).
+
 ## 2026-10-07 — Pacotes do Expo, expo-asset e EAS
 
 - **Pacotes do Expo atualizados** para as versões que o SDK 57 espera (`npx expo install --fix`): só versões de

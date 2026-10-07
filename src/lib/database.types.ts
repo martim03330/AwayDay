@@ -5122,6 +5122,10 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: undefined
       }
+      sync_stay_trip_expense: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
       take_rate_limit: {
         Args: {
           p_bucket: string

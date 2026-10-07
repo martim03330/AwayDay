@@ -22,6 +22,7 @@ export type TripRefusal =
   | 'not_yours'
   | 'not_in_trip'
   | 'ride_expense'
+  | 'stay_expense'
   | 'bad_settlement'
   | 'cannot_add'
   | 'has_money'
@@ -54,6 +55,7 @@ const RECUSAS: TripRefusal[] = [
   'not_yours',
   'not_in_trip',
   'ride_expense',
+  'stay_expense',
   'bad_settlement',
   'cannot_add',
   'has_money',
@@ -101,10 +103,13 @@ export type TripExpense = {
   participantNames: string[];
   /** Se esta despesa também é minha. */
   iAmIn: boolean;
-  /** Se a posso apagar: escrevi-a ou fui eu que paguei. Nunca na despesa da boleia, que segue o carro. */
+  /** Se a posso apagar: escrevi-a ou fui eu que paguei. Nunca nas que entram sozinhas (boleia, casa). */
   mine: boolean;
-  /** 'boleia': entrou sozinha, com o custo da boleia e as pessoas do carro. */
-  source: 'manual' | 'boleia';
+  /**
+   * 'boleia': entrou sozinha, com o custo da boleia e as pessoas do carro.
+   * 'casa': entrou sozinha quando a casa do plano foi reservada, com quem tem cama (ou a sessão toda).
+   */
+  source: 'manual' | 'boleia' | 'casa';
   createdOn: string;
 };
 
@@ -144,6 +149,10 @@ export async function openTripSession(groupId: string, fixtureId: string): Promi
   return data;
 }
 
+function origemDaDespesa(source: string | null): TripExpense['source'] {
+  return source === 'boleia' || source === 'casa' ? source : 'manual';
+}
+
 export async function fetchTripExpenses(sessionId: string): Promise<TripExpense[]> {
   const { data, error } = await client().rpc('trip_expenses', { p_session_id: sessionId });
   if (error) throw error;
@@ -158,7 +167,7 @@ export async function fetchTripExpenses(sessionId: string): Promise<TripExpense[
     participantNames: row.participant_names ?? [],
     iAmIn: row.i_am_in === true,
     mine: row.mine === true,
-    source: row.source === 'boleia' ? ('boleia' as const) : ('manual' as const),
+    source: origemDaDespesa(row.source),
     createdOn: row.created_on ?? '',
   }));
 }

@@ -20,12 +20,14 @@ import {
   useTripSessionCard,
   useTripSettlements,
 } from '@/features/trips/hooks/useTrips';
+import { casaLancadaAMao, notaDaOrigem } from '@/features/trips/origem';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { Avatar } from '@/ui/avatar';
+import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
@@ -156,6 +158,13 @@ export default function DespesasScreen() {
 
         {erro ? <MensagemErro>{erro}</MensagemErro> : null}
 
+        {vista === 'lista' && casaLancadaAMao(lista) ? (
+          <Aviso
+            title="A casa está duas vezes"
+            message="A casa reservada já entrou sozinha nas contas. Quem lançou a despesa de casa à mão pode apagá-la, tocando nela sem largar."
+          />
+        ) : null}
+
         {vista === 'lista' ? (
           lista.length === 0 ? (
             <View style={[styles.vazio, { borderColor: theme.borderStrong }]}>
@@ -181,11 +190,15 @@ export default function DespesasScreen() {
                     separador={indice < lista.length - 1}
                     leading={<IconCircle name={CATEGORIA[despesa.category].icon} tone="neutral" />}
                     title={despesa.description}
-                    subtitle={`${quem(despesa.payerId, despesa.payerName)} ${despesa.payerId === userId ? 'pagaste' : 'pagou'} · ${
+                    subtitle={[
+                      `${quem(despesa.payerId, despesa.payerName)} ${despesa.payerId === userId ? 'pagaste' : 'pagou'}`,
                       despesa.participants === sessao.people
                         ? 'toda a malta'
-                        : plural(despesa.participants, 'pessoa', 'pessoas')
-                    }`}
+                        : plural(despesa.participants, 'pessoa', 'pessoas'),
+                      notaDaOrigem(despesa.source),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                     trailing={
                       <ThemedText type="smallBold" style={styles.valor}>
                         {formatarCentimos(despesa.cents)}
