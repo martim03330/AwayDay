@@ -300,6 +300,30 @@ select pg_temp.as_user('ad000007-0000-4000-8000-0000000000a1');
 select pg_temp.expect('31st plan of the day refused',
   pg_temp.refusal(format('select public.invite_group_to_fixture(%L, %L)', 'c0000007-0000-4000-8000-0000000000a1', pg_temp.jogo())), 'rate_limited');
 
+-- 9. Security review 2026-10-08: a plan cannot be used to take over a stranger's car or house. X makes a group of
+-- their own, invites it to the game and tries to attach M's car (M is not in X's group) and to join it.
+reset role;
+insert into public.fan_group (id, name, created_by, invite_code)
+values ('c0000007-0000-4000-8000-0000000000a4', 'Grupo Plano Intruso', 'ad000007-0000-4000-8000-0000000000e1', 'acplanos04');
+insert into public.fan_group_member (group_id, profile_id, role)
+values ('c0000007-0000-4000-8000-0000000000a4', 'ad000007-0000-4000-8000-0000000000e1', 'owner');
+delete from public.rate_limit_hit where profile_id = 'ad000007-0000-4000-8000-0000000000e1';
+set local role authenticated;
+select pg_temp.as_user('ad000007-0000-4000-8000-0000000000e1');
+insert into t_ids (key, id) values ('px', public.invite_group_to_fixture('c0000007-0000-4000-8000-0000000000a4', pg_temp.jogo()));
+select pg_temp.expect('a plan creator cannot attach the car of someone outside the plan',
+  pg_temp.refusal(format('select public.set_fixture_plan_ride(%L, %L)', pg_temp.id('px'), pg_temp.id('ride'))), 'driver_not_in_plan');
+select pg_temp.expect('so there is no car to join without asking',
+  pg_temp.refusal(format('select public.join_plan_ride(%L)', pg_temp.id('px'))), 'ride_not_found');
+select pg_temp.expect('nor a stranger''s house (H only offers it to G1)',
+  pg_temp.refusal(format('select public.set_fixture_plan_stay(%L, %L)', pg_temp.id('px'), pg_temp.id('casa'))), 'owner_not_in_plan');
+reset role;
+select pg_temp.expect('X is no passenger of M''s car',
+  (select count(*)::integer from public.ride_passenger where ride_id = pg_temp.id('ride') and profile_id = 'ad000007-0000-4000-8000-0000000000e1'), 0);
+select pg_temp.expect('and X got into no trip accounts of that car',
+  (select count(*)::integer from public.trip_session_member as m join public.trip_session as t on t.id = m.session_id
+   where t.ride_id = pg_temp.id('ride') and m.profile_id = 'ad000007-0000-4000-8000-0000000000e1'), 0);
+
 reset role;
 select count(*) as checks_passed from expect_log;
 

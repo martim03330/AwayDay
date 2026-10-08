@@ -13,6 +13,7 @@ function missao(mudancas: Partial<Mission> = {}): Mission {
     kind: 'weekly',
     family: 'tasco',
     tier: null,
+    metric: 'tasco',
     needsProofPhoto: false,
     target: 3,
     xp: 50,
@@ -72,33 +73,35 @@ describe('LinhaMissao', () => {
     expect(screen.queryByText('0 de 1', { includeHiddenElements: true })).toBeNull();
   });
 
-  it('open proof mission with a handler: the photo button shows and works', () => {
-    const onTirarFoto = jest.fn();
-    render(<LinhaMissao missao={missao({ needsProofPhoto: true })} onTirarFoto={onTirarFoto} />);
-    const botao = screen.getByRole('button', { name: 'Tirar a foto de prova: Vai a três tascos' });
-    fireEvent.press(botao);
-    expect(onTirarFoto).toHaveBeenCalledTimes(1);
-    // The row is not one element any more, or the button inside it could not be reached by the screen reader.
-    expect(screen.root).toHaveProp('accessible', false);
+  it('with a handler, tapping the row opens how to do it and a button that goes there', () => {
+    const onAcao = jest.fn();
+    render(<LinhaMissao missao={missao()} onAcao={onAcao} />);
+    expect(screen.queryByText('Ver tascos perto')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Vai a três tascos. 1 de 3. Mais 50 pontos. Toca para ver como fazer.' }));
+    expect(screen.getByText('Abre em Locais o tasco onde estás.')).toBeOnTheScreen();
+    fireEvent.press(screen.getByText('Ver tascos perto'));
+    expect(onAcao).toHaveBeenCalledWith('ver-tascos');
   });
 
-  it('proof mission already done: no photo button', () => {
-    render(
-      <LinhaMissao
-        missao={missao({ needsProofPhoto: true, completedAt: '2026-10-06T12:00:00Z' })}
-        onTirarFoto={jest.fn()}
-      />
-    );
-    expect(screen.queryByRole('button')).toBeNull();
+  it('the photo with a rival opens the camera from its guide, not from a button in the list', () => {
+    const onAcao = jest.fn();
+    render(<LinhaMissao missao={missao({ metric: 'proof_photo', needsProofPhoto: true, target: 1, progress: 0 })} onAcao={onAcao} />);
+    expect(screen.queryByText('Abrir a câmara')).toBeNull();
+    fireEvent.press(screen.getByRole('button'));
+    expect(screen.getByText('Pede primeiro. Cada um com a sua camisola, lado a lado e sem contacto.')).toBeOnTheScreen();
+    fireEvent.press(screen.getByText('Abrir a câmara'));
+    expect(onAcao).toHaveBeenCalledWith('abrir-camara');
   });
 
-  it('proof mission without a handler (e.g. no account, demo): no photo button', () => {
+  it('a done mission opens to say it is done, with no action', () => {
+    render(<LinhaMissao missao={missao({ progress: 3, completedAt: '2026-10-06T12:00:00Z' })} onAcao={jest.fn()} />);
+    fireEvent.press(screen.getByRole('button'));
+    expect(screen.getByText('Feita. Os pontos já estão no teu ranking.')).toBeOnTheScreen();
+    expect(screen.queryByText('Ver tascos perto')).toBeNull();
+  });
+
+  it('without a handler (no account, demo) the row is read-only', () => {
     render(<LinhaMissao missao={missao({ needsProofPhoto: true })} />);
-    expect(screen.queryByRole('button')).toBeNull();
-  });
-
-  it('a mission that needs no photo: no photo button even with a handler', () => {
-    render(<LinhaMissao missao={missao()} onTirarFoto={jest.fn()} />);
     expect(screen.queryByRole('button')).toBeNull();
   });
 

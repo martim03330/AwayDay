@@ -94,6 +94,7 @@ export async function fetchMyMissions(): Promise<Mission[]> {
     kind: missionKind(row.kind),
     family: row.family,
     tier: tier(row.tier),
+    metric: row.metric,
     needsProofPhoto: row.metric === 'proof_photo',
     target: row.target,
     xp: row.xp,

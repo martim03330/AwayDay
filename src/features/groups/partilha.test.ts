@@ -4,7 +4,6 @@ import {
   conviteDoCartao,
   deOutroGrupo,
   origemDoPlano,
-  partilhadoCom,
   rotuloDeOutroGrupo,
 } from '@/features/groups/partilha';
 
@@ -41,18 +40,6 @@ describe('origemDoPlano', () => {
 
   it("says nothing in the plan's own group", () => {
     expect(origemDoPlano(plano, 'malta')).toBeNull();
-  });
-});
-
-describe('partilhadoCom', () => {
-  it('lists the groups it was sent to', () => {
-    expect(partilhadoCom(['Primos da bola'])).toBe('Também aberto a «Primos da bola»');
-    expect(partilhadoCom(['Primos', 'Trabalho'])).toBe('Também aberto a «Primos» e «Trabalho»');
-    expect(partilhadoCom(['A', 'B', 'C'])).toBe('Também aberto a «A», «B» e «C»');
-  });
-
-  it('is null when it was not sent anywhere', () => {
-    expect(partilhadoCom([])).toBeNull();
   });
 });
 

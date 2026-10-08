@@ -54,6 +54,8 @@ export type Mission = {
   family: string;
   /** 1 bronze, 2 silver, 3 gold; `null` for single missions. */
   tier: 1 | 2 | 3 | null;
+  /** What counts towards it (the catalogue's metric): picks the how-to guide. */
+  metric: string;
   /** True for missions proven by a photo taken on the day. */
   needsProofPhoto: boolean;
   target: number;

@@ -31,6 +31,14 @@ const glyphs = {
   },
   locais: { paths: [PIN, circle(12, 10, 2.5)] },
   perfil: { paths: [circle(12, 8, 4), 'M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6'] },
+  malta: {
+    paths: [
+      circle(9, 8.5, 3.2),
+      'M3 19.5c1-3.4 3.3-5.3 6-5.3s5 1.9 6 5.3',
+      circle(16.8, 9.3, 2.6),
+      'M16 14.4c2.5 0 4.3 1.7 5 4.6',
+    ],
+  },
   estadio: {
     paths: [
       ellipse(12, 8.5, 9, 3.8),

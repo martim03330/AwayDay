@@ -4,11 +4,11 @@ import { StyleSheet, View } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { iconeDaMissao, LinhaMissao } from '@/features/ranks/components/LinhaMissao';
+import { useAcaoDaMissao } from '@/features/ranks/hooks/useAcaoDaMissao';
 import { rankingKey, useMyMissions } from '@/features/ranks/hooks/useRanking';
 import { conquistasPorFamilia, nomeDoPatamar, segundaFeiraDe } from '@/features/ranks/labels';
 import type { Mission } from '@/features/ranks/types';
 import { useTheme } from '@/hooks/use-theme';
-import { useTirarFoto } from '@/hooks/use-tirar-foto';
 import { chaveDoDia } from '@/lib/datas';
 import { useUserId } from '@/lib/session';
 import { useAppState } from '@/state/app-state';
@@ -84,7 +84,7 @@ export default function MissoesScreen() {
   const { fonte } = useAppState();
   const conta = fonte === 'conta' ? userId : null;
   const missoes = useMyMissions(conta);
-  const tirarFoto = useTirarFoto();
+  const agir = useAcaoDaMissao();
   const [verRegras, setVerRegras] = useState(false);
 
   if (!conta) {
@@ -112,9 +112,6 @@ export default function MissoesScreen() {
   const ganhos = familias.flatMap((familia) => familia.ganhos);
   const conquistas = todas.filter((missao) => missao.kind === 'achievement');
 
-  // Proof photos can show someone else: the camera asks for their permission first.
-  const fotografar = (missao: Mission) => tirarFoto({ id: missao.id, fotoComOutraPessoa: true });
-
   const lista = (itens: readonly Mission[]) => (
     <Card style={styles.lista}>
       {itens.map((missao, indice) => (
@@ -122,7 +119,7 @@ export default function MissoesScreen() {
           key={`${missao.weekStart ?? ''}-${missao.id}`}
           missao={missao}
           separador={indice < itens.length - 1}
-          onTirarFoto={() => fotografar(missao)}
+          onAcao={(acao) => agir(missao, acao)}
         />
       ))}
     </Card>

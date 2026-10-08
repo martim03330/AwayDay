@@ -97,6 +97,7 @@ function missao(partial: Partial<Mission> & Pick<Mission, 'id' | 'family'>): Mis
   return {
     kind: 'achievement',
     tier: null,
+    metric: 'stadium',
     needsProofPhoto: false,
     target: 1,
     xp: 100,

@@ -7,6 +7,7 @@ import { RankingCard } from '@/components/ranking-card';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { CartaoDivisao } from '@/features/ranks/components/CartaoDivisao';
 import { LinhaMissao } from '@/features/ranks/components/LinhaMissao';
+import { useAcaoDaMissao } from '@/features/ranks/hooks/useAcaoDaMissao';
 import { CartaoNivel } from '@/features/ranks/components/CartaoNivel';
 import { TabelaRanking } from '@/features/ranks/components/TabelaRanking';
 import {
@@ -47,6 +48,7 @@ const TOPO = 3;
 export default function RankingScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const agir = useAcaoDaMissao();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const userId = useUserId();
@@ -154,6 +156,7 @@ export default function RankingScreen() {
                       key={missao.id}
                       missao={missao}
                       separador={indice < desafios.length - 1}
+                      onAcao={(acao) => agir(missao, acao)}
                     />
                   ))
                 ) : (

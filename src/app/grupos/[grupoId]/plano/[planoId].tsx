@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { LayoutAnimation, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
 import { CartaoDaBoleia } from '@/features/groups/components/CartaoDaBoleia';
 import { CasasDoPlano } from '@/features/groups/components/CasasDoPlano';
+import { GruposDoPlano, type GrupoDoPlano } from '@/features/groups/components/GruposDoPlano';
 import { avisarConviteRepetido } from '@/features/groups/convite-repetido';
 import {
   plansKey,
@@ -25,9 +26,7 @@ import {
   sharePlan,
   unsharePlan,
   type FixturePlan,
-  type SharedGroup,
 } from '@/features/groups/plans';
-import { partilhadoCom } from '@/features/groups/partilha';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { leaveRide, setRideReturnRequests, setRideVisibility } from '@/features/rides/api';
 import { useTheme } from '@/hooks/use-theme';
@@ -37,7 +36,7 @@ import { useUserId } from '@/lib/session';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
-import { Chip } from '@/ui/chip';
+import { ConfirmacaoInline } from '@/ui/confirmacao-inline';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
@@ -98,7 +97,8 @@ export default function PlanoScreen() {
   const doGrupo = useGroupPlans(grupoId ?? null);
 
   const [aTratar, setATratar] = useState(false);
-  const [mostrarGrupos, setMostrarGrupos] = useState(false);
+  const [aConfirmarDesistir, setAConfirmarDesistir] = useState(false);
+  const [avisoDeFecho, setAvisoDeFecho] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   if (!plano) {
@@ -152,21 +152,19 @@ export default function PlanoScreen() {
       setATratar(false);
     }
   }
-  /** Take the plan back from a group: confirm first, it leaves their chat. */
-  function deixarDeAbrir(grupo: SharedGroup) {
-    Alert.alert(
-      `Deixar de abrir a «${grupo.groupName}»?`,
-      'O plano sai da conversa deles e quem de lá disse que ia deixa de contar. Os lugares já aceites na boleia e na casa ficam como estão. Os dois grupos são avisados.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Deixar de abrir',
-          style: 'destructive',
-          onPress: () => void tratar(() => unsharePlan(plano!.id, grupo.groupId)),
-        },
-      ]
-    );
-  }
+  /** Sends the plan to another group; if that group already has an invite for this game, says so instead. */
+  const mandarA = (grupo: { id: string; name: string }) =>
+    void tratar(async () => {
+      try {
+        await sharePlan(plano!.id, grupo.id);
+      } catch (problema) {
+        if (problema instanceof PlanRefused && problema.reason === 'plan_exists') {
+          avisarConviteRepetido(router, grupo, problema.planId);
+          return;
+        }
+        throw problema;
+      }
+    });
 
 
   const abrirBoleiaAoPublico = () => {
@@ -174,61 +172,47 @@ export default function PlanoScreen() {
     if (rideId) void tratar(() => setRideVisibility(rideId, true));
   };
 
-  const fechar = () => {
-    const fecharJa = () => void tratar(() => setPlanStatus(plano.id, 'fechado'));
+  const fecharJa = () =>
+    void tratar(() => setPlanStatus(plano.id, 'fechado')).then((feito) => {
+      if (feito) setAvisoDeFecho(null);
+    });
 
+  /** Closing with nothing missing is immediate; without a car, or with seats to spare, it says so first, here. */
+  const fechar = () => {
     if (!plano.ride) {
-      Alert.alert(
-        'Fechar sem boleia?',
-        'O plano ainda não tem boleia. Podes fechá-lo na mesma — cada um vai como quiser.',
-        [
-          { text: 'Deixa estar', style: 'cancel' },
-          { text: 'Fechar o plano', onPress: fecharJa },
-        ]
-      );
+      setAvisoDeFecho('O plano ainda não tem boleia. Podes fechá-lo na mesma: cada um vai como quiser.');
       return;
     }
     if (livres === 0) {
       fecharJa();
       return;
     }
-
-    // Ainda sobram lugares: lembra o que dá para fazer, mas deixa fechar.
-    const opcoes: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
-    if (souCondutor && !plano.ride.publica) {
-      opcoes.push({ text: 'Abrir a boleia ao público', onPress: abrirBoleiaAoPublico });
-    }
-    if (outrosGrupos.length > 0) {
-      opcoes.push({ text: 'Mandar a outro grupo', onPress: () => setMostrarGrupos(true) });
-    }
-    opcoes.push({ text: 'Fechar mesmo assim', onPress: fecharJa });
-    opcoes.push({ text: 'Deixa estar', style: 'cancel' });
-    Alert.alert(
-      livres === 1 ? 'Ainda sobra 1 lugar no carro' : `Ainda sobram ${livres} lugares no carro`,
-      'Podes chamar malta de fora — abrir a boleia ao público ou mandar o plano a outro grupo. Ou fechar assim mesmo.',
-      opcoes
+    const sobram = livres === 1 ? 'Ainda sobra 1 lugar no carro.' : `Ainda sobram ${livres} lugares no carro.`;
+    setAvisoDeFecho(
+      `${sobram} Podes ${souCondutor && !plano.ride.publica ? 'abrir a boleia ao público ou ' : ''}mandar o plano a outro grupo, em «Chamar mais malta». Ou fechar assim mesmo.`
     );
   };
 
   const desistir = () =>
-    Alert.alert('Desistir do plano?', 'O convite deixa de valer para toda a gente.', [
-      { text: 'Deixa estar', style: 'cancel' },
-      {
-        text: 'Desistir',
-        style: 'destructive',
-        onPress: () =>
-          void tratar(() => setPlanStatus(plano.id, 'cancelado')).then((feito) => {
-            if (feito) router.back();
-          }),
-      },
-    ]);
+    void tratar(() => setPlanStatus(plano.id, 'cancelado')).then((feito) => {
+      if (feito) router.back();
+    });
 
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
 
   const pessoasQueResponderam = [...vao, ...aPensar];
   const podeAbrirAoPublico = aberto && souCondutor && plano.ride !== null && !plano.ride.publica;
-  const podeMandar = aberto && souQuemConvidou && outrosGrupos.length > 0;
+  const podeGerirGrupos = aberto && souQuemConvidou;
+  // Who invited sees every other group of theirs (sent or not); everyone else only the groups it was sent to.
+  const gruposVisiveis: GrupoDoPlano[] = podeGerirGrupos
+    ? [
+        ...outrosGrupos.map((grupo) => ({ id: grupo.id, name: grupo.name, aberto: mandadoPara.includes(grupo.id) })),
+        ...partilhados
+          .filter((grupo) => !outrosGrupos.some((meu) => meu.id === grupo.groupId))
+          .map((grupo) => ({ id: grupo.groupId, name: grupo.groupName, aberto: true })),
+      ]
+    : partilhados.map((grupo) => ({ id: grupo.groupId, name: grupo.groupName, aberto: true }));
 
   return (
     <Screen>
@@ -356,13 +340,13 @@ export default function PlanoScreen() {
 
       <CasasDoPlano plano={plano} grupoId={grupoId ?? plano.groupId} />
 
-      {podeAbrirAoPublico || podeMandar ? (
+      {podeAbrirAoPublico || gruposVisiveis.length > 0 ? (
         <>
-          <SectionHeader title="Chamar mais malta" />
+          <SectionHeader title={podeGerirGrupos ? 'Chamar mais malta' : 'Também aberto a'} />
           <Card style={styles.lista}>
             {podeAbrirAoPublico ? (
               <LinhaGrupo
-                separador={podeMandar}
+                separador={gruposVisiveis.length > 0}
                 leading={<IconCircle name={icons.partilhar} />}
                 title="Abrir a boleia ao público"
                 subtitle="Qualquer adepto pode pedir lugar."
@@ -370,78 +354,18 @@ export default function PlanoScreen() {
                 trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
               />
             ) : null}
-            {podeMandar ? (
-              <>
-                <LinhaGrupo
-                  leading={<IconCircle name={icons.perfil} />}
-                  title="Mandar a outro grupo"
-                  subtitle="Quem recebe vê a boleia e pode pedir lugar."
-                  onPress={() => setMostrarGrupos((atual) => !atual)}
-                  accessibilityLabel={`Mandar a outro grupo. ${mostrarGrupos ? 'Toca para esconder os grupos.' : 'Toca para escolher o grupo.'}`}
-                  trailing={
-                    <Icon
-                      name={mostrarGrupos ? icons.fechar : icons.seguinte}
-                      size={18}
-                      color={theme.textMuted}
-                    />
-                  }
-                />
-                {mostrarGrupos ? (
-                  <View style={[styles.etiquetas, styles.grupos]}>
-                    {outrosGrupos.map((grupo) => (
-                      <Chip
-                        key={grupo.id}
-                        label={grupo.name}
-                        emCartao
-                        selected={mandadoPara.includes(grupo.id)}
-                        onPress={() => {
-                          if (mandadoPara.includes(grupo.id)) return;
-                          void tratar(async () => {
-                            try {
-                              await sharePlan(plano.id, grupo.id);
-                            } catch (problema) {
-                              // That group already has an invite for this game: say so, don't post another.
-                              if (problema instanceof PlanRefused && problema.reason === 'plan_exists') {
-                                avisarConviteRepetido(router, grupo, problema.planId);
-                                return;
-                              }
-                              throw problema;
-                            }
-                          });
-                        }}
-                      />
-                    ))}
-                  </View>
-                ) : null}
-              </>
-            ) : null}
-          </Card>
-        </>
-      ) : null}
-
-      {partilhados.length > 0 ? (
-        <>
-          <SectionHeader title={partilhadoCom(partilhados.map((grupo) => grupo.groupName)) ?? ''} />
-          <Card style={styles.lista}>
-            {partilhados.map((grupo, indice) => (
-              <LinhaGrupo
-                key={grupo.groupId}
-                separador={indice < partilhados.length - 1}
-                leading={<IconCircle name={icons.perfil} />}
-                title={grupo.groupName}
-                subtitle="Veem a boleia e a casa e podem pedir lugar."
-                trailing={
-                  souQuemConvidou ? (
-                    <LinkTexto
-                      perigo
-                      label="Deixar de abrir"
-                      disabled={aTratar}
-                      onPress={() => deixarDeAbrir(grupo)}
-                    />
-                  ) : undefined
-                }
+            {gruposVisiveis.length > 0 ? (
+              <GruposDoPlano
+                grupos={gruposVisiveis}
+                podeGerir={podeGerirGrupos}
+                aTratar={aTratar}
+                onMandar={(grupoId) => {
+                  const grupo = outrosGrupos.find((candidato) => candidato.id === grupoId);
+                  if (grupo) mandarA(grupo);
+                }}
+                onRetirar={(grupoId) => tratar(() => unsharePlan(plano.id, grupoId))}
               />
-            ))}
+            ) : null}
           </Card>
         </>
       ) : null}
@@ -450,16 +374,55 @@ export default function PlanoScreen() {
 
       {aberto && souQuemConvidou ? (
         <View style={styles.bloco}>
-          <Button
-            label="Fechar o plano"
-            icon={icons.selecionado}
-            disabled={aTratar}
-            onPress={fechar}
-          />
+          {avisoDeFecho ? (
+            <ConfirmacaoInline
+              aTratar={aTratar}
+              mensagem={avisoDeFecho}
+              cancelar="Deixa estar"
+              confirmar="Fechar mesmo assim"
+              onCancelar={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+                setAvisoDeFecho(null);
+              }}
+              onConfirmar={fecharJa}
+            />
+          ) : (
+            <Button
+              label="Fechar o plano"
+              icon={icons.selecionado}
+              disabled={aTratar}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+                fechar();
+              }}
+            />
+          )}
           <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
             Também fecha sozinho quando o carro enche.
           </ThemedText>
-          <LinkTexto perigo label="Desistir do plano" onPress={desistir} />
+          {aConfirmarDesistir ? (
+            <ConfirmacaoInline
+              perigo
+              aTratar={aTratar}
+              mensagem="O convite deixa de valer para toda a gente do grupo e de quem o recebeu. Ninguém mais conta como «vou»."
+              cancelar="Continuar com o plano"
+              confirmar="Desistir"
+              onCancelar={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+                setAConfirmarDesistir(false);
+              }}
+              onConfirmar={desistir}
+            />
+          ) : (
+            <LinkTexto
+              perigo
+              label="Desistir do plano"
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+                setAConfirmarDesistir(true);
+              }}
+            />
+          )}
         </View>
       ) : null}
 
