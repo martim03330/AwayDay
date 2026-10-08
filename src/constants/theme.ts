@@ -180,3 +180,6 @@ export const CardShadow = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+/** Amber, like a cold beer: the tasco pin on every map, round so it never looks like the square WC and car parks. */
+export const COR_TASCO = '#C7820A';

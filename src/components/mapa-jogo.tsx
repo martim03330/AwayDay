@@ -20,7 +20,7 @@ import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
 import { CarrosselLocais } from '@/components/carrossel-locais';
 import { corFacilidade, LegendaFacilidade } from '@/components/facilidade-parque';
 import { WcDetalhes } from '@/components/wc-detalhes';
-import { CardShadow, Radius, Spacing } from '@/constants/theme';
+import { CardShadow, COR_TASCO, Radius, Spacing } from '@/constants/theme';
 import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
 import { getCurrentPosition } from '@/features/presence/location';
 import {
@@ -104,6 +104,8 @@ type PontoMapaProps = {
   animar: boolean;
   accessibilityLabel: string;
   onPress: () => void;
+  /** Which pin wins where they overlap; the selected one always comes on top. */
+  zIndex?: number;
   children: (tamanho: number) => ReactNode;
 };
 
@@ -114,6 +116,7 @@ function PontoMapa({
   animar,
   accessibilityLabel,
   onPress,
+  zIndex = 2,
   children,
 }: PontoMapaProps) {
   const aRedesenhar = useRedesenhoTemporario(`${id}-${selecionado}`);
@@ -124,7 +127,15 @@ function PontoMapa({
       coordinate={coordenadas}
       anchor={{ x: 0.5, y: 0.5 }}
       tracksViewChanges={aRedesenhar}
-      onPress={onPress}
+      zIndex={selecionado ? 30 : zIndex}
+      // Without a callout, iOS hands the tap to onPress straight away; and the tap must not reach the map, which
+      // would close what was just opened.
+      tappable
+      onPress={(evento) => {
+        evento.stopPropagation();
+        onPress();
+      }}
+      onSelect={onPress}
       accessibilityLabel={accessibilityLabel}>
       <View style={styles.pontoArea}>
         <Animated.View entering={animar ? ZoomIn.duration(250) : undefined}>
@@ -395,7 +406,8 @@ export function MapaJogo({
             identifier={venue.id}
             coordinate={venue.coordenadas}
             anchor={{ x: 0.5, y: 0.5 }}
-            zIndex={10}
+            // Around the stadium the tascos sit right next to the shield: there they win the tap.
+            zIndex={modo === 'estadio' ? 1 : 10}
             tracksViewChanges={aRedesenharEscudo}
             onPress={aproximarDoEstadio}
             accessibilityLabel={`Escudo do ${clube?.nomeCurto ?? 'clube da casa'}. Toca para veres os tascos e os WC à volta do estádio.`}>
@@ -457,21 +469,22 @@ export function MapaJogo({
                     selecionado={selecao?.tipo === 'local' && selecao.id === ponto.local.id}
                     animar={animar}
                     onPress={() => irParaLocal(ponto.local.id)}
-                    accessibilityLabel={`${ponto.local.nome}${ponto.local.homeFanHeavy ? ', ponto habitual de adeptos da casa' : ''}`}>
+                    accessibilityLabel={`Tasco ${ponto.local.nome}${ponto.local.homeFanHeavy ? ', ponto habitual de adeptos da casa' : ''}`}
+                    zIndex={5}>
                     {(tamanho) => (
                       <View
                         style={[
                           styles.ponto,
+                          styles.pontoTasco,
                           {
-                            width: tamanho,
-                            height: tamanho,
-                            borderRadius: tamanho / 2,
-                            backgroundColor: ponto.local.homeFanHeavy
-                              ? COR_ADEPTOS_DA_CASA
-                              : theme.accent,
+                            width: tamanho + 6,
+                            height: tamanho + 6,
+                            borderRadius: (tamanho + 6) / 2,
+                            backgroundColor: ponto.local.homeFanHeavy ? COR_ADEPTOS_DA_CASA : COR_TASCO,
                           },
-                        ]}
-                      />
+                        ]}>
+                        <Icon name={icons.tasco} size={tamanho * 0.62} color="#FFFFFF" strokeWidth={2.4} />
+                      </View>
                     )}
                   </PontoMapa>
                 ) : ponto.tipo === 'parque' ? (
@@ -626,7 +639,9 @@ export function MapaJogo({
 
       <View style={styles.legenda}>
         <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-          <View style={[styles.pontoLegenda, { backgroundColor: theme.accent }]} />
+          <View style={[styles.pontoLegendaIcone, { backgroundColor: COR_TASCO }]}>
+            <Icon name={icons.tasco} size={9} color="#FFFFFF" strokeWidth={2.6} />
+          </View>
           <ThemedText style={styles.legendaTexto}>Tasco</ThemedText>
         </View>
         <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
@@ -745,6 +760,11 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     boxShadow: '0 1px 4px rgba(19, 36, 27, 0.35)',
   },
+  pontoTasco: {
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pontoParque: {
     borderRadius: 6,
     alignItems: 'center',
@@ -859,6 +879,13 @@ const styles = StyleSheet.create({
   },
   pontoLegendaWc: {
     borderRadius: 3,
+  },
+  pontoLegendaIcone: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dica: {
     fontSize: 14,

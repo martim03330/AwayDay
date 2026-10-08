@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import MapView, { MapMarker } from 'react-native-maps';
 
 import { CarrosselLocais } from '@/components/carrossel-locais';
-import { Radius, Spacing } from '@/constants/theme';
+import { COR_TASCO, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Local, Venue } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
@@ -93,7 +93,7 @@ export function MapaEscolherTasco({
           {locais.map((local) => {
             const focado = local.id === emFocoId;
             const escolhido = local.id === escolhidoId;
-            const tamanho = focado ? 28 : 18;
+            const tamanho = focado ? 30 : 22;
             return (
               <MapMarker
                 // The key includes the state so the custom marker is redrawn when it changes.
@@ -115,17 +115,23 @@ export function MapaEscolherTasco({
                     style={[
                       styles.ponto,
                       {
-                        width: tamanho,
-                        height: tamanho,
-                        borderRadius: tamanho / 2,
+                        width: tamanho + 6,
+                        height: tamanho + 6,
+                        borderRadius: (tamanho + 6) / 2,
                         backgroundColor: escolhido
                           ? theme.highlight
                           : local.homeFanHeavy
                             ? COR_ADEPTOS_DA_CASA
-                            : theme.accent,
+                            : COR_TASCO,
                       },
-                    ]}
-                  />
+                    ]}>
+                    <Icon
+                      name={escolhido ? icons.checkInFeito : icons.tasco}
+                      size={tamanho * 0.62}
+                      color={escolhido ? theme.highlightText : '#FFFFFF'}
+                      strokeWidth={2.4}
+                    />
+                  </View>
                 </View>
               </MapMarker>
             );
@@ -198,8 +204,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ponto: {
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   acao: {
     flex: 1,
