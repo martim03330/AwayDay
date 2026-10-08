@@ -23,7 +23,7 @@ import { formatarNota, plural } from '@/lib/formatos';
 import { estadoDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
 import { precisaDeDormida } from '@/lib/dormida';
-import { avisoDeChuva } from '@/lib/meteorologia';
+import { avisoMeteorologico } from '@/lib/meteorologia';
 import { mostrarRelogio } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
@@ -131,7 +131,7 @@ export default function JogoScreen() {
   const relogioVisivel = mostrarRelogio(jogo, agora);
   // The live strip is short and green: it sits under the header instead of overlapping it.
   const relogioSobreposto = relogioVisivel && estado !== 'a-decorrer';
-  const aviso = estado === 'terminado' ? null : avisoDeChuva(jogo.meteorologia, estadio);
+  const aviso = estado === 'terminado' ? null : avisoMeteorologico(jogo.meteorologia, estadio);
   const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
   // Dormir fora não é só para as ilhas e o estrangeiro: quem é das ilhas também dorme fora para vir ao continente.
   const terra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;

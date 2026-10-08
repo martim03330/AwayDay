@@ -29,7 +29,7 @@ export const definicoesNotificacao: Record<TipoNotificacao, DefinicaoNotificacao
   },
   meteorologia: {
     titulo: 'Aviso de meteorologia',
-    descricao: '3 horas antes do jogo, se a previsão pedir impermeável.',
+    descricao: '3 horas antes do jogo, se a previsão pedir impermeável ou o IPMA tiver aviso laranja ou vermelho.',
     exemplo: {
       titulo: 'Leva o impermeável',
       corpo: 'Há 80% de probabilidade de chuva no Estádio do Mar às 19:00 e a bancada só é coberta em parte.',

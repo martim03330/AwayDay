@@ -8,22 +8,36 @@ export function haPrevisaoDeChuva(meteorologia: Meteorologia | null) {
   return (
     meteorologia.condicao === 'chuva' ||
     meteorologia.condicao === 'aguaceiros' ||
-    meteorologia.probabilidadeChuva >= LIMIAR_PROBABILIDADE_CHUVA
+    (meteorologia.probabilidadeChuva ?? 0) >= LIMIAR_PROBABILIDADE_CHUVA
   );
 }
 
-/** Aviso para mostrar na ficha do jogo quando vai chover e o estádio não é todo coberto. */
-export function avisoDeChuva(meteorologia: Meteorologia | null, venue: Pick<Venue, 'roofCoverage'>) {
-  if (!meteorologia || !haPrevisaoDeChuva(meteorologia) || venue.roofCoverage === 'total') return null;
+/**
+ * Aviso para mostrar na ficha do jogo: primeiro um aviso do IPMA para a zona do estádio (qualquer cobertura), depois
+ * chuva num estádio que não é todo coberto.
+ */
+export function avisoMeteorologico(meteorologia: Meteorologia | null, venue: Pick<Venue, 'roofCoverage'>) {
+  if (!meteorologia) return null;
+  const { aviso } = meteorologia;
+  if (aviso) {
+    return {
+      titulo: `Aviso ${aviso.nivel} do IPMA`,
+      mensagem: `${aviso.tipo} (aviso ${aviso.nivel}) na zona do estádio à hora do jogo. Vai com tempo e atento às indicações.`,
+    };
+  }
+  if (!haPrevisaoDeChuva(meteorologia) || venue.roofCoverage === 'total') return null;
 
-  const probabilidade = `${meteorologia.probabilidadeChuva}%`;
+  const chuva =
+    meteorologia.probabilidadeChuva !== null && meteorologia.probabilidadeChuva > 0
+      ? `${meteorologia.probabilidadeChuva}% de probabilidade de chuva`
+      : 'Chuva prevista';
   return {
     titulo: 'Vem aí chuva',
     mensagem:
       venue.roofCoverage === 'parcial'
-        ? `${probabilidade} de probabilidade de chuva e o estádio só tem cobertura parcial. Leva impermeável ou escolhe bem o lugar.`
+        ? `${chuva} e o estádio só tem cobertura parcial. Leva impermeável ou escolhe bem o lugar.`
         : venue.roofCoverage === 'nenhuma'
-          ? `${probabilidade} de probabilidade de chuva e o estádio não tem cobertura. Impermeável no bolso.`
-          : `${probabilidade} de probabilidade de chuva e ainda não sabemos se a bancada é coberta. Leva impermeável, por via das dúvidas.`,
+          ? `${chuva} e o estádio não tem cobertura. Impermeável no bolso.`
+          : `${chuva} e ainda não sabemos se a bancada é coberta. Leva impermeável, por via das dúvidas.`,
   };
 }

@@ -2,6 +2,31 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-08 — Meteorologia verdadeira, de graça (IPMA e MET Norway)
+
+A meteorologia dos jogos era simulada (`src/mocks/extras-jogos.ts`), embora a app prometa avisar quando chove. Agora vem
+de fontes gratuitas e sem chave. Migração `20261008085417_fixture_weather.sql` e função `sync-weather`:
+- **IPMA** nos estádios em Portugal, ilhas incluídas: o ponto de previsão mais próximo (até 40 km) entre os 423 do
+  IPMA. Usa o intervalo de hora em hora mais próximo do início do jogo (cerca de 3 dias à frente) e depois os de 3 em 3
+  horas (até cerca de 6 dias). Os resumos diários não servem: não têm a temperatura a uma hora certa. O IPMA só dá a
+  probabilidade de chuva de 3 em 3 horas, por isso usa-se a do intervalo mais próximo. As horas do IPMA estão em UTC
+  (confirmado na documentação).
+- **Avisos do IPMA** (amarelo, laranja, vermelho) para a zona do estádio, de 3 horas antes a 3 horas depois do início.
+  A agitação marítima é ignorada.
+- **MET Norway** no estrangeiro (Lens, por exemplo) e quando o IPMA não tem nada que sirva. É gratuito, permite uso
+  comercial com menção da fonte e pede um User-Agent identificado. Fora dos países nórdicos não dá probabilidade de
+  chuva, que fica `null`; a app esconde a percentagem e decide só pelo estado do tempo.
+- **Rejeitado:** o Open-Meteo, que só é grátis para uso não comercial.
+- `fixture_weather` tem leitura pública, como o resto do catálogo; só a Edge Function escreve. O pg_cron chama a função
+  de hora a hora (minuto 25). Se uma fonte falhar, fica a última previsão guardada.
+- **Notificação** cerca de 3 horas antes do jogo (início entre 2 e 4 horas depois da execução) para quem marcou que vai
+  (`fixture_attendance` = `going`), se não desligou o aviso de meteorologia. Envia-se quando há chuva prevista e o
+  estádio não é todo coberto, ou quando há aviso laranja ou vermelho, qualquer que seja a cobertura. Vai uma só vez por
+  pessoa e jogo (`weather_notice`, sem acesso de nenhum cliente, apagada aos 30 dias). O registo é gravado antes de
+  enviar: mais vale perder um aviso do que mandá-lo duas vezes.
+- O cartão mostra a fonte («Previsão IPMA» ou «Previsão MET Norway»), como as duas pedem. O modo demo continua com a
+  meteorologia simulada.
+
 ## 2026-10-07 — Aguentar muitos utilizadores sem pagar
 
 Antes do teste com pessoas reais (15 de outubro), três pontos que podiam obrigar a pagar ou partir com carga. Tudo

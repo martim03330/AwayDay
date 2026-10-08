@@ -10,7 +10,7 @@ import { formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { fimDoJogo } from '@/lib/jogos';
 import { filtrarPorTempoAPe } from '@/lib/locais';
-import { avisoDeChuva } from '@/lib/meteorologia';
+import { avisoMeteorologico } from '@/lib/meteorologia';
 import { LIMIAR_CALOR } from '@/lib/pratos';
 import {
   FASES_DIA_DE_JOGO,
@@ -171,7 +171,7 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
     if (fase === 'a-caminho') {
       const ondeFizesteCheckIn = perto.find((local) => fezCheckIn(local.id));
       const origem = ondeFizesteCheckIn ?? tascoMaisConcorrido(perto, pessoasAqui);
-      const chuva = avisoDeChuva(jogo.meteorologia, venue);
+      const chuva = avisoMeteorologico(jogo.meteorologia, venue);
       const temperatura = jogo.meteorologia?.temperatura;
       const calor = temperatura !== undefined && temperatura >= LIMIAR_CALOR;
       const avisos = (

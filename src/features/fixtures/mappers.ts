@@ -4,12 +4,16 @@ import type {
   FixtureRow,
   MeetingPointRow,
   VenueRow,
+  WeatherRow,
 } from '@/features/fixtures/types';
 import type {
   Clube,
   Competicao,
   Divisao,
+  CondicaoMeteorologica,
   Jogo,
+  Meteorologia,
+  NivelAvisoMeteorologico,
   OrigemPontoEncontro,
   PontoEncontro,
   Regiao,
@@ -52,6 +56,33 @@ function toMeetingPoint(row: MeetingPointRow): PontoEncontro | null {
       // Published for this very fixture.
       jogoOriginal: null,
     },
+  };
+}
+
+const CONDITIONS: Readonly<Record<string, CondicaoMeteorologica>> = {
+  sunny: 'sol',
+  clear: 'limpo',
+  cloudy: 'nublado',
+  showers: 'aguaceiros',
+  rain: 'chuva',
+};
+const WARNING_LEVELS: Readonly<Record<string, NivelAvisoMeteorologico>> = {
+  yellow: 'amarelo',
+  orange: 'laranja',
+  red: 'vermelho',
+};
+
+function toWeather(row: WeatherRow): Meteorologia | null {
+  const condicao = hasKey(CONDITIONS, row.condition) ? CONDITIONS[row.condition] : null;
+  if (!condicao) return null;
+  const nivel = row.warning_level && hasKey(WARNING_LEVELS, row.warning_level) ? WARNING_LEVELS[row.warning_level] : null;
+  return {
+    condicao,
+    temperatura: row.temperature_c,
+    probabilidadeChuva: row.rain_probability,
+    ventoKmh: row.wind_kmh,
+    fonte: row.source === 'ipma' ? 'IPMA' : 'MET Norway',
+    aviso: nivel && row.warning_kind ? { nivel, tipo: row.warning_kind } : null,
   };
 }
 
@@ -166,6 +197,7 @@ function toFixture(
   extras: CatalogExtras['fixtures'],
   clubIds: ReadonlySet<string>,
   venueIds: ReadonlySet<string>,
+  weather: ReadonlyMap<string, Meteorologia>,
   meetingPoints: ReadonlyMap<string, PontoEncontro>
 ): Jogo | null {
   const competition = row.competition_id;
@@ -188,7 +220,7 @@ function toFixture(
     // Postgres returns "+00:00"; the app works with the "Z" form of ISO 8601.
     inicio: new Date(row.kickoff_at).toISOString(),
     horaConfirmada: row.kickoff_confirmed ?? true,
-    meteorologia: extra?.meteorologia ?? null,
+    meteorologia: extra?.meteorologia ?? weather.get(row.id) ?? null,
     pontoEncontro: extra?.pontoEncontro ?? meetingPoints.get(row.id) ?? null,
   };
 }
@@ -266,10 +298,16 @@ export function buildFixtureCatalog(
     if (ponto) meetingPoints.set(row.fixture_id, ponto);
   }
 
+  const weather = new Map<string, Meteorologia>();
+  for (const row of rows.weather ?? []) {
+    const meteorologia = toWeather(row);
+    if (meteorologia) weather.set(row.fixture_id, meteorologia);
+  }
+
   const fixtures = collect(
     rows.fixtures,
     'fixture',
-    (row) => toFixture(row, extras.fixtures, clubIds, venueIds, meetingPoints),
+    (row) => toFixture(row, extras.fixtures, clubIds, venueIds, weather, meetingPoints),
     skipped
   ).sort((a, b) => a.inicio.localeCompare(b.inicio));
 

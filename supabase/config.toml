@@ -503,6 +503,13 @@ verify_jwt = false
 import_map = "./functions/sync-fixtures/deno.json"
 entrypoint = "./functions/sync-fixtures/index.ts"
 
+[functions.sync-weather]
+enabled = true
+# Called only by pg_cron with the x-cron-secret header, checked inside the function.
+verify_jwt = false
+import_map = "./functions/sync-weather/deno.json"
+entrypoint = "./functions/sync-weather/index.ts"
+
 [functions.generate-season-recaps]
 enabled = true
 # Called only by pg_cron with the x-cron-secret header, checked inside the function.

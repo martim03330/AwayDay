@@ -18,11 +18,12 @@ const condicoes: Record<CondicaoMeteorologica, { nome: string; icon: IconName; t
 export function MeteorologiaCard({ meteorologia }: { meteorologia: Meteorologia }) {
   const theme = useTheme();
   const condicao = condicoes[meteorologia.condicao];
+  const chuva = meteorologia.probabilidadeChuva;
 
   return (
     <Card
       style={styles.card}
-      accessibilityLabel={`${condicao.nome}, ${meteorologia.temperatura} graus, ${meteorologia.probabilidadeChuva}% de probabilidade de chuva, vento a ${meteorologia.ventoKmh} quilómetros por hora`}>
+      accessibilityLabel={`${condicao.nome}, ${meteorologia.temperatura} graus, ${chuva !== null ? `${chuva}% de probabilidade de chuva, ` : ''}vento a ${meteorologia.ventoKmh} quilómetros por hora${meteorologia.fonte ? `. Previsão ${meteorologia.fonte}` : ''}`}>
       <IconCircle name={condicao.icon} size={26} tone={condicao.tone} />
       <View style={styles.corpo}>
         <ThemedText type="score" style={styles.temperatura}>
@@ -31,14 +32,19 @@ export function MeteorologiaCard({ meteorologia }: { meteorologia: Meteorologia 
         <ThemedText type="small" themeColor="textSecondary">
           {condicao.nome} à hora do jogo
         </ThemedText>
+        {meteorologia.fonte ? (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.fonte}>
+            Previsão {meteorologia.fonte}
+          </ThemedText>
+        ) : null}
       </View>
       <View style={styles.detalhes}>
-        <View style={styles.detalhe}>
-          <Icon name={icons.probabilidadeChuva} size={16} color={theme.info} />
-          <ThemedText style={[styles.detalheTexto, { color: theme.info }]}>
-            {meteorologia.probabilidadeChuva}%
-          </ThemedText>
-        </View>
+        {chuva !== null ? (
+          <View style={styles.detalhe}>
+            <Icon name={icons.probabilidadeChuva} size={16} color={theme.info} />
+            <ThemedText style={[styles.detalheTexto, { color: theme.info }]}>{chuva}%</ThemedText>
+          </View>
+        ) : null}
         <View style={styles.detalhe}>
           <Icon name={icons.vento} size={16} color={theme.textSecondary} />
           <ThemedText themeColor="textSecondary" style={styles.detalheTexto}>
@@ -63,6 +69,10 @@ const styles = StyleSheet.create({
   temperatura: {
     fontSize: 34,
     lineHeight: 38,
+  },
+  fonte: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   detalhes: {
     gap: 6,

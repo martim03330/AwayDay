@@ -79,11 +79,18 @@ export type Competicao =
 
 export type CondicaoMeteorologica = 'sol' | 'limpo' | 'nublado' | 'aguaceiros' | 'chuva';
 
+export type NivelAvisoMeteorologico = 'amarelo' | 'laranja' | 'vermelho';
+
 export type Meteorologia = {
   condicao: CondicaoMeteorologica;
   temperatura: number;
-  probabilidadeChuva: number;
+  /** `null` when the forecast has none (abroad). */
+  probabilidadeChuva: number | null;
   ventoKmh: number;
+  /** Who made the forecast; absent in the demo's simulated weather. */
+  fonte?: 'IPMA' | 'MET Norway';
+  /** The strongest IPMA warning for the stadium's area around kick-off. */
+  aviso?: { nivel: NivelAvisoMeteorologico; tipo: string } | null;
 };
 
 export type OrigemPontoEncontro = 'clube' | 'camara' | 'policia';

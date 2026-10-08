@@ -57,6 +57,18 @@ export type MeetingPointRow = Pick<
   | 'longitude'
 >;
 
+export type WeatherRow = Pick<
+  Tables<'fixture_weather'>,
+  | 'fixture_id'
+  | 'source'
+  | 'condition'
+  | 'temperature_c'
+  | 'rain_probability'
+  | 'wind_kmh'
+  | 'warning_level'
+  | 'warning_kind'
+>;
+
 export type FixtureCatalogRows = {
   competitions: CompetitionRow[];
   venues: VenueRow[];
@@ -64,4 +76,6 @@ export type FixtureCatalogRows = {
   fixtures: FixtureRow[];
   /** Official meeting points for travelling fans. The bundled catalogue has none. */
   meetingPoints?: MeetingPointRow[];
+  /** Forecast at kick-off for the coming games (from sync-weather). The bundled catalogue has none. */
+  weather?: WeatherRow[];
 };

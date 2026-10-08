@@ -1,13 +1,13 @@
 import type { FixtureCatalogRows } from '@/features/fixtures/types';
 import { supabase } from '@/lib/supabase';
 
-/** Reads the whole catalogue (competitions, venues, clubs and fixtures) in four parallel requests. */
+/** Reads the whole catalogue (competitions, venues, clubs, fixtures, meeting points and weather) in parallel. */
 export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
   if (!supabase) {
     throw new Error('Supabase is not configured: set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY.');
   }
 
-  const [competitions, venues, clubs, fixtures, meetingPoints] = await Promise.all([
+  const [competitions, venues, clubs, fixtures, meetingPoints, weather] = await Promise.all([
     supabase.from('competition').select('id, name, kind, tier'),
     supabase
       .from('venue')
@@ -26,6 +26,9 @@ export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
       .select(
         'fixture_id, name, address, schedule, transport, note, origin, published_by, source_title, source_url, published_on, latitude, longitude'
       ),
+    supabase
+      .from('fixture_weather')
+      .select('fixture_id, source, condition, temperature_c, rain_probability, wind_kmh, warning_level, warning_kind'),
   ]);
 
   if (competitions.error) throw competitions.error;
@@ -33,6 +36,7 @@ export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
   if (clubs.error) throw clubs.error;
   if (fixtures.error) throw fixtures.error;
   if (meetingPoints.error) throw meetingPoints.error;
+  if (weather.error) throw weather.error;
 
   return {
     competitions: competitions.data,
@@ -40,5 +44,6 @@ export async function fetchFixtureCatalogRows(): Promise<FixtureCatalogRows> {
     clubs: clubs.data,
     fixtures: fixtures.data,
     meetingPoints: meetingPoints.data,
+    weather: weather.data,
   };
 }

@@ -1028,6 +1028,53 @@ export type Database = {
           },
         ]
       }
+      fixture_weather: {
+        Row: {
+          condition: string
+          fixture_id: string
+          forecast_for: string
+          rain_probability: number | null
+          source: string
+          temperature_c: number
+          updated_at: string
+          warning_kind: string | null
+          warning_level: string | null
+          wind_kmh: number
+        }
+        Insert: {
+          condition: string
+          fixture_id: string
+          forecast_for: string
+          rain_probability?: number | null
+          source: string
+          temperature_c: number
+          updated_at?: string
+          warning_kind?: string | null
+          warning_level?: string | null
+          wind_kmh: number
+        }
+        Update: {
+          condition?: string
+          fixture_id?: string
+          forecast_for?: string
+          rain_probability?: number | null
+          source?: string
+          temperature_c?: number
+          updated_at?: string
+          warning_kind?: string | null
+          warning_level?: string | null
+          wind_kmh?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixture_weather_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: true
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendship: {
         Row: {
           addressee_id: string
@@ -2053,6 +2100,24 @@ export type Database = {
           },
         ]
       }
+      place_search_cache: {
+        Row: {
+          created_at: string
+          key: string
+          results: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          results: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          results?: Json
+        }
+        Relationships: []
+      }
       place_toilet_answer: {
         Row: {
           created_at: string
@@ -2895,6 +2960,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      route_cache: {
+        Row: {
+          created_at: string
+          distance_m: number
+          duration_s: number
+          key: string
+          toll_segments: Json
+        }
+        Insert: {
+          created_at?: string
+          distance_m: number
+          duration_s: number
+          key: string
+          toll_segments?: Json
+        }
+        Update: {
+          created_at?: string
+          distance_m?: number
+          duration_s?: number
+          key?: string
+          toll_segments?: Json
+        }
+        Relationships: []
       }
       season: {
         Row: {
@@ -3823,6 +3912,39 @@ export type Database = {
           },
         ]
       }
+      weather_notice: {
+        Row: {
+          fixture_id: string
+          profile_id: string
+          sent_at: string
+        }
+        Insert: {
+          fixture_id: string
+          profile_id: string
+          sent_at?: string
+        }
+        Update: {
+          fixture_id?: string
+          profile_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_notice_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weather_notice_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_challenge: {
         Row: {
           created_at: string
@@ -4009,6 +4131,7 @@ export type Database = {
       decline_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
       delete_cancelled_rides: { Args: never; Returns: undefined }
       delete_old_home_fan_reports: { Args: never; Returns: number }
+      delete_old_map_cache: { Args: never; Returns: undefined }
       delete_old_stay_plans: { Args: never; Returns: number }
       delete_stale_fan_places: { Args: never; Returns: number }
       division_promotion_min_xp: { Args: never; Returns: number }
@@ -4551,6 +4674,10 @@ export type Database = {
           my_balance_cents: number
           total_cents: number
         }[]
+      }
+      nearest_municipality_name: {
+        Args: { p_latitude: number; p_longitude: number }
+        Returns: string
       }
       new_invite_code: { Args: never; Returns: string }
       noise_ranking: {

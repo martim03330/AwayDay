@@ -49,6 +49,9 @@ export function NotificacoesPush() {
           router.push('/jogos');
         }
       }
+      if (tipo === 'weather' && typeof jogoId === 'string' && obterJogo(jogoId)) {
+        router.push({ pathname: '/jogos/[jogoId]', params: { jogoId } });
+      }
       if (tipo === 'recap') router.push('/perfil/retrospetiva');
       if (tipo === 'meeting-point-draft') router.push('/perfil/pontos-de-encontro');
       const rideId =
