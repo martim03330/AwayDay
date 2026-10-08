@@ -73,3 +73,24 @@ export function linkGoogleFlights({
   });
   return `${GOOGLE_FLIGHTS}?${parametros}`;
 }
+
+/** Further than this from an island stadium, a meeting point is not on that island (São Miguel is ~65 km long). */
+const RAIO_DA_ILHA_KM = 80;
+
+/**
+ * The notice for a ride to a game on an island: a car only makes sense for someone already there (or arriving by
+ * plane or boat before the game). `null` on the mainland and abroad.
+ */
+export function avisoDeBoleiaNaIlha(regiao: Regiao) {
+  if (regiao !== 'madeira' && regiao !== 'acores') return null;
+  const onde = regiao === 'madeira' ? 'na Madeira' : 'nos Açores';
+  return {
+    titulo: `Jogo ${onde}`,
+    mensagem: `Esta boleia faz sentido se já estiveres na ilha do estádio, ou se lá chegares de avião ou barco antes do jogo. O ponto de encontro tem de ser na ilha: do continente não se chega de carro.`,
+  };
+}
+
+/** Whether a meeting point is on the island of the stadium (only asked for island games). */
+export function partidaNaIlha(partida: Coordenadas, estadio: Coordenadas) {
+  return distanciaEmLinhaRetaKm(partida, estadio) <= RAIO_DA_ILHA_KM;
+}

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { datasDaEstadia } from '@/lib/dormida';
-import { AEROPORTOS, aeroportoMaisPerto, linkGoogleFlights, precisaDeVoo } from '@/lib/voos';
+import {
+  AEROPORTOS,
+  aeroportoMaisPerto,
+  avisoDeBoleiaNaIlha,
+  linkGoogleFlights,
+  partidaNaIlha,
+  precisaDeVoo,
+} from '@/lib/voos';
 
 const lisboa = AEROPORTOS.find((a) => a.codigo === 'LIS')!;
 
@@ -59,5 +66,24 @@ describe('linkGoogleFlights', () => {
   it('leaves the country out when we do not have it', () => {
     const link = linkGoogleFlights({ origem: lisboa, cidade: 'Milão', pais: '', estadia });
     expect(new URL(link).searchParams.get('q')).toBe('Flights from LIS to Milão on 2026-10-12 through 2026-10-14');
+  });
+});
+
+describe('boleias para jogos nas ilhas', () => {
+  const funchal = { latitude: 32.646, longitude: -16.928 };
+  const pontaDelgada = { latitude: 37.748, longitude: -25.667 };
+
+  it('only warns for the islands', () => {
+    expect(avisoDeBoleiaNaIlha('madeira')?.titulo).toBe('Jogo na Madeira');
+    expect(avisoDeBoleiaNaIlha('acores')?.titulo).toBe('Jogo nos Açores');
+    expect(avisoDeBoleiaNaIlha('continente')).toBeNull();
+    expect(avisoDeBoleiaNaIlha('estrangeiro')).toBeNull();
+  });
+
+  it('a meeting point must be on the island of the stadium', () => {
+    expect(partidaNaIlha({ latitude: 32.74, longitude: -16.69 }, funchal)).toBe(true); // Machico
+    expect(partidaNaIlha({ latitude: 38.72, longitude: -9.14 }, funchal)).toBe(false); // Lisboa
+    expect(partidaNaIlha({ latitude: 37.82, longitude: -25.15 }, pontaDelgada)).toBe(true); // Nordeste, São Miguel
+    expect(partidaNaIlha({ latitude: 38.66, longitude: -27.22 }, pontaDelgada)).toBe(false); // Terceira
   });
 });

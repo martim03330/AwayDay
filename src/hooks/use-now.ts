@@ -19,3 +19,16 @@ export function useNow(intervalMs = DEFAULT_INTERVAL_MS) {
 
   return real + desvioMs;
 }
+
+/**
+ * The real time, refreshed every `intervalMs`, ignoring demo mode's simulated hour: for what the server decides by
+ * the real clock (a plan freezes at the real kick-off).
+ */
+export function useRealNow(intervalMs = DEFAULT_INTERVAL_MS) {
+  const [agora, setAgora] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setAgora(Date.now()), intervalMs);
+    return () => clearInterval(interval);
+  }, [intervalMs]);
+  return agora;
+}

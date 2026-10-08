@@ -2,6 +2,24 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-08 — O plano fica parado no apito inicial, aviso nas boleias para as ilhas e sem NIF público
+
+- **Plano depois do jogo:** a partir do apito inicial, o plano é uma recordação de quem foi.
+  - **No servidor** (migrações `20261008160000` e `20261008160100`): triggers recusam com `fixture_over` respostas
+    novas, mandar o plano a outro grupo, votos na casa, e mudanças de estado, carro ou casa.
+  - **Quem é travado:** só pessoas (`auth.uid()` presente, também dentro das RPCs). As tarefas do servidor e as
+    cascatas continuam a funcionar, e retirar a resposta ou o plano de um grupo nunca é bloqueado.
+  - **Na app:** o cartão e o ecrã do plano usam a hora real (`useRealNow`, não a do modo demo), porque é a que o
+    servidor usa. Escondem os botões, mostram «O jogo já começou» ou «O jogo já foi», e resumem o carro e a casa só
+    para leitura. «Quem vai» passa a «Quem foi».
+- **Boleias para as ilhas:** ao oferecer boleia para um jogo na Madeira ou nos Açores, aparece um aviso: a boleia faz
+  sentido para quem já está na ilha. Um ponto de encontro a mais de 80 km do estádio (fora da ilha) não deixa calcular
+  o percurso. De qualquer forma, o router não encontraria estrada do continente.
+- **Sem NIF nos textos legais:** a app é gratuita e não é um negócio, por isso os deveres de prestador do DL 7/2004
+  (art. 10.º) e de comerciante do DSA não se aplicam, e o RGPD só pede identidade e contacto. O NIF saiu da app, das
+  páginas geradas e do repositório público `awayday-legal`, cujo único commit foi substituído por um sem NIF. Volta,
+  com uma morada comercial, no dia em que a app tiver receitas.
+
 ## 2026-10-08 — Correções da revisão de segurança
 
 Revisão completa (base de dados real, 13 Edge Functions e app) antes do teste de 15 de outubro. Migração

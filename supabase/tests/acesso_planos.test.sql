@@ -324,6 +324,22 @@ select pg_temp.expect('and X got into no trip accounts of that car',
   (select count(*)::integer from public.trip_session_member as m join public.trip_session as t on t.id = m.session_id
    where t.ride_id = pg_temp.id('ride') and m.profile_id = 'ad000007-0000-4000-8000-0000000000e1'), 0);
 
+-- 10. Once the game kicks off the plan is a record: nobody answers, closes or reopens it any more; leaving still works.
+reset role;
+update public.fixture set kickoff_at = now() - interval '1 hour' where id = pg_temp.jogo();
+set local role authenticated;
+select pg_temp.as_user('ad000007-0000-4000-8000-0000000000e1');
+select pg_temp.expect('after kick-off nobody answers a plan',
+  pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('px'), 'talvez')), 'fixture_over');
+select pg_temp.expect('after kick-off the plan cannot be closed or reopened',
+  pg_temp.refusal(format('select public.set_fixture_plan_status(%L, %L)', pg_temp.id('px'), 'fechado')), 'fixture_over');
+select pg_temp.expect('after kick-off taking back one''s answer still works',
+  pg_temp.refusal(format('select public.answer_fixture_plan(%L, null)', pg_temp.id('px'))), 'accepted');
+reset role;
+select set_config('request.jwt.claims', '', true);
+select pg_temp.expect('server jobs can still change it (no person behind them)',
+  pg_temp.refusal(format('update public.fixture_plan set status = %L where id = %L', 'fechado', pg_temp.id('px'))), 'accepted');
+
 reset role;
 select count(*) as checks_passed from expect_log;
 

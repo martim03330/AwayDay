@@ -42,9 +42,11 @@ import { CRIAR_HORAS_ANTES } from '@/lib/regras-boleia';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { usePlanosJogos } from '@/state/planos-jogos';
+import { avisoDeBoleiaNaIlha, partidaNaIlha } from '@/lib/voos';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import type { Coordenadas } from '@/mocks/tipos';
+import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
@@ -349,7 +351,11 @@ export default function OferecerBoleiaScreen() {
     partida !== null &&
     Math.abs(aquiEstou.latitude - partida.latitude) < 0.0002 &&
     Math.abs(aquiEstou.longitude - partida.longitude) < 0.0002;
-  const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null;
+  // A game on an island: the car only makes sense on that island, so the meeting point must be there.
+  const avisoIlha = estadio ? avisoDeBoleiaNaIlha(estadio.regiao) : null;
+  const foraDaIlha =
+    avisoIlha !== null && partida !== null && estadio !== undefined && !partidaNaIlha(partida, estadio.coordenadas);
+  const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null && !foraDaIlha;
   const cotacao = cotacoes?.find((candidata) => candidata.option === escolhida) ?? null;
   const parqueEscolhido = parquesDoEstadio.find((parque) => parque.id === parqueId) ?? null;
   const minutosAPeDoParque = minutosAPe(parqueEscolhido?.distanceM ?? null);
@@ -523,6 +529,7 @@ export default function OferecerBoleiaScreen() {
 
   return (
     <Screen>
+      {avisoIlha ? <Aviso title={avisoIlha.titulo} message={avisoIlha.mensagem} icon={icons.aviao} /> : null}
       <SectionHeader title="Ponto de encontro" trailing="Toca no mapa para acertar" />
       <Card>
         <View style={styles.mapaArea}>
@@ -903,6 +910,10 @@ export default function OferecerBoleiaScreen() {
           {partida === null ? (
             <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
               Põe primeiro o ponto de encontro no mapa.
+            </ThemedText>
+          ) : foraDaIlha ? (
+            <ThemedText type="small" themeColor="dangerText" style={styles.centro}>
+              Este ponto de encontro não é na ilha do estádio. Escolhe um sítio na ilha.
             </ThemedText>
           ) : null}
         </>

@@ -7,6 +7,7 @@ import { Spacing } from '@/constants/theme';
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
 import { CartaoDaBoleia } from '@/features/groups/components/CartaoDaBoleia';
 import { CasasDoPlano } from '@/features/groups/components/CasasDoPlano';
+import { avisoDoPlanoFechado, faseDoPlano } from '@/features/groups/fase-do-plano';
 import { GruposDoPlano, type GrupoDoPlano } from '@/features/groups/components/GruposDoPlano';
 import { avisarConviteRepetido } from '@/features/groups/convite-repetido';
 import {
@@ -29,6 +30,7 @@ import {
 } from '@/features/groups/plans';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { leaveRide, setRideReturnRequests, setRideVisibility } from '@/features/rides/api';
+import { useRealNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
@@ -62,6 +64,8 @@ function mensagemDeRecusa(erro: unknown) {
       return 'O carro já saiu.';
     case 'not_shared':
       return 'Esse grupo já não tinha o plano.';
+    case 'fixture_over':
+      return 'O jogo já começou: o plano já não muda.';
     case 'driver_not_in_plan':
       return 'Só dá para usar o carro de alguém do plano. Pede ao condutor que entre no grupo, ou pede lugar na boleia.';
     default:
@@ -100,6 +104,7 @@ export default function PlanoScreen() {
   const [aConfirmarDesistir, setAConfirmarDesistir] = useState(false);
   const [avisoDeFecho, setAvisoDeFecho] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const agoraReal = useRealNow(60 * 1000);
 
   if (!plano) {
     return (
@@ -118,7 +123,10 @@ export default function PlanoScreen() {
     );
   }
 
-  const aberto = plano.status === 'aberto';
+  // From kick-off the plan is a record of who went: nothing changes any more (the server refuses it too).
+  const fase = faseDoPlano(plano, agoraReal);
+  const congelado = fase !== 'antes';
+  const aberto = plano.status === 'aberto' && !congelado;
   const souQuemConvidou = plano.isMine;
   const souCondutor = plano.ride?.driverId === userId;
   const livres = lugaresLivres(plano);
@@ -228,10 +236,19 @@ export default function PlanoScreen() {
         onRespondido={() => void queryClient.invalidateQueries({ queryKey: plansKey() })}
       />
 
+      {fase !== 'antes' ? (
+        <Card style={styles.recordacao}>
+          <IconCircle name={fase === 'a-decorrer' ? icons.horario : icons.album} tone="neutral" />
+          <ThemedText themeColor="textSecondary" style={styles.flex}>
+            {avisoDoPlanoFechado(fase)}
+          </ThemedText>
+        </Card>
+      ) : null}
+
       {pessoasQueResponderam.length > 0 ? (
         <>
           <SectionHeader
-            title="Quem vai"
+            title={congelado ? 'Quem foi' : 'Quem vai'}
             trailing={vao.length > 0 ? String(vao.length) : undefined}
           />
           <Card style={styles.lista}>
@@ -262,7 +279,31 @@ export default function PlanoScreen() {
       ) : null}
 
       <SectionHeader title="Boleia" />
-      {plano.ride ? (
+      {congelado ? (
+        <Card style={styles.lista}>
+          <LinhaGrupo
+            leading={<IconCircle name={icons.carro} tone={plano.ride ? 'green' : 'neutral'} />}
+            title={plano.ride ? `Carro de ${plano.ride.driverName}` : 'Sem boleia no plano'}
+            subtitle={
+              plano.ride
+                ? plural(plano.ride.seatsTaken, 'pessoa foi no carro', 'pessoas foram no carro')
+                : 'Cada um foi como quis.'
+            }
+            onPress={
+              plano.ride
+                ? () =>
+                    router.push({
+                      pathname: '/jogos/boleia',
+                      params: { rideId: plano.ride?.id ?? '', jogoId: plano.fixtureId },
+                    })
+                : undefined
+            }
+            trailing={
+              plano.ride ? <Icon name={icons.seguinte} size={18} color={theme.textMuted} /> : undefined
+            }
+          />
+        </Card>
+      ) : plano.ride ? (
         <CartaoDaBoleia
           boleia={plano.ride}
           fotoDoCondutor={fotoDe(plano.ride.driverId)}
@@ -338,7 +379,22 @@ export default function PlanoScreen() {
         </Card>
       )}
 
-      <CasasDoPlano plano={plano} grupoId={grupoId ?? plano.groupId} />
+      {congelado ? (
+        plano.stay ? (
+          <>
+            <SectionHeader title="Dormida" />
+            <Card style={styles.lista}>
+              <LinhaGrupo
+                leading={<IconCircle name={icons.casa} />}
+                title={`Casa de ${plano.stay.ownerName}`}
+                subtitle={plural(plano.stay.taken, 'pessoa com cama', 'pessoas com cama')}
+              />
+            </Card>
+          </>
+        ) : null
+      ) : (
+        <CasasDoPlano plano={plano} grupoId={grupoId ?? plano.groupId} />
+      )}
 
       {podeAbrirAoPublico || gruposVisiveis.length > 0 ? (
         <>
@@ -426,7 +482,7 @@ export default function PlanoScreen() {
         </View>
       ) : null}
 
-      {plano.status === 'fechado' ? (
+      {plano.status === 'fechado' && !congelado ? (
         <View style={styles.bloco}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
             A sessão da viagem abre na véspera do jogo, nos Jogos.
@@ -458,6 +514,14 @@ const styles = StyleSheet.create({
   },
   centro: {
     textAlign: 'center',
+  },
+  recordacao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.twoAndHalf,
+  },
+  flex: {
+    flex: 1,
   },
   etiquetas: {
     flexDirection: 'row',

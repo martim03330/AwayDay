@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { avisoDoPlanoFechado, faseDoPlano } from '@/features/groups/fase-do-plano';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import {
   answerPlan,
@@ -9,6 +10,7 @@ import {
   type PlanAnswer,
 } from '@/features/groups/plans';
 import { conviteDoCartao, origemDoPlano } from '@/features/groups/partilha';
+import { useRealNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
@@ -111,7 +113,10 @@ export function CartaoDoPlano({
   const [aResponder, setAResponder] = useState<PlanAnswer | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  const aberto = plano.status === 'aberto';
+  // From kick-off the plan is a record: no answer buttons (the server refuses them too).
+  const agora = useRealNow(60 * 1000);
+  const fase = faseDoPlano(plano, agora);
+  const aberto = plano.status === 'aberto' && fase === 'antes';
   const convite = conviteDoCartao(quemConvidou, plano, grupoAtualId);
   const origem = origemDoPlano(plano, grupoAtualId);
 
@@ -126,7 +131,9 @@ export function CartaoDoPlano({
       setErro(
         problema instanceof PlanRefused && problema.reason === 'plan_closed'
           ? 'O plano já fechou.'
-          : problema instanceof PlanRefused && problema.reason === 'already_going'
+          : problema instanceof PlanRefused && problema.reason === 'fixture_over'
+            ? 'O jogo já começou: o plano já não muda.'
+            : problema instanceof PlanRefused && problema.reason === 'already_going'
             ? 'Já vais a este jogo com outro grupo.'
             : 'Não deu para responder. Tenta outra vez.'
       );
@@ -187,13 +194,17 @@ export function CartaoDoPlano({
           color={plano.status === 'fechado' ? theme.accentInk : theme.textSecondary}
         />
         <ThemedText type="small" themeColor="textSecondary" style={styles.flex} numberOfLines={1}>
-          {`${respostas(plano)} · ${estadoCurto(plano)}`}
+          {`${respostas(plano)} · ${fase === 'antes' ? estadoCurto(plano) : fase === 'a-decorrer' ? 'a decorrer' : 'jogo terminado'}`}
         </ThemedText>
       </View>
 
       {vaisComOutroGrupo ? (
         <ThemedText type="small" style={{ color: theme.warningText }}>
           {`Já vais a este jogo com «${vaisComOutroGrupo}».`}
+        </ThemedText>
+      ) : fase !== 'antes' ? (
+        <ThemedText type="small" themeColor="textMuted">
+          {avisoDoPlanoFechado(fase)}
         </ThemedText>
       ) : aberto ? (
         <View style={styles.botoes}>
