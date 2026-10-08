@@ -30,6 +30,16 @@ export function mensagemDeRecusaDasContas(erro: unknown) {
       return 'Essa pessoa já tem despesas nestas contas. Apaga-as primeiro, se for engano.';
     case 'last_person':
       return 'Umas contas não ficam sem ninguém.';
+    case 'more_than_owed':
+      return 'Isso é mais do que deves a essa pessoa. Marca só o que lhe pagaste da tua dívida.';
+    case 'nothing_owed':
+      return 'Não deves nada a essa pessoa nestas contas.';
+    case 'confirmed_settlement':
+      return 'Já confirmaste este pagamento. Só quem pagou o pode apagar, se foi engano.';
+    case 'not_involved':
+      return 'Só lanças despesas que pagaste ou em que entraste.';
+    case 'not_session_owner':
+      return 'Só quem abriu estas contas (ou o condutor) pode tirar outras pessoas ou apagá-las.';
     case 'rate_limited':
       return 'Já lançaste muitas despesas hoje. Continua amanhã.';
     default:

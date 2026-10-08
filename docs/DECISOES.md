@@ -2,6 +2,60 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-08 — Correções da revisão de segurança
+
+Revisão completa (base de dados real, 13 Edge Functions e app) antes do teste de 15 de outubro. Migração
+`20261008110000_security_fixes.sql`, funções e app:
+- **Planos:** só se liga a um plano a boleia ou a casa de alguém que vê o plano (o condutor ou o dono está no grupo
+  ou num grupo a quem o plano foi mandado). Isto é verificado ao ligar e outra vez ao entrar, e a sessão de contas
+  do plano só adota a sessão de uma boleia nessas condições. Antes, quem criava um plano podia meter-se na boleia
+  de um desconhecido sem aprovação e lançar-lhe despesas. Entrar numa casa do plano também exige `can_share_house`.
+- **Ponto de partida das boleias:** o quadro de boleias dá o ponto exato só ao condutor e aos passageiros aceites;
+  os outros recebem-no arredondado a duas casas decimais (cerca de 1 km). O pin já não começa na posição GPS: o mapa
+  centra ali, mas o condutor tem de tocar num sítio, e se usar a posição atual aparece um aviso.
+- **Perfis:** `profile_cards` e as fotos de perfil só para quem tem razão para ver a pessoa (`can_see_profile_card`:
+  caminhos cruzados, condutor com boleia aberta, alguém num plano que se vê, admin), nunca para quem foi bloqueado.
+  A pasta `avatars` deixou de se poder listar.
+- **Dinheiro:**
+  - Um acerto registado por quem paga não pode passar do que deve: o saldo do pagador tem de ser negativo, o de
+    quem recebe positivo, e o valor fica limitado ao menor dos dois.
+  - Um acerto confirmado só o pagador o apaga.
+  - Uma despesa só a lança quem a pagou ou quem entra nela.
+  - Só quem abriu as contas, ou o condutor, tira outras pessoas ou apaga a sessão; cada pessoa pode sair sozinha.
+- **Preço das boleias:** consumo entre 3 e 15 L/100 km e combustível entre 1,000 e 2,600 €/L, na app e no servidor.
+  Os passageiros já viam a distância, o combustível e as portagens.
+- **Mapa dos tascos:**
+  - Só contam contas com pelo menos 3 dias.
+  - Os números saem arredondados para baixo a múltiplos de 5.
+  - O agregado só é publicado pela tarefa de 5 em 5 minutos, já não a cada check-in.
+  - Assim, 4 contas falsas já não revelam uma pessoa sozinha nem o clube dela. Custo aceite: contas novas (os
+    testadores de dia 15) só aparecem no mapa ao fim de 3 dias.
+- **Fotos:** todas as fotos são regravadas em JPEG antes de enviar (`src/lib/foto-para-enviar.ts`,
+  `expo-image-manipulator`). No Android o seletor copiava o GPS do EXIF para a foto enviada.
+- **Sessão:** guardada no Keychain/Keystore (`expo-secure-store`, em pedaços de 1800 caracteres, só neste aparelho e
+  fora das cópias de segurança). Uma sessão antiga em AsyncStorage passa para lá na primeira leitura. O
+  `npx expo install` acrescentou o plugin `expo-secure-store` ao `app.json`.
+- **Ligações das casas:** só Airbnb (com `abnb.me`) e Booking, na base de dados e na app. O botão diz o site e mostra
+  o domínio que vai abrir.
+- **Apagar a conta:** apaga também as pastas da pessoa em `avatars` e `place-photos`. As fotos de grupo e de viagem
+  ficam, porque são memórias do grupo.
+- **Fotos de grupo:** só quem enviou o ficheiro, ou o dono do grupo, o substitui ou apaga.
+- **Gastos com IA:** registo à parte (`ai_usage_ledger`), sem ligação ao perfil, preenchido por triggers.
+  `ai_usage_since` lê daí, e apagar uma conta já não apaga o que ela gastou.
+- **Notificações:**
+  - `social-notify` publicada com `verify_jwt = false`. Antes, o gateway recusava as chamadas da base de dados e as
+    notificações de conversa, convites, amigos e dinheiro perdiam-se.
+  - O envio vai em blocos de 100, para todos os telemóveis.
+  - Os pedidos de lugar respeitam os bloqueios.
+- **Rotas a pé sem conta:** o limite usa o último endereço de `x-forwarded-for`, que é o que o gateway acrescenta.
+- **Ficou de fora, de propósito:**
+  - App Links (precisam de um domínio próprio).
+  - Proteção contra palavras-passe divulgadas (só no plano pago).
+  - O limite comum do formulário de opinião sem conta.
+  - «Fui ao jogo» declarado pela própria pessoa (não conta para carimbos nem para o ranking).
+  - Passagem de um código de notificações conhecido para outra conta (os códigos não são expostos).
+  - Plausibilidade do GPS.
+
 ## 2026-10-08 — Meteorologia verdadeira, de graça (IPMA e MET Norway)
 
 A meteorologia dos jogos era simulada (`src/mocks/extras-jogos.ts`), embora a app prometa avisar quando chove. Agora vem

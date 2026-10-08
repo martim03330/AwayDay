@@ -1,7 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 
 import type { PlaceCatalogRows, PlaceScoreRow } from '@/features/places/types';
-import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
+import { fotoParaEnviar } from '@/lib/foto-para-enviar';
 import { supabase } from '@/lib/supabase';
 
 /** The API returns at most this many rows per request (max_rows). */
@@ -123,11 +123,12 @@ export async function suggestPlacePhoto(
   mimeType: string
 ) {
   const bucket = client().storage.from('place-photos');
-  const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/heic' ? 'heic' : 'jpg';
-  const path = `anonimas/${placeId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+  // Re-encoded without metadata (no GPS from where the photo was taken), so always JPEG.
+  const foto = await fotoParaEnviar(uri);
+  const path = `anonimas/${placeId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.jpg`;
 
-  const upload = await bucket.upload(path, base64ParaBytes(await lerFicheiroEmBase64(uri)), {
-    contentType: mimeType,
+  const upload = await bucket.upload(path, foto.bytes, {
+    contentType: foto.mimeType,
     upsert: false,
   });
   if (upload.error) throw upload.error;

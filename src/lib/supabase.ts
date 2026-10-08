@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 
 import type { Database } from '@/lib/database.types';
+import { sessaoSegura } from '@/lib/sessao-segura';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -17,7 +18,8 @@ const noServidor = typeof window === 'undefined';
 /**
  * Supabase client with the publishable key only (RLS protects the data).
  * `null` when the environment variables are missing: the app keeps working with its bundled data,
- * signed out. The session is kept in AsyncStorage so people stay signed in between launches.
+ * signed out. The session is kept in the phone's secure storage (Keychain / Keystore) so people stay signed in
+ * between launches without the refresh token lying in plain files; on the web, where there is none, in AsyncStorage.
  */
 export const supabase =
   supabaseUrl && supabasePublishableKey
@@ -25,7 +27,7 @@ export const supabase =
         auth: noServidor
           ? { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
           : {
-              storage: AsyncStorage,
+              storage: Platform.OS === 'web' ? AsyncStorage : sessaoSegura,
               persistSession: true,
               autoRefreshToken: true,
               detectSessionInUrl: false,

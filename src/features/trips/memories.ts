@@ -1,4 +1,4 @@
-import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
+import { fotoParaEnviar } from '@/lib/foto-para-enviar';
 import { supabase } from '@/lib/supabase';
 
 // As recordações de uma viagem: quem foi, quanto se gastou (e a maior extravagância) e o álbum. As fotos são de quem
@@ -90,13 +90,12 @@ export async function addTripPhoto(
   input: { uri: string; mimeType: string },
   caption?: string
 ) {
-  const extensao =
-    input.mimeType === 'image/png' ? 'png' : input.mimeType === 'image/heic' ? 'heic' : 'jpg';
-  const caminho = `${sessionId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.${extensao}`;
-  const bytes = base64ParaBytes(await lerFicheiroEmBase64(input.uri));
+  // Re-encoded without metadata (no GPS from where the photo was taken), so always JPEG.
+  const { bytes, mimeType } = await fotoParaEnviar(input.uri);
+  const caminho = `${sessionId}/${Date.now()}-${Math.round(Math.random() * 1e6)}.jpg`;
   const subida = await client()
     .storage.from(BALDE)
-    .upload(caminho, bytes, { contentType: input.mimeType, upsert: false });
+    .upload(caminho, bytes, { contentType: mimeType, upsert: false });
   if (subida.error) throw subida.error;
   const { error } = await client().rpc('add_trip_photo', {
     p_session_id: sessionId,

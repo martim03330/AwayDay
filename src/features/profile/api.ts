@@ -9,7 +9,7 @@ import type {
   NotificationPreferences,
   UsualTransport,
 } from '@/features/profile/types';
-import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
+import { fotoParaEnviar } from '@/lib/foto-para-enviar';
 import { supabase } from '@/lib/supabase';
 
 function client() {
@@ -214,14 +214,13 @@ export async function saveProfilePhoto(
   userId: string,
   input: { uri: string; mimeType: string }
 ): Promise<string | null> {
-  const extensao =
-    input.mimeType === 'image/png' ? 'png' : input.mimeType === 'image/heic' ? 'heic' : 'jpg';
-  const caminho = `${userId}/${Date.now()}.${extensao}`;
-  const bytes = base64ParaBytes(await lerFicheiroEmBase64(input.uri));
+  // Re-encoded without metadata (no GPS from where the photo was taken), so always JPEG.
+  const { bytes, mimeType } = await fotoParaEnviar(input.uri);
+  const caminho = `${userId}/${Date.now()}.jpg`;
 
   const subida = await client()
     .storage.from(BALDE_FOTOS)
-    .upload(caminho, bytes, { contentType: input.mimeType, upsert: false });
+    .upload(caminho, bytes, { contentType: mimeType, upsert: false });
   if (subida.error) throw subida.error;
 
   const anterior = await client()

@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { ligacaoDeCasaValida } from '@/lib/dormida';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -49,6 +50,10 @@ function mensagemDeRecusa(erro: unknown) {
         return 'A casa encheu entretanto.';
       case 'stay_not_locked':
         return 'A escolha da casa voltou a abrir. Espera que fechem outra vez.';
+      case 'owner_not_in_plan':
+        return 'Só dá para escolher a casa de alguém do plano.';
+      case 'needs_history':
+        return 'Para entrar numa casa partilhada precisas de ter as boleias em dia.';
       default:
         return 'Não deu para fazer isso. Tenta outra vez.';
     }
@@ -137,7 +142,7 @@ export function CasasDoPlano({ plano, grupoId }: CasasDoPlanoProps) {
           onSair={() => void tratar('sair', () => leaveStayPlace(escolhida.id))}
           onReabrir={() => void tratar('reabrir', () => setPlanStayLocked(plano.id, false))}
           onVerAnuncio={
-            escolhida.listingUrl
+            escolhida.listingUrl && ligacaoDeCasaValida(escolhida.listingUrl)
               ? () =>
                   void WebBrowser.openBrowserAsync(escolhida.listingUrl ?? '').catch(
                     () => undefined
@@ -164,7 +169,7 @@ export function CasasDoPlano({ plano, grupoId }: CasasDoPlanoProps) {
                   void tratar(`escolher-${casa.id}`, () => setPlanStay(plano.id, casa.id))
                 }
                 onVerAnuncio={
-                  casa.listingUrl
+                  casa.listingUrl && ligacaoDeCasaValida(casa.listingUrl)
                     ? () =>
                         void WebBrowser.openBrowserAsync(casa.listingUrl ?? '').catch(
                           () => undefined

@@ -118,6 +118,14 @@ Deno.serve(async (request) => {
     const passengerId = typeof body?.profile_id === 'string' ? body.profile_id : null;
     if (!passengerId) return json(400, { error: 'bad_request' });
     if (status === 'requested' && oldStatus !== 'requested') {
+      // Someone the driver blocked does not reach them, as in the other notifications.
+      const blocked = await admin
+        .from('user_block')
+        .select('blocker_id')
+        .eq('blocker_id', driverId)
+        .eq('blocked_id', passengerId)
+        .maybeSingle();
+      if (blocked.data) return json(200, { sent: 0 });
       recipients = [driverId];
       title = 'Pedido de lugar';
       text = `${await nameOf(admin, passengerId)} quer ir na tua boleia para ${jogo}. Responde até às ${hora(closes)}.`;

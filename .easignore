@@ -53,3 +53,7 @@ docs/promo/
 
 # Google Play service account key: read locally by eas submit, never uploaded
 google-service-account.json
+
+# Local security scan results and skill observation logs: never in Git or in an EAS build.
+strix_runs/
+skill-observations/

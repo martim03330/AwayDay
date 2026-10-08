@@ -1,4 +1,4 @@
-import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
+import { fotoParaEnviar } from '@/lib/foto-para-enviar';
 import { supabase } from '@/lib/supabase';
 
 // Grupos: a malta que anda junta de jogo para jogo. Entra-se por convite (um link com um código) e não há pedidos
@@ -347,13 +347,12 @@ async function subirFoto(
   prefixo: string,
   input: { uri: string; mimeType: string }
 ) {
-  const extensao =
-    input.mimeType === 'image/png' ? 'png' : input.mimeType === 'image/heic' ? 'heic' : 'jpg';
-  const caminho = `${groupId}/${prefixo}-${Date.now()}.${extensao}`;
-  const bytes = base64ParaBytes(await lerFicheiroEmBase64(input.uri));
+  // Re-encoded without metadata (no GPS from where the photo was taken), so always JPEG.
+  const { bytes, mimeType } = await fotoParaEnviar(input.uri);
+  const caminho = `${groupId}/${prefixo}-${Date.now()}.jpg`;
   const subida = await client()
     .storage.from(BALDE_GRUPOS)
-    .upload(caminho, bytes, { contentType: input.mimeType, upsert: false });
+    .upload(caminho, bytes, { contentType: mimeType, upsert: false });
   if (subida.error) throw subida.error;
   return caminho;
 }

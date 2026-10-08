@@ -98,6 +98,9 @@ select
   'authenticated', 'authenticated'
 from generate_series(1, 12) as n;
 update public.profile set is_admin = true where id = 'e1000000-0000-4000-8000-000000000011';
+-- Only accounts at least 3 days old count for the pulse (fresh fake accounts cannot make up the 5).
+update public.profile set created_at = now() - interval '4 days'
+where id::text like 'e1000000-0000-4000-8000-0000000000%';
 
 -- A stadium of our own, far from real ones, with two clubs, two tascos and a game that already kicked off.
 insert into public.venue (id, name, city, country, region, location)
@@ -227,6 +230,14 @@ select pg_temp.expect('nobody wipes the pulse',
 
 reset role;
 select public.start_checkin('e1000000-0000-4000-8000-000000000005', 'tz-pres-tasco-um');
+select pg_temp.expect('a check-in does not publish by itself (the 5-minute job does)',
+  (select count(*)::integer from public.place_pulse where place_id = 'tz-pres-tasco-um'), 0);
+update public.profile set created_at = now() where id = 'e1000000-0000-4000-8000-000000000005';
+select public.refresh_place_pulse();
+select pg_temp.expect('a fresh account does not count: four old ones are not published',
+  (select count(*)::integer from public.place_pulse where place_id = 'tz-pres-tasco-um'), 0);
+update public.profile set created_at = now() - interval '4 days' where id = 'e1000000-0000-4000-8000-000000000005';
+select public.refresh_place_pulse();
 set local role anon;
 select pg_temp.as_anon();
 select pg_temp.expect('five people of one club: published with the club',
@@ -237,11 +248,12 @@ select pg_temp.expect('five people of one club: published with the club',
 reset role;
 select public.start_checkin('e1000000-0000-4000-8000-000000000006', 'tz-pres-tasco-um');
 select public.start_checkin('e1000000-0000-4000-8000-000000000007', 'tz-pres-tasco-um');
+select public.refresh_place_pulse();
 set local role authenticated;
 select pg_temp.as_user('e1000000-0000-4000-8000-000000000010');
-select pg_temp.expect('a club with one person goes to others',
+select pg_temp.expect('seven people show as 5 (multiples of 5: one more person does not show)',
   (select people || ' ' || clubs::text || ' ' || others from public.place_pulse where place_id = 'tz-pres-tasco-um'),
-  '7 [{"people": 5, "club_id": "tz-pres-casa"}] 2');
+  '5 [{"people": 5, "club_id": "tz-pres-casa"}] 0');
 
 -- Six people in the second tasco, three per club: published, but no club reaches 5.
 reset role;
@@ -264,9 +276,9 @@ select pg_temp.expect('kick-off at this stadium ended the earlier check-ins',
 
 set local role anon;
 select pg_temp.as_anon();
-select pg_temp.expect('three and three: everyone is "others"',
+select pg_temp.expect('three and three: everyone is "others" (6 shows as 5)',
   (select people || ' ' || clubs::text || ' ' || others from public.place_pulse where place_id = 'tz-pres-tasco-dois'),
-  '6 [] 6');
+  '5 [] 5');
 select pg_temp.expect('anon sees two pulses at the test stadium and no small one',
   pg_temp.visible('select * from public.place_pulse where venue_id = ''tz-pres-estadio'''), 2);
 select pg_temp.expect('no published pulse anywhere has fewer than 5 people',
@@ -284,6 +296,7 @@ select pg_temp.expect('ending a check-in also removes the visit it created',
    where profile_id = 'e1000000-0000-4000-8000-000000000006' and place_id = 'tz-pres-tasco-um'), 0);
 select public.end_checkin('e1000000-0000-4000-8000-000000000005', 'tz-pres-tasco-um');
 select public.end_checkin('e1000000-0000-4000-8000-000000000004', 'tz-pres-tasco-um');
+select public.refresh_place_pulse();
 set local role anon;
 select pg_temp.as_anon();
 select pg_temp.expect('four left: the pulse is withdrawn',

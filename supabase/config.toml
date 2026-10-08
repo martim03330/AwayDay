@@ -510,6 +510,14 @@ verify_jwt = false
 import_map = "./functions/sync-weather/deno.json"
 entrypoint = "./functions/sync-weather/index.ts"
 
+[functions.social-notify]
+enabled = true
+# Called only by the database (pg_net) with the x-cron-secret header, checked inside the function. With verify_jwt on,
+# the gateway refused every call and chat, invite, friend and money notifications were lost.
+verify_jwt = false
+import_map = "./functions/social-notify/deno.json"
+entrypoint = "./functions/social-notify/index.ts"
+
 [functions.generate-season-recaps]
 enabled = true
 # Called only by pg_cron with the x-cron-secret header, checked inside the function.

@@ -63,6 +63,8 @@ function mensagemDeRecusa(erro: unknown) {
       return 'O carro já saiu.';
     case 'not_shared':
       return 'Esse grupo já não tinha o plano.';
+    case 'driver_not_in_plan':
+      return 'Só dá para usar o carro de alguém do plano. Pede ao condutor que entre no grupo, ou pede lugar na boleia.';
     default:
       return 'Não deu para fazer isso. Tenta outra vez.';
   }

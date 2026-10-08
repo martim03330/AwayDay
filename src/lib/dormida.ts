@@ -165,3 +165,22 @@ export function porPessoaNaCasa(totalCentimos: number, pessoas: number) {
   const gente = Math.max(1, Math.round(pessoas));
   return Math.ceil(totalCentimos / gente);
 }
+
+/**
+ * The sites a shared house may link to, as the database enforces them (stay_plan_listing_url_check): Airbnb (with its
+ * short links) and Booking. Any other address could be a look-alike payment page.
+ */
+const LIGACAO_DE_CASA =
+  /^https:\/\/(www\.)?(airbnb\.(pt|com|es|fr|de|it|ie|nl|be|ch|co\.uk|com\.br)|abnb\.me|booking\.com)(\/|$)/;
+
+export function ligacaoDeCasaValida(url: string) {
+  return url.length <= 500 && LIGACAO_DE_CASA.test(url);
+}
+
+/** «Airbnb» or «Booking», and the address's host, to show next to the button; `null` for any other address. */
+export function siteDaCasa(url: string): { nome: 'Airbnb' | 'Booking'; dominio: string } | null {
+  const partes = LIGACAO_DE_CASA.exec(url);
+  if (!partes?.[2]) return null;
+  const dominio = partes[2];
+  return { nome: dominio === 'booking.com' ? 'Booking' : 'Airbnb', dominio };
+}

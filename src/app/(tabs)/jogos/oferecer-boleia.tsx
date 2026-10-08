@@ -80,7 +80,7 @@ function lerConsumo(texto: string) {
   const partes = /^(\d{1,2})(?:[.,](\d))?$/.exec(texto.trim());
   if (!partes) return null;
   const centilitros = Number(partes[1]) * 100 + Number(partes[2] ?? '0') * 10;
-  return centilitros >= 200 && centilitros <= 2500 ? centilitros : null;
+  return centilitros >= 300 && centilitros <= 1500 ? centilitros : null;
 }
 
 /** "2,072" -> 2072 thousandths of a euro per litre; `null` outside 0,500–4,000 €. */
@@ -88,7 +88,7 @@ function lerPrecoLitro(texto: string) {
   const partes = /^(\d)(?:[.,](\d{1,3}))?$/.exec(texto.trim().replace(/\s*€$/, ''));
   if (!partes) return null;
   const milesimas = Number(partes[1]) * 1000 + Number((partes[2] ?? '').padEnd(3, '0') || '0');
-  return milesimas >= 500 && milesimas <= 4000 ? milesimas : null;
+  return milesimas >= 1000 && milesimas <= 2600 ? milesimas : null;
 }
 
 /** 2072 -> "2,072", with integer maths. */
@@ -235,7 +235,9 @@ export default function OferecerBoleiaScreen() {
   });
   const minhaBoleia = quadro.data?.find((boleia) => boleia.isMine && boleia.status === 'open');
 
-  // The ride starts near the driver, not near the stadium: find where they are, when they allow it.
+  // The ride starts near the driver, not near the stadium: find where they are, when they allow it. The map centres
+  // there but the pin is not dropped on it: the start point is shown to every fan of the game, and where the driver
+  // is right now is often their home.
   useEffect(() => {
     let ativo = true;
     void getCurrentPosition().then((resultado) => {
@@ -250,7 +252,6 @@ export default function OferecerBoleiaScreen() {
       };
       setAquiEstou(aqui);
       setEstadoLocalizacao('ok');
-      setPartida((atual) => atual ?? aqui);
     });
     return () => {
       ativo = false;
@@ -258,8 +259,8 @@ export default function OferecerBoleiaScreen() {
   }, []);
 
   // The map only moves once it is ready; before that, a move is silently lost.
-  const latitudePartida = partida?.latitude;
-  const longitudePartida = partida?.longitude;
+  const latitudePartida = partida?.latitude ?? aquiEstou?.latitude;
+  const longitudePartida = partida?.longitude ?? aquiEstou?.longitude;
   useEffect(() => {
     if (!mapaPronto || latitudePartida === undefined || longitudePartida === undefined) return;
     mapa.current?.animateToRegion(
@@ -566,7 +567,14 @@ export default function OferecerBoleiaScreen() {
               A procurar a tua localização…
             </ThemedText>
           ) : estadoLocalizacao === 'ok' && naMinhaLocalizacao ? (
-            <Etiqueta icon={icons.selecionado} label="Na tua localização atual" tone="positivo" />
+            <Etiqueta icon={icons.aviso} label="Onde estás agora: se for a tua casa, escolhe um sítio público" tone="aviso" />
+          ) : estadoLocalizacao === 'ok' && partida === null ? (
+            <>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                Toca no mapa num sítio público perto de ti
+              </ThemedText>
+              <LinkTexto neutro label="Usar onde estou" onPress={usarAMinhaLocalizacao} />
+            </>
           ) : estadoLocalizacao === 'ok' ? (
             <>
               <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
@@ -811,7 +819,7 @@ export default function OferecerBoleiaScreen() {
               keyboardType="decimal-pad"
               returnKeyType="next"
               onSubmitEditing={() => campoPrecoLitro.current?.focus()}
-              erro={consumo && consumoCl === null ? 'Escreve um valor entre 2 e 25, ex.: 6,5' : null}
+              erro={consumo && consumoCl === null ? 'Escreve um valor entre 3 e 15, ex.: 6,5' : null}
             />
             <View style={styles.chips}>
               {COMBUSTIVEIS.map((opcao) => (
@@ -839,7 +847,7 @@ export default function OferecerBoleiaScreen() {
               keyboardType="decimal-pad"
               returnKeyType="done"
               ajuda="Valor de referência. Põe o que pagaste da última vez que atestaste."
-              erro={precoLitro && precoMilesimas === null ? 'Escreve um preço como 2,072' : null}
+              erro={precoLitro && precoMilesimas === null ? 'Escreve um preço entre 1,000 e 2,600, ex.: 2,072' : null}
             />
 
             <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />

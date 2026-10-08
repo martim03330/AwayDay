@@ -84,6 +84,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_ledger: {
+        Row: {
+          created_at: string
+          id: number
+          input_tokens: number
+          kind: string
+          output_tokens: number
+          profile_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          input_tokens: number
+          kind: string
+          output_tokens: number
+          profile_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          input_tokens?: number
+          kind?: string
+          output_tokens?: number
+          profile_id?: string | null
+        }
+        Relationships: []
+      }
       checkin: {
         Row: {
           club_id: string | null
@@ -4053,10 +4080,12 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: boolean
       }
+      caller_owns_group_folder: { Args: { p_folder: string }; Returns: boolean }
       caller_sees_trip_memories: {
         Args: { p_session_id: string }
         Returns: boolean
       }
+      can_open_avatar: { Args: { p_name: string }; Returns: boolean }
       can_see_fixture_plan: {
         Args: { p_plan_id: string; p_profile_id: string }
         Returns: boolean
@@ -4070,6 +4099,10 @@ export type Database = {
         Returns: boolean
       }
       can_see_profile: {
+        Args: { p_profile_id: string; p_viewer: string }
+        Returns: boolean
+      }
+      can_see_profile_card: {
         Args: { p_profile_id: string; p_viewer: string }
         Returns: boolean
       }
@@ -5094,6 +5127,10 @@ export type Database = {
       }
       roll_up_home_fan_reports: { Args: never; Returns: number }
       rotate_group_invite: { Args: { p_group_id: string }; Returns: string }
+      runs_trip_session: {
+        Args: { p_profile_id: string; p_session_id: string }
+        Returns: boolean
+      }
       season_attendance: {
         Args: never
         Returns: {

@@ -34,7 +34,19 @@ export function parsePushTickets(messages: readonly PushMessage[], payload: unkn
   return outcome;
 }
 
+/** Sends every message, 100 per request (Expo's limit): a group chat with more devices than that reaches them all. */
 export async function sendExpoPush(messages: readonly PushMessage[]): Promise<PushOutcome> {
+  const total: PushOutcome = { sent: 0, failed: 0, invalidTokens: [] };
+  for (let start = 0; start < messages.length; start += 100) {
+    const outcome = await sendBatch(messages.slice(start, start + 100));
+    total.sent += outcome.sent;
+    total.failed += outcome.failed;
+    total.invalidTokens.push(...outcome.invalidTokens);
+  }
+  return total;
+}
+
+async function sendBatch(messages: readonly PushMessage[]): Promise<PushOutcome> {
   if (messages.length === 0) return { sent: 0, failed: 0, invalidTokens: [] };
   try {
     const response = await fetch('https://exp.host/--/api/v2/push/send', {
@@ -44,7 +56,7 @@ export async function sendExpoPush(messages: readonly PushMessage[]): Promise<Pu
         'accept-encoding': 'gzip, deflate',
         'content-type': 'application/json',
       },
-      body: JSON.stringify(messages.slice(0, 100).map((message) => ({ ...message, sound: 'default' }))),
+      body: JSON.stringify(messages.map((message) => ({ ...message, sound: 'default' }))),
     });
     if (!response.ok) return { sent: 0, failed: messages.length, invalidTokens: [] };
     return parsePushTickets(messages, await response.json());

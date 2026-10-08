@@ -58,22 +58,26 @@ Deno.serve(async (request) => {
     return json(403, { error: 'reauthentication_required' });
   }
 
-  // Files in Storage do not follow the database cascade: remove the user's mission photos first.
-  const photos = admin.storage.from('mission-photos');
+  // Files in Storage do not follow the database cascade: remove the user's own folders first (mission photos, the
+  // profile photo, and tasco photos from before they were moved to `anonimas/`). Group and trip photos stay: they
+  // belong to the group's or the trip's memories (docs/DECISOES.md).
   const PAGE = 100;
-  for (;;) {
-    const { data: files, error: listError } = await photos.list(caller.user.id, { limit: PAGE });
-    if (listError) {
-      console.error('delete-account could not list photos:', listError.message);
-      return json(500, { error: 'delete_failed' });
+  for (const bucket of ['mission-photos', 'avatars', 'place-photos']) {
+    const photos = admin.storage.from(bucket);
+    for (;;) {
+      const { data: files, error: listError } = await photos.list(caller.user.id, { limit: PAGE });
+      if (listError) {
+        console.error(`delete-account could not list ${bucket}:`, listError.message);
+        return json(500, { error: 'delete_failed' });
+      }
+      if (files.length === 0) break;
+      const { error: removeError } = await photos.remove(files.map((file) => `${caller.user.id}/${file.name}`));
+      if (removeError) {
+        console.error(`delete-account could not remove ${bucket}:`, removeError.message);
+        return json(500, { error: 'delete_failed' });
+      }
+      if (files.length < PAGE) break;
     }
-    if (files.length === 0) break;
-    const { error: removeError } = await photos.remove(files.map((file) => `${caller.user.id}/${file.name}`));
-    if (removeError) {
-      console.error('delete-account could not remove photos:', removeError.message);
-      return json(500, { error: 'delete_failed' });
-    }
-    if (files.length < PAGE) break;
   }
 
   // Everything the user created goes with the auth user (on delete cascade).

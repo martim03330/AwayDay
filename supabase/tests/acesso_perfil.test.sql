@@ -212,8 +212,20 @@ select pg_temp.expect('non-admin cannot clear someone''s photo',
 select pg_temp.expect('non-admin gets no reported photos',
   (select count(*)::integer from public.reported_profile_photos()), 0);
 
--- 4. Profile cards: name, photo, city and reputation, never the email or the clubs.
-select pg_temp.expect('profile card shows the public bits of B',
+-- 4. Profile cards: name, photo, city and reputation, never the email or the clubs; and only of people A has a
+-- reason to see (crossed paths, a driver with an open ride, a plan A sees), so nobody can dump every profile.
+select pg_temp.expect('a stranger''s card is not given',
+  (select count(*)::integer from public.profile_cards(array['ad000001-0000-4000-8000-0000000000b1'::uuid])), 0);
+reset role;
+insert into public.fan_group (id, name, created_by, invite_code)
+values ('c0000001-0000-4000-8000-0000000000a1', 'Grupo Perfil', 'ad000001-0000-4000-8000-0000000000a1', 'acperfil01');
+insert into public.fan_group_member (group_id, profile_id, role)
+values
+  ('c0000001-0000-4000-8000-0000000000a1', 'ad000001-0000-4000-8000-0000000000a1', 'owner'),
+  ('c0000001-0000-4000-8000-0000000000a1', 'ad000001-0000-4000-8000-0000000000b1', 'member');
+set local role authenticated;
+select pg_temp.as_user('ad000001-0000-4000-8000-0000000000a1');
+select pg_temp.expect('profile card shows the public bits of B, now in A''s group',
   (select display_name || '/' || coalesce(home_city, '-') || '/' || is_me::text
    from public.profile_cards(array['ad000001-0000-4000-8000-0000000000b1'::uuid])),
   'Perfil B/Viseu/false');

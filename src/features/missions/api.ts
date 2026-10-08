@@ -1,5 +1,5 @@
 import type { MissionPhoto, MissionPhotoInput } from '@/features/missions/types';
-import { base64ParaBytes, lerFicheiroEmBase64 } from '@/lib/ficheiros';
+import { fotoParaEnviar } from '@/lib/foto-para-enviar';
 import { supabase } from '@/lib/supabase';
 
 // Proof photos live in the private `mission-photos` bucket under `<user id>/`. RLS and the Storage policies
@@ -51,10 +51,11 @@ export async function fetchMyMissionPhotos(userId: string): Promise<MissionPhoto
 /** Uploads a proof photo and records it. A new photo for the same mission replaces the previous one. */
 export async function saveMissionPhoto(userId: string, input: MissionPhotoInput) {
   const bucket = client().storage.from(BUCKET);
-  const path = `${userId}/${input.missionId}-${Date.now()}.${extensionFor(input.mimeType)}`;
-  const bytes = base64ParaBytes(await lerFicheiroEmBase64(input.uri));
+  // Re-encoded without metadata (no GPS from where the photo was taken), so always JPEG.
+  const { bytes, mimeType } = await fotoParaEnviar(input.uri);
+  const path = `${userId}/${input.missionId}-${Date.now()}.${extensionFor(mimeType)}`;
 
-  const upload = await bucket.upload(path, bytes, { contentType: input.mimeType, upsert: false });
+  const upload = await bucket.upload(path, bytes, { contentType: mimeType, upsert: false });
   if (upload.error) throw upload.error;
 
   const previous = await client()

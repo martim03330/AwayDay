@@ -27,6 +27,11 @@ export type TripRefusal =
   | 'cannot_add'
   | 'has_money'
   | 'last_person'
+  | 'more_than_owed'
+  | 'nothing_owed'
+  | 'confirmed_settlement'
+  | 'not_involved'
+  | 'not_session_owner'
   | 'bad_name'
   | 'rate_limited'
   | 'unknown';
@@ -60,6 +65,11 @@ const RECUSAS: TripRefusal[] = [
   'cannot_add',
   'has_money',
   'last_person',
+  'more_than_owed',
+  'nothing_owed',
+  'confirmed_settlement',
+  'not_involved',
+  'not_session_owner',
   'bad_name',
   'rate_limited',
 ];

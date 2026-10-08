@@ -344,8 +344,9 @@ Deno.serve(async (request) => {
   }
   const fixtureId = typeof body?.fixtureId === 'string' ? body.fixtureId : null;
   const origin = toPoint(body?.origin);
-  const consumption = wholeBetween(body?.consumptionClPer100Km, 200, 2500);
-  const fuelPrice = wholeBetween(body?.fuelPriceMilliPerLitre, 500, 4000);
+  // Realistic bounds (3–15 L/100 km, 1,000–2,600 €/L): the driver cannot inflate what the passengers pay.
+  const consumption = wholeBetween(body?.consumptionClPer100Km, 300, 1500);
+  const fuelPrice = wholeBetween(body?.fuelPriceMilliPerLitre, 1000, 2600);
   const roundTrip = typeof body?.roundTrip === 'boolean' ? body.roundTrip : null;
   if (
     (action !== 'quote' && action !== 'create') ||

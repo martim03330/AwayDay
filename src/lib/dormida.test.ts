@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ligacaoDeCasaValida,
+  siteDaCasa,
   datasDaEstadia,
   ESCALOES_POR_PESSOA,
   linkAirbnb,
@@ -186,5 +188,25 @@ describe('precisaDeDormida', () => {
   it('sem terra conhecida, não se inventa uma viagem longa', () => {
     expect(precisaDeDormida(lisboa, null)).toBe(false);
     expect(precisaDeDormida(funchal, null)).toBe(true);
+  });
+});
+
+describe('house links', () => {
+  it('accepts Airbnb (with its short links) and Booking', () => {
+    expect(ligacaoDeCasaValida('https://www.airbnb.pt/rooms/123')).toBe(true);
+    expect(ligacaoDeCasaValida('https://airbnb.com/rooms/123?check_in=2026-10-12')).toBe(true);
+    expect(ligacaoDeCasaValida('https://abnb.me/xYz')).toBe(true);
+    expect(ligacaoDeCasaValida('https://www.booking.com/hotel/pt/x.html')).toBe(true);
+    expect(siteDaCasa('https://www.booking.com/hotel/pt/x.html')).toEqual({ nome: 'Booking', dominio: 'booking.com' });
+    expect(siteDaCasa('https://www.airbnb.co.uk/rooms/1')).toEqual({ nome: 'Airbnb', dominio: 'airbnb.co.uk' });
+  });
+
+  it('refuses look-alike and plain addresses', () => {
+    expect(ligacaoDeCasaValida('https://airbnb-pt-reserva.example/1')).toBe(false);
+    expect(ligacaoDeCasaValida('https://airbnb.pt.evil.example/rooms/1')).toBe(false);
+    expect(ligacaoDeCasaValida('https://www.airbnb.co.ev/rooms/1')).toBe(false);
+    expect(ligacaoDeCasaValida('http://www.airbnb.pt/rooms/1')).toBe(false);
+    expect(ligacaoDeCasaValida('https://evil.example/?u=https://www.airbnb.pt/')).toBe(false);
+    expect(siteDaCasa('https://evil.example/')).toBeNull();
   });
 });

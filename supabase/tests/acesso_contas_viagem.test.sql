@@ -356,12 +356,23 @@ select pg_temp.expect('nobody pays themselves',
 select pg_temp.expect('nobody pays someone outside the trip',
   pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, 100)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000005')),
   'not_in_trip');
+select pg_temp.expect('nobody charges the others for something they did not pay nor share',
+  pg_temp.refusal(format('select public.add_trip_expense(%L, %L, %L, 1000, %L, array[%L, %L]::uuid[])', pg_temp.id('s2'),
+    'Jantar', 'refeicao', 'e5000000-0000-4000-8000-000000000002', 'e5000000-0000-4000-8000-000000000002', 'e5000000-0000-4000-8000-000000000003')), 'not_involved');
 select pg_temp.expect('a payment of zero is refused',
   pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, 0)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002')),
   'bad_settlement');
 select pg_temp.expect('a negative payment is refused',
   pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, -459)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002')),
   'bad_settlement');
+
+-- What the payer records counts before it is confirmed, so it is capped at what they owe.
+select pg_temp.expect('the payer cannot record more than they owe',
+  pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, 460)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002')), 'more_than_owed');
+select pg_temp.as_user('e5000000-0000-4000-8000-000000000002');
+select pg_temp.expect('someone who owes nothing cannot record a payment',
+  pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, 100)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000001')), 'nothing_owed');
+select pg_temp.as_user('e5000000-0000-4000-8000-000000000001');
 
 -- A says "I paid B" (waits for B); B says "C paid me" (confirmed at once).
 insert into t_ids (key, id) values ('pagou_a', public.add_trip_settlement(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002', 459));
@@ -382,6 +393,8 @@ select pg_temp.as_user('e5000000-0000-4000-8000-000000000002');
 select public.confirm_trip_settlement(pg_temp.id('pagou_a'));
 select pg_temp.expect('a payment is confirmed only once',
   pg_temp.refusal(format('select public.confirm_trip_settlement(%L)', pg_temp.id('pagou_a'))), 'not_yours');
+select pg_temp.expect('the receiver cannot undo a payment they confirmed',
+  pg_temp.refusal(format('select public.remove_trip_settlement(%L)', pg_temp.id('pagou_a'))), 'confirmed_settlement');
 insert into t_ids (key, id) values ('recebeu_b', public.add_trip_settlement(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002', 1458,
   'e5000000-0000-4000-8000-000000000003'));
 
@@ -449,6 +462,12 @@ select public.rename_trip_session(pg_temp.id('s2'), '  Ida ao jogo  ');
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000002');
 select pg_temp.expect('the new name is for everyone',
   (select name from public.my_trip_accounts('teste-acesso-contas') where session_id = pg_temp.id('s2')), 'Ida ao jogo');
+select pg_temp.expect('only who opened the accounts takes someone else out',
+  pg_temp.refusal(format('select public.remove_trip_person(%L, %L)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000009')),
+  'not_session_owner');
+select pg_temp.expect('only who opened the accounts deletes them',
+  pg_temp.refusal(format('select public.remove_trip_session(%L)', pg_temp.id('s2'))), 'not_session_owner');
+select pg_temp.as_user('e5000000-0000-4000-8000-000000000001');
 select public.remove_trip_person(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000009');
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000009');
 select pg_temp.expect('someone taken out no longer sees the accounts',

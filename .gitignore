@@ -56,3 +56,6 @@ skill-observations/
 # recordings in clipes/ and clipes-longo/ stay in git.
 docs/promo/anuncio/*.mp4
 docs/promo/anuncio/reels/*.mp4
+
+# Local security scan results and skill observation logs: never in Git or in an EAS build.
+strix_runs/

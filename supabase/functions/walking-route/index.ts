@@ -52,7 +52,8 @@ function straightLineM(from: Point, to: Point) {
 }
 
 function anonymousAllowed(request: Request) {
-  const address = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  // The rightmost address is the one the gateway added; the ones before it are whatever the client sent.
+  const address = request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || 'unknown';
   const now = Date.now();
   const recent = (anonymousHits.get(address) ?? []).filter((at) => now - at < HOUR_MS);
   if (recent.length >= ANONYMOUS_LIMIT_PER_HOUR) {

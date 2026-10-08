@@ -249,8 +249,11 @@ select pg_temp.as_user('e7000000-0000-4000-8000-000000000008');
 select pg_temp.expect('a suspended fan cannot offer a house', pg_temp.offer('teste-acesso-casas', 2, 30000, 2, 'certo'), 'needs_history');
 
 select pg_temp.as_user('e7000000-0000-4000-8000-000000000001');
+select pg_temp.expect('a house link must be Airbnb or Booking (no look-alike payment pages)',
+  pg_temp.refusal('select public.set_stay_plan(p_fixture_id => ''teste-acesso-casas'', p_nights => 2::smallint, p_total_cents => 30000, p_spare_places => 2::smallint, p_commitment => ''certo'', p_listing_url => ''https://airbnb-pt-reserva.example/1'')'),
+  'new row for relation "stay_plan" violates check constraint "stay_plan_listing_url_check"');
 insert into t_ids (key, id) values ('casa', public.set_stay_plan(p_fixture_id => 'teste-acesso-casas', p_nights => 2::smallint,
-  p_total_cents => 30000, p_spare_places => 2::smallint, p_commitment => 'certo', p_listing_url => 'https://casa.example/1'));
+  p_total_cents => 30000, p_spare_places => 2::smallint, p_commitment => 'certo', p_listing_url => 'https://www.airbnb.pt/rooms/1'));
 select pg_temp.expect('the host cannot change the price directly',
   pg_temp.refusal(format('update public.stay_plan set total_cents = 1 where id = %L', pg_temp.id('casa'))),
   'permission denied for table stay_plan');

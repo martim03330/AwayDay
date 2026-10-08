@@ -27,9 +27,11 @@ import { formatarData } from '@/lib/datas';
 import {
   datasDaEstadia,
   ESCALOES_POR_PESSOA,
+  ligacaoDeCasaValida,
   linkAirbnb,
   pesquisasPorOrcamento,
   porPessoaNaCasa,
+  siteDaCasa,
   type Escalao,
 } from '@/lib/dormida';
 import { plural } from '@/lib/formatos';
@@ -189,6 +191,7 @@ function CasaProposta({
   onMudar: () => void;
   onApagar: () => void;
 }) {
+  const site = casa.listingUrl ? siteDaCasa(casa.listingUrl) : null;
   const theme = useTheme();
   const livres = casa.sparePlaces - casa.taken;
   const reservada = casa.status === 'reservada';
@@ -249,16 +252,16 @@ function CasaProposta({
 
       {casa.note ? <ThemedText>{casa.note}</ThemedText> : null}
 
-      {casa.listingUrl ? (
+      {site && casa.listingUrl ? (
         <>
           <LinkTexto
-            label="Ver esta casa no Airbnb"
+            label={`Ver esta casa no ${site.nome}`}
             onPress={() =>
               casa.listingUrl && void Linking.openURL(casa.listingUrl).catch(() => undefined)
             }
           />
           <ThemedText type="small" themeColor="textMuted">
-            {`Visto por ${casa.isMine ? 'ti' : casa.displayName}${casa.listingSeenOn ? ` a ${formatarData(new Date(casa.listingSeenOn))}` : ''}. Confirma no Airbnb: pode já não estar disponível.`}
+            {`Abre ${site.dominio}. Visto por ${casa.isMine ? 'ti' : casa.displayName}${casa.listingSeenOn ? ` a ${formatarData(new Date(casa.listingSeenOn))}` : ''}. Confirma no ${site.nome}: pode já não estar disponível.`}
           </ThemedText>
         </>
       ) : null}
@@ -436,6 +439,10 @@ export function DormidaCard({
   async function guardar() {
     if (centimos === null) {
       setErro('Escreve quanto custa a casa ao todo, por exemplo 320.');
+      return;
+    }
+    if (link.trim() && !ligacaoDeCasaValida(link.trim())) {
+      setErro('O link tem de ser do Airbnb ou do Booking, por exemplo https://www.airbnb.pt/rooms/…');
       return;
     }
     const guardado = await tratar(async () => {
@@ -716,7 +723,7 @@ export function DormidaCard({
             ) : null}
 
             <Campo
-              label="Link da casa no Airbnb (opcional)"
+              label="Link da casa no Airbnb ou no Booking (opcional)"
               value={link}
               onChangeText={setLink}
               placeholder="https://www.airbnb.pt/rooms/…"
