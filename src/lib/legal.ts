@@ -21,10 +21,14 @@ export type DocumentoLegal = {
 /** Bump when the terms or the privacy policy change in a way people must accept again. */
 export const VERSAO_DOS_TERMOS = '2026-10-06';
 
-/** Who provides the app. Shown in every document and on the about page (DL 7/2004, art. 10.º; RGPD, art. 13.º). */
+/**
+ * Who provides the app. Shown in every document and on the about page (RGPD, art. 13.º: identity and contact).
+ * No tax number: the app is free and not run as a business, so the trader duties of DL 7/2004 (art. 10.º) and of the
+ * DSA do not apply, and a personal NIF has no business being public. Add it (and a business address) the day the app
+ * earns money.
+ */
 export const RESPONSAVEL = {
   nome: 'Martim Henriques',
-  nif: '243597444',
   /**
    * Postal address (an apartado or a business address — never the home address). `null` until there is one: the
    * contact is the email, which is enough for the GDPR (art. 13.º) for a free app run by one person.
@@ -62,7 +66,7 @@ export const PRIVACIDADE: DocumentoLegal = {
       titulo: 'Quem é o responsável',
       blocos: [
         p(
-          `O responsável pelo tratamento dos teus dados é ${RESPONSAVEL.nome} (NIF ${RESPONSAVEL.nif})${RESPONSAVEL.morada ? `, ${RESPONSAVEL.morada}` : ''}. Para qualquer assunto de privacidade, escreve para ${RESPONSAVEL.email}.`
+          `O responsável pelo tratamento dos teus dados é ${RESPONSAVEL.nome}${RESPONSAVEL.morada ? `, ${RESPONSAVEL.morada}` : ''}. Para qualquer assunto de privacidade, escreve para ${RESPONSAVEL.email}.`
         ),
       ],
     },
@@ -190,7 +194,7 @@ export const TERMOS: DocumentoLegal = {
       titulo: 'Quem presta o serviço',
       blocos: [
         p(
-          `O AwayDay é disponibilizado por ${RESPONSAVEL.nome} (NIF ${RESPONSAVEL.nif})${RESPONSAVEL.morada ? `, ${RESPONSAVEL.morada}` : ''}, ${RESPONSAVEL.email}. Ao criar conta aceitas estes termos e a política de privacidade.`
+          `O AwayDay é disponibilizado por ${RESPONSAVEL.nome}${RESPONSAVEL.morada ? `, ${RESPONSAVEL.morada}` : ''}, ${RESPONSAVEL.email}. Ao criar conta aceitas estes termos e a política de privacidade.`
         ),
       ],
     },
@@ -307,7 +311,6 @@ export const SOBRE: DocumentoLegal = {
       blocos: [
         l(
           `Nome: ${RESPONSAVEL.nome}`,
-          `NIF: ${RESPONSAVEL.nif}`,
           ...(RESPONSAVEL.morada ? [`Morada: ${RESPONSAVEL.morada}`] : []),
           `Email: ${RESPONSAVEL.email}`
         ),
