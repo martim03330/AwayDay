@@ -13,7 +13,6 @@ import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
-import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -75,8 +74,10 @@ export function WcMaisProximo({ origem, estadioId, titulo }: WcMaisProximoProps)
               Sem bilhete nem consumo
             </ThemedText>
             <WcDetalhes wc={livre.wc} metros={livre.metros} minutos={livre.minutos} />
-            <LinkTexto
-              label="Como chegar a este"
+            <Button
+              label="Como chegar a pé"
+              variant="secondary"
+              icon={icons.aPe}
               onPress={() => abrirDirecoes(livre.wc.coordenadas, 'a-pe')}
             />
           </View>

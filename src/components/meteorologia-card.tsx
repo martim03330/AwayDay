@@ -32,11 +32,6 @@ export function MeteorologiaCard({ meteorologia }: { meteorologia: Meteorologia 
         <ThemedText type="small" themeColor="textSecondary">
           {condicao.nome} à hora do jogo
         </ThemedText>
-        {meteorologia.fonte ? (
-          <ThemedText type="small" themeColor="textSecondary" style={styles.fonte}>
-            Previsão {meteorologia.fonte}
-          </ThemedText>
-        ) : null}
       </View>
       <View style={styles.detalhes}>
         {chuva !== null ? (
@@ -69,10 +64,6 @@ const styles = StyleSheet.create({
   temperatura: {
     fontSize: 34,
     lineHeight: 38,
-  },
-  fonte: {
-    fontSize: 12,
-    lineHeight: 16,
   },
   detalhes: {
     gap: 6,

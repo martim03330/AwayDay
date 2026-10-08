@@ -62,7 +62,10 @@ export default function EstadioScreen() {
 
       {jogo.meteorologia ? (
         <>
-          <SectionHeader title="Meteorologia" trailing="Previsão simulada" />
+          <SectionHeader
+            title="Meteorologia"
+            trailing={jogo.meteorologia.fonte ? `Previsão ${jogo.meteorologia.fonte}` : 'Previsão simulada'}
+          />
           <MeteorologiaCard meteorologia={jogo.meteorologia} />
         </>
       ) : null}
