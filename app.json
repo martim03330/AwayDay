@@ -68,14 +68,14 @@
           "locationWhenInUsePermission": "O AwayDay usa a tua localização no momento em que fazes check-in num tasco, carimbas o estádio, escolhes o ponto de partida de uma boleia ou procuras a casa de banho mais perto. A tua posição não fica guardada.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false,
-          "motionUsagePermission": false
+          "motionUsagePermission": "O AwayDay não usa os sensores de movimento. Este texto existe porque a biblioteca de localização inclui essa função; o AwayDay nunca a ativa."
         }
       ],
       "expo-asset",
       [
         "expo-secure-store",
         {
-          "faceIDPermission": false
+          "faceIDPermission": "O AwayDay não usa o Face ID. A sessão fica guardada de forma segura no teu iPhone, sem pedir o teu rosto."
         }
       ],
       [
