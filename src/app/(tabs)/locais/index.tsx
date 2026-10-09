@@ -20,6 +20,7 @@ import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
+import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
@@ -176,6 +177,27 @@ export default function LocaisScreen() {
           icon={verLista ? icons.fechar : icons.lista}
           onPress={() => setVerLista((atual) => !atual)}
         />
+        {/* Always in view, not at the end of the list: new tascos are how the map grows. */}
+        <Card style={[styles.sugerir, { backgroundColor: theme.highlight }]}>
+          <View style={styles.sugerirTopo}>
+            <IconCircle name={icons.tasco} tone="neutral" />
+            <View style={styles.flex}>
+              <ThemedText style={[styles.sugerirTitulo, { color: theme.highlightText }]}>
+                Conheces um tasco que falta?
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.highlightText }}>
+                Sugere-o para a malta. Fica no mapa quando 5 adeptos confirmarem que é bom.
+              </ThemedText>
+            </View>
+          </View>
+          <Button
+            label="Sugerir um tasco"
+            icon={icons.checkIn}
+            onPress={() =>
+              router.push({ pathname: '/locais/sugerir-tasco', params: { estadioId: estadio.id } })
+            }
+          />
+        </Card>
         {verLista ? renderLista() : null}
       </>
     );
@@ -223,14 +245,6 @@ export default function LocaisScreen() {
             </ThemedText>
           </View>
         ) : null}
-        <Button
-          label="Sugerir um tasco"
-          variant="secondary"
-          icon={icons.checkIn}
-          onPress={() =>
-            router.push({ pathname: '/locais/sugerir-tasco', params: { estadioId: estadio.id } })
-          }
-        />
       </>
     );
   }
@@ -286,6 +300,19 @@ export default function LocaisScreen() {
 }
 
 const styles = StyleSheet.create({
+  sugerir: {
+    gap: Spacing.twoAndHalf,
+  },
+  sugerirTopo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.twoAndHalf,
+  },
+  sugerirTitulo: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: 800,
+  },
   chipsScroll: {
     marginHorizontal: -20,
   },
