@@ -31,6 +31,9 @@ function pagina(doc) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- No scripts, no outside resources: these pages are plain text. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>${escapar(doc.titulo)} · AwayDay</title>
 <meta name="description" content="${escapar(doc.resumo)}">
 <style>
