@@ -88,9 +88,7 @@ function LinhaBoleia({
         </View>
       </View>
       <View style={styles.etiquetas}>
-        {boleia.status === 'cancelled' ? (
-          <Etiqueta icon={icons.fechar} label="Cancelada" tone="negativo" />
-        ) : boleia.myStatus ? (
+        {boleia.myStatus ? (
           <Etiqueta
             icon={icons.selecionado}
             label={ESTADOS[boleia.myStatus]}
@@ -156,7 +154,12 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
     );
   }
 
-  const boleias = ordenarBoleiasPorPerto(quadro.data ?? [], partida);
+  // A cancelled ride is gone from the list for everyone (the server only sends open ones; this keeps an old cached
+  // answer from showing one).
+  const boleias = ordenarBoleiasPorPerto(
+    (quadro.data ?? []).filter((boleia) => boleia.status === 'open'),
+    partida
+  );
   const jaOfereco = boleias.some((boleia) => boleia.isMine && boleia.status === 'open');
   const foraDePortugal = obterEstadio(jogo.estadioId)?.regiao === 'estrangeiro';
 

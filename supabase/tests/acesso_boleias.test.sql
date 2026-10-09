@@ -481,8 +481,8 @@ select pg_temp.as_user('e1000000-0000-4000-8000-000000000001');
 select pg_temp.expect('only the driver can cancel (others change nothing)',
   (select status from public.ride_board('teste-acesso-boleias') where id = pg_temp.id('r1')), 'open');
 select public.cancel_ride(pg_temp.id('r1'));
-select pg_temp.expect('the driver cancels',
-  (select status from public.ride_board('teste-acesso-boleias') where id = pg_temp.id('r1')), 'cancelled');
+select pg_temp.expect('the driver cancels: the ride leaves the board, the driver''s included',
+  (select count(*)::integer from public.ride_board('teste-acesso-boleias') where id = pg_temp.id('r1')), 0);
 select pg_temp.as_user('e1000000-0000-4000-8000-000000000002');
 select pg_temp.expect('the passenger is told the ride was cancelled',
   (select kind from public.my_ride_alerts() where ride_id = pg_temp.id('r1')), 'cancelada');

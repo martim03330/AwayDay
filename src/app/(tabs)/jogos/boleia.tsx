@@ -292,8 +292,8 @@ export default function BoleiaScreen() {
       <Screen>
         <EmptyState
           icon={icons.naoEncontrado}
-          title="Boleia não encontrada"
-          message="Pode ter sido cancelada. Volta ao teu jogo e vê as outras."
+          title="Esta boleia já não existe"
+          message="Foi cancelada pelo condutor ou já passou. Vê as outras boleias do jogo."
           action={{ label: 'Voltar', onPress: () => router.back() }}
         />
       </Screen>
@@ -382,7 +382,11 @@ export default function BoleiaScreen() {
         {
           text: 'Cancelar',
           style: 'destructive' as const,
-          onPress: () => void executar(() => cancelRide(boleia.id)),
+          // Cancelled, the ride is gone: back to the game, where the list no longer has it.
+          onPress: () =>
+            void executar(() => cancelRide(boleia.id)).then((feito) => {
+              if (feito) router.back();
+            }),
         },
       ]
     );
