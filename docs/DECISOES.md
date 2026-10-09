@@ -2,6 +2,20 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-09 — Fotos até 1 600 px, e plano Pro do Supabase
+
+- **Fotos:** antes de enviar, o lado maior é reduzido a 1 600 px (`src/lib/medida-da-foto.ts`), além de a foto ser
+  regravada sem metadados. Uma foto de 12 MP passa de cerca de 500 KB para 150–200 KB. Carrega mais depressa com os
+  dados móveis do estádio e gasta menos armazenamento e tráfego, que eram os primeiros limites do plano gratuito.
+  Uma foto já pequena nunca é aumentada.
+- **Capacidade, medida a 2026-10-09:** base de dados com 43 MB (quase tudo catálogo) e fotos com cerca de 17 MB. No
+  plano gratuito, os primeiros limites eram o armazenamento das fotos (1 GB), o tráfego (5 GB/mês) e os 30 emails por
+  hora.
+- **Plano Pro:** o dono passa para o plano Pro (25 $/mês) em outubro de 2026. Fica com cópias diárias (7 dias), sem
+  pausas por inatividade, com proteção contra palavras-passe divulgadas e com limites muito maiores. Deve manter o
+  Spend Cap ligado. A cópia semanal no GitHub fica como segunda cópia, fora do Supabase. O workflow para manter o
+  projeto acordado deixa de ser preciso, mas não faz mal.
+
 ## 2026-10-09 — Lista de segurança final
 
 Cada ponto foi verificado com provas, em vez de ser assumido:
