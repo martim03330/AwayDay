@@ -1,0 +1,87 @@
+# Weekly copy of the production database, and a real restore test of that copy (the free Supabase plan has no
+# downloadable backups). Free on GitHub.
+#
+# 1. Dumps roles, schema and data with the Supabase CLI, and records how many rows the main tables have.
+# 2. Encrypts the dump with BACKUP_PASSPHRASE (only the owner knows it) and keeps it as a private artifact, 30 days.
+# 3. Starts an empty Supabase inside the runner (auth and storage, no project migrations), restores the dump the way
+#    Supabase documents for a new project, and checks every counted table came back with the same number of rows.
+#    If anything fails, the run fails and GitHub emails the owner.
+#
+# Secrets: SUPABASE_DB_URL (Session pooler connection string, with the database password) and BACKUP_PASSPHRASE.
+# To restore for real: download the artifact, `gpg -d copia.tar.gz.gpg | tar xz`, then the psql line of step 3
+# against the target database (see docs/COPIAS.md).
+name: Copia da base de dados
+
+on:
+  schedule:
+    - cron: '23 4 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  copiar-e-testar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Instalar o cliente do Postgres 17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Copiar (papéis, esquema e dados)
+        run: |
+          test -n "$SUPABASE_DB_URL" && test -n "$BACKUP_PASSPHRASE"
+          mkdir copia
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f copia/roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f copia/schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f copia/data.sql --use-copy --data-only
+          ls -la copia
+
+      - name: Contar linhas em produção
+        run: psql "$SUPABASE_DB_URL" -X -A -t -v ON_ERROR_STOP=1 -f .github/scripts/contar-linhas.sql > copia/contagens.txt && cat copia/contagens.txt
+
+      - name: Cifrar e guardar
+        run: |
+          tar czf copia.tar.gz copia
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 -o copia.tar.gz.gpg copia.tar.gz
+          rm copia.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: copia-${{ github.run_id }}
+          path: copia.tar.gz.gpg
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Restaurar num Supabase vazio
+        run: |
+          # An empty Supabase (auth, storage and realtime create their own tables, which the dump refers to), without
+          # this project's migrations or seed: the dump brings the schema itself, as when restoring into a new project.
+          mkdir vazio && cd vazio && supabase init --force >/dev/null
+          sed -i 's/^major_version = .*/major_version = 17/' supabase/config.toml
+          supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+          LOCAL_DB_URL=$(supabase status -o env | sed -n 's/^DB_URL="\(.*\)"$/\1/p')
+          echo "LOCAL_DB_URL=$LOCAL_DB_URL" >> "$GITHUB_ENV"
+          cd ..
+          psql "$LOCAL_DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction \
+            --file copia/roles.sql --file copia/schema.sql \
+            --command 'SET session_replication_role = replica' --file copia/data.sql
+
+      - name: Confirmar que voltou tudo
+        run: |
+          psql "$LOCAL_DB_URL" -X -A -t -v ON_ERROR_STOP=1 -f .github/scripts/contar-linhas.sql > restaurada.txt
+          diff copia/contagens.txt restaurada.txt && echo "A copia restaura-se com as mesmas linhas em todas as tabelas contadas."
