@@ -229,6 +229,7 @@ export default function OferecerBoleiaScreen() {
     queryFn: userId ? fetchMyGroups : skipToken,
     meta: { persist: false },
   });
+  const nomeDoGrupoDoPlano = (meusGrupos.data ?? []).find((grupo) => grupo.id === grupoDoPlano)?.name ?? null;
   const reputacao = useQuery({
     queryKey: ['rides', 'reputation', userId],
     queryFn: userId ? () => fetchReputation(userId) : skipToken,
@@ -760,7 +761,36 @@ export default function OferecerBoleiaScreen() {
         />
       </Card>
 
-      {(meusGrupos.data ?? []).length > 0 ? (
+      {grupoDoPlano ? (
+        // From a plan the ride is the group's: only the group, or everyone. Another group is invited from the plan
+        // («Convidar malta de outro grupo»), never by making the car belong to it.
+        <>
+          <SectionHeader title="Quem pode pedir lugar" />
+          <Card>
+            <View style={styles.chips}>
+              <Chip
+                label={nomeDoGrupoDoPlano ? `Só a malta do «${nomeDoGrupoDoPlano}»` : 'Só a malta do grupo'}
+                selected={soParaOGrupo}
+                emCartao
+                onPress={() => setSoParaOGrupo(true)}
+              />
+              <Chip
+                label="Toda a gente"
+                selected={!soParaOGrupo}
+                emCartao
+                onPress={() => setSoParaOGrupo(false)}
+              />
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              {soParaOGrupo
+                ? 'Se o carro não encher, abres a toda a gente. Para chamar malta de outro grupo, convida-os no plano.'
+                : 'Qualquer adepto deste jogo vê a boleia e pode pedir lugar.'}
+            </ThemedText>
+          </Card>
+        </>
+      ) : null}
+
+      {!grupoDoPlano && (meusGrupos.data ?? []).length > 0 ? (
         <>
           <SectionHeader title="De quem é a boleia" />
           <Card>

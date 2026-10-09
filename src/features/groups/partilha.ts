@@ -24,10 +24,12 @@ export function conviteDoCartao(
 
 /** In the group that received it: the plan, the car and the house are another group's, opened to this one. */
 export function origemDoPlano(plano: { groupId: string; groupName: string }, grupoAtualId: string | null | undefined) {
-  return deOutroGrupo(plano, grupoAtualId) ? `Plano de «${plano.groupName}», aberto a este grupo` : null;
+  return deOutroGrupo(plano, grupoAtualId) ? `Convite da malta do «${plano.groupName}»` : null;
 }
 
 /** The label on a car or a house of a group the viewer is not in (they see it because a plan was sent to them). */
 export function rotuloDeOutroGrupo(tipo: 'boleia' | 'casa', grupo: string) {
-  return tipo === 'boleia' ? `Boleia de «${grupo}», aberta ao teu grupo` : `Casa de «${grupo}», aberta ao teu grupo`;
+  return tipo === 'boleia'
+    ? `Convite da malta do «${grupo}»: podes pedir lugar`
+    : `Convite da malta do «${grupo}»: podes pedir cama`;
 }

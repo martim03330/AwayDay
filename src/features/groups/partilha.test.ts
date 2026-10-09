@@ -35,7 +35,7 @@ describe('conviteDoCartao', () => {
 
 describe('origemDoPlano', () => {
   it('explains a plan from another group', () => {
-    expect(origemDoPlano(plano, 'primos')).toBe('Plano de «Malta do café», aberto a este grupo');
+    expect(origemDoPlano(plano, 'primos')).toBe('Convite da malta do «Malta do café»');
   });
 
   it("says nothing in the plan's own group", () => {
@@ -45,7 +45,7 @@ describe('origemDoPlano', () => {
 
 describe('rotuloDeOutroGrupo', () => {
   it("labels a car or a house that is another group's", () => {
-    expect(rotuloDeOutroGrupo('boleia', 'Malta do café')).toBe('Boleia de «Malta do café», aberta ao teu grupo');
-    expect(rotuloDeOutroGrupo('casa', 'Malta do café')).toBe('Casa de «Malta do café», aberta ao teu grupo');
+    expect(rotuloDeOutroGrupo('boleia', 'Malta do café')).toBe('Convite da malta do «Malta do café»: podes pedir lugar');
+    expect(rotuloDeOutroGrupo('casa', 'Malta do café')).toBe('Convite da malta do «Malta do café»: podes pedir cama');
   });
 });

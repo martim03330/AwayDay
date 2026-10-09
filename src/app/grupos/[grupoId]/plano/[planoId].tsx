@@ -81,7 +81,7 @@ function lugaresLivres(plano: FixturePlan) {
 
 /**
  * Um plano: o jogo, quem vai, e o que falta combinar — a boleia e, se for preciso, a dormida. Quem convidou pode
- * mandar o plano a outro grupo e fechá-lo; quem dá a boleia pode abri-la ao público e deixar a volta aberta.
+ * convidar a malta de outro grupo e fechá-lo; quem dá a boleia pode abri-la ao público e deixar a volta aberta.
  */
 export default function PlanoScreen() {
   const router = useRouter();
@@ -199,7 +199,7 @@ export default function PlanoScreen() {
     }
     const sobram = livres === 1 ? 'Ainda sobra 1 lugar no carro.' : `Ainda sobram ${livres} lugares no carro.`;
     setAvisoDeFecho(
-      `${sobram} Podes ${souCondutor && !plano.ride.publica ? 'abrir a boleia ao público ou ' : ''}mandar o plano a outro grupo, em «Chamar mais malta». Ou fechar assim mesmo.`
+      `${sobram} Podes ${souCondutor && !plano.ride.publica ? 'abrir a boleia ao público ou ' : ''}convidar malta de outro grupo, em «Chamar mais malta». Ou fechar assim mesmo.`
     );
   };
 
@@ -400,7 +400,7 @@ export default function PlanoScreen() {
 
       {podeAbrirAoPublico || gruposVisiveis.length > 0 ? (
         <>
-          <SectionHeader title={podeGerirGrupos ? 'Chamar mais malta' : 'Também aberto a'} />
+          <SectionHeader title={podeGerirGrupos ? 'Chamar mais malta' : 'Grupos convidados'} />
           <Card style={styles.lista}>
             {podeAbrirAoPublico ? (
               <LinhaGrupo

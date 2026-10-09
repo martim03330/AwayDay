@@ -51,8 +51,8 @@ export function GruposDoPlano({ grupos, podeGerir, aTratar, onMandar, onRetirar 
               accessibilityRole={podeGerir && grupo.aberto ? 'button' : undefined}
               accessibilityLabel={
                 grupo.aberto
-                  ? `${grupo.name}: o plano está aberto a este grupo.${podeGerir ? ' Toca para o retirar.' : ''}`
-                  : `${grupo.name}: ainda não recebeu o plano.`
+                  ? `${grupo.name}: convidado para este plano.${podeGerir ? ' Toca para retirar o convite.' : ''}`
+                  : `${grupo.name}: ainda não foi convidado.`
               }
               style={({ pressed }) => [styles.linha, pressed && styles.premido]}>
               <IconCircle name={icons.malta} tone={grupo.aberto ? 'green' : 'neutral'} />
@@ -61,14 +61,14 @@ export function GruposDoPlano({ grupos, podeGerir, aTratar, onMandar, onRetirar 
                   {grupo.name}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {grupo.aberto ? 'Vê a boleia e a casa, e pode pedir lugar' : 'Ainda não recebeu o plano'}
+                  {grupo.aberto ? 'Convidados: podem pedir lugar no carro e na casa' : 'Ainda não foram convidados'}
                 </ThemedText>
               </View>
               {grupo.aberto ? (
                 <View style={styles.estado}>
                   <View style={[styles.pilula, { backgroundColor: theme.successBackground }]}>
                     <Icon name={icons.checkInFeito} size={14} color={theme.accentInk} />
-                    <ThemedText style={[styles.pilulaTexto, { color: theme.accentInk }]}>Aberto</ThemedText>
+                    <ThemedText style={[styles.pilulaTexto, { color: theme.accentInk }]}>Convidado</ThemedText>
                   </View>
                   {podeGerir ? (
                     <Icon
@@ -83,7 +83,7 @@ export function GruposDoPlano({ grupos, podeGerir, aTratar, onMandar, onRetirar 
                   onPress={() => onMandar(grupo.id)}
                   disabled={aTratar}
                   accessibilityRole="button"
-                  accessibilityLabel={`Mandar o plano a ${grupo.name}`}
+                  accessibilityLabel={`Convidar a malta do ${grupo.name}`}
                   hitSlop={8}
                   style={({ pressed }) => [
                     styles.pilula,
@@ -92,7 +92,7 @@ export function GruposDoPlano({ grupos, podeGerir, aTratar, onMandar, onRetirar 
                     aTratar && styles.desligado,
                   ]}>
                   <Icon name={icons.enviar} size={14} color={theme.text} />
-                  <ThemedText style={styles.pilulaTexto}>Mandar</ThemedText>
+                  <ThemedText style={styles.pilulaTexto}>Convidar</ThemedText>
                 </Pressable>
               ) : null}
             </Pressable>
@@ -102,9 +102,9 @@ export function GruposDoPlano({ grupos, podeGerir, aTratar, onMandar, onRetirar 
                 <ConfirmacaoInline
                   perigo
                   aTratar={aTratar}
-                  mensagem={`O plano sai da conversa de «${grupo.name}» e quem de lá disse que ia deixa de contar. Os lugares já aceites no carro e na casa ficam. Os dois grupos são avisados.`}
-                  cancelar="Manter aberto"
-                  confirmar="Retirar o plano"
+                  mensagem={`O convite sai da conversa de «${grupo.name}» e quem de lá disse que ia deixa de contar. Os lugares já aceites no carro e na casa ficam. Os dois grupos são avisados.`}
+                  cancelar="Manter o convite"
+                  confirmar="Retirar o convite"
                   onCancelar={() => alternar(grupo.id)}
                   onConfirmar={() =>
                     void onRetirar(grupo.id).then((feito) => {

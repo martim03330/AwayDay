@@ -27,13 +27,13 @@ describe('CartaoDoPlano, for a plan sent to another group', () => {
   it('in the group that received it, says which group it comes from', () => {
     render(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="primos" onAbrir={() => undefined} />);
     expect(screen.getByText('Ana · Malta do café convida')).toBeTruthy();
-    expect(screen.getByText('Plano de «Malta do café», aberto a este grupo')).toBeTruthy();
+    expect(screen.getByText('Convite da malta do «Malta do café»')).toBeTruthy();
   });
 
   it('in its own group, stays as it was', () => {
     render(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="malta" onAbrir={() => undefined} />);
     expect(screen.getByText('Ana convida')).toBeTruthy();
-    expect(screen.queryByText(/aberto a este grupo/)).toBeNull();
+    expect(screen.queryByText(/Convite da malta/)).toBeNull();
   });
 });
 

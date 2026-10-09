@@ -110,7 +110,7 @@ select pg_temp.expect('the card is in the other group''s chat',
   (select count(*)::integer from public.group_message
    where group_id = 'e8200000-0000-4000-8000-0000000000a2' and kind = 'plano' and plan_id = pg_temp.id('plano')), 1);
 select pg_temp.expect('the home group gets a notice saying where it went',
-  pg_temp.msgs('e8200000-0000-4000-8000-0000000000a1', 'aviso') like 'Ana Partilha mandou o plano % ao grupo «Primos Partilha». Eles veem a boleia e a casa e podem pedir lugar.',
+  pg_temp.msgs('e8200000-0000-4000-8000-0000000000a1', 'aviso') like 'Ana Partilha convidou a malta do «Primos Partilha» para o plano %. Podem pedir lugar no carro e na casa.',
   true);
 select pg_temp.expect('the other group gets no notice, only the card',
   pg_temp.msgs('e8200000-0000-4000-8000-0000000000a2', 'aviso'), null::text);
@@ -173,12 +173,12 @@ reset role;
 select pg_temp.expect('the card leaves the other group''s chat',
   pg_temp.msgs('e8200000-0000-4000-8000-0000000000a2', 'plano'), null::text);
 select pg_temp.expect('the other group is told it was taken back',
-  pg_temp.msgs('e8200000-0000-4000-8000-0000000000a2', 'aviso') like 'Ana Partilha deixou de abrir o plano % a este grupo.', true);
+  pg_temp.msgs('e8200000-0000-4000-8000-0000000000a2', 'aviso') like 'Ana Partilha retirou o convite deste grupo para o plano %.', true);
 -- (Everything here runs in one transaction, so both notices share a timestamp: count them, do not order them.)
 select pg_temp.expect('the home group is told too, next to the first notice',
   (select count(*)::integer from public.group_message
    where group_id = 'e8200000-0000-4000-8000-0000000000a1' and kind = 'aviso' and plan_id = pg_temp.id('plano')
-     and body like 'Ana Partilha deixou de abrir o plano % ao grupo «Primos Partilha». Os lugares já aceites ficam como estão.'),
+     and body like 'Ana Partilha retirou o convite do plano % à malta do «Primos Partilha». Os lugares já aceites ficam como estão.'),
   1);
 select pg_temp.expect('who no longer sees the plan loses their answer; who still sees it keeps it',
   (select string_agg(p.display_name, ',' order by p.display_name)

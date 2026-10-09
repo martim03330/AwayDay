@@ -2,6 +2,23 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-09 — Boleias: canceladas desaparecem, um carro por jogo, e outro grupo entra por convite
+
+- **Boleia cancelada:** desaparece logo de todas as listas, também para o condutor e os passageiros. O quadro de
+  boleias só devolve boleias abertas. Quem tinha lugar ou pedido continua a receber «Boleia cancelada» (notificação
+  e aviso na app). Se a boleia era de um plano, o grupo recebe um aviso na conversa. A limpeza nocturna continua a
+  apagar as canceladas ao fim de 2 dias (migração `20261009130000`).
+- **Um carro por pessoa e por jogo:** quem oferece boleia não pede lugar nem entra pelo plano noutra boleia do mesmo
+  jogo, e quem tem lugar ou um pedido pendente não oferece boleia para esse jogo. A regra está em triggers
+  (`20261009140000`), por isso cobre todos os caminhos. A app explica e esconde «Pedir lugar» a quem já conduz.
+- **Grupos apagados com boleias privadas:** apagar um grupo (sai a última pessoa) falhava se houvesse uma boleia só
+  para esse grupo. Antes de o grupo desaparecer, as boleias abertas são canceladas e nenhuma fica privada
+  (`20261009120000`).
+- **Num plano, a boleia é do grupo ou de toda a gente:** ao oferecer boleia a partir de um plano, as opções são «Só a
+  malta do «grupo»» ou «Toda a gente». Deixou de dar para escolher outro grupo. Chamar outro grupo é um convite
+  feito no plano: «Convidar», «Convidado», «Retirar o convite». No grupo convidado aparece «Convite da malta do
+  «X»», e os avisos na conversa dizem «convidou» e «retirou o convite» (`20261009150000`).
+
 ## 2026-10-09 — Preparar o teste de 15 de outubro: lacunas fechadas
 
 Depois de uma revisão do que faltava (testes, lançamento e configuração do Claude), sem instalar o Ruflo:
