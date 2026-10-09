@@ -12,25 +12,30 @@ de despesas de grupo. Mercado: Portugal. UI em português de Portugal.
 
 ## Stack
 
-- Expo (SDK mais recente estável) + React Native + TypeScript `strict`
+- Expo SDK 57 + React Native 0.86 + TypeScript 6 `strict`
 - Expo Router (navegação por ficheiros)
 - TanStack Query (dados de servidor) + Zustand (estado local de UI)
 - Supabase: Postgres + PostGIS, Auth, Realtime, Storage, Edge Functions (Deno)
-- Testes: Vitest (lógica pura) + Testing Library (componentes)
+- Testes: Vitest (lógica pura) + Jest com Testing Library (`*.ui.test.tsx`) + SQL (`supabase/tests`) + Maestro (e2e)
 
 ## Comandos
 
 ```bash
-npx expo start                      # dev
-npx expo start --ios / --android    # simulador
-npm run typecheck                   # tsc --noEmit
-npm run lint
-npm run test
-supabase start                      # stack local
-supabase migration new <nome>
-supabase db reset                   # aplica migrações + seed
-supabase gen types typescript --local > src/lib/database.types.ts
+npx expo start --clear              # dev (sempre --clear: o repo está no Desktop do iCloud)
+npm run check                       # typecheck + lint + vitest + jest (tudo antes de um commit)
+npm run test:sql                    # testes SQL contra o projeto ligado (cada um numa transação desfeita)
+npm run test:e2e                    # Maestro, no simulador
+# Supabase: projeto REMOTO ligado (--linked). Sem Docker: nada de `supabase start` nem `db reset`.
+# Migração nova: criar supabase/migrations/<AAAAMMDDHHMMSS>_<nome>.sql à mão (`migration new` é lento).
+supabase db push                    # aplica as migrações novas
+npm run db:types                    # regenera src/lib/database.types.ts
 ```
+
+Lições:
+- Nunca `db reset` nem SQL destrutivo com `--linked`: é a base de dados de produção.
+- Depois de `git stash`/`reset`, procurar cópias do iCloud: `git status --untracked-files=all | grep " 2\."`.
+- Só `supabase/functions/sync-weather` tem `deno.lock` no repositório; não criar outros.
+- `docs/DECISOES.md` é grande: procurar com grep, não ler inteiro.
 
 ## Estrutura
 
@@ -102,28 +107,9 @@ São os sítios onde um bug custa dinheiro real a pessoas reais.
 
 A base de skills para desenvolvimento, com quando usar cada uma, está em `docs/SKILLS.md`.
 
-### Task Observer (ativação)
+### Task Observer
 
-Before the first tool call of any session — and before writing or
-proposing a plan, not merely before executing one — invoke the
-task-observer skill AND execute its Session Start Protocol (storage
-check, frontmatter scan, review trigger). Loading the skill and running
-the protocol are separate steps; a session that loads the file and stops
-has activated nothing. Any turn that will involve a tool call counts; do
-not classify the session as "too simple" from its opening message.
+Usa a skill task-observer só quando o utilizador pedir uma revisão das skills ou corrigir a forma de trabalhar
+(«não faças assim», «faz sempre…»). O registo fica em `skill-observations/` (fora do Git).
 
-Select skills on the DECISION the request is about, not on the artefact it
-arrived as. Name what the user is deciding, then match the installed skill
-descriptions against that — a request handed over as a file to review
-still needs the skill whose description names its subject.
-
-After completing each task, list the observation records written this
-session in the same turn and report a one-line summary from that listing
-(ids and titles, or "none logged and why") — never from memory of
-writing them.
-
-Loading a skill is not complete until you have queried the observation
-log for OPEN observations naming it and read their bodies:
-  find "/Users/martim_henriques/Desktop/AwayDay/skill-observations/observation-log" -maxdepth 1 \
-    -name '*.md' -exec grep -l "skill:.*<skill-name>" {} +
-Apply their insights to the current work; editing a skill file waits for the review.
+Escolhe as skills pela decisão que o pedido envolve, não pelo formato em que chegou.

@@ -23,7 +23,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.martimhenriques.awayday"
+      "package": "com.martimhenriques.awayday",
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -43,7 +48,9 @@
         "expo-audio",
         {
           "microphonePermission": "O AwayDay usa o microfone durante 10 segundos para medir o barulho da bancada. Nada é gravado.",
-          "recordAudioAndroid": true
+          "recordAudioAndroid": true,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
         }
       ],
       [
@@ -60,11 +67,24 @@
         {
           "locationWhenInUsePermission": "O AwayDay usa a tua localização no momento em que fazes check-in num tasco, carimbas o estádio, escolhes o ponto de partida de uma boleia ou procuras a casa de banho mais perto. A tua posição não fica guardada.",
           "locationAlwaysAndWhenInUsePermission": false,
-          "locationAlwaysPermission": false
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
         }
       ],
       "expo-asset",
-      "expo-secure-store"
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#187C44"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

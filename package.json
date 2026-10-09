@@ -80,7 +80,9 @@
     "legal:paginas": "node --experimental-strip-types scripts/legal/gerar-paginas.mjs",
     "test:ecras": "jest",
     "test:sql": "sh scripts/testes/sql.sh",
-    "test:e2e": "maestro test .maestro"
+    "test:e2e": "maestro test .maestro",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run test:ecras",
+    "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts"
   },
   "private": true,
   "jest": {
