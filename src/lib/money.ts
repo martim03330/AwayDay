@@ -80,7 +80,14 @@ export function formatarPreco(centimos: number, moeda: string) {
   if (!/^[A-Z]{3}$/.test(moeda)) throw new RangeError(`Moeda inválida: ${moeda}.`);
   let formato = formatosPorMoeda.get(moeda);
   if (!formato) {
-    formato = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: moeda });
+    // Always 2 decimals, as the stored minor units have: newer locale data gives some currencies (HUF) no decimals,
+    // and Intl would then round 199,50 HUF to «200 HUF», showing a price nobody set.
+    formato = new Intl.NumberFormat('pt-PT', {
+      style: 'currency',
+      currency: moeda,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
     formatosPorMoeda.set(moeda, formato);
   }
   return formato.format(exigirCentimos(centimos) / 100);

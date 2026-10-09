@@ -147,6 +147,8 @@ describe('formatarPreco', () => {
     [4500, 'NOK', '45,00 NOK'],
     [12_900, 'CZK', '129,00 CZK'],
     [199_000, 'HUF', '1990,00 HUF'],
+    // Never rounded away, whatever the locale data says about forint decimals.
+    [19_950, 'HUF', '199,50 HUF'],
     [5, 'DKK', '0,05 DKK'],
   ])('formata %i unidades mínimas em %s como "%s"', (centimos, moeda, esperado) => {
     expect(comEspacosNormais(formatarPreco(centimos, moeda))).toBe(esperado);
