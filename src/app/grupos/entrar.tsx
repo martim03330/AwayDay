@@ -1,10 +1,13 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { fetchGroupByCode, GroupRefused, joinGroupWithCode } from '@/features/groups/api';
+import { clearPendingInvite, savePendingInvite } from '@/features/auth/pending-invite';
+import { fetchGroupByCode, fetchMyGroupInbox, GroupRefused, joinGroupWithCode } from '@/features/groups/api';
+import { groupInboxKey } from '@/features/groups/hooks/useGroups';
+import { parseInviteCode } from '@/features/groups/invite-code';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
@@ -25,7 +28,15 @@ export default function EntrarNoGrupoScreen() {
   const theme = useTheme();
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const { code } = useLocalSearchParams<{ code?: string }>();
+  const params = useLocalSearchParams<{ code?: string }>();
+  const code = params.code ? (parseInviteCode(params.code) ?? params.code) : undefined;
+
+  // Without an account, the code is kept so that signing in comes straight back here (see useCloseAccountFlow).
+  // With one, it is no longer needed.
+  useEffect(() => {
+    if (!code) return;
+    void (userId ? clearPendingInvite() : savePendingInvite(code));
+  }, [code, userId]);
 
   const convite = useQuery({
     queryKey: ['groups', 'invite', code ?? null],
@@ -55,7 +66,7 @@ export default function EntrarNoGrupoScreen() {
         <EmptyState
           icon={icons.perfil}
           title="Precisas de conta"
-          message="Entra na tua conta e abre o link outra vez para entrares no grupo."
+          message="Entra na tua conta ou cria uma. Depois voltas logo a este convite."
           action={{ label: 'Entrar', onPress: () => router.push('/conta/entrar') }}
         />
       </Screen>
@@ -69,6 +80,11 @@ export default function EntrarNoGrupoScreen() {
     setAEntrar(true);
     try {
       const id = await joinGroupWithCode(code as string);
+      // The group screen finds the group in this list: it must already have it, or «Já não estás neste grupo»
+      // would flash. If the refresh fails, the group screen asks again.
+      await queryClient
+        .fetchQuery({ queryKey: groupInboxKey(), queryFn: fetchMyGroupInbox })
+        .catch(() => undefined);
       void queryClient.invalidateQueries({ queryKey: ['groups'] });
       router.replace({ pathname: '/grupos/[grupoId]', params: { grupoId: id } });
     } catch (problema) {

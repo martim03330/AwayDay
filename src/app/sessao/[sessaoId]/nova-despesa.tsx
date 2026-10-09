@@ -10,7 +10,13 @@ import {
 } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { addTripExpense, CATEGORIAS, type CategoriaDespesa } from '@/features/trips/api';
+import {
+  addTripExpense,
+  CATEGORIAS,
+  novoIdDePedido,
+  type CategoriaDespesa,
+  type NovaDespesa,
+} from '@/features/trips/api';
 import { CATEGORIA } from '@/features/trips/categorias';
 import { useRefreshTrips, useTripPeople } from '@/features/trips/hooks/useTrips';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
@@ -46,6 +52,9 @@ export default function NovaDespesaScreen() {
   const [quemEntra, setQuemEntra] = useState<string[] | null>(null);
   const [aLancar, setALancar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // The request id of what was last sent. Tapping again with the same form (after a timeout, say) reuses it, so the
+  // server writes the expense once; changing anything in the form makes it a new request.
+  const pedido = useRef<{ chave: string; id: string | undefined } | null>(null);
 
   const gente = pessoas.data ?? [];
   const escolhidos = quemEntra ?? gente.map((pessoa) => pessoa.profileId);
@@ -66,15 +75,18 @@ export default function NovaDespesaScreen() {
     if (!sessaoId || centimos === null) return;
     setErro(null);
     setALancar(true);
+    const despesa: NovaDespesa = {
+      sessionId: sessaoId,
+      description: descricao,
+      category: tipo,
+      cents: centimos,
+      payerId: quemPagou ?? undefined,
+      participants: quemEntra ?? undefined,
+    };
+    const chave = JSON.stringify(despesa);
+    if (pedido.current?.chave !== chave) pedido.current = { chave, id: novoIdDePedido() };
     try {
-      await addTripExpense({
-        sessionId: sessaoId,
-        description: descricao,
-        category: tipo,
-        cents: centimos,
-        payerId: quemPagou ?? undefined,
-        participants: quemEntra ?? undefined,
-      });
+      await addTripExpense({ ...despesa, clientId: pedido.current.id });
       await refrescar();
       router.back();
     } catch (problema) {

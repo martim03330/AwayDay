@@ -8,6 +8,7 @@ import { acceptGroupInvite, declineGroupInvite } from '@/features/friends/api';
 import { useMyGroupInvites, useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import type { GroupInboxItem } from '@/features/groups/api';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
+import { EntrarComCodigo } from '@/features/groups/components/EntrarComCodigo';
 import { useMyGroupInbox, useRefreshGroups } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
 import { chaveDoDia, formatarData, formatarHora } from '@/lib/datas';
@@ -62,6 +63,8 @@ export default function MaltaScreen() {
   const [erro, setErro] = useState<string | null>(null);
 
   const grupos = inbox.data ?? [];
+  // A failed fetch with nothing cached is «no connection», never «no groups».
+  const semLigacao = inbox.isError && inbox.data === undefined;
   const porResponder = convites.data ?? [];
 
   async function responder(acao: () => Promise<void>) {
@@ -141,6 +144,16 @@ export default function MaltaScreen() {
                   <SkeletonCard />
                   <SkeletonCard />
                 </>
+              ) : semLigacao ? (
+                <EmptyState
+                  icon={icons.erro}
+                  title="Sem ligação"
+                  message="Puxa para baixo para tentar outra vez."
+                  action={{
+                    label: 'Tentar outra vez',
+                    onPress: () => void Promise.all([refrescarGrupos(), refrescarAmigos()]),
+                  }}
+                />
               ) : grupos.length === 0 ? (
                 <Card style={styles.convite}>
                   <ThemedText type="subtitle">Ainda sem malta</ThemedText>
@@ -158,9 +171,10 @@ export default function MaltaScreen() {
             <Button
               label="Criar um grupo"
               icon={icons.perfil}
-              variant={grupos.length === 0 ? 'primary' : 'secondary'}
+              variant={grupos.length === 0 && !semLigacao ? 'primary' : 'secondary'}
               onPress={() => router.push('/malta/novo')}
             />
+            <EntrarComCodigo />
           </>
         )}
       </View>

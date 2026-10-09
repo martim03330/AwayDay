@@ -15,7 +15,7 @@ palavras-chave com marcas de outros).
 | Palavras-chave | `futebol,estádio,adeptos,liga,jogo,partilha,despesas,dividir,contas,grupo,viagem,carimbo,ranking` | 95 / 100 |
 | Categoria principal | Desporto | |
 | Categoria secundária | Viagens | |
-| Classificação etária | 17+ (ver `docs/LEGAL-E-LOJAS.md`) | |
+| Classificação etária | 18+ (respostas ao questionário em `docs/REVISAO-LOJAS.md`) | |
 | Preço | Grátis | |
 
 As palavras-chave não repetem o nome nem o subtítulo: a Apple já os indexa juntos.
@@ -73,6 +73,8 @@ Apple pede que mostre só a app: são gravações do ecrã, com títulos curtos 
 | Descrição breve | Boleias a meias, tascos à volta do estádio e contas da viagem com a tua malta. | 78 / 80 |
 | Categoria | Desporto | |
 | Etiquetas | Futebol, Viagens | |
+| Público-alvo | Só 18 anos ou mais (IARC e segurança dos dados em `docs/REVISAO-LOJAS.md`) | |
+| Eliminação da conta (link) | https://martim03330.github.io/awayday-legal/apagar-conta.html | |
 
 **Descrição completa**: a mesma da App Store.
 

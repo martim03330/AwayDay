@@ -5,38 +5,13 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { authenticatedCaller } from '../_shared/auth.ts';
-
-const REAUTHENTICATION_WINDOW_MS = 10 * 60 * 1000;
+import { signedInRecently } from '../_shared/reauthentication.ts';
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
-}
-
-function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-  return Object.fromEntries(Object.entries(value));
-}
-
-/**
- * When the session behind an access token last signed in (ms), from the token's `amr` claim; `null` if missing.
- * Only call it with a token that `auth.getUser` has already accepted.
- */
-function signedInAt(token: string): number | null {
-  const payload = token.split('.')[1];
-  if (!payload) return null;
-  try {
-    const claims = asRecord(JSON.parse(atob(payload.replaceAll('-', '+').replaceAll('_', '/'))));
-    const methods = Array.isArray(claims?.amr) ? claims.amr : [];
-    const times = methods
-      .map((method) => asRecord(method)?.timestamp)
-      .filter((time): time is number => typeof time === 'number' && Number.isFinite(time));
-    return times.length > 0 ? Math.max(...times) * 1000 : null;
-  } catch {
-    return null;
-  }
 }
 
 Deno.serve(async (request) => {
@@ -53,8 +28,7 @@ Deno.serve(async (request) => {
   const caller = await authenticatedCaller(request, admin);
   if (!caller) return json(401, { error: 'not_authenticated' });
 
-  const signedIn = signedInAt(caller.token);
-  if (signedIn === null || Date.now() - signedIn > REAUTHENTICATION_WINDOW_MS) {
+  if (!signedInRecently(caller.token, Date.now())) {
     return json(403, { error: 'reauthentication_required' });
   }
 

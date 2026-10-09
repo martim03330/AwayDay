@@ -151,9 +151,9 @@ describe('Admin reviewing', () => {
     expect(screen.getByLabelText('Foto de perfil de Rui Costa')).toBeOnTheScreen();
     // The storage path is not shown as text.
     expect(screen.queryByText('p-rui/foto.jpg')).toBeNull();
-    fireEvent.press(screen.getByRole('button', { name: 'Tirar a foto' }));
-    expect(alerta).toHaveBeenCalledWith('Tirar a foto?', 'A pessoa fica na app, só sem foto.', expect.any(Array));
-    carregarNoAlerta(alerta, 'Tirar a foto');
+    fireEvent.press(screen.getByRole('button', { name: 'Remover a foto' }));
+    expect(alerta).toHaveBeenCalledWith('Remover a foto?', 'A pessoa fica na app, só sem foto.', expect.any(Array));
+    carregarNoAlerta(alerta, 'Remover a foto');
     await waitFor(() => expect(mockResolveReport).toHaveBeenCalledWith('r1', 'tirar_foto'));
   });
 

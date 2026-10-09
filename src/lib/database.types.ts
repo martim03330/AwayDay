@@ -3350,6 +3350,7 @@ export type Database = {
         Row: {
           category: string
           cents: number
+          client_id: string | null
           created_at: string
           created_by: string | null
           description: string
@@ -3362,6 +3363,7 @@ export type Database = {
         Insert: {
           category: string
           cents: number
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           description: string
@@ -3374,6 +3376,7 @@ export type Database = {
         Update: {
           category?: string
           cents?: number
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
@@ -3587,6 +3590,7 @@ export type Database = {
       trip_settlement: {
         Row: {
           cents: number
+          client_id: string | null
           confirmed_at: string | null
           confirmed_by: string | null
           created_at: string
@@ -3599,6 +3603,7 @@ export type Database = {
         }
         Insert: {
           cents: number
+          client_id?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
@@ -3611,6 +3616,7 @@ export type Database = {
         }
         Update: {
           cents?: number
+          client_id?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
@@ -4016,6 +4022,7 @@ export type Database = {
         Args: {
           p_category: string
           p_cents: number
+          p_client_id?: string
           p_description: string
           p_participants?: string[]
           p_payer_id?: string
@@ -4034,6 +4041,7 @@ export type Database = {
       add_trip_settlement: {
         Args: {
           p_cents: number
+          p_client_id?: string
           p_from_profile_id?: string
           p_session_id: string
           p_to_profile_id: string

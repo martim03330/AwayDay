@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import {
   addTripSettlement,
+  novoIdDePedido,
   confirmTripSettlement,
   removeTripExpense,
   removeTripSettlement,
@@ -49,6 +50,17 @@ const VISTAS = [
  * The trip's expenses: the total on top, then two views — the **list** of what was added and **settle up** (who pays
  * whom). One fixed action at the bottom: add an expense.
  */
+/**
+ * One request id per payment row, kept across retries (and if the screen is reopened) so a timeout never records the
+ * same payment twice. Forgotten once the payment is recorded.
+ */
+const idsDosPedidos = new Map<string, string | undefined>();
+
+function idDoPedido(chave: string) {
+  if (!idsDosPedidos.has(chave)) idsDosPedidos.set(chave, novoIdDePedido());
+  return idsDosPedidos.get(chave);
+}
+
 export default function DespesasScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -255,8 +267,11 @@ export default function DespesasScreen() {
                                   sessaoId,
                                   transferencia.paraId,
                                   transferencia.centimos,
-                                  transferencia.deId
-                                ).then(() => undefined)
+                                  transferencia.deId,
+                                  idDoPedido(`${sessaoId}:${chave}:${transferencia.centimos}`)
+                                ).then(() => {
+                                  idsDosPedidos.delete(`${sessaoId}:${chave}:${transferencia.centimos}`);
+                                })
                             )
                           : undefined
                       }

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -6,6 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JogoCard } from '@/components/jogo-card';
 import { ConvitesDeBoleia } from '@/components/convites-de-boleia';
 import { SessoesAbertas } from '@/components/sessoes-abertas';
+import { fixtureCatalogQuery } from '@/features/fixtures/hooks/useFixtureCatalog';
+import { applyFixtureCatalogRows } from '@/features/fixtures/store';
+import { useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import { useMyOpenTripSessions } from '@/features/trips/hooks/useTrips';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { ConviteTreinador } from '@/components/convite-treinador';
@@ -14,7 +18,6 @@ import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
-import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
@@ -38,7 +41,6 @@ import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
-import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
@@ -160,7 +162,28 @@ export default function JogosScreen() {
   const [verConcorrencia, setVerConcorrencia] = useState(false);
   // The next games of your club by default; the whole season only when asked for.
   const [verCalendario, setVerCalendario] = useState(false);
-  const { loading, refreshing, refresh } = useSimulatedLoading('jogos');
+  const queryClient = useQueryClient();
+  const refrescarAmigos = useRefreshFriends();
+  const [refreshing, setRefreshing] = useState(false);
+
+  /**
+   * Pull to refresh asks the server again: the fixture catalogue (applied now — pulling is asking for it), the open
+   * trips and the ride invites. The spinner stays only while that is in flight; a failure keeps what is on screen.
+   */
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      await Promise.allSettled([
+        queryClient
+          .fetchQuery({ ...fixtureCatalogQuery, staleTime: 0 })
+          .then((rows) => applyFixtureCatalogRows(rows)),
+        userId ? sessoesAbertas.refetch() : Promise.resolve(),
+        userId ? refrescarAmigos() : Promise.resolve(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const idsMeusClubes = clubesDoUtilizador(
     clubeFavoritoId,
@@ -202,16 +225,6 @@ export default function JogosScreen() {
   }
 
   function renderConteudo() {
-    if (loading) {
-      return (
-        <View style={styles.grupo}>
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-        </View>
-      );
-    }
-
     if (filtrados.length === 0) {
       const emCompeticao =
         filtrosCompeticao.find((filtro) => filtro.id === competicao)?.emTexto ?? '';
@@ -281,7 +294,7 @@ export default function JogosScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={refresh}
+          onRefresh={() => void refresh()}
           progressViewOffset={insets.top}
           tintColor={theme.accentText}
         />

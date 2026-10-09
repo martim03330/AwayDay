@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -6,9 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LocalCard } from '@/components/local-card';
 import { MapaJogo } from '@/components/mapa-jogo';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { placeCatalogQuery } from '@/features/places/hooks/usePlaceCatalog';
+import { applyPlaceCatalogRows } from '@/features/places/store';
+import { placePulseKey } from '@/features/presence/hooks/usePresence';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useTheme } from '@/hooks/use-theme';
-import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { plural } from '@/lib/formatos';
 import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE, ordenarTascos, valeACaminhada } from '@/lib/locais';
 import { obterClube } from '@/mocks/clubes';
@@ -21,7 +24,6 @@ import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { SectionHeader } from '@/ui/section-header';
-import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 function temLocaisPerto(estadioId: string) {
@@ -89,7 +91,26 @@ export default function LocaisScreen() {
   const perto = ordenarTascos(pertoPorDistancia);
   const confirmados = perto.filter((local) => local.confirmacao === 'confirmado');
   const sugestoes = perto.filter((local) => local.confirmacao === 'sugerido');
-  const { loading, refreshing, refresh } = useSimulatedLoading(`locais-${estadio.id}`);
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  /**
+   * Pull to refresh asks the server again: the tascos (applied now — pulling is asking for them) and how many people
+   * are at each one. The spinner stays only while that is in flight; a failure keeps what is on screen.
+   */
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      await Promise.allSettled([
+        queryClient
+          .fetchQuery({ ...placeCatalogQuery, staleTime: 0 })
+          .then((rows) => applyPlaceCatalogRows(rows)),
+        queryClient.refetchQueries({ queryKey: placePulseKey, type: 'active' }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
   // The map shows everything at a glance; the long list is there for whoever prefers it.
   const [verLista, setVerLista] = useState(false);
 
@@ -108,16 +129,6 @@ export default function LocaisScreen() {
   }
 
   function renderConteudo() {
-    if (loading) {
-      return (
-        <>
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-        </>
-      );
-    }
-
     const estadioDaMalta = obterEstadio(estadioDoClube);
     if (perto.length === 0 && estadio.regiao === 'estrangeiro' && estadioDaMalta) {
       return (
@@ -232,7 +243,7 @@ export default function LocaisScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={refresh}
+          onRefresh={() => void refresh()}
           progressViewOffset={insets.top}
         />
       }>
@@ -263,9 +274,7 @@ export default function LocaisScreen() {
               {estadio.nome}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {loading
-                ? 'A procurar locais…'
-                : `${plural(perto.length, 'local', 'locais')} a menos de ${MAX_MINUTOS_A_PE} min a pé · ${estadio.cidade}`}
+              {`${plural(perto.length, 'local', 'locais')} a menos de ${MAX_MINUTOS_A_PE} min a pé · ${estadio.cidade}`}
             </ThemedText>
           </View>
         </View>

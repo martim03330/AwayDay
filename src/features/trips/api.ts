@@ -34,6 +34,7 @@ export type TripRefusal =
   | 'not_session_owner'
   | 'bad_name'
   | 'rate_limited'
+  | 'duplicate_request'
   | 'unknown';
 
 export class TripRefused extends Error {
@@ -72,10 +73,55 @@ const RECUSAS: TripRefusal[] = [
   'not_session_owner',
   'bad_name',
   'rate_limited',
+  'duplicate_request',
 ];
 
 function refusal(error: { message: string }) {
   return new TripRefused(RECUSAS.find((reason) => error.message === reason) ?? 'unknown');
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * A fresh id for one money write (an expense or a payment), so a retry of the same request is written only once:
+ * the server keeps one row per (session, id) and gives the same row back when the id comes again. The screen makes it
+ * once per form and reuses it when the person taps again after a failure.
+ *
+ * Where the random bytes come from, in order (no new dependency):
+ * 1. `crypto.randomUUID` — web, Node (Vitest) and any runtime that has it. Hermes in React Native 0.86 / SDK 57 does
+ *    not promise it, so it is only used when present.
+ * 2. `globalThis.expo.uuidv4` — installed natively by expo-modules-core in every Expo app (Android `UUID.randomUUID`,
+ *    iOS `UUID()`), both from the platform's secure generator.
+ * 3. `crypto.getRandomValues` — RFC 4122 version 4 built by hand from 16 random bytes.
+ * With none of these it returns `undefined` and the write goes without the protection, as before: no Math.random,
+ * because a guessable id would let a retry of someone else's request collide.
+ */
+export function novoIdDePedido(): string | undefined {
+  const ambiente = globalThis as {
+    crypto?: { randomUUID?: () => string; getRandomValues?: (bytes: Uint8Array) => Uint8Array };
+    expo?: { uuidv4?: () => string };
+  };
+  const candidatos = [
+    () => ambiente.crypto?.randomUUID?.(),
+    () => ambiente.expo?.uuidv4?.(),
+    () => {
+      if (!ambiente.crypto?.getRandomValues) return undefined;
+      const bytes = ambiente.crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    },
+  ];
+  for (const candidato of candidatos) {
+    try {
+      const id = candidato();
+      if (typeof id === 'string' && UUID.test(id)) return id.toLowerCase();
+    } catch {
+      // Try the next source.
+    }
+  }
+  return undefined;
 }
 
 /** As caixas onde cabe o dinheiro de um dia de jogo. */
@@ -206,6 +252,8 @@ export type NovaDespesa = {
   payerId?: string;
   /** Quem entra na despesa. Sem isto, entra o grupo todo. */
   participants?: string[];
+  /** Id do pedido (`novoIdDePedido`): o mesmo em cada nova tentativa, para a despesa não entrar duas vezes. */
+  clientId?: string;
 };
 
 export async function addTripExpense(despesa: NovaDespesa): Promise<string> {
@@ -216,6 +264,7 @@ export async function addTripExpense(despesa: NovaDespesa): Promise<string> {
     p_cents: despesa.cents,
     p_payer_id: despesa.payerId,
     p_participants: despesa.participants,
+    p_client_id: despesa.clientId,
   });
   if (error) throw refusal(error);
   return data;
@@ -492,13 +541,16 @@ export async function addTripSettlement(
   sessionId: string,
   toProfileId: string,
   cents: number,
-  fromProfileId?: string
+  fromProfileId?: string,
+  /** Id do pedido (`novoIdDePedido`), o mesmo em cada nova tentativa: o pagamento fica registado uma vez só. */
+  clientId?: string
 ): Promise<string> {
   const { data, error } = await client().rpc('add_trip_settlement', {
     p_session_id: sessionId,
     p_to_profile_id: toProfileId,
     p_cents: cents,
     p_from_profile_id: fromProfileId,
+    p_client_id: clientId,
   });
   if (error) throw refusal(error);
   return data;

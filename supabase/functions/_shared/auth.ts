@@ -5,6 +5,8 @@
 
 import type { SupabaseClient, User } from 'npm:@supabase/supabase-js@2.116.0';
 
+export { hasCronSecret } from './cron-secret.ts';
+
 export type Caller = {
   user: User;
   /** The access token, already accepted by Supabase Auth. */
@@ -20,17 +22,4 @@ export async function authenticatedCaller(request: Request, admin: SupabaseClien
   if (!token) return null;
   const { data, error } = await admin.auth.getUser(token);
   return error || !data.user ? null : { user: data.user, token };
-}
-
-/** Whether the request carries CRON_SECRET in `x-cron-secret`. Always `false` while the secret is not set. */
-export function hasCronSecret(request: Request): boolean {
-  const expected = Deno.env.get('CRON_SECRET') ?? '';
-  const provided = request.headers.get('x-cron-secret') ?? '';
-  if (!expected || expected.length !== provided.length) return false;
-  // Constant time: how long the comparison takes says nothing about how much of the secret matched.
-  let difference = 0;
-  for (let index = 0; index < expected.length; index++) {
-    difference |= expected.charCodeAt(index) ^ provided.charCodeAt(index);
-  }
-  return difference === 0;
 }

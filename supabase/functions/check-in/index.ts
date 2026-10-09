@@ -8,18 +8,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { authenticatedCaller } from '../_shared/auth.ts';
+import { checkPresence, parseCheckInBody, type CheckInBody } from '../_shared/check-in-rules.ts';
 
-/** How far from the place a check-in still counts. */
-const MAX_DISTANCE_M = 150;
-/** Positions less precise than this are refused: they could put someone in the tasco next door. */
-const MAX_ACCURACY_M = 100;
 const RATE_LIMIT = { bucket: 'check-in', limit: 30, window: '1 hour' } as const;
-const PLACE_ID = /^[a-z0-9-]{1,120}$/;
-const EARTH_RADIUS_M = 6_371_000;
-
-type Body =
-  | { action: 'check-in'; placeId: string; latitude: number; longitude: number; accuracy: number }
-  | { action: 'check-out'; placeId: string };
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -31,45 +22,6 @@ function json(status: number, body: Record<string, unknown>) {
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   return Object.fromEntries(Object.entries(value));
-}
-
-function finiteBetween(value: unknown, min: number, max: number): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
-}
-
-function parseBody(value: unknown): Body | null {
-  const body = asRecord(value);
-  if (!body || typeof body.placeId !== 'string' || !PLACE_ID.test(body.placeId)) return null;
-  if (body.action === 'check-out') return { action: 'check-out', placeId: body.placeId };
-  if (
-    body.action !== 'check-in' ||
-    !finiteBetween(body.latitude, -90, 90) ||
-    !finiteBetween(body.longitude, -180, 180) ||
-    !finiteBetween(body.accuracy, 0, 100_000)
-  ) {
-    return null;
-  }
-  return {
-    action: 'check-in',
-    placeId: body.placeId,
-    latitude: body.latitude,
-    longitude: body.longitude,
-    accuracy: body.accuracy,
-  };
-}
-
-function toRadians(degrees: number) {
-  return (degrees * Math.PI) / 180;
-}
-
-/** Straight-line distance in metres (haversine). */
-function distanceM(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
-  const dLat = toRadians(to.lat - from.lat);
-  const dLng = toRadians(to.lng - from.lng);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(from.lat)) * Math.cos(toRadians(to.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a));
 }
 
 Deno.serve(async (request) => {
@@ -85,9 +37,9 @@ Deno.serve(async (request) => {
   const caller = await authenticatedCaller(request, admin);
   if (!caller) return json(401, { error: 'not_authenticated' });
 
-  let body: Body | null = null;
+  let body: CheckInBody | null = null;
   try {
-    body = parseBody(await request.json());
+    body = parseCheckInBody(await request.json());
   } catch {
     body = null;
   }
@@ -127,15 +79,14 @@ Deno.serve(async (request) => {
     return json(404, { error: 'place_not_found' });
   }
 
-  if (body.accuracy > MAX_ACCURACY_M) return json(422, { error: 'low_accuracy' });
-
-  const distance = distanceM(
-    { lat: body.latitude, lng: body.longitude },
-    { lat: row.latitude, lng: row.longitude }
-  );
-  if (distance > MAX_DISTANCE_M) {
-    // Rounded to 50 m: enough to say "you are 400 m away", not a precise position.
-    return json(422, { error: 'too_far', distance_m: Math.round(distance / 50) * 50 });
+  const presence = checkPresence(body, { latitude: row.latitude, longitude: row.longitude });
+  if (!presence.ok) {
+    return json(
+      422,
+      presence.error === 'too_far'
+        ? { error: 'too_far', distance_m: presence.distance_m }
+        : { error: presence.error }
+    );
   }
 
   const started = await admin.rpc('start_checkin', {

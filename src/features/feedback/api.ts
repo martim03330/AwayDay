@@ -1,6 +1,6 @@
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+import { versionForFeedback } from '@/features/feedback/versao';
 import { supabase } from '@/lib/supabase';
 
 // Reportar um erro ou sugerir uma melhoria. Não é preciso ter conta: um erro não espera por um registo.
@@ -51,11 +51,6 @@ function aparelho() {
   return `${Platform.OS} ${String(Platform.Version)} · ${modelo}`.slice(0, 120);
 }
 
-function versaoDaApp() {
-  const versao = Constants.expoConfig?.version;
-  return typeof versao === 'string' ? versao : undefined;
-}
-
 export async function sendFeedback(input: {
   kind: NaturezaFeedback;
   area: AreaFeedback;
@@ -66,7 +61,7 @@ export async function sendFeedback(input: {
     p_area: input.area,
     p_body: input.body.trim(),
     p_device: aparelho(),
-    p_app_version: versaoDaApp(),
+    p_app_version: versionForFeedback(),
   });
   if (error) throw refusal(error);
 }

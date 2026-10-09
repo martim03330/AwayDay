@@ -42,7 +42,7 @@ function acaoPrincipal(denuncia: PendingReport): { action: ReportAction; label: 
   if (denuncia.kind === 'message' || denuncia.kind === 'ride_message') {
     return { action: 'esconder', label: 'Esconder a mensagem' };
   }
-  if (denuncia.kind === 'profile_photo') return { action: 'tirar_foto', label: 'Tirar a foto' };
+  if (denuncia.kind === 'profile_photo') return { action: 'tirar_foto', label: 'Remover a foto' };
   return { action: 'resolver', label: 'Já tratei' };
 }
 
@@ -78,7 +78,7 @@ export default function DenunciasScreen() {
       return;
     }
     Alert.alert(
-      action === 'esconder' ? 'Esconder para toda a gente?' : 'Tirar a foto?',
+      action === 'esconder' ? 'Esconder para toda a gente?' : 'Remover a foto?',
       action === 'esconder'
         ? 'A mensagem sai da conversa de todos, incluindo de quem a escreveu.'
         : 'A pessoa fica na app, só sem foto.',

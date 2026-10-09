@@ -12,13 +12,21 @@ import {
   Figtree_800ExtraBold,
 } from '@expo-google-fonts/figtree';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  type ErrorBoundaryProps,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 import { LigacaoDemo } from '@/components/ligacao-demo';
-import { fontFamily } from '@/constants/theme';
+import { Colors, ColorsEscuro, fontFamily, Radius, Spacing } from '@/constants/theme';
+import { reportErrorOnce } from '@/features/feedback/report';
 import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
 import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalogSync';
 import { restoreFixtureCatalog } from '@/features/fixtures/hooks/useFixtureCatalog';
@@ -155,3 +163,79 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+/**
+ * A screen that crashed while drawing. Expo Router shows this in place of the layout, so it lives **outside** every
+ * provider (app state, theme, queries): plain React Native only, colours from the system scheme. The error goes to
+ * the feedback inbox once per distinct error, in the background; the person only sees a calm message and a retry.
+ */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const escuro = useColorScheme() === 'dark';
+  const paleta = escuro ? ColorsEscuro : Colors;
+  const [aTentar, setATentar] = useState(false);
+  const mensagem = error.message || error.name;
+
+  useEffect(() => {
+    // Keyed on the message and the top of the stack: the same crash twice in a launch is reported once.
+    const chave = `ecra:${mensagem}:${(error.stack ?? '').split('\n')[1] ?? ''}`;
+    reportErrorOnce(chave, 'Ecrã partiu', error, { area: 'outro', stack: error.stack }).catch(
+      () => undefined
+    );
+  }, [error, mensagem]);
+
+  return (
+    <View style={[estilosErro.ecra, { backgroundColor: paleta.background }]}>
+      <Text accessibilityRole="header" style={[estilosErro.titulo, { color: paleta.text }]}>
+        Algo correu mal neste ecrã
+      </Text>
+      <Text style={[estilosErro.texto, { color: paleta.textSecondary }]}>
+        Já nos chegou o aviso. Tenta outra vez; se voltar a acontecer, sai e volta a entrar.
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Tentar outra vez"
+        accessibilityState={{ disabled: aTentar }}
+        disabled={aTentar}
+        onPress={() => {
+          setATentar(true);
+          void retry().finally(() => setATentar(false));
+        }}
+        style={({ pressed }) => [
+          estilosErro.botao,
+          { backgroundColor: pressed ? paleta.accentPressed : paleta.accent },
+        ]}>
+        <Text style={[estilosErro.botaoTexto, { color: paleta.accentText }]}>Tentar outra vez</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const estilosErro = StyleSheet.create({
+  ecra: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.four,
+  },
+  titulo: {
+    fontFamily: fontFamily('body', 800),
+    fontSize: 22,
+    textAlign: 'center',
+  },
+  texto: {
+    fontFamily: fontFamily('body', 500),
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  botao: {
+    borderRadius: Radius.button,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+  },
+  botaoTexto: {
+    fontFamily: fontFamily('body', 700),
+    fontSize: 16,
+  },
+});

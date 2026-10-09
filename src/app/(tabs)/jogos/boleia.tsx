@@ -1,7 +1,6 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import * as Linking from 'expo-linking';
 import { Alert, Share, StyleSheet, Switch, View } from 'react-native';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
@@ -328,9 +327,8 @@ export default function BoleiaScreen() {
   /** Shares the ride with a link that opens it in the app, so the group organises itself here. */
   async function partilhar() {
     if (!boleia || !jogo) return;
-    const link = Linking.createURL('/jogos/boleia', {
-      queryParams: { rideId: boleia.id, jogoId: jogo.id },
-    });
+    // An https page that opens the ride in the app: WhatsApp does not make awayday:// tappable.
+    const link = `https://martim03330.github.io/awayday-legal/convite/?boleia=${encodeURIComponent(boleia.id)}&jogo=${encodeURIComponent(jogo.id)}`;
     const casa = obterClube(jogo.casaId)?.nomeCurto ?? '';
     const fora = obterClube(jogo.foraId)?.nomeCurto ?? '';
     const lugares = boleia.seatsOffered - boleia.seatsTaken;

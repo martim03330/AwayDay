@@ -42,7 +42,7 @@ export const IDADE_MINIMA = 18;
 const p = (texto: string): BlocoLegal => ({ tipo: 'paragrafo', texto });
 const l = (...itens: string[]): BlocoLegal => ({ tipo: 'lista', itens });
 
-const ATUALIZADO = '6 de outubro de 2026';
+const ATUALIZADO = '9 de outubro de 2026';
 
 export const PRIVACIDADE: DocumentoLegal = {
   id: 'privacidade',
@@ -58,7 +58,7 @@ export const PRIVACIDADE: DocumentoLegal = {
           'Usamos só o que é preciso para a app funcionar: a tua conta, o que fazes nos dias de jogo e o que partilhas com a tua malta.',
           'Não temos publicidade, não vendemos dados, não usamos ferramentas de análise nem de rastreio, e a app não usa cookies.',
           'A tua localização é lida no momento em que precisas dela e não fica guardada.',
-          'Podes apagar a conta quando quiseres, dentro da app.'
+          'Podes apagar a conta quando quiseres, dentro da app (Perfil, Conta) ou por email.'
         ),
       ],
     },
@@ -93,7 +93,7 @@ export const PRIVACIDADE: DocumentoLegal = {
       titulo: 'A tua localização',
       blocos: [
         p(
-          'A app só lê a tua localização quando usas uma função que precisa dela: fazer check-in num tasco, carimbar o estádio, escolher o ponto de partida de uma boleia ou encontrar a casa de banho mais perto. Lê uma vez, e a posição não fica guardada.'
+          'A app só lê a tua localização quando usas uma função que precisa dela: fazer check-in num tasco, carimbar o estádio, escolher o ponto de partida de uma boleia ou encontrar a casa de banho mais perto. Lê uma vez, e a posição não fica guardada. Numa boleia, fica guardado o ponto de encontro que escolhes no mapa, não a tua posição.'
         ),
         l(
           'Guardamos o resultado, não a posição: por exemplo, que estiveste num estádio num certo dia.',
@@ -119,12 +119,13 @@ export const PRIVACIDADE: DocumentoLegal = {
         p('Para a app funcionar usamos estes fornecedores, que tratam dados em nosso nome e só para isso:'),
         l(
           'Supabase: base de dados, contas e ficheiros. Os dados ficam na União Europeia (Frankfurt, Alemanha).',
+          'Brevo: envio dos emails com o código para confirmares a conta ou mudares a password (recebe o teu email). Empresa francesa, dados na União Europeia.',
           'Expo, Apple e Google: entrega das notificações no teu telemóvel.',
           'Apple Maps (iPhone) e Google Maps (Android): desenho do mapa dentro da app.',
           'Anthropic: escrita das dicas e da retrospetiva (Estados Unidos).',
-          'OpenStreetMap (Nominatim e serviços de percursos): pesquisa de moradas e cálculo de percursos. Enviamos o que pesquisas, não quem és.'
+          'OpenStreetMap (Nominatim e serviços de percursos) e Photon, da komoot (quando o Nominatim falha): pesquisa de moradas e cálculo de percursos. Enviamos o que pesquisas, não quem és.'
         ),
-        p('O calendário dos jogos vem da football-data.org, que não recebe dados teus. Não partilhamos dados com clubes, ligas, anunciantes nem corretores de dados.'),
+        p('O calendário dos jogos vem da football-data.org, e a previsão do tempo para os estádios do IPMA e do MET Norway (instituto de meteorologia norueguês). Estes serviços não recebem dados teus: o nosso servidor só lhes pede os jogos e a previsão para o sítio de cada estádio. Não partilhamos dados com clubes, ligas, anunciantes nem corretores de dados.'),
       ],
     },
     {
@@ -141,7 +142,7 @@ export const PRIVACIDADE: DocumentoLegal = {
         l(
           'Os dados da conta e o que fizeste na app, enquanto tiveres conta.',
           'Check-ins ativos: 48 horas. Assinalar adeptos da casa: até 48 horas depois do jogo.',
-          'Quando apagas a conta, apagamos o teu perfil e o que está ligado a ti. As fotos de tascos já aprovadas podem ficar, sem o teu nome.',
+          'Quando apagas a conta, apagamos o teu perfil e tudo o que está ligado a ti, com duas exceções: as fotos de tascos já aprovadas ficam, sem o teu nome; e as fotos que enviaste para um grupo ou para o álbum de uma viagem ficam nesse grupo ou nessa viagem, porque são memórias de quem lá estava.',
           'Cópias de segurança do fornecedor podem guardar dados durante um período curto antes de serem substituídas.'
         ),
       ],

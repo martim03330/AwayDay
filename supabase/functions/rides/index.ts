@@ -15,8 +15,9 @@ import {
   sharePerPersonCents,
   tripCost,
   type TollRate,
-  type TollSegment,
+  type TripCost,
 } from '../_shared/ride-cost.ts';
+import { routeFromCache, routeFromValhalla, type Route } from '../_shared/route-parse.ts';
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
@@ -43,7 +44,6 @@ const OPTIONS = [
 
 type RouteOption = (typeof OPTIONS)[number]['option'];
 type Point = { latitude: number; longitude: number };
-type Route = { distanceM: number; durationS: number; tollM: number; tollSegments: TollSegment[] };
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -87,17 +87,6 @@ function straightLineM(from: Point, to: Point) {
   return 2 * 6_371_000 * Math.asin(Math.sqrt(a));
 }
 
-/** "A 1" -> "A1"; anything that is not a motorway reference counts under the default rate. */
-function motorwayOf(names: unknown) {
-  const list = Array.isArray(names) ? names : [];
-  for (const name of list) {
-    if (typeof name !== 'string') continue;
-    const match = /^A\s?(\d+(?:-\d+)?)$/.exec(name.trim());
-    if (match) return `A${match[1]}`;
-  }
-  return 'default';
-}
-
 async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<Route | null> {
   try {
     const response = await fetch(ROUTER, {
@@ -115,30 +104,7 @@ async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<
       signal: AbortSignal.timeout(15_000),
     });
     if (!response.ok) return null;
-    const trip = asRecord(asRecord(await response.json())?.trip);
-    const summary = asRecord(trip?.summary);
-    const lengthKm = summary?.length;
-    const timeS = summary?.time;
-    if (typeof lengthKm !== 'number' || typeof timeS !== 'number') return null;
-
-    const segments: TollSegment[] = [];
-    for (const legValue of Array.isArray(trip?.legs) ? trip.legs : []) {
-      const leg = asRecord(legValue);
-      for (const maneuverValue of Array.isArray(leg?.maneuvers) ? leg.maneuvers : []) {
-        const maneuver = asRecord(maneuverValue);
-        if (maneuver?.toll !== true || typeof maneuver.length !== 'number') continue;
-        segments.push({
-          motorway: motorwayOf(maneuver.street_names),
-          tollM: Math.round(maneuver.length * 1000),
-        });
-      }
-    }
-    return {
-      distanceM: Math.max(Math.round(lengthKm * 1000), 1),
-      durationS: Math.max(Math.round(timeS), 1),
-      tollM: segments.reduce((total, segment) => total + segment.tollM, 0),
-      tollSegments: segments,
-    };
+    return routeFromValhalla(await response.json());
   } catch {
     return null;
   }
@@ -159,15 +125,10 @@ async function route(admin: SupabaseClient, from: Point, to: Point, useTolls: nu
     .eq('key', key)
     .gte('created_at', new Date(Date.now() - 30 * DAY_MS).toISOString())
     .maybeSingle();
-  if (cached.data) {
-    const segments = Array.isArray(cached.data.toll_segments) ? (cached.data.toll_segments as TollSegment[]) : [];
-    return {
-      distanceM: Number(cached.data.distance_m),
-      durationS: Number(cached.data.duration_s),
-      tollM: segments.reduce((total, segment) => total + segment.tollM, 0),
-      tollSegments: segments,
-    };
-  }
+  // A malformed row is ignored: the route is asked again and the upsert below overwrites it.
+  const fromCache = cached.data ? routeFromCache(cached.data) : null;
+  if (fromCache) return fromCache;
+  if (cached.data) console.error('rides: discarding malformed route_cache row', key);
   const found = await routeValhalla(from, to, useTolls);
   if (found) {
     await admin.from('route_cache').upsert({
@@ -387,17 +348,24 @@ Deno.serve(async (request) => {
   const rates = await tollRates(admin);
   if (!rates) return json(500, { error: 'toll_rates_failed' });
 
-  const costOf = (found: Route) =>
-    tripCost(
-      {
-        distanceM: found.distanceM,
-        tollSegments: found.tollSegments,
-        consumptionClPer100Km: consumption,
-        fuelPriceMilliPerLitre: fuelPrice,
-        roundTrip,
-      },
-      rates
-    );
+  /** The cost of a route, or `null` when it cannot be worked out (say, a toll road with no rate, not even "default"). */
+  const costOf = (found: Route): TripCost | null => {
+    try {
+      return tripCost(
+        {
+          distanceM: found.distanceM,
+          tollSegments: found.tollSegments,
+          consumptionClPer100Km: consumption,
+          fuelPriceMilliPerLitre: fuelPrice,
+          roundTrip,
+        },
+        rates
+      );
+    } catch (error) {
+      console.error('rides: cost failed:', error instanceof Error ? error.message : String(error));
+      return null;
+    }
+  };
 
   if (action === 'quote') {
     const limited = await takeLimit(admin, caller.user.id, QUOTE_LIMIT);
@@ -421,6 +389,7 @@ Deno.serve(async (request) => {
       );
       if (same) continue;
       const cost = costOf(found);
+      if (!cost) return json(500, { error: 'cost_failed' });
       quotes.push({
         option,
         distance_m: found.distanceM,
@@ -510,6 +479,7 @@ Deno.serve(async (request) => {
   const found = await route(admin, origin, stadium, useTolls);
   if (!found) return json(404, { error: 'no_route' });
   const cost = costOf(found);
+  if (!cost) return json(500, { error: 'cost_failed' });
 
   // Para onde a boleia volta: o concelho de onde saiu. É o que deixa a app mostrar «quem volta para Viseu» no fim
   // do jogo. Se não se souber, a boleia entra na mesma sem destino — é só uma etiqueta.

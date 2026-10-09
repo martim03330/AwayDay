@@ -2,6 +2,67 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-09 — Preparar o teste de 15 de outubro: lacunas fechadas
+
+Depois de uma revisão do que faltava (testes, lançamento e configuração do Claude), sem instalar o Ruflo:
+- **Mapa dos tascos:** conta contas com email confirmado, em vez de contas com 3 dias (migração `20261009090000`).
+  Os testadores contam no primeiro dia; mantêm-se os múltiplos de 5 e a atualização de 5 em 5 minutos.
+- **Dinheiro sem duplicados** (`20261009100000_trip_money_idempotency.sql`): `add_trip_expense` e `add_trip_settlement`
+  aceitam `p_client_id`. O id pertence a quem o usou primeiro: repetir devolve a linha que já existe, e outra pessoa
+  com o mesmo id recebe `duplicate_request`. A app gera o id uma vez por formulário ou por linha de pagamento e reusa-o
+  nas novas tentativas. As fontes, por ordem: `crypto.randomUUID`, `expo.uuidv4` e `crypto.getRandomValues`; nunca
+  `Math.random`. Sem nenhuma delas, a app envia sem id, como antes.
+- **Acerto de contas:** cada pessoa entra uma vez numa divisão, mesmo que venha repetida. Ids repetidos juntam-se,
+  nunca há transferências para si próprio, e os saldos têm de ser inteiros. A ordem dos cêntimos que sobram é a do
+  servidor.
+- **Datas em Lisboa:** «Hoje», «Amanhã» e «Ontem» comparam dias do calendário, não 24 horas. Uma hora que não existe
+  (mudança de hora em março) avança, e uma hora ambígua (outubro) fica com o primeiro instante.
+- **Edge Functions:** a leitura das rotas, as regras do check-in, o segredo do cron e a janela de reautenticação
+  passaram para módulos puros em `_shared`, todos com testes. Uma rota guardada com defeito é ignorada e calculada
+  outra vez, e um erro no preço responde `cost_failed`, com mensagem na app.
+- **Notificações:**
+  - «Ligar avisos» na introdução pede mesmo a autorização ao telemóvel e regista o aparelho. Sem conta, pede no
+    primeiro login.
+  - Tocar numa notificação com a app fechada abre o ecrã certo.
+  - Os lembretes locais de jogo também (liam `fixtureId` e enviavam `jogoId`).
+  - As falhas a registar o aparelho são enviadas, no máximo uma por arranque, pelo formulário de opinião.
+- **Erros de ecrã:** `ErrorBoundary` na raiz com «Algo correu mal neste ecrã» e «Tentar outra vez». O erro vai pelo
+  formulário de opinião, uma vez por erro.
+- **Versão:** a opinião e as Definições mostram «Versão X (build Y)». O número da compilação vem do binário, sem
+  dependências novas.
+- **Caixa de entrada para administradores:** «Erros e ideias recebidos», em Definições.
+- **Sem ligação:** a Malta e a conversa de um grupo mostram «Sem ligação», e não «Ainda sem malta» ou «Já não estás
+  neste grupo».
+- **Puxar para atualizar** em Jogos e Locais vai mesmo buscar os dados e aplica o catálogo novo. Normalmente só se
+  aplica no arranque seguinte, mas aqui é a pessoa que o pede. O carregamento fingido desapareceu.
+- **Convites:** a ligação partilhada passa a ser https, para o WhatsApp a deixar tocar
+  (`https://martim03330.github.io/awayday-legal/convite/?c=…` ou `?boleia=…&jogo=…`).
+  - A página tenta abrir a app; se não der, mostra o código e como instalar.
+  - Na Malta há «Tenho um código».
+  - Um convite aberto sem sessão é guardado e retomado depois do login.
+  - Depois de entrar, espera pela lista de grupos, para nunca piscar «Já não estás neste grupo».
+- **Textos legais:**
+  - Juntam-se a Brevo (emails dos códigos), o Photon, o IPMA e o MET Norway.
+  - Explicam o que fica depois de apagar a conta: fotos de tasco anónimas e fotos de grupo e de viagem.
+  - Explicam que se guarda o ponto de encontro da boleia, não a posição.
+  - Há uma página pública para apagar a conta (pedida pelo Google Play).
+  - As notas para a revisão das lojas estão em `docs/REVISAO-LOJAS.md`, com classificação 18+.
+- **Compilações:**
+  - Sem áudio em segundo plano.
+  - Sem os avisos em inglês do Face ID e do movimento.
+  - O Android sem `SYSTEM_ALERT_WINDOW` nem acesso ao armazenamento.
+  - Ícone das notificações definido.
+  - A pré-visualização Android sai em APK.
+  - `app.config.js` junta, só na compilação, a chave do Google Maps para Android e o `google-services.json`, a partir
+    das variáveis do EAS. Ficam fora do Git.
+  - A chave do Maps é a exceção à regra 3: só desenha o mapa e fica presa à app e ao certificado.
+- **Ferramentas:** `npm run check` corre os tipos, o lint e os dois conjuntos de testes. `npm run db:types` regenera os
+  tipos. Uma GitHub Action corre `check` a cada envio.
+- **Configuração do Claude:**
+  - O `CLAUDE.md` passa a ter os comandos reais (projeto remoto, sem `db reset`) e as lições aprendidas.
+  - O task-observer passa a correr só a pedido: em quatro sessões não registou nenhuma observação.
+  - Saíram 17 skills que não servem o projeto.
+
 ## 2026-10-08 — O plano fica parado no apito inicial, aviso nas boleias para as ilhas e sem NIF público
 
 - **Plano depois do jogo:** a partir do apito inicial, o plano é uma recordação de quem foi.

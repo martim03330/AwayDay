@@ -69,6 +69,7 @@ export type RideRefusal =
   | 'too_late'
   | 'request_not_found'
   | 'bad_location'
+  | 'cost_failed'
   | 'unknown';
 
 export class RideRefused extends Error {
@@ -97,6 +98,7 @@ const REASONS: readonly RideRefusal[] = [
   'outside_window',
   'not_participant',
   'bad_parking',
+  'cost_failed',
 ];
 
 function toReason(value: unknown): RideRefusal {

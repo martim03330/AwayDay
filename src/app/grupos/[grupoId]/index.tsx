@@ -8,6 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -76,7 +78,15 @@ export default function ConversaDoGrupoScreen() {
   const userId = useUserId();
   const { grupoId } = useLocalSearchParams<{ grupoId?: string }>();
 
-  const { group: grupo, isLoading } = useGroupFromInbox(grupoId ?? null, userId !== null);
+  const {
+    group: grupo,
+    isLoading,
+    isError: inboxFalhou,
+    data: inboxGuardada,
+    refetch: tentarOutraVez,
+  } = useGroupFromInbox(grupoId ?? null, userId !== null);
+  // The list never arrived (offline, timeout): that says nothing about being in the group.
+  const semLigacao = inboxFalhou && inboxGuardada === undefined;
   const mensagens = useGroupMessages(grupo ? grupo.id : null);
   const online = useGroupChannel(grupo ? grupo.id : null, userId);
   const cartoes = useProfileCards([
@@ -94,6 +104,16 @@ export default function ConversaDoGrupoScreen() {
   const [texto, setTexto] = useState('');
   const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [aTentar, setATentar] = useState(false);
+
+  async function tentarDeNovo() {
+    setATentar(true);
+    try {
+      await tentarOutraVez();
+    } finally {
+      setATentar(false);
+    }
+  }
 
   // Abrir a conversa é lê-la: o número de mensagens por ler desaparece da lista da Malta.
   const ultimaDeOutro = (mensagens.data ?? []).find((mensagem) => !mensagem.mine)?.id ?? null;
@@ -103,6 +123,25 @@ export default function ConversaDoGrupoScreen() {
       .then(() => refrescar())
       .catch(() => undefined);
   }, [grupoId, ultimaDeOutro, refrescar]);
+
+  if (userId && grupoId && !grupo && semLigacao) {
+    return (
+      <ScrollView
+        style={[styles.tudo, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.semLigacao}
+        refreshControl={
+          <RefreshControl refreshing={aTentar} onRefresh={() => void tentarDeNovo()} />
+        }>
+        <Stack.Screen options={{ title: 'Grupo' }} />
+        <EmptyState
+          icon={icons.erro}
+          title="Sem ligação"
+          message="Puxa para baixo para tentar outra vez."
+          action={{ label: 'Tentar outra vez', onPress: () => void tentarDeNovo() }}
+        />
+      </ScrollView>
+    );
+  }
 
   if (!userId || !grupoId || (!grupo && !isLoading)) {
     return (
@@ -475,6 +514,10 @@ function Atalho({ icon, label, onPress }: { icon: IconName; label: string; onPre
 }
 
 const styles = StyleSheet.create({
+  semLigacao: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   tudo: {
     flex: 1,
   },

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Convite · AwayDay</title>
+<meta name="description" content="Abre o convite no AwayDay: grupos da malta e boleias para a bola.">
+<meta property="og:title" content="Convite para o AwayDay">
+<meta property="og:description" content="Toca para abrir na app. Se ainda não a tens, instala-a e usa o código.">
+<!--
+  Invite redirect page, served from the public GitHub Pages repo martim03330/awayday-legal at /convite/.
+    Group:  https://martim03330.github.io/awayday-legal/convite/?c=<invite code>
+    Ride:   https://martim03330.github.io/awayday-legal/convite/?boleia=<ride id>&jogo=<fixture id>
+  WhatsApp does not make awayday:// links tappable, but it does https ones. This page tries the app straight away and
+  shows the code to type in Malta → «Tenho um código» when the app is not installed yet.
+  BEFORE PUBLISHING: replace TODO_TESTFLIGHT_URL and TODO_ANDROID_URL below (search for "TODO_").
+  No external scripts, no cookies, no analytics: the code never leaves the page.
+-->
+<style>
+  :root {
+    color-scheme: light dark;
+    --texto: #13241B; --fundo: #F8F7F2; --cartao: #FFFFFF; --suave: #4A5A50; --linha: #DCE3DC;
+    --verde: #187C44; --verde-tinta: #FFFFFF; --verde-claro: #E3F2E8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --texto: #E7EEE8; --fundo: #0E1512; --cartao: #16201B; --suave: #A6B5AA; --linha: #2A3A31;
+      --verde: #68CE93; --verde-tinta: #0E1512; --verde-claro: #1D3326;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--fundo); color: var(--texto);
+    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+  }
+  main { width: 100%; max-width: 420px; }
+  .marca { font-weight: 900; letter-spacing: 0.02em; color: var(--verde); margin: 0 0 16px; text-align: center; }
+  .cartao {
+    background: var(--cartao); border: 1px solid var(--linha); border-radius: 20px; padding: 24px 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  }
+  h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 6px; }
+  p { margin: 0 0 12px; color: var(--suave); }
+  .codigo {
+    margin: 18px 0 10px; padding: 14px 12px; border-radius: 14px; background: var(--verde-claro);
+    font: 800 2rem/1.1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: 0.12em;
+    text-align: center; color: var(--texto); word-break: break-all; user-select: all;
+  }
+  .botao {
+    display: block; width: 100%; text-align: center; text-decoration: none; cursor: pointer;
+    font: 700 1rem/1.2 inherit; font-family: inherit; padding: 14px 16px; border-radius: 14px; margin-top: 10px;
+    border: 1.5px solid var(--linha); background: transparent; color: var(--texto);
+  }
+  .botao.principal { background: var(--verde); border-color: var(--verde); color: var(--verde-tinta); }
+  .botao:focus-visible { outline: 3px solid var(--verde); outline-offset: 2px; }
+  .botao:active { opacity: 0.85; }
+  h2 { font-size: 1rem; margin: 22px 0 4px; }
+  ol { margin: 6px 0 0; padding-left: 1.2em; color: var(--suave); }
+  li { margin: 4px 0; }
+  .aviso { font-size: 0.9rem; text-align: center; margin-top: 16px; }
+  .aviso a { color: var(--verde); font-weight: 600; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <p class="marca">AwayDay</p>
+  <div class="cartao">
+    <h1 id="titulo">A abrir o convite…</h1>
+    <p id="explicacao">Se a app não abrir sozinha, toca em «Abrir no AwayDay».</p>
+
+    <div id="bloco-codigo" hidden>
+      <div class="codigo" id="codigo" aria-label="Código do convite"></div>
+      <button class="botao" id="copiar" type="button">Copiar o código</button>
+    </div>
+
+    <a class="botao principal" id="abrir" href="awayday://">Abrir no AwayDay</a>
+
+    <h2>Ainda não tens a app?</h2>
+    <a class="botao" id="ios" href="TODO_TESTFLIGHT_URL">Instalar no iPhone (TestFlight)</a>
+    <a class="botao" id="android" href="TODO_ANDROID_URL">Instalar no Android</a>
+    <ol id="passos"></ol>
+  </div>
+  <p class="aviso"><a href="../privacidade.html">Privacidade</a> · <a href="../sobre.html">Contactos</a></p>
+</main>
+<script>
+  // Install buttons whose link is not filled in yet stay hidden instead of leading nowhere.
+  for (const id of ['ios', 'android']) {
+    const botao = document.getElementById(id);
+    if (botao && (botao.getAttribute('href') || '').startsWith('TODO_')) botao.hidden = true;
+  }
+
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    // Same shape as the server's invite_code (10 lowercase letters or digits); ids are uuids or short slugs.
+    var code = (params.get('c') || params.get('code') || '').trim().toLowerCase();
+    if (!/^[a-z0-9]{10}$/.test(code)) code = '';
+    var seguro = /^[A-Za-z0-9_.:-]{1,80}$/;
+    var boleia = params.get('boleia') || '';
+    var jogo = params.get('jogo') || '';
+    if (!seguro.test(boleia)) boleia = '';
+    if (!seguro.test(jogo)) jogo = '';
+
+    var titulo = document.getElementById('titulo');
+    var explicacao = document.getElementById('explicacao');
+    var abrir = document.getElementById('abrir');
+    var passos = document.getElementById('passos');
+    var link = null;
+    var lista = [];
+
+    if (code) {
+      link = 'awayday://grupos/entrar?code=' + encodeURIComponent(code);
+      titulo.textContent = 'Convite para um grupo da malta';
+      explicacao.textContent = 'Se a app não abrir sozinha, toca em «Abrir no AwayDay». Também podes entrar com este código:';
+      document.getElementById('codigo').textContent = code;
+      document.getElementById('bloco-codigo').hidden = false;
+      lista = ['Instala a app e cria a tua conta.', 'Vai à Malta e toca em «Tenho um código».', 'Cola o código e entra no grupo.'];
+    } else if (boleia && jogo) {
+      link = 'awayday://jogos/boleia?rideId=' + encodeURIComponent(boleia) + '&jogoId=' + encodeURIComponent(jogo);
+      titulo.textContent = 'Uma boleia para a bola';
+      explicacao.textContent = 'Se a app não abrir sozinha, toca em «Abrir no AwayDay» para veres a boleia e pedires lugar.';
+      lista = ['Instala a app e cria a tua conta.', 'Volta a esta página e toca em «Abrir no AwayDay».'];
+    } else {
+      titulo.textContent = 'Este convite está incompleto';
+      explicacao.textContent = 'Pede à malta que te mande o link outra vez.';
+      abrir.hidden = true;
+      lista = ['Instala a app e cria a tua conta.', 'Na Malta, toca em «Tenho um código» quando tiveres um.'];
+    }
+
+    lista.forEach(function (texto) {
+      var item = document.createElement('li');
+      item.textContent = texto;
+      passos.appendChild(item);
+    });
+
+    if (link) {
+      abrir.href = link;
+      // Try the app once, straight away. If it is not installed, nothing happens and the page stays.
+      window.location.href = link;
+    }
+
+    var copiar = document.getElementById('copiar');
+    copiar.addEventListener('click', function () {
+      function feito() {
+        copiar.textContent = 'Copiado';
+        setTimeout(function () { copiar.textContent = 'Copiar o código'; }, 2000);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(feito, function () { selecionar(); });
+      } else {
+        selecionar();
+      }
+    });
+    function selecionar() {
+      var range = document.createRange();
+      range.selectNodeContents(document.getElementById('codigo'));
+      var selecao = window.getSelection();
+      selecao.removeAllRanges();
+      selecao.addRange(range);
+      copiar.textContent = 'Seleciona e copia';
+    }
+  })();
+</script>
+</body>
+</html>

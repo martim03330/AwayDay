@@ -125,6 +125,8 @@ function mensagemRecusa(erro: unknown) {
       return 'Tens de aceitar as regras das boleias para publicar.';
     case 'bad_parking':
       return 'Esse parque não é deste estádio. Escolhe outro.';
+    case 'cost_failed':
+      return 'Não deu para calcular o preço deste percurso. Tenta outra vez ou muda o ponto de partida.';
     default:
       return 'Não deu para concluir. Tenta outra vez.';
   }

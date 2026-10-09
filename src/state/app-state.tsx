@@ -24,6 +24,7 @@ import {
   type PlaceSubScores,
 } from '@/features/activity/api';
 import { useMyAttendance } from '@/features/activity/hooks/useAttendance';
+import { reportErrorOnce } from '@/features/feedback/report';
 import {
   myDishRecommendationsKey,
   myPlaceRatingsKey,
@@ -76,6 +77,7 @@ import { useNow } from '@/hooks/use-now';
 import { distanciaEmLinhaRetaKm } from '@/lib/distancia';
 import { formatarDistancia } from '@/lib/formatos';
 import { checkInsAtivos } from '@/lib/presenca';
+import { askForPushOnSignIn, enablePushOnThisDevice } from '@/lib/push';
 import { currentUserId, useUserId } from '@/lib/session';
 import { fotosIniciais } from '@/mocks/album';
 import { avaliacoesIniciais } from '@/mocks/avaliacoes';
@@ -766,6 +768,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   function concluirOnboarding(escolhas: Permissoes) {
     const ligar = escolhas.notificacoes === 'aceite';
+    if (ligar) {
+      // «Ligar avisos» has to reach the phone: with an account, ask the OS now and register this phone; without
+      // one, remember the choice and ask on the first sign-in (NotificacoesPush). In the background: the OS dialog
+      // shows over the next screen and nothing waits for the network.
+      if (sessaoUserId) {
+        void enablePushOnThisDevice().catch((erro: unknown) =>
+          reportErrorOnce('push-registo', 'Registo do telemóvel para notificações (introdução)', erro)
+        );
+      } else {
+        void askForPushOnSignIn().catch(() => undefined);
+      }
+    }
     mudarPreferencias((atuais) => ({
       ...atuais,
       permissoes: escolhas,

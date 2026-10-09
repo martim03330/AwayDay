@@ -38,21 +38,42 @@ function exigirCentimos(valor: number) {
 }
 
 /**
- * Quanto cabe a cada pessoa numa despesa. Devolve as partes pela mesma ordem em que recebeu as pessoas, e a soma
- * das partes é sempre exatamente o total: ninguém paga um cêntimo a mais por acaso, nem falta um no fim.
+ * The order the server uses for the leftover cents: `row_number() over (partition by expense order by profile_id)`
+ * in `trip_balances`, where `profile_id` is a uuid. Postgres compares uuids byte by byte, which for the canonical
+ * text form is the same as comparing the lowercase hex strings character by character.
+ */
+function compararIds(a: string, b: string) {
+  const x = a.toLowerCase();
+  const y = b.toLowerCase();
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+/**
+ * Quanto cabe a cada pessoa numa despesa. Devolve uma parte por pessoa distinta, pela ordem em que cada uma aparece
+ * pela primeira vez (alguém repetido na lista entra uma vez só, como no servidor), e a soma das partes é sempre
+ * exatamente o total: ninguém paga um cêntimo a mais por acaso, nem falta um no fim.
  */
 export function dividirCentimos(totalCentimos: number, participantes: string[]): number[] {
   exigirCentimos(totalCentimos);
   if (totalCentimos < 0) throw new RangeError('Uma despesa não pode ser negativa.');
-  if (participantes.length === 0) throw new RangeError('Uma despesa tem de ter alguém a pagá-la.');
 
-  const base = Math.floor(totalCentimos / participantes.length);
-  const resto = totalCentimos - base * participantes.length;
+  // One share per person: the server keeps one trip_expense_share row per (expense, profile).
+  const vistos = new Set<string>();
+  const pessoas = participantes.filter((pessoa) => {
+    const chave = pessoa.toLowerCase();
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+  if (pessoas.length === 0) throw new RangeError('Uma despesa tem de ter alguém a pagá-la.');
+
+  const base = Math.floor(totalCentimos / pessoas.length);
+  const resto = totalCentimos - base * pessoas.length;
   // Os cêntimos a mais seguem a ordem do identificador — a mesma que o servidor usa, e que não muda de dia para dia.
-  const ordenados = [...participantes].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const ordenados = [...pessoas].sort(compararIds);
   const comMais = new Set(ordenados.slice(0, resto));
 
-  return participantes.map((pessoa) => (comMais.has(pessoa) ? base + 1 : base));
+  return pessoas.map((pessoa) => (comMais.has(pessoa) ? base + 1 : base));
 }
 
 /**
@@ -71,26 +92,38 @@ export function parteDeCada(totalCentimos: number, quantos: number) {
 
 /**
  * Quem paga a quem. Os saldos têm de somar zero — é o que acontece quando vêm do servidor, onde cada despesa é
- * dividida por inteiro. Pessoas com saldo zero não aparecem em lado nenhum.
+ * dividida por inteiro. Pessoas com saldo zero não aparecem em lado nenhum. A mesma pessoa repetida na lista conta
+ * uma vez só, com a soma dos seus saldos (e o primeiro nome que aparecer), para nunca ninguém pagar a si próprio.
  */
-export function acertarContas(saldos: SaldoDeViagem[]): Transferencia[] {
-  const total = saldos.reduce((soma, pessoa) => soma + exigirCentimos(pessoa.saldoCentimos), 0);
-  if (total !== 0) {
+export function acertarContas(saldosRecebidos: SaldoDeViagem[]): Transferencia[] {
+  const porPessoa = new Map<string, SaldoDeViagem>();
+  // BigInt only for the check: balances near the safe-integer limit must not overflow while adding up.
+  let total = BigInt(0);
+  for (const pessoa of saldosRecebidos) {
+    total += BigInt(exigirCentimos(pessoa.saldoCentimos));
+    const chave = pessoa.profileId.toLowerCase();
+    const antes = porPessoa.get(chave);
+    porPessoa.set(
+      chave,
+      antes
+        ? { ...antes, saldoCentimos: exigirCentimos(antes.saldoCentimos + pessoa.saldoCentimos) }
+        : { ...pessoa }
+    );
+  }
+  if (total !== BigInt(0)) {
     throw new RangeError(`Os saldos têm de somar zero e somam ${total}.`);
   }
+  const saldos = [...porPessoa.values()];
 
   // Ordem fixa: maiores primeiro, e o identificador desempata. Sem isto, a mesma viagem dava listas diferentes.
   const ordem = (a: SaldoDeViagem, b: SaldoDeViagem) =>
-    Math.abs(b.saldoCentimos) - Math.abs(a.saldoCentimos) ||
-    (a.profileId < b.profileId ? -1 : a.profileId > b.profileId ? 1 : 0);
+    Math.abs(b.saldoCentimos) - Math.abs(a.saldoCentimos) || compararIds(a.profileId, b.profileId);
 
   const devem = saldos
     .filter((p) => p.saldoCentimos < 0)
-    .map((p) => ({ ...p }))
     .sort(ordem);
   const receber = saldos
     .filter((p) => p.saldoCentimos > 0)
-    .map((p) => ({ ...p }))
     .sort(ordem);
 
   const transferencias: Transferencia[] = [];

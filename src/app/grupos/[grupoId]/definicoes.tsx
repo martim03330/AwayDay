@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { launchImageLibraryAsync } from 'expo-image-picker';
-import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
@@ -142,7 +141,8 @@ export default function DefinicoesDoGrupoScreen() {
   }
 
   const convidar = async () => {
-    const link = Linking.createURL('/grupos/entrar', { queryParams: { code: grupo.inviteCode } });
+    // An https page (it opens the app, or shows the code and how to install): WhatsApp does not make awayday:// tappable.
+    const link = `https://martim03330.github.io/awayday-legal/convite/?c=${encodeURIComponent(grupo.inviteCode)}`;
     await Share.share({
       message: `Anda para o grupo "${grupo.name}" no AwayDay: ${link}`,
     }).catch(() => undefined);
@@ -160,7 +160,7 @@ export default function DefinicoesDoGrupoScreen() {
     ];
     if (grupo.photoUrl) {
       opcoes.push({
-        text: 'Tirar a foto',
+        text: 'Remover a foto',
         style: 'destructive',
         onPress: () => void tratar(() => saveGroupPhoto(grupo, null)),
       });

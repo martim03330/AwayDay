@@ -40,6 +40,8 @@ export function mensagemDeRecusaDasContas(erro: unknown) {
       return 'Só lanças despesas que pagaste ou em que entraste.';
     case 'not_session_owner':
       return 'Só quem abriu estas contas (ou o condutor) pode tirar outras pessoas ou apagá-las.';
+    case 'duplicate_request':
+      return 'Este pedido já tinha sido usado. Fecha o ecrã e lança outra vez.';
     case 'rate_limited':
       return 'Já lançaste muitas despesas hoje. Continua amanhã.';
     default:

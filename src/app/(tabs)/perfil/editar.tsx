@@ -132,12 +132,12 @@ export default function EditarPerfilScreen() {
         {dados?.avatarUrl ? (
           <LinkTexto
             perigo
-            label="Tirar a foto"
+            label="Remover a foto"
             onPress={() =>
-              Alert.alert('Tirar a foto?', 'Voltas a aparecer com as tuas iniciais.', [
+              Alert.alert('Remover a foto?', 'Voltas a aparecer com as tuas iniciais.', [
                 { text: 'Deixa estar', style: 'cancel' },
                 {
-                  text: 'Tirar',
+                  text: 'Remover',
                   style: 'destructive',
                   onPress: () => void tratar(() => clearProfilePhoto(userId), 'Já não tens foto.'),
                 },

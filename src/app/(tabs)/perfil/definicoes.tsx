@@ -3,6 +3,7 @@ import { Linking, StyleSheet, Switch, View } from 'react-native';
 
 import { ModoDemoCard } from '@/components/modo-demo-card';
 import { Spacing } from '@/constants/theme';
+import { versionLabel } from '@/features/feedback/versao';
 import { useLocationPermission } from '@/features/presence/location';
 import { useMyProfile, useUpdateShareCheckins } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
@@ -53,6 +54,7 @@ export default function DefinicoesScreen() {
     partilha.isPending && partilha.variables !== undefined
       ? partilha.variables
       : (perfil.data?.shareCheckinsWithGroups ?? false);
+  const versao = versionLabel();
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
   const localizacaoBloqueada =
     permissaoLocalizacao !== null &&
@@ -226,11 +228,20 @@ export default function DefinicoesScreen() {
               trailing={chevron}
             />
             <LinhaGrupo
+              separador
               onPress={() => router.push('/perfil/denuncias')}
               accessibilityLabel="Denúncias por rever. Toca para abrir."
               leading={<Icon name={icons.aviso} size={20} color={theme.accentInk} />}
               title="Denúncias por rever"
               subtitle="Mensagens, pessoas e grupos denunciados"
+              trailing={chevron}
+            />
+            <LinhaGrupo
+              onPress={() => router.push('/perfil/feedback')}
+              accessibilityLabel="Erros e ideias recebidos. Toca para abrir."
+              leading={<Icon name={icons.lista} size={20} color={theme.accentInk} />}
+              title="Erros e ideias recebidos"
+              subtitle="O que a malta reportou em Ajudar a melhorar"
               trailing={chevron}
             />
           </Card>
@@ -265,6 +276,12 @@ export default function DefinicoesScreen() {
           {modoDemo ? <ModoDemoCard /> : null}
         </>
       ) : null}
+
+      {versao ? (
+        <ThemedText type="small" themeColor="textMuted" style={styles.versao}>
+          {versao}
+        </ThemedText>
+      ) : null}
     </Screen>
   );
 }
@@ -281,5 +298,9 @@ const styles = StyleSheet.create({
   grupo: {
     gap: 0,
     paddingVertical: 4,
+  },
+  versao: {
+    textAlign: 'center',
+    paddingVertical: Spacing.two,
   },
 });

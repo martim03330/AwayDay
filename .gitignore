@@ -59,3 +59,6 @@ docs/promo/anuncio/reels/*.mp4
 
 # Local security scan results and skill observation logs: never in Git or in an EAS build.
 strix_runs/
+
+# Firebase config for Android push: lives in an EAS file variable (GOOGLE_SERVICES_JSON), never in Git.
+google-services.json

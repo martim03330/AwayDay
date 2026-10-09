@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -102,4 +103,20 @@ export async function ativarNotificacoesDeBoleias(): Promise<PushPermission> {
       : await Notifications.requestPermissionsAsync();
   if (final.status === Notifications.PermissionStatus.GRANTED) await registerThisDevice();
   return toPermission(final.status);
+}
+
+// «Ligar avisos» in the introduction, without an account: there is no one to register the phone for yet, so the
+// choice waits here and the permission is asked on the first sign-in.
+const CHAVE_PEDIR_AO_ENTRAR = 'awayday:push:pedir-ao-entrar';
+
+export async function askForPushOnSignIn() {
+  await AsyncStorage.setItem(CHAVE_PEDIR_AO_ENTRAR, '1');
+}
+
+/** True (once) when the person asked for notifications before having an account. */
+export async function takePushAskOnSignIn(): Promise<boolean> {
+  const valor = await AsyncStorage.getItem(CHAVE_PEDIR_AO_ENTRAR);
+  if (valor === null) return false;
+  await AsyncStorage.removeItem(CHAVE_PEDIR_AO_ENTRAR);
+  return true;
 }

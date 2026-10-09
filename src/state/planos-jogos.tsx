@@ -13,7 +13,9 @@ import { Alert } from 'react-native';
 
 import { setGoing, setPlanPlace } from '@/features/activity/api';
 import { myPlansKey, useMyPlans } from '@/features/activity/hooks/useMyPlans';
+import { reportErrorOnce } from '@/features/feedback/report';
 import { avisosDoJogo } from '@/lib/avisos-jogo';
+import { registerThisDevice } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
@@ -104,6 +106,8 @@ export function PlanosJogosProvider({ children }: { children: ReactNode }) {
   const [planosDemo, setPlanosDemo] = useState<Planos>({});
   const [desligados, setDesligados] = useState<readonly string[]>([]);
   const [carregado, setCarregado] = useState(false);
+  /** Flips when the OS permission is given here, so the reminders scheduled without it are scheduled again. */
+  const [permissaoDada, setPermissaoDada] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -165,8 +169,24 @@ export function PlanosJogosProvider({ children }: { children: ReactNode }) {
         return proximos;
       });
     }
-    // The reminders need permission; asked the first time someone marks a game.
-    if (ir && fonte !== 'demo') void Notifications.requestPermissionsAsync().catch(() => undefined);
+    // The reminders need permission; asked the first time someone marks a game. Once given, the reminders are
+    // scheduled again (the first attempt ran without permission) and, with an account, this phone is registered for
+    // pushes right away instead of on the next cold start.
+    if (ir && fonte !== 'demo') {
+      void Notifications.getPermissionsAsync()
+        .then(async (antes) => {
+          if (antes.granted) return;
+          const depois = await Notifications.requestPermissionsAsync();
+          if (!depois.granted) return;
+          setPermissaoDada(true);
+          if (sessao) {
+            await registerThisDevice().catch((erro: unknown) =>
+              reportErrorOnce('push-registo', 'Registo do telemóvel para notificações (vou)', erro)
+            );
+          }
+        })
+        .catch(() => undefined);
+    }
     return ir;
   }
 
@@ -223,7 +243,7 @@ export function PlanosJogosProvider({ children }: { children: ReactNode }) {
     void reagendar(avisos).catch((erro: unknown) => {
       if (__DEV__) console.warn('Não foi possível agendar os avisos do jogo:', erro);
     });
-  }, [carregado, agendamento]);
+  }, [carregado, agendamento, permissaoDada]);
 
   const value: PlanosJogos = {
     vou: (jogoId) => jogoId in planos,

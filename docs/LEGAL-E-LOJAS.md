@@ -1,6 +1,6 @@
 # Legal e lojas: o que está feito, o que falta e os riscos
 
-Estado a 6 de outubro de 2026. Este documento não é aconselhamento jurídico. Os textos legais (`src/lib/legal.ts`)
+Estado a 9 de outubro de 2026. Este documento não é aconselhamento jurídico. Os textos legais (`src/lib/legal.ts`)
 descrevem o que a app faz de facto, mas devem ser revistos por um jurista antes da publicação.
 
 ## Feito
@@ -16,7 +16,9 @@ descrevem o que a app faz de facto, mas devem ser revistos por um jurista antes 
 | Dados inventados | Tirados ou limitados ao modo demo: adeptos por clube, sombra/abrigo/transportes/meteorologia dos estádios, «DGEG» no combustível, «confirmado por adeptos», «houve incidentes», «mais recomendado» com 0, avisos prometidos que não existem | ver `docs/DECISOES.md` |
 | Modo demo | Etiqueta permanente «Modo demo · dados de exemplo» | `src/app/(tabs)/_layout.tsx` |
 | Conteúdo de utilizadores | Denunciar e bloquear, fila de denúncias para o administrador | migração `report_and_block` |
-| Apagar conta | Já existia, dentro da app | `src/app/conta/apagar-conta.tsx` |
+| Apagar conta | Dentro da app, e uma página pública que explica como apagar (na app ou por email) e o que fica — o Google Play pede este link | `src/app/conta/apagar-conta.tsx`, `docs/legal/apagar-conta.html` |
+| Fornecedores e fontes (9 out.) | Brevo (emails com códigos) nos fornecedores; Photon, IPMA e MET Norway nos serviços sem dados pessoais; o que fica depois de apagar a conta (fotos de tascos aprovadas, anónimas; fotos de grupo e de viagem, nas memórias do grupo) | `src/lib/legal.ts` (sem mudar `VERSAO_DOS_TERMOS`: não pede nova aceitação) |
+| Notas para a revisão | Notas em inglês, conta e modo demo, classificação etária, etiquetas de privacidade e segurança dos dados | `docs/REVISAO-LOJAS.md` |
 | Cookies | Não se aplica: a app móvel não usa cookies nem analítica, e a versão web não vai ser publicada | — |
 | Reembolsos | Não se aplica: a app é gratuita e não processa pagamentos (dito nos termos) | — |
 
@@ -30,7 +32,14 @@ descrevem o que a app faz de facto, mas devem ser revistos por um jurista antes 
    - Política de privacidade (link para a App Store e o Google Play): https://martim03330.github.io/awayday-legal/privacidade.html
    - Termos: https://martim03330.github.io/awayday-legal/termos.html
    - Sobre e contactos (suporte): https://martim03330.github.io/awayday-legal/sobre.html
-   - Para atualizar: `npm run legal:paginas`, copiar `docs/legal/*.html` para esse repositório e fazer push.
+   - Apagar a conta (link do Google Play, «Eliminação de dados»): https://martim03330.github.io/awayday-legal/apagar-conta.html
+     — página estática (`docs/legal/apagar-conta.html`), não é gerada: se «Quanto tempo guardamos» mudar em
+     `src/lib/legal.ts`, mudar também esta página.
+   - Convites (abrem a app a partir do WhatsApp): https://martim03330.github.io/awayday-legal/convite/?c=CÓDIGO
+     (`docs/convite/index.html`, vai para a pasta `convite/` do repositório). Trocar `TODO_TESTFLIGHT_URL` e
+     `TODO_ANDROID_URL` antes de publicar.
+   - Para atualizar: `npm run legal:paginas`, copiar `docs/legal/*.html` (com `apagar-conta.html`) e a pasta
+     `docs/convite/` para esse repositório e fazer push.
 3. **Textos de permissões no `app.json` — feito** (com autorização). Ficaram assim:
    - Câmara: «O AwayDay usa a câmara para tirares a tua foto de perfil, a do grupo, fotos da viagem e de tascos, e
      as provas das missões.»
@@ -39,14 +48,11 @@ descrevem o que a app faz de facto, mas devem ser revistos por um jurista antes 
      guardada.»
 4. **Identificadores da app — feito:** `com.martimhenriques.awayday` em iOS e Android. Não muda depois da primeira
    submissão.
-5. **Ficha da App Store**
-   - Classificação etária: referências frequentes a álcool (tascos, cerveja) e conteúdo de utilizadores → 17+.
-   - Etiquetas de privacidade (declarar como «ligado à identidade», sem rastreio): informação de contacto (email, nome),
-     conteúdo do utilizador (fotos, mensagens, outro), identificadores (ID de utilizador, token do aparelho),
-     localização precisa (funcionalidade da app; é enviada ao servidor no momento, mesmo que não fique guardada),
-     uso/diagnóstico só nos relatórios que a pessoa envia.
-   - Contacto de suporte: o email do responsável.
-6. **Ficha do Google Play**: secção «Segurança dos dados» equivalente à anterior, e o link para eliminar a conta.
+5. **Ficha da App Store**: classificação etária **18+** (álcool frequente, conteúdo de utilizadores e conversa, e
+   a idade mínima dos termos) e etiquetas de privacidade — respostas completas em `docs/REVISAO-LOJAS.md`.
+   Contacto de suporte: o email do responsável.
+6. **Ficha do Google Play**: «Segurança dos dados», questionário IARC e público-alvo 18+ em
+   `docs/REVISAO-LOJAS.md`; link para eliminar a conta: `apagar-conta.html` (acima).
 7. **Mapillary**: há uma chave `MAPILLARY_ACCESS_TOKEN` no `.env.local`. Confirmar que só é usada em scripts e nunca
    chega à app (não tem o prefixo `EXPO_PUBLIC_`, por isso não chega).
 
