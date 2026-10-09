@@ -2,6 +2,44 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-09 — Lista de segurança final
+
+Cada ponto foi verificado com provas, em vez de ser assumido:
+- **Chaves no frontend:** no bundle de produção só está a chave pública do Supabase. O texto `sb_secret_` que lá aparece
+  vem da biblioteca, que o usa para reconhecer o tipo de chave; não é uma chave. Não há `.env`, chaves de serviço nem
+  certificados no Git (procura em todo o histórico).
+- **Tokens:** a sessão fica no Keychain/Keystore (2026-10-08). A cache das consultas (AsyncStorage) não tem tokens.
+- **Ids enviados pelo telemóvel:** todas as funções que recebem o id de uma pessoa verificam `auth.uid()`. A exceção
+  era `can_share_house`, que dizia a qualquer pessoa se outra estava suspensa das boleias. Deixou de poder ser chamada
+  pela app, e a app usa `i_can_share_house()`, que só responde sobre quem pergunta (`20261009160000`).
+- **RLS, permissões, SQL:** todas as tabelas têm RLS. Nenhuma função monta SQL com `execute`. Todas as funções
+  definer têm `search_path` fixo.
+- **Storage:** os buckets privados estão limitados a imagens de 1 a 8 MB. Os dois públicos (estádios e tascos
+  aprovados) não têm políticas de escrita: só o servidor escreve.
+- **Assinaturas de webhooks:** não há webhooks de terceiros. As chamadas da base de dados às Edge Functions levam o
+  segredo do cron, comparado em tempo constante.
+- **CORS e cabeçalhos:** a app é nativa e as Edge Functions não respondem com CORS, por isso nenhum site consegue
+  chamá-las a partir de um navegador. As páginas públicas (GitHub Pages, sem cabeçalhos próprios) passam a ter
+  Content-Security-Policy por `<meta>`: as legais sem scripts nem recursos de fora, a dos convites só com o seu
+  script. Testei num Chrome sem janela que a página dos convites continua a funcionar.
+- **Stack traces:** as funções devolvem códigos genéricos, o ecrã de erro não mostra o erro, e nenhum ecrã mostra
+  mensagens cruas do servidor.
+- **Pacotes:** `npm audit fix`, só com correções compatíveis, tirou a falha crítica (`shell-quote`) e 3 altas. As
+  restantes são de ferramentas de desenvolvimento (Jest, Metro, CLI do Expo), que não vão dentro da app; as
+  «correções» propostas são versões antigas que partiam o projeto. Confirmei com `expo install --check` e um bundle
+  de iOS.
+- **2FA para administradores:** `is_admin()` exige uma sessão `aal2`, ou seja, um código de uma app de autenticação
+  (TOTP do Supabase Auth, gratuito) (`20261009170000`). A Edge Function dos pontos de encontro exige o mesmo. Na app,
+  as ferramentas de administração só aparecem depois do código, e da primeira vez a app ajuda a ligar a app de
+  autenticação. Os testes SQL passam a usar sessões `aal2`, e há um teste para um administrador sem o segundo fator.
+- **Cópias:** cópia semanal cifrada no GitHub, com restauro num Supabase vazio e comparação das linhas tabela a tabela
+  (`.github/workflows/copia-base-de-dados.yml`, `docs/COPIAS.md`). Precisa dos segredos `SUPABASE_DB_URL` e
+  `BACKUP_PASSPHRASE`, que só o dono tem.
+- **Pelo caminho:**
+  - O GitHub corria os testes e falhava: o `tsc` via o projeto do vídeo em `docs/` e faltava a declaração de `*.css`.
+  - Os preços noutras moedas passam a ter sempre 2 casas decimais: os dados locais novos davam 0 casas ao forint, e
+    o `Intl` arredondava.
+
 ## 2026-10-09 — Uma hora no estádio antes do apito
 
 A hora de chegada ao parque usava 30 minutos de folga, e a hora de saída sugerida usava 45 (75 nos jogos grandes). Um
