@@ -133,6 +133,7 @@ function Parque({
           inicio,
           minutosAPeDoParque: minutos,
           minutosExtraDoParque: minutosExtraDoParque(parque, { jogoGrande }),
+          jogoGrande,
         })
       : null;
 
@@ -165,7 +166,7 @@ function Parque({
       </View>
       {chegada ? (
         <ThemedText style={{ color: theme.accentInk }}>
-          {`Chega por volta das ${formatarHora(chegada)} para apanhares lugar.`}
+          {`Chega por volta das ${formatarHora(chegada)}: apanhas lugar e ainda vais ao tasco.`}
         </ThemedText>
       ) : null}
       {parque.priceNote ? (

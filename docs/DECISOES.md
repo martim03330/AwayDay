@@ -2,6 +2,15 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-09 — Uma hora no estádio antes do apito
+
+A hora de chegada ao parque usava 30 minutos de folga, e a hora de saída sugerida usava 45 (75 nos jogos grandes). Um
+jogo às 18:00 com o parque a 20 minutos a pé dava «chega até às 17:10»: à porta às 17:30, sem tempo para filas nem
+para o tasco. Agora as duas contas usam a mesma margem: estar no estádio **1 hora antes do apito**, ou **1h30 nos jogos
+grandes** (`MARGEM_MINUTOS`, `MARGEM_JOGO_GRANDE_MINUTOS` em `src/lib/hora-saida.ts`). O mesmo jogo dá «chega até às
+16:40». O limite do servidor (sair até 30 minutos antes do apito) não muda: o condutor continua a poder escolher mais
+tarde, e a app avisa que fica apertado.
+
 ## 2026-10-09 — Boleias: canceladas desaparecem, um carro por jogo, e outro grupo entra por convite
 
 - **Boleia cancelada:** desaparece logo de todas as listas, também para o condutor e os passageiros. O quadro de

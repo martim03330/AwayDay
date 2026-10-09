@@ -7,10 +7,13 @@
 const MINUTO_MS = 60 * 1000;
 const HORA_MS = 60 * MINUTO_MS;
 
-/** Time to park, walk in and get through the gates on a normal game. */
-export const MARGEM_MINUTOS = 45;
+/**
+ * How long before kick-off to be at the stadium on a normal game: time for the tasco, the queue and the gates, not a
+ * run from the car park. The same margin drives the suggested departure and the car park arrival time.
+ */
+export const MARGEM_MINUTOS = 60;
 /** Big games (Benfica, FC Porto or Sporting involved, or European nights): more traffic, queues and police. */
-export const MARGEM_JOGO_GRANDE_MINUTOS = 75;
+export const MARGEM_JOGO_GRANDE_MINUTOS = 90;
 export const PASSO_MINUTOS = 15;
 /** Arriving closer than this to kick-off is not allowed. */
 export const CHEGAR_ANTES_MINUTOS = 30;
@@ -94,20 +97,23 @@ export function saidaApertada(saida: Date, sugerida: Date) {
 }
 
 /**
- * When to be at the car park for it to still have a space: kick-off, minus the walk to the ground, minus the half
- * hour to get in, minus the extra the car park itself asks for. Rounded down to 5 minutes.
+ * When to be at the car park: kick-off, minus the margin (an hour, an hour and a half on big games, so there is time
+ * for the tasco), minus the walk to the ground, minus the extra the car park itself asks for. Rounded down to 5
+ * minutes. Same margin as the suggested departure, so the two never disagree.
  */
 export function chegadaRecomendada({
   inicio,
   minutosAPeDoParque,
   minutosExtraDoParque = 0,
+  jogoGrande = false,
 }: {
   inicio: string;
   minutosAPeDoParque: number | null;
   minutosExtraDoParque?: number;
+  jogoGrande?: boolean;
 }): Date {
   const antes =
-    (CHEGAR_ANTES_MINUTOS + (minutosAPeDoParque ?? 0) + minutosExtraDoParque) * MINUTO_MS;
+    (margemMinutos(jogoGrande) + (minutosAPeDoParque ?? 0) + minutosExtraDoParque) * MINUTO_MS;
   const passo = 5 * MINUTO_MS;
   return new Date(Math.floor((Date.parse(inicio) - antes) / passo) * passo);
 }

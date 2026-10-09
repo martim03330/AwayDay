@@ -26,15 +26,15 @@ describe('saidaSugerida', () => {
     expect(sugerida.toISOString()).toBe('2026-09-20T16:30:00.000Z');
   });
 
-  it('drive + walk + 45 min on a normal game, rounded down to 15 min', () => {
-    // 2 h 12 drive + 9 min walk + 45 min = 3 h 06 before 19:30 -> 16:24 -> 16:15
+  it('drive + walk + 1 h on a normal game, rounded down to 15 min', () => {
+    // 2 h 12 drive + 9 min walk + 60 min = 3 h 21 before 19:30 -> 16:09 -> 16:00
     const sugerida = saidaSugerida({
       inicio,
       duracaoS: 132 * 60,
       minutosAPeDoParque: 9,
       jogoGrande: false,
     });
-    expect(sugerida.toISOString()).toBe('2026-09-20T16:15:00.000Z');
+    expect(sugerida.toISOString()).toBe('2026-09-20T16:00:00.000Z');
   });
 
   it('30 min more on a big game', () => {
@@ -61,8 +61,8 @@ describe('saidaSugerida', () => {
       minutosAPeDoParque: null,
       jogoGrande: false,
     });
-    // 1 h + 45 min before 19:30 = 17:45
-    expect(semParque.toISOString()).toBe('2026-09-20T17:45:00.000Z');
+    // 1 h drive + 1 h at the stadium before 19:30 = 17:30
+    expect(semParque.toISOString()).toBe('2026-09-20T17:30:00.000Z');
   });
 });
 
@@ -114,21 +114,33 @@ describe('saidaApertada', () => {
 });
 
 describe('chegadaRecomendada', () => {
-  it('is kick-off minus the walk, the half hour to get in and what the car park asks for', () => {
-    // 19:30 - 30 min - 9 min a pé - 45 min de um parque que enche cedo = 18:06 -> 18:05
+  it('is kick-off minus the hour at the stadium, the walk and what the car park asks for', () => {
+    // 19:30 - 60 min - 9 min a pé - 45 min de um parque que enche cedo = 17:36 -> 17:35
     expect(
       chegadaRecomendada({
         inicio,
         minutosAPeDoParque: 9,
         minutosExtraDoParque: 45,
       }).toISOString()
-    ).toBe('2026-09-20T18:05:00.000Z');
+    ).toBe('2026-09-20T17:35:00.000Z');
   });
 
   it('asks for nothing extra where parking is easy', () => {
     expect(
       chegadaRecomendada({ inicio, minutosAPeDoParque: 10, minutosExtraDoParque: 0 }).toISOString()
-    ).toBe('2026-09-20T18:50:00.000Z');
+    ).toBe('2026-09-20T18:20:00.000Z');
+  });
+
+  it('the case that was too tight: an 18:00 game with a car park 20 min away is 16:40, not 17:10', () => {
+    expect(
+      chegadaRecomendada({ inicio: '2026-10-11T17:00:00Z', minutosAPeDoParque: 20 }).toISOString()
+    ).toBe('2026-10-11T15:40:00.000Z');
+  });
+
+  it('half an hour more on a big game, like the departure', () => {
+    const normal = chegadaRecomendada({ inicio, minutosAPeDoParque: 10 });
+    const grande = chegadaRecomendada({ inicio, minutosAPeDoParque: 10, jogoGrande: true });
+    expect(normal.getTime() - grande.getTime()).toBe(30 * MIN);
   });
 });
 

@@ -114,6 +114,7 @@ export function EscolherParque({
             inicio,
             minutosAPeDoParque: minutos,
             minutosExtraDoParque: minutosExtraDoParque(parque, { jogoGrande }),
+            jogoGrande,
           });
           return (
             <Opcao
@@ -125,7 +126,7 @@ export function EscolherParque({
               // Only on the chosen one: the list stays one line per car park.
               nota={
                 escolhido === parque.id
-                  ? `Chega até às ${formatarHora(chegada)} para apanhares lugar`
+                  ? `Chega até às ${formatarHora(chegada)}: apanhas lugar e ainda vais ao tasco`
                   : undefined
               }
               cor={corFacilidade(theme, nivel)}

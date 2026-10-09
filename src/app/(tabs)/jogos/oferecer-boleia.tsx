@@ -723,7 +723,7 @@ export default function OferecerBoleiaScreen() {
             {verPorque ? (
               <ThemedText type="small" themeColor="textMuted">
                 {cotacao
-                  ? `${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''}${extraDoParque > 0 ? `, mais ${extraDoParque} min porque o parque enche cedo` : ''} e ${margemMinutos(jogoGrande)} min de margem${jogoGrande ? ' (jogo grande: mais trânsito e filas)' : ''}. Os pedidos de lugar fecham 2 h antes da saída.`
+                  ? `${duracao(cotacao.durationS)} de viagem${minutosAPeDoParque !== null ? `, ${minutosAPeDoParque} min a pé do parque` : ''}${extraDoParque > 0 ? `, mais ${extraDoParque} min porque o parque enche cedo` : ''} e ${margemMinutos(jogoGrande) >= 90 ? '1 h 30' : '1 h'} no estádio antes do apito, para o tasco e as filas${jogoGrande ? ' (jogo grande: mais trânsito)' : ''}. Os pedidos de lugar fecham 2 h antes da saída.`
                   : 'A hora acerta-se à distância, ao parque e ao tipo de jogo. Os pedidos de lugar fecham 2 h antes da saída.'}
               </ThemedText>
             ) : null}
