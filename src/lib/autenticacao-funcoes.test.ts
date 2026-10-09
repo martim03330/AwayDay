@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { hasCronSecret } from '../../supabase/functions/_shared/cron-secret';
 import {
+  assuranceLevel,
   REAUTHENTICATION_WINDOW_MS,
   signedInAt,
   signedInRecently,
@@ -119,5 +120,16 @@ describe('signedInRecently', () => {
   it('refuses without amr or with a malformed token', () => {
     expect(signedInRecently(token({ sub: 'x' }), signedIn * 1000)).toBe(false);
     expect(signedInRecently('garbage', signedIn * 1000)).toBe(false);
+  });
+});
+
+describe('assuranceLevel', () => {
+  it('reads the second factor from the token, and nothing else counts', () => {
+    expect(assuranceLevel(token({ aal: 'aal2' }))).toBe('aal2');
+    expect(assuranceLevel(token({ aal: 'aal1' }))).toBe('aal1');
+    expect(assuranceLevel(token({ aal: 'aal3' }))).toBeNull();
+    expect(assuranceLevel(token({}))).toBeNull();
+    expect(assuranceLevel('not.a-jwt')).toBeNull();
+    expect(assuranceLevel('')).toBeNull();
   });
 });

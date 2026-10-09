@@ -6,6 +6,7 @@ import { Spacing } from '@/constants/theme';
 import { versionLabel } from '@/features/feedback/versao';
 import { useLocationPermission } from '@/features/presence/location';
 import { useMyProfile, useUpdateShareCheckins } from '@/features/profile/hooks/useMyProfile';
+import { SegundoFatorAdmin } from '@/features/profile/components/SegundoFatorAdmin';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
@@ -208,6 +209,7 @@ export default function DefinicoesScreen() {
       {perfil.data?.isAdmin ? (
         <>
           <SectionHeader title="Administração" />
+          <SegundoFatorAdmin>
           <Card style={styles.grupo}>
             <LinhaGrupo
               separador
@@ -245,6 +247,7 @@ export default function DefinicoesScreen() {
               trailing={chevron}
             />
           </Card>
+          </SegundoFatorAdmin>
         </>
       ) : null}
 

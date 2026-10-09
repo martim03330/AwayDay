@@ -4,6 +4,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { authenticatedCaller } from '../_shared/auth.ts';
+import { assuranceLevel } from '../_shared/reauthentication.ts';
 
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
 const USER_AGENT = 'AwayDay/1.0 (meeting point publishing for a match-day app)';
@@ -63,6 +64,8 @@ Deno.serve(async (request) => {
     .maybeSingle();
   if (profile.error) return json(500, { error: 'profile_failed' });
   if (asRecord(profile.data)?.is_admin !== true) return json(403, { error: 'not_admin' });
+  // Admin powers need the second factor (authenticator app), like is_admin() in the database.
+  if (assuranceLevel(caller.token) !== 'aal2') return json(403, { error: 'needs_second_factor' });
 
   const body = asRecord(await request.json().catch(() => null));
   const draftId = field(body?.draftId, 36, 36);

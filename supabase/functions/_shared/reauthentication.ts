@@ -34,3 +34,18 @@ export function signedInRecently(token: string, now: number): boolean {
   const signedIn = signedInAt(token);
   return signedIn !== null && now - signedIn <= REAUTHENTICATION_WINDOW_MS;
 }
+
+/**
+ * The token's assurance level: 'aal2' after a second factor (authenticator app), 'aal1' with the password only, `null`
+ * if missing or malformed. Admin powers need 'aal2'. Same caveat as signedInAt: only for a token already accepted.
+ */
+export function assuranceLevel(token: string): 'aal1' | 'aal2' | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const aal = asRecord(JSON.parse(atob(payload.replaceAll('-', '+').replaceAll('_', '/'))))?.aal;
+    return aal === 'aal1' || aal === 'aal2' ? aal : null;
+  } catch {
+    return null;
+  }
+}
