@@ -344,6 +344,17 @@ Deno.serve(async (request) => {
   if (existing.data.length > 0) {
     return json(409, { error: 'already_offering', id: existing.data[0].id });
   }
+  // One car per game: someone with a seat (or a pending request) in another ride of this game goes in that one.
+  const seat = await admin
+    .from('ride_passenger')
+    .select('ride_id, ride!inner(fixture_id, status)')
+    .eq('profile_id', caller.user.id)
+    .in('status', ['requested', 'accepted'])
+    .eq('ride.fixture_id', fixtureId)
+    .eq('ride.status', 'open')
+    .limit(1);
+  if (seat.error) return json(500, { error: 'lookup_failed' });
+  if (seat.data.length > 0) return json(409, { error: 'already_going' });
 
   const rates = await tollRates(admin);
   if (!rates) return json(500, { error: 'toll_rates_failed' });
@@ -513,6 +524,8 @@ Deno.serve(async (request) => {
     .select('id')
     .single();
   if (inserted.error?.code === '23505') return json(409, { error: 'already_offering' });
+  // The database trigger (one car per game) as the last word, if a seat was taken in the meantime.
+  if (inserted.error?.message === 'already_going') return json(409, { error: 'already_going' });
   if (inserted.error) return json(500, { error: 'create_failed' });
   return json(200, { id: inserted.data.id });
 });

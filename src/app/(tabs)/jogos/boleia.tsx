@@ -93,6 +93,8 @@ function mensagemRecusa(erro: unknown) {
   switch (erro.reason) {
     case 'ride_full':
       return 'A boleia já está cheia.';
+    case 'already_offering':
+      return 'Já ofereces boleia para este jogo. Para ires com outra pessoa, cancela primeiro a tua.';
     case 'ride_closed':
       return 'Os pedidos para esta boleia já fecharam.';
     case 'rate_limited':
@@ -448,6 +450,19 @@ export default function BoleiaScreen() {
               : `O condutor responde até às ${formatarHora(prazos.pedidosFecham)}.`}
           </ThemedText>
         </View>
+      );
+    }
+    // One car per game: whoever drives to this game goes in their own car.
+    const minhaBoleia = (quadro.data ?? []).find(
+      (outra) => outra.isMine && outra.status === 'open' && outra.id !== boleia.id
+    );
+    if (minhaBoleia) {
+      return (
+        <Aviso
+          title="Já ofereces boleia para este jogo"
+          message="Vais no teu carro. Para ires com outra pessoa, cancela primeiro a tua boleia."
+          icon={icons.carro}
+        />
       );
     }
     if (suspensoAte) {

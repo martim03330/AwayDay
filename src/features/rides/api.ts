@@ -99,6 +99,7 @@ const REASONS: readonly RideRefusal[] = [
   'not_participant',
   'bad_parking',
   'cost_failed',
+  'already_going',
 ];
 
 function toReason(value: unknown): RideRefusal {

@@ -119,6 +119,8 @@ function mensagemRecusa(erro: unknown) {
       return 'Este jogo já começou.';
     case 'already_offering':
       return 'Já ofereces boleia para este jogo.';
+    case 'already_going':
+      return 'Já tens lugar, ou pediste lugar, noutra boleia para este jogo. Sai dela antes de ofereceres a tua.';
     case 'suspended':
       return 'Estás suspenso das boleias por faltas.';
     case 'rules_not_accepted':

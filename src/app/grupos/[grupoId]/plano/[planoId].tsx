@@ -66,6 +66,8 @@ function mensagemDeRecusa(erro: unknown) {
       return 'Esse grupo já não tinha o plano.';
     case 'fixture_over':
       return 'O jogo já começou: o plano já não muda.';
+    case 'already_offering':
+      return 'Já ofereces boleia para este jogo: vais no teu carro.';
     case 'driver_not_in_plan':
       return 'Só dá para usar o carro de alguém do plano. Pede ao condutor que entre no grupo, ou pede lugar na boleia.';
     default:

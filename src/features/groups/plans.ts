@@ -27,6 +27,7 @@ export type PlanRefusal =
   | 'house_full'
   | 'already_going'
   | 'driver_not_in_plan'
+  | 'already_offering'
   | 'owner_not_in_plan'
   | 'needs_history'
   /** The group already has an invite for this game: `planId` says which. */
@@ -68,6 +69,7 @@ const RECUSAS: PlanRefusal[] = [
   'house_full',
   'already_going',
   'driver_not_in_plan',
+  'already_offering',
   'owner_not_in_plan',
   'needs_history',
   'plan_exists',
