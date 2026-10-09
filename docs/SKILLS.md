@@ -10,7 +10,11 @@ servem em todos os projetos. Aparecem a partir de uma **sessão nova**.
 **Manter:** `npx skills update` atualiza as skills instaladas com o `skills`; `claude plugin update superpowers`
 atualiza o plugin. Remover: `npx skills remove <nome>` ou `claude plugin uninstall <plugin>`.
 
-Instaladas a 2026-10-07.
+Instaladas a 2026-10-07. A 2026-10-09 saíram 17 que não servem este projeto: as 9 da Strix (só embrulham um serviço
+pago; a revisão de segurança faz-se sem ela), `full-output-enforcement` e as de design só para sites
+(`design-taste-frontend-v1`, `gpt-taste`, `image-to-code`, `imagegen-frontend-web`, `industrial-brutalist-ui`,
+`minimalist-ui`, `stitch-design-taste`). Para o design da app ficam `redesign-existing-projects`,
+`high-end-visual-design`, `design-taste-frontend`, `imagegen-frontend-mobile`, `frontend-design` e `ui-ux-pro-max`.
 
 ## O fluxo recomendado para uma funcionalidade nova
 
@@ -93,15 +97,13 @@ Antes de escrever código Expo, ler também a documentação da versão em uso (
 | Skill | Quando | Exemplo |
 |---|---|---|
 | `find-skills` | Procurar uma skill para uma tarefa | «Procura uma skill para testes com Maestro.» |
-| `task-observer` | Observar as sessões e propor melhorias às skills (precisa de ativação, ver abaixo) | «Revê as observações da semana.» |
+| `task-observer` | Rever as skills quando pedires, ou registar uma correção à forma de trabalhar | «Revê as observações da semana.» |
 | `writing-skills` (superpowers) | Criar ou editar uma skill própria | «Cria uma skill com as regras de dinheiro do AwayDay.» |
 
 ## Por ativar ou instalar (precisam de ti)
 
-- **`task-observer`** — está instalado, mas só funciona com o bloco de ativação no `CLAUDE.md` (o do projeto ou o
-  pessoal `~/.claude/CLAUDE.md`). O texto está em `~/.claude/skills/task-observer/references/environments.md`,
-  secção «The activation block». Junta também `skill-observations/` ao `.gitignore`. Custa contexto em todas as
-  sessões.
+- **`task-observer`** — ativo só a pedido desde 2026-10-09: o bloco de ativação obrigatória saiu do `CLAUDE.md`
+  porque, em quatro sessões, não registou nenhuma observação e custava contexto em todas.
 - **`impeccable`** — design para agentes; instala hooks, por isso corre-se no terminal:
   `npx impeccable install --providers=claude --scope=project`, e depois `/impeccable init`.
 - **`claude-mem`** — memória entre sessões; instala hooks e um serviço em segundo plano. Por omissão guarda as
