@@ -4433,6 +4433,7 @@ export type Database = {
           reporters: number
         }[]
       }
+      i_can_share_house: { Args: never; Returns: boolean }
       in_ride: {
         Args: { p_profile_id: string; p_ride_id: string }
         Returns: boolean

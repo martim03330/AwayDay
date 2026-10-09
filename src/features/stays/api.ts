@@ -227,9 +227,9 @@ export async function fetchStayPlacePeople(planId: string): Promise<StayPlacePer
   });
 }
 
-/** Se a app deixa esta pessoa propor ou entrar numa casa: conta com mais de uma semana ou uma boleia feita. */
-export async function canShareHouse(profileId: string): Promise<boolean> {
-  const { data, error } = await client().rpc('can_share_house', { p_profile_id: profileId });
+/** Se a app me deixa propor ou entrar numa casa. O servidor só responde sobre quem pergunta. */
+export async function canShareHouse(): Promise<boolean> {
+  const { data, error } = await client().rpc('i_can_share_house');
   if (error) throw error;
   return data === true;
 }

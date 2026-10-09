@@ -163,10 +163,15 @@ select pg_temp.expect('anon cannot take a bed',
 
 set local role authenticated;
 select pg_temp.as_user('e9300000-0000-4000-8000-000000000002');
+select pg_temp.expect('nobody can ask whether someone else may share a house (it would tell who is suspended)',
+  pg_temp.refusal('select public.can_share_house(''e9300000-0000-4000-8000-000000000003'')'),
+  'permission denied for function can_share_house');
 select pg_temp.expect('a clean record may share a house',
-  public.can_share_house('e9300000-0000-4000-8000-000000000002'), true);
+  public.i_can_share_house(), true);
+select pg_temp.as_user('e9300000-0000-4000-8000-000000000003');
 select pg_temp.expect('two no-shows in the last months may not',
-  public.can_share_house('e9300000-0000-4000-8000-000000000003'), false);
+  public.i_can_share_house(), false);
+select pg_temp.as_user('e9300000-0000-4000-8000-000000000002');
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 2. One refusal per rule.

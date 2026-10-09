@@ -361,7 +361,7 @@ export function DormidaCard({
   });
   const permissao = useQuery({
     queryKey: ['stays', 'can-share', userId],
-    queryFn: userId ? () => canShareHouse(userId) : skipToken,
+    queryFn: userId ? () => canShareHouse() : skipToken,
     meta: { persist: false },
   });
 
