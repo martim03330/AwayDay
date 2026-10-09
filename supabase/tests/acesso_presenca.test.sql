@@ -98,8 +98,8 @@ select
   'authenticated', 'authenticated'
 from generate_series(1, 12) as n;
 update public.profile set is_admin = true where id = 'e1000000-0000-4000-8000-000000000011';
--- Only accounts at least 3 days old count for the pulse (fresh fake accounts cannot make up the 5).
-update public.profile set created_at = now() - interval '4 days'
+-- Only accounts with a confirmed email count for the pulse.
+update auth.users set email_confirmed_at = now()
 where id::text like 'e1000000-0000-4000-8000-0000000000%';
 
 -- A stadium of our own, far from real ones, with two clubs, two tascos and a game that already kicked off.
@@ -232,11 +232,11 @@ reset role;
 select public.start_checkin('e1000000-0000-4000-8000-000000000005', 'tz-pres-tasco-um');
 select pg_temp.expect('a check-in does not publish by itself (the 5-minute job does)',
   (select count(*)::integer from public.place_pulse where place_id = 'tz-pres-tasco-um'), 0);
-update public.profile set created_at = now() where id = 'e1000000-0000-4000-8000-000000000005';
+update auth.users set email_confirmed_at = null where id = 'e1000000-0000-4000-8000-000000000005';
 select public.refresh_place_pulse();
-select pg_temp.expect('a fresh account does not count: four old ones are not published',
+select pg_temp.expect('an account without a confirmed email does not count: four are not published',
   (select count(*)::integer from public.place_pulse where place_id = 'tz-pres-tasco-um'), 0);
-update public.profile set created_at = now() - interval '4 days' where id = 'e1000000-0000-4000-8000-000000000005';
+update auth.users set email_confirmed_at = now() where id = 'e1000000-0000-4000-8000-000000000005';
 select public.refresh_place_pulse();
 set local role anon;
 select pg_temp.as_anon();
