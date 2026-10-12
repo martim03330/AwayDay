@@ -41,7 +41,8 @@ function barraDosSeparadores(largura: number, fundo: number) {
   const ios = Platform.OS === 'ios';
   const flutuante = ios && Number.parseFloat(String(Platform.Version)) >= 26;
   if (flutuante) {
-    const margem = 20;
+    // Measured on an iPhone 17 Pro: the floating bar's tabs sit 26 pt in from each side of the screen.
+    const margem = 26;
     return { esquerda: margem, largura: largura - margem * 2, altura: 62, baixo: Math.max(fundo - 12, 8) };
   }
   return { esquerda: 0, largura, altura: ios ? 49 : 80, baixo: ios ? fundo : 0 };

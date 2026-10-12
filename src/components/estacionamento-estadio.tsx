@@ -20,6 +20,7 @@ import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Icon, icons } from '@/ui/icon';
+import { Expansor } from '@/ui/expansor';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -176,22 +177,6 @@ function OutroParque({
   );
 }
 
-/** A line that opens to show more: keeps the section short until someone wants the detail. */
-function Abrir({ rotulo, aberto, onPress }: { rotulo: string; aberto: boolean; onPress: () => void }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      hitSlop={6}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ expanded: aberto }}
-      style={({ pressed }) => [styles.abrir, pressed && styles.pressed]}>
-      <ThemedText style={[styles.abrirTexto, { color: theme.accentInk }]}>{rotulo}</ThemedText>
-      <Icon name={aberto ? icons.fechar : icons.seguinte} size={14} color={theme.accentInk} />
-    </Pressable>
-  );
-}
-
 /**
  * Where to leave the car on match day: the recommended car park on its own, then the match-day warnings and the other
  * car parks each behind a tap. Every car park says only what decides it (whether it fills, and how far it is on foot).
@@ -259,9 +244,13 @@ export function EstacionamentoEstadio({
         )}
 
         {info.warnings.length > 0 ? (
-          <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
-            <Abrir
-              rotulo={`${plural(info.warnings.length, 'aviso', 'avisos')} para dia de jogo`}
+          <View style={styles.bloco}>
+            <Expansor
+              tom="aviso"
+              icon={icons.aviso}
+              titulo="Avisos para dia de jogo"
+              subtitulo="Lê antes de ir de carro"
+              contagem={info.warnings.length}
               aberto={avisosAbertos}
               onPress={() => setAvisosAbertos((atual) => !atual)}
             />
@@ -279,9 +268,12 @@ export function EstacionamentoEstadio({
         ) : null}
 
         {outros.length > 0 ? (
-          <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
-            <Abrir
-              rotulo={`Mais ${plural(outros.length, 'parque', 'parques')}`}
+          <View style={styles.bloco}>
+            <Expansor
+              icon={icons.carro}
+              titulo="Outros parques"
+              subtitulo={`${plural(outros.length, 'parque', 'parques')} perto do estádio`}
+              contagem={outros.length}
               aberto={todosAbertos}
               onPress={() => setTodosAbertos((atual) => !atual)}
             />
@@ -377,17 +369,6 @@ const styles = StyleSheet.create({
   },
   bloco: {
     gap: Spacing.two,
-    paddingTop: Spacing.three,
-    borderTopWidth: 1,
-  },
-  abrir: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 36,
-  },
-  abrirTexto: {
-    fontWeight: 700,
   },
   aviso: {
     flexDirection: 'row',

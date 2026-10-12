@@ -15,11 +15,11 @@ import { useAppState } from '@/state/app-state';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons } from '@/ui/icon';
-import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { Expansor } from '@/ui/expansor';
 
 function contagem(missoes: readonly Mission[]) {
   const feitas = missoes.filter((missao) => missao.completedAt !== null).length;
@@ -163,8 +163,10 @@ export default function MissoesScreen() {
           <Distintivos ganhos={ganhos} />
           {lista(familias.map(({ atual }) => atual))}
 
-          <LinkTexto
-            label={verRegras ? 'Esconder' : 'Como se ganham pontos'}
+          <Expansor
+            icon={icons.ranking}
+            titulo="Como se ganham pontos"
+            aberto={verRegras}
             onPress={() => setVerRegras((atual) => !atual)}
           />
           {verRegras ? (

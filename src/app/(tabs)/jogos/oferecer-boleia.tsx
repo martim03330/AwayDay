@@ -58,6 +58,7 @@ import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { Expansor } from '@/ui/expansor';
 
 /**
  * Starting values only, not an official price: the driver sets what they paid. Not attributed to any source, since they
@@ -1022,9 +1023,10 @@ export default function OferecerBoleiaScreen() {
                   ))
                 : null}
               {partilhas.length > 1 ? (
-                <LinkTexto
-                  neutro
-                  label={verPartilhas ? 'Esconder' : 'Ver com menos gente'}
+                <Expansor
+                  icon={icons.perfil}
+                  titulo="Quanto fica com menos gente"
+                  aberto={verPartilhas}
                   onPress={() => setVerPartilhas((atual) => !atual)}
                 />
               ) : null}

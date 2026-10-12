@@ -12,8 +12,8 @@ import type { Coordenadas, Venue } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Icon, icons } from '@/ui/icon';
-import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
+import { Expansor } from '@/ui/expansor';
 
 /** Instructions shown before "Ver todas as indicações". */
 const PASSOS_VISIVEIS = 5;
@@ -202,8 +202,11 @@ export function MapaPontoEncontro({ nome, coordenadas, estadio }: MapaPontoEncon
             </View>
           ))}
           {rota && rota.steps.length > PASSOS_VISIVEIS ? (
-            <LinkTexto
-              label={verTodos ? 'Mostrar menos' : `Ver as ${rota.steps.length} indicações`}
+            <Expansor
+              icon={icons.rota}
+              titulo={verTodos ? 'Mostrar menos' : 'Todas as indicações'}
+              contagem={verTodos ? undefined : rota.steps.length}
+              aberto={verTodos}
               onPress={() => setVerTodos((atual) => !atual)}
             />
           ) : null}

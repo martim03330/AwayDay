@@ -15,6 +15,7 @@ import { LinkTexto } from '@/ui/link-texto';
 import { MensagemErro } from '@/ui/mensagem-erro';
 import { Segmentado } from '@/ui/segmentado';
 import { CampoCodigo } from '@/features/auth/components/AuthForm';
+import { Expansor } from '@/ui/expansor';
 import { MenuDaMensagem } from '@/ui/menu-da-mensagem';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -469,5 +470,16 @@ describe('CampoCodigo', () => {
     render(<CampoCodigo label="Código" value="" onChangeText={jest.fn()} digitos={8} onCompleto={onCompleto} />);
     fireEvent.changeText(screen.getByLabelText('Código'), '1234');
     expect(onCompleto).not.toHaveBeenCalled();
+  });
+});
+
+describe('Expansor', () => {
+  it('shows the title and the count, says whether it is open, and toggles', () => {
+    const onPress = jest.fn();
+    render(<Expansor titulo="Outros parques" contagem={16} aberto={false} onPress={onPress} />);
+    const faixa = screen.getByRole('button', { name: 'Outros parques, 16' });
+    expect(faixa).toHaveAccessibilityState({ expanded: false });
+    fireEvent.press(faixa);
+    expect(onPress).toHaveBeenCalled();
   });
 });

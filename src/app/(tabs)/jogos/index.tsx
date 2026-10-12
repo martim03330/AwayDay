@@ -49,6 +49,7 @@ import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
+import { Expansor } from '@/ui/expansor';
 
 const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
   { id: 'todas', label: 'Todas', emTexto: '' },
@@ -279,12 +280,12 @@ export default function JogosScreen() {
           </View>
         ))}
         {!verTodos && proximos.length > PROXIMOS_DO_CLUBE ? (
-          <LinkTexto
-            label={
-              verCalendario
-                ? 'Mostrar só os próximos jogos'
-                : `Ver o calendário todo${clubeFavorito ? ` do ${clubeFavorito.nomeCurto}` : ''} (${plural(proximos.length, 'jogo', 'jogos')})`
-            }
+          <Expansor
+            icon={icons.calendario}
+            titulo={verCalendario ? 'Só os próximos jogos' : 'Calendário todo'}
+            subtitulo={clubeFavorito ? `Os jogos do ${clubeFavorito.nomeCurto} até ao fim da época` : undefined}
+            contagem={verCalendario ? undefined : proximos.length}
+            aberto={verCalendario}
             onPress={() => setVerCalendario((atual) => !atual)}
           />
         ) : null}
