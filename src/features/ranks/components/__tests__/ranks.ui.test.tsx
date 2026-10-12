@@ -1,3 +1,4 @@
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { CartaoDivisao } from '@/features/ranks/components/CartaoDivisao';
@@ -139,9 +140,11 @@ describe('TabelaRanking', () => {
     const minha = screen.getByLabelText('2.º, tu, 998 pts, Nível 7');
     expect(minha).toBeOnTheScreen();
     expect(screen.getByText('Rui Costa (tu)', { includeHiddenElements: true })).toBeOnTheScreen();
-    // Highlighted with a background; the others have none.
-    expect(minha).toHaveStyle({ borderRadius: 12 });
-    expect(screen.getByLabelText('1.º, Ana, 999 pts, Nível 7')).not.toHaveStyle({ borderRadius: 12 });
+    // Marked by the colour of the name, without a box around the line.
+    const cor = (texto: string) =>
+      StyleSheet.flatten(screen.getByText(texto, { includeHiddenElements: true }).props.style).color;
+    expect(cor('Rui Costa (tu)')).not.toBe(cor('Ana'));
+    expect(minha).not.toHaveStyle({ borderRadius: 12 });
   });
 
   it('a gap in positions (you outside the top) shows «⋯» once, and only there', () => {
