@@ -1,5 +1,5 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
@@ -7,6 +7,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { REACOES, type Emoji } from '@/lib/conversa';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+
+/** Quick and soft: about 140 ms, easing out, from 25 px below. */
+const ENTRADA_DO_MENU = FadeInDown.duration(140).easing(Easing.out(Easing.cubic));
 
 export type AcaoDaMensagem = {
   label: string;
@@ -34,15 +37,16 @@ export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }
   const insets = useSafeAreaInsets();
 
   return (
-    // No Modal animation (its fade is slow): the backdrop fades in and the menu springs up, quick like WhatsApp.
+    // No Modal animation (its fade is slow): the backdrop fades in and the menu appears where it stays, with a short
+    // fade and a few pixels of movement, so the reactions can be tapped almost at once.
     <Modal visible={texto !== null} transparent animationType="none" onRequestClose={onFechar}>
-      <Animated.View entering={FadeIn.duration(120)} style={styles.tudo}>
+      <Animated.View entering={FadeIn.duration(100)} style={styles.tudo}>
       <Pressable
         style={[styles.fundo, { paddingBottom: Math.max(insets.bottom, Spacing.three) }]}
         onPress={onFechar}
         accessibilityRole="button"
         accessibilityLabel="Fechar">
-        <Animated.View entering={SlideInDown.springify().damping(22).stiffness(260)} style={styles.conteudo}>
+        <Animated.View entering={ENTRADA_DO_MENU} style={styles.conteudo}>
           {texto ? (
             <View style={[styles.mensagem, { backgroundColor: theme.backgroundElement }]}>
               <ThemedText numberOfLines={4}>{texto}</ThemedText>
