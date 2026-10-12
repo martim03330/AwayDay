@@ -2,6 +2,26 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Segurança, segunda volta (pontos baixos da revisão)
+
+- **Dependências:** atualizações de correção do SDK 57 e `supabase-js` 2.117.3 na app. As edge functions ficam no
+  2.116.0 (sem avisos; mudar obriga a refazer o `deno.lock` do `sync-weather`). Os avisos do `npm audit` que
+  restam (braces, node-forge, decode-uri-component, uuid, sprintf-js) são de ferramentas de build e não têm versão
+  corrigida compatível; não se usa `npm audit fix --force` (faz downgrades).
+- **Tarefas automáticas:** `force`, `profile_ids` e `season_id` só valem com `ALLOW_TEST_OPTIONS=true` (nunca em
+  produção).
+- **Treinador:** a hora simulada da app só conta para administradores; para os outros manda o relógio do servidor.
+- **Pontos de encontro:** a decisão de um rascunho muda o estado de `pending` num só passo; dois administradores
+  ao mesmo tempo, só o primeiro conta. Se a publicação falhar, o rascunho volta à lista.
+- **Despesas em nome de outro:** quem aparece como pagador recebe sempre um aviso («X registou que pagaste N €»),
+  mesmo com os avisos de contas desligados, e pode apagá-la.
+- **Erros fora dos ecrãs:** `ErrorUtils` e o rastreio de promessas do Hermes vão para os relatórios automáticos.
+- **Testes de SQL no CI:** correm em cada push contra um Supabase criado do zero (migrações + seed + um catálogo
+  público de teste em `supabase/tests/catalogo.sql`, gerado por `scripts/testes/exportar-catalogo.py`, sem dados de
+  pessoas). Localmente continuam a poder correr contra a produção (`npm run test:sql`) ou contra um Supabase local
+  (`SQL_ALVO=--local`).
+- **Mapillary:** o token saiu do `.env.local` (o Expo copiava-o para os logs) para `scripts/.env`.
+
 ## 2026-10-13 — Captcha (Cloudflare Turnstile) nas contas
 
 - **Porquê:** criar conta, entrar e recuperar a password estavam abertos a bots, só com o limite por endereço.
