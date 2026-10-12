@@ -5,6 +5,7 @@ import { fontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { closeAccountFlow } from '@/features/auth/navigation';
 import { Icon, icons } from '@/ui/icon';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 function BotaoFechar({ onPress }: { onPress: () => void }) {
   const theme = useTheme();
@@ -34,6 +35,7 @@ export default function ContaLayout() {
   return (
     <Stack
       screenOptions={{
+        scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS,
         headerBackButtonDisplayMode: 'minimal',
         headerShadowVisible: false,
         headerTintColor: theme.text,

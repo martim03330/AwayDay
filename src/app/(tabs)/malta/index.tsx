@@ -52,7 +52,9 @@ function resumo(grupo: GroupInboxItem) {
  * boleias e as contas.
  */
 export default function MaltaScreen() {
-  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo({
+    reporNoTopo: true,
+  });
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();

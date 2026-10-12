@@ -60,7 +60,9 @@ function iniciais(nome: string) {
 }
 
 export default function PerfilScreen() {
-  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo({
+    reporNoTopo: true,
+  });
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();

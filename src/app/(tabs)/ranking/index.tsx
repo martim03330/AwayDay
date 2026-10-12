@@ -47,7 +47,9 @@ const TOPO = 3;
  * app confirmou — carimbos no estádio, check-ins no tasco, fotos aprovadas. Marcar à mão não dá pontos.
  */
 export default function RankingScreen() {
-  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo({
+    reporNoTopo: true,
+  });
   const router = useRouter();
   const theme = useTheme();
   const agir = useAcaoDaMissao();

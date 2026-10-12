@@ -2,12 +2,13 @@ import { Stack } from 'expo-router';
 
 import { fontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function JogosLayout() {
   const theme = useTheme();
 
   return (
-    <Stack>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
       {/* The list draws its own green pitch header. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title large>Jogos</Stack.Screen.Title>

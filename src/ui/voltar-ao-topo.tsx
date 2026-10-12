@@ -1,5 +1,5 @@
-import { useSegments } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useFocusEffect, useSegments } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -25,13 +25,27 @@ const MOSTRAR_DEPOIS_DE = 1100;
  * Give `ref`, `onScroll` and `scrollEventThrottle` to the page's ScrollView and render `botao` next to it, inside a
  * container that fills the screen.
  */
-export function useVoltarAoTopo() {
+export function useVoltarAoTopo({ reporNoTopo = false }: { reporNoTopo?: boolean } = {}) {
   const ref = useRef<ScrollView>(null);
+  const posicao = useRef(0);
   const [visivel, setVisivel] = useState(false);
 
   function onScroll(evento: NativeSyntheticEvent<NativeScrollEvent>) {
+    posicao.current = evento.nativeEvent.contentOffset.y;
     setVisivel(evento.nativeEvent.contentOffset.y > MOSTRAR_DEPOIS_DE);
   }
+
+  // Leaving a page in the middle of a pull (to refresh) can leave it stuck below its top when you come back, with a
+  // band of header colour on top (testers' feedback). Coming back puts it in place. Only for pages whose top is at 0
+  // (`contentInsetAdjustmentBehavior="never"`): under a native header the top is a negative offset.
+  useFocusEffect(
+    useCallback(() => {
+      if (reporNoTopo && posicao.current < 0) {
+        ref.current?.scrollTo({ y: 0, animated: true });
+        posicao.current = 0;
+      }
+    }, [reporNoTopo])
+  );
 
   const botao = visivel ? (
     <BotaoVoltarAoTopo

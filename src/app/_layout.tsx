@@ -46,6 +46,7 @@ import { SincronizarConta } from '@/state/sincronizar-conta';
 import { SonsProvider } from '@/state/sons';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 // Keep the splash screen up until the fonts are ready, so text never flashes in the system font.
 SplashScreen.preventAutoHideAsync();
@@ -100,7 +101,7 @@ function NavegacaoRaiz() {
   const dentro = onboardingConcluido && (!precisaDeConta || comConta);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
       <Stack.Protected guard={!dentro}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>

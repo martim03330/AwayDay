@@ -72,7 +72,9 @@ function ChipRelvado({ clubeId, nome, selected, onPress }: ChipRelvadoProps) {
 }
 
 export default function LocaisScreen() {
-  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo({
+    reporNoTopo: true,
+  });
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();

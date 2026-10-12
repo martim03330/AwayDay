@@ -82,7 +82,9 @@ function CabecalhoTasco({ children }: { children?: ReactNode }) {
 }
 
 function Pagina({ children, cabecalho }: { children: ReactNode; cabecalho: ReactNode }) {
-  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo({
+    reporNoTopo: true,
+  });
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 

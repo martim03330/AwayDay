@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function MaltaLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
       {/* A lista desenha o próprio cabeçalho verde, como os Jogos. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Malta</Stack.Screen.Title>

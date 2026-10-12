@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function PerfilLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
       {/* The profile draws its own green header. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Perfil</Stack.Screen.Title>

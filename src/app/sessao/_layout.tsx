@@ -1,10 +1,11 @@
 import { Stack } from 'expo-router';
 
 import { BotaoVoltar } from '@/ui/botao-voltar';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function SessaoLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
       <Stack.Screen
         name="[sessaoId]/index"
         options={{ headerLeft: () => <BotaoVoltar destino="/jogos" /> }}>

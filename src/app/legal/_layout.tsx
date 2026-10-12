@@ -4,6 +4,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { fontFamily } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons } from '@/ui/icon';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 /** Privacidade, termos e contactos: abrem em modal por cima de qualquer sítio (criar conta, definições, introdução). */
 export default function LegalLayout() {
@@ -13,6 +14,7 @@ export default function LegalLayout() {
   return (
     <Stack
       screenOptions={{
+        scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS,
         headerShadowVisible: false,
         headerTintColor: theme.text,
         headerStyle: { backgroundColor: theme.background },

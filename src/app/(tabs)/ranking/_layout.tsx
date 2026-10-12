@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
+import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function RankingLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
       {/* O início desenha o próprio cabeçalho verde, como a Malta. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Ranking</Stack.Screen.Title>
