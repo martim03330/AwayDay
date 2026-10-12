@@ -24,6 +24,7 @@ import {
 import { BotaoMais, useModeracao } from '@/features/moderation/components/Moderacao';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
@@ -97,6 +98,7 @@ export default function AmigosScreen() {
       void refrescar();
     } catch (problema) {
       setErro(mensagemDeRecusa(problema));
+      vibrarErro();
     } finally {
       setATratar(false);
     }
@@ -135,6 +137,7 @@ export default function AmigosScreen() {
     );
     try {
       await acceptFriendRequest(pedido.profileId);
+      vibrarSucesso();
     } catch (problema) {
       for (const [chave, dados] of anteriores) queryClient.setQueryData(chave, dados);
       throw problema;

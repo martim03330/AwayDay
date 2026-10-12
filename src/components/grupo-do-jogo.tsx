@@ -7,13 +7,13 @@ import { fetchStayHouses, fetchStayPlacePeople } from '@/features/stays/api';
 import { useNow } from '@/hooks/use-now';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import type { Jogo } from '@/mocks/tipos';
 import { Card } from '@/ui/card';
 import { SectionHeader } from '@/ui/section-header';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 import { useTheme } from '@/hooks/use-theme';
 
 function nomes(lista: readonly { displayName?: string; name?: string; isMine?: boolean }[]) {
@@ -28,6 +28,7 @@ function nomes(lista: readonly { displayName?: string; name?: string; isMine?: b
  * dividir e o tasco escolhido. Junta tudo num sítio para saberes com quem contas e a que horas.
  */
 export function GrupoDoJogo({ jogo, tascoNome }: { jogo: Jogo; tascoNome?: string | null }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const userId = useUserId();
   const agora = useNow(60 * 1000);
@@ -95,7 +96,7 @@ export function GrupoDoJogo({ jogo, tascoNome }: { jogo: Jogo; tascoNome?: strin
                 {casa.isMine ? 'A casa que propuseste' : `Casa de ${casa.displayName}`}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {`${formatarCentimos(casa.shareNowCents)} cada · ${plural(casa.nights, 'noite', 'noites')}${casa.status === 'reservada' ? ' · já reservada' : ' · ainda a juntar gente'}`}
+                {`${dinheiro.formatar(casa.shareNowCents)} cada · ${plural(casa.nights, 'noite', 'noites')}${casa.status === 'reservada' ? ' · já reservada' : ' · ainda a juntar gente'}`}
               </ThemedText>
             </View>
           </View>

@@ -45,12 +45,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regras-boleia';
 import { podeResponderVolta } from '@/lib/regras-volta';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { avisoDeBoleiaPelaRegiao } from '@/lib/voos';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
@@ -71,6 +71,7 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 const OPCOES: Record<RideSummary['routeOption'], string> = {
   rapida: 'Mais rápido',
@@ -213,6 +214,7 @@ function Seta({ aberta = false }: { aberta?: boolean }) {
  * departure — unforeseen events with votes and confirming who turned up.
  */
 export default function BoleiaScreen() {
+  const dinheiro = useFormatarDinheiro();
   const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const theme = useTheme();
@@ -295,9 +297,11 @@ export default function BoleiaScreen() {
       // One after the other: a refused request must not leave the game marked «Vou». The screen already shows the
       // request, so the wait is not seen.
       await requestSeat(idDaBoleia);
+      vibrarSucesso();
       await garantirVou(idDoJogo).catch(() => undefined);
     } catch (erro) {
       queryClient.setQueryData(chave, antes);
+      vibrarErro();
       Alert.alert('Não foi possível', mensagemRecusa(erro));
     } finally {
       setATratar(false);
@@ -377,7 +381,7 @@ export default function BoleiaScreen() {
       `Boleia para ${casa} x ${fora}`,
       `Sai de ${boleia.originName}, ${formatarDiaEHora(partida, agora).toLowerCase()}`,
       lugares > 0
-        ? `${plural(lugares, 'lugar livre', 'lugares livres')} · ${formatarCentimos(boleia.shareFullCents)} a ${formatarCentimos(boleia.shareNowCents)} por pessoa`
+        ? `${plural(lugares, 'lugar livre', 'lugares livres')} · ${dinheiro.formatar(boleia.shareFullCents)} a ${dinheiro.formatar(boleia.shareNowCents)} por pessoa`
         : 'Boleia cheia',
       `Pede lugar no AwayDay: ${link}`,
     ].join('\n');
@@ -577,7 +581,7 @@ export default function BoleiaScreen() {
               onPress={() => abrirPerfil(pessoa.profileId)}
               leading={<Avatar nome={pessoa.displayName} />}
               title={pessoa.displayName}
-              subtitle={`Só na volta · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${formatarCentimos(pessoa.shareCents)}`}
+              subtitle={`Só na volta · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${dinheiro.formatar(pessoa.shareCents)}`}
               separador={separador}
             />
           ),
@@ -685,7 +689,7 @@ export default function BoleiaScreen() {
           <Facto rotulo="Saída" valor={formatarHora(partida)} />
           <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
           {/* Only the price now: how it drops as the car fills is in the cost breakdown further down. */}
-          <Facto rotulo="Por pessoa" valor={formatarCentimos(boleia.shareNowCents)} />
+          <Facto rotulo="Por pessoa" valor={dinheiro.formatar(boleia.shareNowCents)} />
           <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
           <Facto
             rotulo="Lugares"
@@ -761,7 +765,7 @@ export default function BoleiaScreen() {
                   subtitle={`A ${formatarDistancia(pedido.distanceToCarM)} do carro · ${reputacao(pedido.completed, pedido.faults)}`}
                   trailing={
                     <ThemedText type="smallBold">
-                      {formatarCentimos(pedido.shareCents)}
+                      {dinheiro.formatar(pedido.shareCents)}
                     </ThemedText>
                   }
                 />
@@ -934,9 +938,9 @@ export default function BoleiaScreen() {
         />
         <LinhaGrupo
           onPress={() => setVerCusto((atual) => !atual)}
-          accessibilityLabel={`Custo total ${formatarCentimos(boleia.totalCents)}. Toca para ${verCusto ? 'esconder' : 'ver'} as contas.`}
+          accessibilityLabel={`Custo total ${dinheiro.dito(boleia.totalCents)}. Toca para ${verCusto ? 'esconder' : 'ver'} as contas.`}
           leading={<IconCircle name={icons.preco} tone="yellow" />}
-          title={`Total ${formatarCentimos(boleia.totalCents)}`}
+          title={`Total ${dinheiro.formatar(boleia.totalCents)}`}
           subtitle="A dividir por todos"
           trailing={<Seta aberta={verCusto} />}
           separador={depoisDoCusto || verCusto}
@@ -944,18 +948,18 @@ export default function BoleiaScreen() {
         {verCusto ? (
           <View style={[styles.contas, linhaSeparada(!depoisDoCusto)]}>
             {/* Only what each one pays; the detail of how it adds up stays in two short lines. */}
-            <LinhaValor rotulo="Combustível" valor={formatarCentimos(boleia.fuelCents)} />
+            <LinhaValor rotulo="Combustível" valor={dinheiro.formatar(boleia.fuelCents)} />
             {boleia.tollCents > 0 ? (
-              <LinhaValor rotulo="Portagens" valor={formatarCentimos(boleia.tollCents)} />
+              <LinhaValor rotulo="Portagens" valor={dinheiro.formatar(boleia.tollCents)} />
             ) : null}
             <LinhaValor
               rotulo={`Cada um agora (${plural(1 + boleia.seatsTaken, 'pessoa', 'pessoas')})`}
-              valor={formatarCentimos(boleia.shareNowCents)}
+              valor={dinheiro.formatar(boleia.shareNowCents)}
               destaque
             />
             <LinhaValor
               rotulo={`Com a boleia cheia (${1 + boleia.seatsOffered})`}
-              valor={formatarCentimos(boleia.shareFullCents)}
+              valor={dinheiro.formatar(boleia.shareFullCents)}
             />
           </View>
         ) : null}

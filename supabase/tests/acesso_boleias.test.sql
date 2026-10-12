@@ -521,6 +521,8 @@ reset role;
 insert into public.fan_group_member (group_id, profile_id)
 values ('e1000000-0000-4000-8000-0000000000a1', 'e1000000-0000-4000-8000-000000000008');
 insert into t_ids (key, id) values ('plano', gen_random_uuid());
+-- The ride for the group already made a plan by itself; this test builds its own.
+delete from public.fixture_plan where group_id = 'e1000000-0000-4000-8000-0000000000a1' and fixture_id = 'teste-acesso-boleias';
 insert into public.fixture_plan (id, group_id, fixture_id, created_by, ride_id)
 values (pg_temp.id('plano'), 'e1000000-0000-4000-8000-0000000000a1', 'teste-acesso-boleias',
   'e1000000-0000-4000-8000-000000000009', pg_temp.id('r2'));

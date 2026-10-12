@@ -41,7 +41,11 @@
         {
           "backgroundColor": "#187C44",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200
+          "imageWidth": 200,
+          "dark": {
+            "backgroundColor": "#19763F",
+            "image": "./assets/images/splash-icon.png"
+          }
         }
       ],
       [
@@ -73,9 +77,15 @@
       ],
       "expo-asset",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "O AwayDay usa o Face ID para abrir a app quando ligas o bloqueio."
+        }
+      ],
+      [
         "expo-secure-store",
         {
-          "faceIDPermission": "O AwayDay não usa o Face ID. A sessão fica guardada de forma segura no teu iPhone, sem pedir o teu rosto."
+          "faceIDPermission": "O AwayDay usa o Face ID para abrir a app quando ligas o bloqueio."
         }
       ],
       [
@@ -102,6 +112,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/a1b5fdb5-078f-4853-a26c-bc565cec0160"
-    }
+    },
+    "backgroundColor": "#187C44"
   }
 }

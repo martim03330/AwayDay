@@ -94,6 +94,8 @@ insert into t_ids (key, id) values ('plano', gen_random_uuid()), ('casa', gen_ra
 insert into public.stay_plan (id, fixture_id, profile_id, nights, commitment, spare_places, total_cents, group_id, visibility)
 values (pg_temp.id('casa'), 'teste-casa-contas', 'e8100000-0000-4000-8000-000000000001', 2, 'certo', 5, 36001,
   'e8100000-0000-4000-8000-0000000000a1', 'grupo');
+-- The house for the group already made a plan by itself; this test builds its own.
+delete from public.fixture_plan where group_id = 'e8100000-0000-4000-8000-0000000000a1' and fixture_id = 'teste-casa-contas';
 insert into public.fixture_plan (id, group_id, fixture_id, created_by, stay_plan_id)
 values (pg_temp.id('plano'), 'e8100000-0000-4000-8000-0000000000a1', 'teste-casa-contas',
   'e8100000-0000-4000-8000-000000000001', pg_temp.id('casa'));

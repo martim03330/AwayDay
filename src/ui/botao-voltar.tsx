@@ -1,8 +1,9 @@
 import { useRouter, type Href } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons } from '@/ui/icon';
+import { Premivel } from '@/ui/premivel';
 
 /**
  * Back button for the first screen of a stack that opens over the tabs (a group, a car, a trip). Opened from a
@@ -14,7 +15,7 @@ export function BotaoVoltar({ destino }: { destino: Href }) {
   const theme = useTheme();
 
   return (
-    <Pressable
+    <Premivel
       onPress={() => (router.canGoBack() ? router.back() : router.replace(destino))}
       hitSlop={12}
       accessibilityRole="button"
@@ -22,7 +23,7 @@ export function BotaoVoltar({ destino }: { destino: Href }) {
       testID="botao-voltar"
       style={({ pressed }) => [styles.botao, pressed && styles.pressed]}>
       <Icon name={icons.voltar} size={26} color={theme.text} />
-    </Pressable>
+    </Premivel>
   );
 }
 

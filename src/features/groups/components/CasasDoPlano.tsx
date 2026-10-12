@@ -19,7 +19,7 @@ import {
 import { leaveStayPlace, StayRefused } from '@/features/stays/api';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
+import { vibrarErro } from '@/lib/vibrar';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import { Button } from '@/ui/button';
@@ -30,6 +30,7 @@ import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 function mensagemDeRecusa(erro: unknown) {
   if (erro instanceof StayRefused) {
@@ -99,6 +100,7 @@ export function CasasDoPlano({ plano, grupoId }: CasasDoPlanoProps) {
       void queryClient.invalidateQueries({ queryKey: ['stays'] });
     } catch (problema) {
       setErro(mensagemDeRecusa(problema));
+      vibrarErro();
     } finally {
       setATratar(null);
     }
@@ -223,6 +225,7 @@ function CasaProposta({
   onEscolher: () => void;
   onVerAnuncio?: () => void;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const livres = Math.max(0, casa.sparePlaces - casa.taken);
   const estado = casa.chosen
@@ -252,7 +255,7 @@ function CasaProposta({
             {casa.isMine ? 'A tua casa' : `Casa de ${casa.ownerName}`}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {`${formatarCentimos(casa.shareNowCents)} cada · ${formatarCentimos(casa.shareFullCents)} com a casa cheia`}
+            {`${dinheiro.formatar(casa.shareNowCents)} cada · ${dinheiro.formatar(casa.shareFullCents)} com a casa cheia`}
           </ThemedText>
         </View>
       </View>
@@ -261,7 +264,7 @@ function CasaProposta({
         partes={[
           plural(casa.nights, 'noite', 'noites'),
           livres > 0 ? plural(livres, 'cama livre', 'camas livres') : 'cheia',
-          `${formatarCentimos(casa.totalCents)} ao todo`,
+          `${dinheiro.formatar(casa.totalCents)} ao todo`,
           casa.booked ? 'reservada' : null,
         ]}
       />
@@ -347,6 +350,7 @@ function CasaFechada({
   onReabrir: () => void;
   onVerAnuncio?: () => void;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const livres = Math.max(0, casa.sparePlaces - casa.taken);
   const estouLa = casa.isMine || casa.myStatus === 'aceite';
@@ -367,7 +371,7 @@ function CasaFechada({
         </View>
         <View style={styles.preco}>
           <ThemedText style={[styles.precoValor, { color: theme.accentInk }]}>
-            {formatarCentimos(casa.shareNowCents)}
+            {dinheiro.formatar(casa.shareNowCents)}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             cada
@@ -377,14 +381,14 @@ function CasaFechada({
 
       <ThemedText type="small" themeColor="textSecondary">
         {livres > 0
-          ? `Com a casa cheia, ${formatarCentimos(casa.shareFullCents)} cada.`
+          ? `Com a casa cheia, ${dinheiro.formatar(casa.shareFullCents)} cada.`
           : 'A casa está cheia: é o preço final.'}
       </ThemedText>
       <LinhaDetalhes
         partes={[
           plural(casa.nights, 'noite', 'noites'),
           livres > 0 ? plural(livres, 'cama livre', 'camas livres') : 'cheia',
-          `${formatarCentimos(casa.totalCents)} ao todo`,
+          `${dinheiro.formatar(casa.totalCents)} ao todo`,
         ]}
       />
       <ThemedText type="small">{`Lá dentro: ${casa.peopleNames.join(', ')}`}</ThemedText>

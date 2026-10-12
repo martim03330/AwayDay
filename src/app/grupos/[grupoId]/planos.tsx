@@ -11,7 +11,7 @@ import { useUserId } from '@/lib/session';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
-import { ThemedText } from '@/ui/themed-text';
+import { SkeletonCard } from '@/ui/skeleton';
 
 /**
  * Os planos do grupo: os jogos para onde alguém convidou a malta (aqui ou noutro grupo que mandou o plano
@@ -29,7 +29,10 @@ export default function PlanosDoGrupoScreen() {
   return (
     <Screen refreshing={planos.isRefetching} onRefresh={() => void planos.refetch()}>
       {planos.isLoading ? (
-        <ThemedText themeColor="textSecondary">A procurar os planos do grupo…</ThemedText>
+        <>
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+        </>
       ) : lista.length === 0 ? (
         <EmptyState
           icon={icons.calendario}

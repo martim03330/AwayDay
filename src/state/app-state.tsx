@@ -231,6 +231,12 @@ type AppState = {
   /** Desligados por omissão. */
   sonsLigados: boolean;
   alternarSons: () => void;
+  /** Lock the app with Face ID, Touch ID or the passcode when it opens. Local to this phone. */
+  bloqueioAoAbrir: boolean;
+  mudarBloqueioAoAbrir: (ligar: boolean) => void;
+  /** Hide every amount of money («•••• €»). Local to this phone. */
+  esconderValores: boolean;
+  alternarEsconderValores: () => void;
   notificacoes: PreferenciasNotificacoes;
   alternarNotificacao: (tipo: TipoNotificacao) => void;
   /** Signed in for the first time with activity kept on this phone: ask whether to bring it in. */
@@ -1093,6 +1099,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     sonsLigados: preferencias.sonsLigados,
     alternarSons: () =>
       mudarPreferencias((atuais) => ({ ...atuais, sonsLigados: !atuais.sonsLigados })),
+    bloqueioAoAbrir: preferencias.bloqueioAoAbrir,
+    mudarBloqueioAoAbrir: (ligar) =>
+      mudarPreferencias((atuais) => ({ ...atuais, bloqueioAoAbrir: ligar })),
+    esconderValores: preferencias.esconderValores,
+    alternarEsconderValores: () =>
+      mudarPreferencias((atuais) => ({ ...atuais, esconderValores: !atuais.esconderValores })),
     notificacoes,
     alternarNotificacao,
     atividadeParaJuntar,

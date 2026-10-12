@@ -46,6 +46,7 @@ import { AvisoDeConversa, BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } 
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
+import { SkeletonConversa } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 /** How the rest of the chat makes room for a new message: as fast as the send animation, easing out. */
@@ -172,9 +173,9 @@ export default function ConversaDoGrupoScreen() {
 
   if (!grupo) {
     return (
-      <View style={[styles.tudo, styles.centro, { backgroundColor: theme.background }]}>
+      <View style={[styles.tudo, styles.emBaixo, { backgroundColor: theme.background }]}>
         <Stack.Screen options={{ title: 'Grupo' }} />
-        <ThemedText themeColor="textSecondary">A abrir a conversa…</ThemedText>
+        <SkeletonConversa />
       </View>
     );
   }
@@ -642,6 +643,9 @@ const styles = StyleSheet.create({
   centro: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emBaixo: {
+    justifyContent: 'flex-end',
   },
   flex: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, type DimensionValue } from 'react-native';
+import { StyleSheet, View, type DimensionValue } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -52,7 +52,55 @@ export function SkeletonCard({ lines = 2 }: { lines?: number }) {
   );
 }
 
+/** A person's page while it opens: the round photo, the name and a card underneath. */
+export function SkeletonPerfil() {
+  return (
+    <View style={styles.perfil} accessible accessibilityLabel="A carregar">
+      <Skeleton width={96} height={96} radius={48} />
+      <Skeleton width="55%" height={22} />
+      <Skeleton width="35%" height={14} />
+      <View style={styles.largura}>
+        <SkeletonCard lines={2} />
+      </View>
+    </View>
+  );
+}
+
+const BOLHAS: readonly { minha: boolean; largura: DimensionValue; altura: number }[] = [
+  { minha: false, largura: '62%', altura: 44 },
+  { minha: false, largura: '48%', altura: 36 },
+  { minha: true, largura: '55%', altura: 44 },
+  { minha: false, largura: '70%', altura: 60 },
+  { minha: true, largura: '40%', altura: 36 },
+];
+
+/** A chat while it opens: a few bubbles on both sides, shaped like the messages about to arrive. */
+export function SkeletonConversa() {
+  return (
+    <View style={styles.conversa} accessible accessibilityLabel="A carregar">
+      {BOLHAS.map((bolha, index) => (
+        <View key={index} style={{ alignSelf: bolha.minha ? 'flex-end' : 'flex-start', width: bolha.largura }}>
+          <Skeleton height={bolha.altura} radius={18} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  perfil: {
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  largura: {
+    alignSelf: 'stretch',
+    marginTop: Spacing.two,
+  },
+  conversa: {
+    alignSelf: 'stretch',
+    gap: Spacing.two,
+    padding: Spacing.three,
+  },
   card: {
     gap: Spacing.two,
     padding: Spacing.three,

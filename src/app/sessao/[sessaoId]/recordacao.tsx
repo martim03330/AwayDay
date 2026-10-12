@@ -13,7 +13,6 @@ import { addTripPhoto, removeTripPhoto, type TripPhoto } from '@/features/trips/
 import { useTheme } from '@/hooks/use-theme';
 import { parteDeCada } from '@/lib/acerto';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -25,8 +24,10 @@ import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
+import { Skeleton, SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 const formatoData = new Intl.DateTimeFormat('pt-PT', {
   weekday: 'long',
@@ -41,6 +42,7 @@ const formatoData = new Intl.DateTimeFormat('pt-PT', {
  * link to the accounts) and the album. The accounts are still there, but here they are not the point.
  */
 export default function RecordacaoScreen() {
+  const dinheiro = useFormatarDinheiro();
   const router = useRouter();
   const theme = useTheme();
   const queryClient = useQueryClient();
@@ -56,7 +58,10 @@ export default function RecordacaoScreen() {
     return (
       <Screen>
         {memoria.isLoading ? (
-          <ThemedText themeColor="textSecondary">A abrir a recordação…</ThemedText>
+          <>
+            <Skeleton height={220} radius={Radius.card} />
+            <SkeletonCard lines={3} />
+          </>
         ) : (
           <EmptyState
             icon={icons.album}
@@ -177,9 +182,9 @@ export default function RecordacaoScreen() {
         <View style={styles.numeros}>
           <Numero valor={String(viagem.peopleNames.length)} legenda="foram" />
           <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
-          <Numero valor={formatarCentimos(viagem.totalCents)} legenda="gastos" />
+          <Numero valor={dinheiro.formatar(viagem.totalCents)} legenda="gastos" />
           <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
-          <Numero valor={formatarCentimos(porCabeca)} legenda="por cabeça" />
+          <Numero valor={dinheiro.formatar(porCabeca)} legenda="por cabeça" />
         </View>
         <View style={[styles.linhaFina, { backgroundColor: theme.backgroundSelected }]} />
         <LinhaGrupo
@@ -193,7 +198,7 @@ export default function RecordacaoScreen() {
             separador={podeVerContas}
             leading={<IconCircle name={icons.brinde} tone="yellow" />}
             title={viagem.biggest.description}
-            subtitle={`A maior extravagância · ${formatarCentimos(viagem.biggest.cents)}`}
+            subtitle={`A maior extravagância · ${dinheiro.formatar(viagem.biggest.cents)}`}
           />
         ) : null}
         {podeVerContas ? (

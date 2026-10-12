@@ -6,17 +6,18 @@ import type { MyRanking } from '@/features/ranks/types';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarNumero } from '@/lib/formatos';
 import { Card } from '@/ui/card';
+import { NumeroAnimado } from '@/ui/numero-animado';
 import { ProgressBar } from '@/ui/progress-bar';
 import { ThemedText } from '@/ui/themed-text';
 
 const NIVEL_MAXIMO = 99;
 
+const pontosDesdeSempre = (pontos: number) => `${formatarNumero(pontos)} pontos desde sempre`;
+
 function Numero({ valor, legenda }: { valor: number; legenda: string }) {
   return (
     <View style={styles.numero} accessible accessibilityLabel={`${valor} ${legenda}`}>
-      <ThemedText type="score" style={styles.numeroValor}>
-        {formatarNumero(valor)}
-      </ThemedText>
+      <NumeroAnimado valor={valor} type="score" style={styles.numeroValor} />
       <ThemedText type="small" themeColor="textSecondary" style={styles.numeroLegenda}>
         {legenda}
       </ThemedText>
@@ -43,18 +44,19 @@ export function CartaoNivel({ ranking }: { ranking: MyRanking }) {
           style={[styles.medalha, { backgroundColor: theme.highlight }]}
           accessible
           accessibilityLabel={`Nível ${ranking.level}`}>
-          <ThemedText type="score" style={[styles.nivel, { color: theme.highlightText }]}>
-            {ranking.level}
-          </ThemedText>
+          <NumeroAnimado valor={ranking.level} type="score" style={[styles.nivel, { color: theme.highlightText }]} />
         </View>
         <View style={styles.flex}>
           <ThemedText type="eyebrow" themeColor="accentInk">
             {`Nível ${ranking.level}`}
           </ThemedText>
           <ThemedText type="subtitle">{titulo}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {`${formatarNumero(ranking.totalXp)} pontos desde sempre`}
-          </ThemedText>
+          <NumeroAnimado
+            valor={ranking.totalXp}
+            formatar={pontosDesdeSempre}
+            type="small"
+            themeColor="textSecondary"
+          />
         </View>
       </View>
 

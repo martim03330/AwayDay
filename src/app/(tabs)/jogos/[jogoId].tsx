@@ -26,6 +26,7 @@ import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { Aviso } from '@/ui/aviso';
 import { Card } from '@/ui/card';
+import { CamadaConfetti } from '@/ui/confetti';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
@@ -143,7 +144,7 @@ export default function JogoScreen() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <CamadaConfetti>
       <ScrollView
         ref={paginaRef}
         onScroll={onScroll}
@@ -293,7 +294,7 @@ export default function JogoScreen() {
         </View>
       </ScrollView>
       {voltarAoTopo}
-    </View>
+    </CamadaConfetti>
   );
 }
 

@@ -25,8 +25,9 @@ import { casaLancadaAMao, notaDaOrigem } from '@/features/trips/origem';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
+import { useAppState } from '@/state/app-state';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { Avatar } from '@/ui/avatar';
 import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
@@ -38,6 +39,7 @@ import { SectionHeader } from '@/ui/section-header';
 import { Segmentado } from '@/ui/segmentado';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { useFormatarDinheiro, Valor } from '@/ui/valor';
 
 type Vista = 'lista' | 'acertar';
 
@@ -62,6 +64,8 @@ function idDoPedido(chave: string) {
 }
 
 export default function DespesasScreen() {
+  const dinheiro = useFormatarDinheiro();
+  const { esconderValores, alternarEsconderValores } = useAppState();
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -105,6 +109,7 @@ export default function DespesasScreen() {
       await refrescar();
     } catch (problema) {
       setErro(mensagemDeRecusaDasContas(problema));
+      vibrarErro();
     } finally {
       setATratar(null);
     }
@@ -157,13 +162,31 @@ export default function DespesasScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.conteudo}>
-        <View style={styles.resumo}>
-          <ThemedText type="subtitle" style={styles.valor}>
-            {formatarCentimos(sessao.totalCents)}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {`${plural(lista.length, 'despesa', 'despesas')} · ${plural(sessao.people, 'pessoa', 'pessoas')}`}
-          </ThemedText>
+        <View style={styles.cabecalho}>
+          <View style={styles.resumo}>
+            <Valor type="subtitle" style={styles.valor} cents={sessao.totalCents} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {`${plural(lista.length, 'despesa', 'despesas')} · ${plural(sessao.people, 'pessoa', 'pessoas')}`}
+            </ThemedText>
+          </View>
+          <Pressable
+            hitSlop={8}
+            onPress={alternarEsconderValores}
+            accessibilityRole="switch"
+            accessibilityLabel="Esconder valores"
+            accessibilityState={{ checked: esconderValores }}
+            testID="botao-esconder-valores"
+            style={({ pressed }) => [
+              styles.olho,
+              { backgroundColor: theme.backgroundSelected },
+              pressed && styles.apagado,
+            ]}>
+            <Icon
+              name={esconderValores ? icons.naoEspreitar : icons.espreitar}
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
         </View>
 
         <Segmentado opcoes={VISTAS} valor={vista} onChange={setVista} />
@@ -211,11 +234,7 @@ export default function DespesasScreen() {
                     ]
                       .filter(Boolean)
                       .join(' · ')}
-                    trailing={
-                      <ThemedText type="smallBold" style={styles.valor}>
-                        {formatarCentimos(despesa.cents)}
-                      </ThemedText>
-                    }
+                    trailing={<Valor type="smallBold" style={styles.valor} cents={despesa.cents} />}
                   />
                 </Pressable>
               ))}
@@ -242,7 +261,7 @@ export default function DespesasScreen() {
                   const pago = transferencia.deId === userId;
                   const recebo = transferencia.paraId === userId;
                   const chave = `${transferencia.deId}-${transferencia.paraId}`;
-                  const valor = formatarCentimos(transferencia.centimos);
+                  const valor = dinheiro.formatar(transferencia.centimos);
                   const de = transferencia.deNome.split(' ')[0];
                   const para = transferencia.paraNome.split(' ')[0];
                   return (
@@ -271,6 +290,7 @@ export default function DespesasScreen() {
                                   idDoPedido(`${sessaoId}:${chave}:${transferencia.centimos}`)
                                 ).then(() => {
                                   idsDosPedidos.delete(`${sessaoId}:${chave}:${transferencia.centimos}`);
+                                  vibrarSucesso();
                                 })
                             )
                           : undefined
@@ -292,14 +312,14 @@ export default function DespesasScreen() {
                       leading={<IconCircle name={icons.horario} tone="yellow" />}
                       title={
                         pagamento.iReceive
-                          ? `${pagamento.fromName.split(' ')[0]} pagou-te ${formatarCentimos(pagamento.cents)}`
-                          : `Pagaste ${formatarCentimos(pagamento.cents)} a ${pagamento.toName.split(' ')[0]}`
+                          ? `${pagamento.fromName.split(' ')[0]} pagou-te ${dinheiro.formatar(pagamento.cents)}`
+                          : `Pagaste ${dinheiro.formatar(pagamento.cents)} a ${pagamento.toName.split(' ')[0]}`
                       }
                       subtitle={pagamento.iReceive ? 'Confirma que recebeste' : 'Falta confirmar'}
                       trailing={
                         pagamento.iReceive
                           ? pastilha(pagamento.id, 'Recebi', () =>
-                              confirmTripSettlement(pagamento.id)
+                              confirmTripSettlement(pagamento.id).then(vibrarSucesso)
                             )
                           : pagamento.mine
                             ? pastilha(
@@ -360,8 +380,21 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingBottom: Spacing.five,
   },
+  cabecalho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
   resumo: {
+    flex: 1,
     gap: Spacing.half,
+  },
+  olho: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.pill,
   },
   grupo: {
     gap: 0,

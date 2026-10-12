@@ -17,6 +17,7 @@ import { useAppState } from '@/state/app-state';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
+import { NumeroAnimado } from '@/ui/numero-animado';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { Segmentado } from '@/ui/segmentado';
@@ -51,6 +52,11 @@ const VAZIO: Record<LeaderboardScope, string> = {
 };
 
 /** Aggregates only show from 5 different people, like every other number in the app. */
+const pontosTexto = (xp: number) => `${formatarNumero(xp)} pts`;
+const estadiosTexto = (quantos: number) => plural(quantos, 'estádio', 'estádios');
+const tascosTexto = (quantos: number) => plural(quantos, 'tasco', 'tascos');
+const adeptosTexto = (quantos: number) => plural(quantos, 'adepto', 'adeptos');
+
 const AINDA_POUCOS = 'Aparece a partir de 5 adeptos diferentes.';
 
 function eAmbito(valor: string | undefined): valor is LeaderboardScope {
@@ -98,7 +104,8 @@ export default function TabelasScreen() {
     posicao: linha.position,
     nome: linha.displayName,
     detalhe: `Nível ${linha.level}`,
-    valor: `${formatarNumero(linha.xp)} pts`,
+    valor: pontosTexto(linha.xp),
+    numero: { valor: linha.xp, formatar: pontosTexto },
     sou: linha.isMe,
   }));
 
@@ -107,7 +114,8 @@ export default function TabelasScreen() {
     posicao: indice + 1,
     nome: linha.displayName,
     detalhe: plural(linha.visits, 'jogo', 'jogos'),
-    valor: plural(linha.stadiums, 'estádio', 'estádios'),
+    valor: estadiosTexto(linha.stadiums),
+    numero: { valor: linha.stadiums, formatar: estadiosTexto },
     sou: linha.isMe,
   }));
 
@@ -116,7 +124,8 @@ export default function TabelasScreen() {
     posicao: linha.position,
     nome: linha.displayName,
     detalhe: linha.clubId ? (obterClube(linha.clubId)?.nomeCurto ?? '') : '',
-    valor: plural(linha.value, 'tasco', 'tascos'),
+    valor: tascosTexto(linha.value),
+    numero: { valor: linha.value, formatar: tascosTexto },
     sou: linha.isMe,
   }));
 
@@ -127,7 +136,8 @@ export default function TabelasScreen() {
       posicao: indice + 1,
       nome: estadio?.nome ?? linha.venueId,
       detalhe: estadio?.cidade ?? '',
-      valor: plural(linha.people, 'adepto', 'adeptos'),
+      valor: adeptosTexto(linha.people),
+      numero: { valor: linha.people, formatar: adeptosTexto },
       sou: false,
     };
   });
@@ -137,7 +147,8 @@ export default function TabelasScreen() {
     posicao: indice + 1,
     nome: obterClube(linha.clubId)?.nome ?? linha.clubId,
     detalhe: plural(linha.visits, 'jogo fora', 'jogos fora'),
-    valor: plural(linha.people, 'adepto', 'adeptos'),
+    valor: adeptosTexto(linha.people),
+    numero: { valor: linha.people, formatar: adeptosTexto },
     sou: false,
   }));
 
@@ -190,9 +201,7 @@ export default function TabelasScreen() {
         <>
           {adeptos.season.data ? (
             <View style={styles.resumo}>
-              <ThemedText type="score" style={styles.numero}>
-                {formatarNumero(adeptos.season.data.people)}
-              </ThemedText>
+              <NumeroAnimado valor={adeptos.season.data.people} type="score" style={styles.numero} />
               <ThemedText themeColor="textSecondary">adeptos nos estádios esta época</ThemedText>
             </View>
           ) : null}

@@ -40,6 +40,8 @@ const MARGEM = 20;
 /** Lines of the season table shown here; the full table is one tap away. */
 const TOPO = 3;
 
+const pontosTexto = (xp: number) => `${formatarNumero(xp)} pts`;
+
 /**
  * O Ranking: o teu nível para a vida, a divisão desta época, os desafios da semana e as tabelas. Só conta o que a
  * app confirmou — carimbos no estádio, check-ins no tasco, fotos aprovadas. Marcar à mão não dá pontos.
@@ -73,7 +75,8 @@ export default function RankingScreen() {
       posicao: linha.position,
       nome: linha.displayName,
       detalhe: `Nível ${linha.level}`,
-      valor: `${formatarNumero(linha.xp)} pts`,
+      valor: pontosTexto(linha.xp),
+      numero: { valor: linha.xp, formatar: pontosTexto },
       sou: linha.isMe,
     }));
 

@@ -35,8 +35,9 @@ import {
   type Escalao,
 } from '@/lib/dormida';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos, formatarCentimosCurto, lerPrecoEmCentimos } from '@/lib/money';
+import { formatarCentimosCurto, lerPrecoEmCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import type { Jogo, Venue } from '@/mocks/tipos';
 import { VoosCard } from '@/components/voos-card';
@@ -50,6 +51,7 @@ import { Icon, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 const NOITES = [1, 2, 3];
 const LUGARES = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -190,6 +192,7 @@ function CasaProposta({
   onMudar: () => void;
   onApagar: () => void;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const site = casa.listingUrl ? siteDaCasa(casa.listingUrl) : null;
   const theme = useTheme();
   const livres = casa.sparePlaces - casa.taken;
@@ -202,7 +205,7 @@ function CasaProposta({
           {casa.isMine ? 'A tua casa' : `Casa de ${casa.displayName}`}
         </ThemedText>
         <ThemedText
-          style={styles.preco}>{`${formatarCentimos(casa.shareNowCents)} cada`}</ThemedText>
+          style={styles.preco}>{`${dinheiro.formatar(casa.shareNowCents)} cada`}</ThemedText>
       </View>
       {!casa.isMine ? (
         <ThemedText type="small" themeColor="textMuted">
@@ -211,7 +214,7 @@ function CasaProposta({
       ) : null}
 
       <ThemedText type="small" themeColor="textSecondary">
-        {`${formatarCentimos(casa.totalCents)} no total · ${plural(casa.nights, 'noite', 'noites')}`}
+        {`${dinheiro.formatar(casa.totalCents)} no total · ${plural(casa.nights, 'noite', 'noites')}`}
       </ThemedText>
 
       <View style={styles.etiquetas}>
@@ -327,6 +330,7 @@ export function DormidaCard({
    */
   pessoasDoGrupo?: number | null;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const router = useRouter();
   const userId = useUserId();
@@ -401,6 +405,7 @@ export function DormidaCard({
       return true;
     } catch (problema) {
       setErro(mensagemDeRecusa(problema));
+      vibrarErro();
       return false;
     } finally {
       setATratar(false);
@@ -444,7 +449,9 @@ export function DormidaCard({
       await garantirVou(jogo.id).catch(() => undefined);
       await setStayVisibility(id, !(grupoId && soParaOGrupo)).catch(() => undefined);
     });
-    if (guardado) setAberto(false);
+    if (!guardado) return;
+    vibrarSucesso();
+    setAberto(false);
   }
 
   return (
@@ -560,6 +567,7 @@ export function DormidaCard({
           onPedir={() =>
             void tratar(async () => {
               await requestStayPlace(casa.id);
+              vibrarSucesso();
               await garantirVou(jogo.id).catch(() => undefined);
             })
           }
@@ -620,7 +628,7 @@ export function DormidaCard({
             </View>
             {precoPorPessoa !== null ? (
               <ThemedText style={styles.destaque}>
-                {`Com a casa cheia ficam ${formatarCentimos(precoPorPessoa)} a cada um.`}
+                {`Com a casa cheia ficam ${dinheiro.formatar(precoPorPessoa)} a cada um.`}
               </ThemedText>
             ) : null}
 

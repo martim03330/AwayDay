@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type LinkTextoProps = {
@@ -33,7 +34,7 @@ export function LinkTexto({
       : { fundo: theme.successBackground, tinta: theme.accentInk };
 
   return (
-    <Pressable
+    <Premivel
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
@@ -46,7 +47,7 @@ export function LinkTexto({
         disabled && styles.apagado,
       ]}>
       <ThemedText style={[styles.texto, { color: tom.tinta }]}>{label}</ThemedText>
-    </Pressable>
+    </Premivel>
   );
 }
 
@@ -67,8 +68,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   premido: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.8,
   },
   apagado: {
     opacity: 0.45,

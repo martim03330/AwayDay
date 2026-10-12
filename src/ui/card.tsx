@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react';
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
+import { Premivel } from '@/ui/premivel';
 import { ThemedView } from '@/ui/themed-view';
 
 type CardProps = {
@@ -24,13 +25,15 @@ export function Card({ children, style, onPress, accessibilityLabel }: CardProps
   if (!onPress) return content;
 
   return (
-    <Pressable
+    <Premivel
       onPress={onPress}
+      // Big surfaces shrink less: 0.97 on a full-width card reads as a jump.
+      escala={0.98}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => pressed && styles.pressed}>
       {content}
-    </Pressable>
+    </Premivel>
   );
 }
 
@@ -43,7 +46,6 @@ const styles = StyleSheet.create({
     ...CardShadow,
   },
   pressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.85,
   },
 });

@@ -26,7 +26,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDia, formatarHora } from '@/lib/datas';
 import { minutosAPe, minutosExtraDoParque } from '@/lib/facilidade-estacionamento';
 import { formatarDistancia } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { PlaceSearchRefused, searchPlace, type PlaceResult } from '@/lib/procurar-sitios';
 import { eJogoGrande } from '@/lib/classicos';
 import {
@@ -42,6 +41,7 @@ import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { avisoDeBoleiaNaIlha, avisoDeBoleiaPelaRegiao, partidaNaIlha } from '@/lib/voos';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import type { Coordenadas } from '@/mocks/tipos';
@@ -59,6 +59,7 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 import { Expansor } from '@/ui/expansor';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 /**
  * Starting values only, not an official price: the driver sets what they paid. Not attributed to any source, since they
@@ -174,6 +175,7 @@ function PassoDeQuarto({
  * folded under "Mais opções"; then a route with its cost.
  */
 export default function OferecerBoleiaScreen() {
+  const dinheiro = useFormatarDinheiro();
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
@@ -500,8 +502,10 @@ export default function OferecerBoleiaScreen() {
       // Oferecer boleia é ir ao jogo: o bilhete abre-se sozinho.
       await garantirVou(jogo.id).catch(() => undefined);
       await atualizar();
+      vibrarSucesso();
       router.replace({ pathname: '/jogos/boleia', params: { rideId: id, jogoId: jogo.id } });
     } catch (erro) {
+      vibrarErro();
       Alert.alert('Não foi possível publicar', mensagemRecusa(erro));
     } finally {
       setACarregar(false);
@@ -967,7 +971,7 @@ export default function OferecerBoleiaScreen() {
                   onPress={() => setEscolhida(opcao.option)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selecionada }}
-                  accessibilityLabel={`${OPCOES[opcao.option].titulo}, ${formatarCentimos(opcao.totalCents)}. ${OPCOES[opcao.option].descricao}`}
+                  accessibilityLabel={`${OPCOES[opcao.option].titulo}, ${dinheiro.dito(opcao.totalCents)}. ${OPCOES[opcao.option].descricao}`}
                   style={({ pressed }) => [
                     styles.percurso,
                     indice < cotacoes.length - 1 && {
@@ -993,11 +997,11 @@ export default function OferecerBoleiaScreen() {
                     </ThemedText>
                     {selecionada ? (
                       <ThemedText type="small" themeColor="textMuted">
-                        {`Combustível ${formatarCentimos(opcao.fuelCents)} · portagens ${formatarCentimos(opcao.tollCents)} (estimativa)`}
+                        {`Combustível ${dinheiro.formatar(opcao.fuelCents)} · portagens ${dinheiro.formatar(opcao.tollCents)} (estimativa)`}
                       </ThemedText>
                     ) : null}
                   </View>
-                  <ThemedText style={styles.valor}>{formatarCentimos(opcao.totalCents)}</ThemedText>
+                  <ThemedText style={styles.valor}>{dinheiro.formatar(opcao.totalCents)}</ThemedText>
                 </Pressable>
               );
             })}
@@ -1010,7 +1014,7 @@ export default function OferecerBoleiaScreen() {
                   {`Cada um, com o carro cheio (${partilhas.length} pessoas)`}
                 </ThemedText>
                 <ThemedText style={styles.valorGrande}>
-                  {formatarCentimos(partilhas[partilhas.length - 1])}
+                  {dinheiro.formatar(partilhas[partilhas.length - 1])}
                 </ThemedText>
               </View>
               {verPartilhas
@@ -1019,7 +1023,7 @@ export default function OferecerBoleiaScreen() {
                       <ThemedText themeColor="textSecondary">
                         {indice === 0 ? 'Só tu' : `Tu e mais ${indice}`}
                       </ThemedText>
-                      <ThemedText style={styles.valor}>{`${formatarCentimos(valor)} cada`}</ThemedText>
+                      <ThemedText style={styles.valor}>{`${dinheiro.formatar(valor)} cada`}</ThemedText>
                     </View>
                   ))
                 : null}

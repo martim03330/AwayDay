@@ -1,8 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { vibrarSelecao } from '@/lib/vibrar';
 import type { Nota } from '@/mocks/tipos';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 const NOTAS: readonly Nota[] = [1, 2, 3, 4, 5];
@@ -46,9 +48,12 @@ export function SeletorNota({ label, description, value, onChange }: SeletorNota
         {NOTAS.map((nota) => {
           const preenchida = value !== null && nota <= value;
           return (
-            <Pressable
+            <Premivel
               key={nota}
-              onPress={() => onChange(nota)}
+              onPress={() => {
+                vibrarSelecao();
+                onChange(nota);
+              }}
               accessibilityRole="radio"
               accessibilityState={{ checked: value === nota }}
               accessibilityLabel={`${label}: ${nota} de 5, ${ROTULOS[nota]}`}
@@ -65,7 +70,7 @@ export function SeletorNota({ label, description, value, onChange }: SeletorNota
                 style={[styles.numero, { color: preenchida ? theme.accentText : theme.textMuted }]}>
                 {nota}
               </ThemedText>
-            </Pressable>
+            </Premivel>
           );
         })}
       </View>
@@ -121,6 +126,6 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.85,
   },
 });

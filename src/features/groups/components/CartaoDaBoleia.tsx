@@ -6,13 +6,13 @@ import type { FixturePlan } from '@/features/groups/plans';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Icon, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 type Boleia = NonNullable<FixturePlan['ride']>;
 
@@ -51,6 +51,7 @@ export function CartaoDaBoleia({
   onVer,
   onTirar,
 }: CartaoDaBoleiaProps) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const abrirPerfil = useAbrirPerfil();
   const saida = new Date(boleia.departureAt);
@@ -76,7 +77,7 @@ export function CartaoDaBoleia({
         </View>
         <View style={styles.preco}>
           <ThemedText style={[styles.precoValor, { color: theme.accentInk }]}>
-            {formatarCentimos(boleia.shareNowCents)}
+            {dinheiro.formatar(boleia.shareNowCents)}
           </ThemedText>
           <ThemedText style={[styles.precoLegenda, { color: theme.textSecondary }]}>
             cada

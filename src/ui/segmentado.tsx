@@ -1,7 +1,9 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { vibrarSelecao } from '@/lib/vibrar';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type Opcao<T extends string> = { valor: T; label: string };
@@ -22,9 +24,12 @@ export function Segmentado<T extends string>({ opcoes, valor, onChange }: Segmen
       {opcoes.map((opcao) => {
         const ativo = opcao.valor === valor;
         return (
-          <Pressable
+          <Premivel
             key={opcao.valor}
-            onPress={() => onChange(opcao.valor)}
+            onPress={() => {
+              if (!ativo) vibrarSelecao();
+              onChange(opcao.valor);
+            }}
             accessibilityRole="tab"
             hitSlop={{ top: 4, bottom: 4 }}
             accessibilityState={{ selected: ativo }}
@@ -38,7 +43,7 @@ export function Segmentado<T extends string>({ opcoes, valor, onChange }: Segmen
               numberOfLines={1}>
               {opcao.label}
             </ThemedText>
-          </Pressable>
+          </Premivel>
         );
       })}
     </View>

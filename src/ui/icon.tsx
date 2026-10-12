@@ -261,6 +261,9 @@ const glyphs = {
     ],
   },
   espreitar: { paths: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z', circle(12, 12, 3)] },
+  naoEspreitar: {
+    paths: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z', circle(12, 12, 3), 'M3 3l18 18'],
+  },
   brinde: {
     paths: [
       'M5 3h5l-.5 6a2 2 0 0 1-4 0z',

@@ -1,7 +1,6 @@
 import { useFocusEffect, useSegments } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
-  Pressable,
   StyleSheet,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -14,6 +13,7 @@ import { BottomTabInset, CardShadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { vibrarLeve } from '@/lib/vibrar';
 import { Icon, icons } from '@/ui/icon';
+import { Premivel } from '@/ui/premivel';
 
 /** How far down (in points) before the button shows: about a screen and a half. */
 const MOSTRAR_DEPOIS_DE = 1100;
@@ -80,7 +80,7 @@ function BotaoVoltarAoTopo({ onPress }: { onPress: () => void }) {
       entering={FadeIn.duration(150)}
       exiting={FadeOut.duration(150)}
       style={[styles.lugar, { bottom: fundo }]}>
-      <Pressable
+      <Premivel
         onPress={onPress}
         hitSlop={8}
         accessibilityRole="button"
@@ -93,7 +93,7 @@ function BotaoVoltarAoTopo({ onPress }: { onPress: () => void }) {
           pressed && styles.premido,
         ]}>
         <Icon name={icons.subir} size={20} color={theme.text} />
-      </Pressable>
+      </Premivel>
     </Animated.View>
   );
 }

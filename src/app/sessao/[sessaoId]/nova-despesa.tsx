@@ -22,7 +22,7 @@ import { useRefreshTrips, useTripPeople } from '@/features/trips/hooks/useTrips'
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
 import { dividirCentimos } from '@/lib/acerto';
-import { formatarCentimos, lerPrecoEmCentimos } from '@/lib/money';
+import { lerPrecoEmCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
@@ -30,12 +30,14 @@ import { Chip } from '@/ui/chip';
 import { icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 /**
  * Add an expense: what it was, how much, its type, who paid and who is in. By default you paid and everyone is in —
  * the round of drinks. The final split is always the server's; here it is only previewed before adding.
  */
 export default function NovaDespesaScreen() {
+  const dinheiro = useFormatarDinheiro();
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
@@ -182,8 +184,8 @@ export default function NovaDespesaScreen() {
           ) : partes ? (
             <ThemedText type="small" themeColor="textSecondary">
               {Math.max(...partes) === Math.min(...partes)
-                ? `${formatarCentimos(partes[0])} para cada um`
-                : `Cerca de ${formatarCentimos(Math.min(...partes))} para cada um`}
+                ? `${dinheiro.formatar(partes[0])} para cada um`
+                : `Cerca de ${dinheiro.formatar(Math.min(...partes))} para cada um`}
             </ThemedText>
           ) : null}
         </View>

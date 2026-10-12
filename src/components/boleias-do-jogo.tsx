@@ -11,7 +11,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { kmDePartida, ordenarBoleiasPorPerto } from '@/lib/boleias-perto';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { podePedirVolta } from '@/lib/regras-volta';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
@@ -25,6 +24,7 @@ import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 const ESTADOS: Record<NonNullable<RideSummary['myStatus']>, string> = {
   requested: 'Pedido enviado',
@@ -47,6 +47,7 @@ function LinhaBoleia({
   onPress: () => void;
   separador: boolean;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const agora = useNow(60 * 1000);
   const livres = boleia.seatsOffered - boleia.seatsTaken;
@@ -55,7 +56,7 @@ function LinhaBoleia({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Boleia de ${boleia.driverName} a partir de ${boleia.originName}, ${plural(livres, 'lugar livre', 'lugares livres')} de ${boleia.seatsOffered}, ${formatarCentimos(boleia.shareNowCents)} por pessoa agora`}
+      accessibilityLabel={`Boleia de ${boleia.driverName} a partir de ${boleia.originName}, ${plural(livres, 'lugar livre', 'lugares livres')} de ${boleia.seatsOffered}, ${dinheiro.dito(boleia.shareNowCents)} por pessoa agora`}
       style={({ pressed }) => [
         styles.linha,
         separador && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
@@ -75,10 +76,10 @@ function LinhaBoleia({
           />
         </View>
         <View style={styles.precoCaixa}>
-          <ThemedText style={styles.preco}>{formatarCentimos(boleia.shareNowCents)}</ThemedText>
+          <ThemedText style={styles.preco}>{dinheiro.formatar(boleia.shareNowCents)}</ThemedText>
           {boleia.shareFullCents < boleia.shareNowCents ? (
             <ThemedText type="small" themeColor="textMuted">
-              {`cheia: ${formatarCentimos(boleia.shareFullCents)}`}
+              {`cheia: ${dinheiro.formatar(boleia.shareFullCents)}`}
             </ThemedText>
           ) : null}
         </View>
@@ -118,6 +119,7 @@ function LinhaBoleia({
 
 /** The rides to this game: join one, or offer yours. Needs an account (seats and people are real). */
 export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
+  const dinheiro = useFormatarDinheiro();
   const router = useRouter();
   const userId = useUserId();
   const agora = useNow(60 * 1000);
@@ -200,7 +202,7 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
                     key={carro.rideId}
                     leading={<IconCircle name={icons.carro} tone="neutral" size={16} />}
                     title={carro.driverName}
-                    subtitle={`${plural(carro.seatsLeft, 'lugar livre', 'lugares livres')} · ${formatarCentimos(carro.priceCents)} cada`}
+                    subtitle={`${plural(carro.seatsLeft, 'lugar livre', 'lugares livres')} · ${dinheiro.formatar(carro.priceCents)} cada`}
                     trailing={
                       carro.myStatus === 'pending' ? (
                         <Etiqueta label="Pedido enviado" tone="aviso" />

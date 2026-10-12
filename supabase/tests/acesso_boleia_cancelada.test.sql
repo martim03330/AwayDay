@@ -70,6 +70,9 @@ select (select id from t_ids where key = 'ride'), f.id, 'ad00000b-0000-4000-8000
   'SRID=4326;POINT(-8.42 40.2)', f.kickoff_at - interval '3 hours', 3, 'rapida', false, 100000, 3600, 0, 600, 1700,
   1020, 0, 1020, 'c000000b-0000-4000-8000-0000000000a1', 'grupo'
 from public.fixture as f where f.id = (select txt from t_ids where key = 'jogo');
+-- The ride for the group already made a plan by itself; this test builds its own.
+delete from public.fixture_plan
+where group_id = 'c000000b-0000-4000-8000-0000000000a1' and fixture_id = (select txt from t_ids where key = 'jogo');
 
 set local role authenticated;
 select pg_temp.as_user('ad00000b-0000-4000-8000-0000000000a1');

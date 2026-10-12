@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Icon, type IconName } from '@/ui/icon';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type ButtonProps = {
@@ -34,7 +35,7 @@ export function Button({
   }[variant];
 
   return (
-    <Pressable
+    <Premivel
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -48,7 +49,7 @@ export function Button({
       ]}>
       {icon ? <Icon name={icon} size={20} color={look.ink} /> : null}
       <ThemedText style={[styles.label, { color: look.ink }]}>{label}</ThemedText>
-    </Pressable>
+    </Premivel>
   );
 }
 

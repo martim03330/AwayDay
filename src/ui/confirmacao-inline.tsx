@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type ConfirmacaoInlineProps = {
@@ -41,7 +42,7 @@ export function ConfirmacaoInline({
         {mensagem}
       </ThemedText>
       <View style={styles.botoes}>
-        <Pressable
+        <Premivel
           onPress={onCancelar}
           disabled={aTratar}
           accessibilityRole="button"
@@ -51,8 +52,8 @@ export function ConfirmacaoInline({
             styles.contorno,
           ]}>
           <ThemedText style={styles.rotulo}>{cancelar}</ThemedText>
-        </Pressable>
-        <Pressable
+        </Premivel>
+        <Premivel
           onPress={onConfirmar}
           disabled={aTratar}
           accessibilityRole="button"
@@ -62,7 +63,7 @@ export function ConfirmacaoInline({
             { backgroundColor: fundo, opacity: aTratar ? 0.5 : pressed ? 0.75 : 1 },
           ]}>
           <ThemedText style={[styles.rotulo, { color: tinta }]}>{aTratar ? 'A tratar…' : confirmar}</ThemedText>
-        </Pressable>
+        </Premivel>
       </View>
     </View>
   );

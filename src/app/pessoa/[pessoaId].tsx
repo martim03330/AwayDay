@@ -14,6 +14,7 @@ import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { usePublicProfile } from '@/features/profile/hooks/useMyProfile';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { obterClube } from '@/mocks/clubes';
 import { Avatar } from '@/ui/avatar';
 import { Button } from '@/ui/button';
@@ -24,6 +25,7 @@ import { Escudo } from '@/ui/escudo';
 import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
+import { SkeletonPerfil } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 /** "setembro de 2026". */
@@ -67,15 +69,20 @@ export default function PerfilPublicoScreen() {
       if (amizade === 'pedido_recebido') {
         mudarEstado('amigos');
         await acceptFriendRequest(pessoaId);
+        vibrarSucesso();
       } else {
         mudarEstado('pedido_enviado');
         // If that person had already asked, you are friends right away.
-        if ((await sendFriendRequest(pessoaId)) === 'amigos') mudarEstado('amigos');
+        if ((await sendFriendRequest(pessoaId)) === 'amigos') {
+          mudarEstado('amigos');
+          vibrarSucesso();
+        }
       }
       void refrescarAmigos();
     } catch {
       for (const [chave, dados] of anteriores) queryClient.setQueryData(chave, dados);
       setErro('Não deu para enviar o pedido. Tenta outra vez.');
+      vibrarErro();
     } finally {
       setATratar(false);
     }
@@ -84,7 +91,7 @@ export default function PerfilPublicoScreen() {
   if (perfil.isLoading) {
     return (
       <Screen>
-        <ThemedText themeColor="textSecondary">A abrir o perfil…</ThemedText>
+        <SkeletonPerfil />
       </Screen>
     );
   }

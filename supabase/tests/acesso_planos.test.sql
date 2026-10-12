@@ -126,6 +126,21 @@ values
    'c0000007-0000-4000-8000-0000000000a1', 'grupo'),
   (pg_temp.id('casa_x'), pg_temp.jogo(), 'ad000007-0000-4000-8000-0000000000e1', 1, 'certo', 3, 9000, null, 'publica');
 
+-- 0. A house (or a ride) for a group puts the plan in the group by itself: created by whoever proposed it, going,
+-- with the house in it and the message in the chat.
+select pg_temp.expect('the house for G1 made the plan by itself',
+  (select count(*)::integer from public.fixture_plan
+   where group_id = 'c0000007-0000-4000-8000-0000000000a1' and fixture_id = pg_temp.jogo()
+     and created_by = 'ad000007-0000-4000-8000-0000000000c1' and stay_plan_id = pg_temp.id('casa')), 1);
+select pg_temp.expect('whoever proposed the house is going',
+  (select a.answer from public.fixture_plan_answer as a join public.fixture_plan as fp on fp.id = a.plan_id
+   where fp.group_id = 'c0000007-0000-4000-8000-0000000000a1' and a.profile_id = 'ad000007-0000-4000-8000-0000000000c1'), 'vou');
+select pg_temp.expect('and the plan is in the group chat',
+  (select count(*)::integer from public.group_message
+   where group_id = 'c0000007-0000-4000-8000-0000000000a1' and kind = 'plano'), 1);
+-- The rest of this test starts from a group with no plan.
+delete from public.fixture_plan where group_id = 'c0000007-0000-4000-8000-0000000000a1' and fixture_id = pg_temp.jogo();
+
 -- 1. Anon.
 set local role anon;
 select pg_temp.as_anon();

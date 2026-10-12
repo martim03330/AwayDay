@@ -7,17 +7,17 @@ import { useMyOpenTripSessions } from '@/features/trips/hooks/useTrips';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+import { type FormatarDinheiro, useFormatarDinheiro } from '@/ui/valor';
 
 /** "Deves 12,50 €", "Tens a receber 12,50 €", "Estás em dia". */
-function saldo(centimos: number) {
+function saldo(centimos: number, dinheiro: FormatarDinheiro) {
   if (centimos === 0) return 'Estás em dia';
   return centimos > 0
-    ? `Tens a receber ${formatarCentimos(centimos)}`
-    : `Deves ${formatarCentimos(-centimos)}`;
+    ? `Tens a receber ${dinheiro.formatar(centimos)}`
+    : `Deves ${dinheiro.formatar(-centimos)}`;
 }
 
 /**
@@ -25,6 +25,7 @@ function saldo(centimos: number) {
  * sessão — quem vai, a hora do carro, quem deu a boleia e as despesas.
  */
 export function SessoesAbertas() {
+  const dinheiro = useFormatarDinheiro();
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
@@ -41,7 +42,7 @@ export function SessoesAbertas() {
             router.push({ pathname: '/sessao/[sessaoId]', params: { sessaoId: sessao.sessionId } })
           }
           accessibilityRole="button"
-          accessibilityLabel={`Viagem para ${nomeDoJogo(sessao.fixtureId)}, com ${plural(sessao.people, 'pessoa', 'pessoas')}. ${saldo(sessao.myBalanceCents)}. Toca para abrir.`}
+          accessibilityLabel={`Viagem para ${nomeDoJogo(sessao.fixtureId)}, com ${plural(sessao.people, 'pessoa', 'pessoas')}. ${saldo(sessao.myBalanceCents, dinheiro)}. Toca para abrir.`}
           style={({ pressed }) => [
             styles.cartao,
             CardShadow,
@@ -66,7 +67,7 @@ export function SessoesAbertas() {
           <View style={styles.linha}>
             <View style={[styles.pastilha, { backgroundColor: theme.accentPressed }]}>
               <ThemedText type="smallBold" style={{ color: theme.accentText }}>
-                {`${formatarCentimos(sessao.totalCents)} gastos`}
+                {`${dinheiro.formatar(sessao.totalCents)} gastos`}
               </ThemedText>
             </View>
             <View
@@ -82,7 +83,7 @@ export function SessoesAbertas() {
                 style={{
                   color: sessao.myBalanceCents < 0 ? theme.highlightText : theme.accentText,
                 }}>
-                {saldo(sessao.myBalanceCents)}
+                {saldo(sessao.myBalanceCents, dinheiro)}
               </ThemedText>
             </View>
           </View>

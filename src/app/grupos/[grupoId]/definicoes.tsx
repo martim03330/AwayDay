@@ -35,6 +35,7 @@ import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
+import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 function mensagemDeRecusa(erro: unknown) {
@@ -105,7 +106,10 @@ export default function DefinicoesDoGrupoScreen() {
     return (
       <Screen>
         {isLoading ? (
-          <ThemedText themeColor="textSecondary">A abrir o grupo…</ThemedText>
+          <>
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={4} />
+          </>
         ) : (
           <EmptyState
             icon={icons.naoEncontrado}

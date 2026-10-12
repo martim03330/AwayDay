@@ -11,7 +11,6 @@ import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
 import { formatarData, formatarHora } from '@/lib/datas';
 import { formatarNota, plural } from '@/lib/formatos';
 import { notaMedia } from '@/lib/jogos';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
@@ -30,6 +29,7 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { type FormatarDinheiro, useFormatarDinheiro } from '@/ui/valor';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof FriendRefused)) return 'Não deu para fazer isso. Tenta outra vez.';
@@ -39,11 +39,11 @@ function mensagemDeRecusa(erro: unknown) {
 }
 
 /** Your balance on one trip, in a few words. */
-function saldo(centimos: number) {
+function saldo(centimos: number, dinheiro: FormatarDinheiro) {
   if (centimos === 0) return 'Estás em dia';
   return centimos > 0
-    ? `Recebes ${formatarCentimos(centimos)}`
-    : `Deves ${formatarCentimos(-centimos)}`;
+    ? `Recebes ${dinheiro.formatar(centimos)}`
+    : `Deves ${dinheiro.formatar(-centimos)}`;
 }
 
 /**
@@ -53,6 +53,7 @@ function saldo(centimos: number) {
  * abertas para consulta muito depois do apito.
  */
 export default function ResumoScreen() {
+  const dinheiro = useFormatarDinheiro();
   const { foste } = useJogosAQueFoste();
   const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
@@ -165,7 +166,7 @@ export default function ResumoScreen() {
 
       <SectionHeader
         title="O que se gastou"
-        trailing={gastoTotal > 0 ? formatarCentimos(gastoTotal) : undefined}
+        trailing={gastoTotal > 0 ? dinheiro.formatar(gastoTotal) : undefined}
       />
       {gastoTotal === 0 ? (
         <Card>
@@ -182,14 +183,14 @@ export default function ResumoScreen() {
                   params: { sessaoId: viagem.sessionId },
                 })
               }
-              accessibilityLabel={`${viagem.name}: ${formatarCentimos(viagem.totalCents)}, ${saldo(viagem.myBalanceCents)}. Toca para ver as contas.`}
+              accessibilityLabel={`${viagem.name}: ${dinheiro.dito(viagem.totalCents)}, ${dinheiro.leitor(saldo(viagem.myBalanceCents, dinheiro))}. Toca para ver as contas.`}
               leading={<IconCircle name={icons.preco} />}
               title={viagem.name}
-              subtitle={`${formatarCentimos(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}`}
+              subtitle={`${dinheiro.formatar(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}`}
               separador={indice < comDespesas.length - 1}
               trailing={
                 <Etiqueta
-                  label={saldo(viagem.myBalanceCents)}
+                  label={saldo(viagem.myBalanceCents, dinheiro)}
                   tone={
                     viagem.myBalanceCents === 0
                       ? 'neutro'

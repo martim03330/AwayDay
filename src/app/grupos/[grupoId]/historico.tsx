@@ -8,7 +8,6 @@ import type { GroupHistoryTrip } from '@/features/groups/history';
 import { useGroupHistory } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -20,6 +19,7 @@ import { LinhaDetalhes } from '@/ui/linha-detalhes';
 import { Screen } from '@/ui/screen';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 const formatoData = new Intl.DateTimeFormat('pt-PT', {
   day: 'numeric',
@@ -84,6 +84,7 @@ function CartaoDeRecordacao({
   viagem: GroupHistoryTrip;
   onPress: () => void;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
   const jogo = obterJogo(viagem.fixtureId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
@@ -177,7 +178,7 @@ function CartaoDeRecordacao({
         <LinhaDetalhes
           partes={[
             viagem.photos > 0 ? plural(viagem.photos, 'foto', 'fotos') : 'sem fotos',
-            `${formatarCentimos(viagem.totalCents)} gastos`,
+            `${dinheiro.formatar(viagem.totalCents)} gastos`,
             plural(viagem.people, 'pessoa', 'pessoas'),
           ]}
         />

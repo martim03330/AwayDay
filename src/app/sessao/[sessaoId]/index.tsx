@@ -19,7 +19,6 @@ import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
 import { parteDeCada } from '@/lib/acerto';
 import { formatarDiaEHora } from '@/lib/datas';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -33,13 +32,15 @@ import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
+import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { type FormatarDinheiro, useFormatarDinheiro } from '@/ui/valor';
 
 /** "15,00 €" ou "cerca de 15,00 €", quando a divisão não dá certa ao cêntimo. */
-function parteDaBoleia(centimos: number, pessoas: number) {
+function parteDaBoleia(centimos: number, pessoas: number, dinheiro: FormatarDinheiro) {
   const { base, comMaisUmCentimo } = parteDeCada(centimos, pessoas);
-  return comMaisUmCentimo === 0 ? formatarCentimos(base) : `cerca de ${formatarCentimos(base)}`;
+  return comMaisUmCentimo === 0 ? dinheiro.formatar(base) : `cerca de ${dinheiro.formatar(base)}`;
 }
 
 /**
@@ -47,6 +48,7 @@ function parteDaBoleia(centimos: number, pessoas: number) {
  * add an expense; then the day (car and kick-off) and who is going.
  */
 export default function SessaoScreen() {
+  const dinheiro = useFormatarDinheiro();
   const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const theme = useTheme();
@@ -69,7 +71,10 @@ export default function SessaoScreen() {
     return (
       <Screen>
         {isLoading ? (
-          <ThemedText themeColor="textSecondary">A abrir a viagem…</ThemedText>
+          <>
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={4} />
+          </>
         ) : (
           <EmptyState
             icon={icons.naoEncontrado}
@@ -150,7 +155,7 @@ export default function SessaoScreen() {
         boleia.iDrive ? 'Levas tu o carro' : `Carro de ${boleia.driverName}`,
         boleia.originName ? `de ${boleia.originName}` : null,
         boleia.cents !== null && boleia.people
-          ? `${parteDaBoleia(boleia.cents, boleia.people)} cada`
+          ? `${parteDaBoleia(boleia.cents, boleia.people, dinheiro)} cada`
           : null,
       ]
         .filter(Boolean)
@@ -168,7 +173,7 @@ export default function SessaoScreen() {
             ? sessao.expenses === 0
               ? 'Ainda sem despesas'
               : 'Estás em dia'
-            : `${saldo < 0 ? 'Deves' : 'Tens a receber'} ${formatarCentimos(Math.abs(saldo))}${
+            : `${saldo < 0 ? 'Deves' : 'Tens a receber'} ${dinheiro.formatar(Math.abs(saldo))}${
                 comQuem ? (saldo < 0 ? ` a ${comQuem}` : ` de ${comQuem}`) : ''
               }`
         }
@@ -186,7 +191,7 @@ export default function SessaoScreen() {
               {saldo < 0 ? 'Deves' : 'Tens a receber'}
             </ThemedText>
             <ThemedText type="title" style={[styles.valor, { color: theme.accentText }]}>
-              {formatarCentimos(Math.abs(saldo))}
+              {dinheiro.formatar(Math.abs(saldo))}
             </ThemedText>
             {comQuem ? (
               <ThemedText style={{ color: theme.accentText }}>
@@ -212,7 +217,7 @@ export default function SessaoScreen() {
         label={
           sessao.expenses === 0
             ? 'Ver as despesas'
-            : `Ver as despesas · ${formatarCentimos(sessao.totalCents)}`
+            : `Ver as despesas · ${dinheiro.formatar(sessao.totalCents)}`
         }
         onPress={abrirDespesas}
       />

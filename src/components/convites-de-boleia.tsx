@@ -6,7 +6,6 @@ import { Spacing } from '@/constants/theme';
 import { acceptRideInvite, declineRideInvite, FriendRefused } from '@/features/friends/api';
 import { useMyRideInvites, useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import { formatarDiaEHora } from '@/lib/datas';
-import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
@@ -17,6 +16,7 @@ import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 function nomeDoJogo(fixtureId: string) {
   const jogo = obterJogo(fixtureId);
@@ -36,6 +36,7 @@ function mensagemDeRecusa(erro: unknown) {
  * aceitar. Ficam no topo da lista de jogos, que é onde se abre a app.
  */
 export function ConvitesDeBoleia() {
+  const dinheiro = useFormatarDinheiro();
   const router = useRouter();
   const userId = useUserId();
   const convites = useMyRideInvites(userId !== null);
@@ -69,7 +70,7 @@ export function ConvitesDeBoleia() {
           <ThemedText type="small" themeColor="textSecondary">
             {`Sai de ${convite.originName} ${formatarDiaEHora(
               new Date(convite.departureAt)
-            ).toLowerCase()} · ${formatarCentimos(convite.shareCents)} para ti`}
+            ).toLowerCase()} · ${dinheiro.formatar(convite.shareCents)} para ti`}
           </ThemedText>
           <Button
             label="Aceitar o lugar"

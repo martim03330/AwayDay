@@ -30,6 +30,10 @@ export type PreferenciasLocais = {
   tema: 'sistema' | 'claro' | 'escuro';
   /** Accounts that were already asked whether to bring this phone's activity in. */
   contasPerguntadas: string[];
+  /** Asks for Face ID, Touch ID or the phone's passcode when the app opens. Off until the person turns it on. */
+  bloqueioAoAbrir: boolean;
+  /** Shows «•••• €» instead of every amount of money in the app. */
+  esconderValores: boolean;
 };
 
 /** Beer (cervejómetro) and food (petiscómetro) scores for one tasco. */
@@ -56,6 +60,8 @@ export const PREFERENCIAS_INICIAIS: PreferenciasLocais = {
   modoDemo: false,
   tema: 'sistema',
   contasPerguntadas: [],
+  bloqueioAoAbrir: false,
+  esconderValores: false,
 };
 
 export const ATIVIDADE_VAZIA: AtividadeLocal = {
@@ -174,7 +180,11 @@ async function escrever(chave: string, valor: unknown) {
 }
 
 export async function lerPreferencias(): Promise<PreferenciasLocais> {
-  const valor = await ler(CHAVE_PREFERENCIAS);
+  return converterPreferencias(await ler(CHAVE_PREFERENCIAS));
+}
+
+/** Reads whatever was saved (possibly by an older version, or broken) into valid preferences. */
+export function converterPreferencias(valor: unknown): PreferenciasLocais {
   if (!eRegisto(valor)) return PREFERENCIAS_INICIAIS;
   const permissoes = eRegisto(valor.permissoes) ? valor.permissoes : {};
   const notificacoes = eRegisto(valor.notificacoes) ? valor.notificacoes : {};
@@ -202,6 +212,8 @@ export async function lerPreferencias(): Promise<PreferenciasLocais> {
     contasPerguntadas: Array.isArray(valor.contasPerguntadas)
       ? valor.contasPerguntadas.filter((id): id is string => typeof id === 'string')
       : [],
+    bloqueioAoAbrir: booleano(valor.bloqueioAoAbrir, false),
+    esconderValores: booleano(valor.esconderValores, false),
   };
 }
 

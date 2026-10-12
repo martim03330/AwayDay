@@ -16,7 +16,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { plural } from '@/lib/formatos';
-import { formatarCentimos } from '@/lib/money';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { janelaDaVolta, podePedirVolta } from '@/lib/regras-volta';
 import { useUserId } from '@/lib/session';
@@ -34,6 +33,7 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useFormatarDinheiro } from '@/ui/valor';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof RideRefused)) {
@@ -76,6 +76,7 @@ function Carro({
   onCancelar: () => void;
   separador: boolean;
 }) {
+  const dinheiro = useFormatarDinheiro();
   const theme = useTheme();
 
   return (
@@ -100,7 +101,7 @@ function Carro({
             ]}
           />
         </View>
-        <ThemedText style={styles.preco}>{formatarCentimos(carro.priceCents)}</ThemedText>
+        <ThemedText style={styles.preco}>{dinheiro.formatar(carro.priceCents)}</ThemedText>
       </View>
 
       {carro.myStatus === 'accepted' ? (

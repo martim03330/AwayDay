@@ -45,6 +45,7 @@ import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
+import { SkeletonCard } from '@/ui/skeleton';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -114,7 +115,10 @@ export default function PlanoScreen() {
     return (
       <Screen>
         {isLoading ? (
-          <ThemedText themeColor="textSecondary">A abrir o plano…</ThemedText>
+          <>
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={2} />
+          </>
         ) : (
           <EmptyState
             icon={icons.naoEncontrado}

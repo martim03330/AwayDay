@@ -6,12 +6,16 @@ import { Spacing } from '@/constants/theme';
 import { getCurrentPosition } from '@/features/presence/location';
 import { fetchMyStamps, stampStadium, StampRefused } from '@/features/stamps/api';
 import { useNow } from '@/hooks/use-now';
+import { useTheme } from '@/hooks/use-theme';
 import { podeCarimbar } from '@/lib/carimbos';
-import { formatarDistancia } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
+import { vibrarSucesso } from '@/lib/vibrar';
+import { obterClube } from '@/mocks/clubes';
 import type { Jogo, Venue } from '@/mocks/tipos';
+import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
+import { useConfetti } from '@/ui/confetti';
 import { Etiqueta } from '@/ui/etiqueta';
 import { icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -50,6 +54,11 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
   const agora = useNow(60 * 1000);
   const queryClient = useQueryClient();
   const [aCarimbar, setACarimbar] = useState(false);
+  // Shown at once after stamping, before the list of stamps comes back from the server.
+  const [carimbadoAgora, setCarimbadoAgora] = useState(false);
+  const { clubeFavoritoId } = useAppState();
+  const theme = useTheme();
+  const lancarConfetti = useConfetti();
 
   const carimbos = useQuery({
     queryKey: ['stamps', userId],
@@ -61,7 +70,7 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
 
   const hoje = hojeEmLisboa();
   const meu = (carimbos.data ?? []).find((carimbo) => carimbo.venueId === estadio.id);
-  const carimbadoHoje = meu?.lastVisit === hoje;
+  const carimbadoHoje = carimbadoAgora || meu?.lastVisit === hoje;
 
   async function carimbar() {
     setACarimbar(true);
@@ -76,16 +85,17 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
         );
         return;
       }
-      const distancia = await stampStadium(jogo.id, {
+      await stampStadium(jogo.id, {
         latitude: posicao.position.latitude,
         longitude: posicao.position.longitude,
       });
       void queryClient.invalidateQueries({ queryKey: ['stamps'] });
       void queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      Alert.alert(
-        'Carimbado!',
-        `${estadio.nome} entra no teu passaporte como visitado: estavas a ${formatarDistancia(distancia)} do estádio.`
-      );
+      // The biggest moment in the app: the card turns to «Estádio carimbado» under confetti in the club's colours.
+      setCarimbadoAgora(true);
+      vibrarSucesso();
+      const cores = obterClube(clubeFavoritoId)?.cores;
+      lancarConfetti(cores ? [cores.primaria, cores.secundaria] : [theme.accent, theme.highlight]);
     } catch (problema) {
       Alert.alert('Não deu para carimbar', mensagemDeRecusa(problema));
     } finally {

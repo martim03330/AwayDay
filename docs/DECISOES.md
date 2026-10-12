@@ -2,6 +2,33 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Plano de jogo automático, movimento e arranque
+
+- **Plano automático:** uma boleia ou uma casa para um grupo põe o plano do jogo nesse grupo (`plan_for_group_game`,
+  chamado pelos triggers que já ligavam boleias e casas a planos). Sem plano para o jogo, cria-o (com o «vou» de quem
+  o fez e a mensagem no chat); com um plano aberto sem boleia ou casa, entra nele. Planos fechados ficam como estão.
+  Apagar um grupo apaga primeiro os seus planos (senão as mensagens eram apagadas duas vezes e o Postgres recusava).
+- **Movimento:** botões, chips e linhas encolhem ao carregar (`Premivel`, 0,97 ou 0,98, sem movimento com «Reduzir
+  movimento»); números que rolam em 0,2 s nos pontos, níveis e contagens (`NumeroAnimado`), nunca em dinheiro;
+  confetti nas cores do clube e vibração de sucesso ao carimbar o estádio, o grande momento da app; skeletons em vez
+  de textos de «a carregar»; vibrações iguais em toda a app (`src/lib/vibrar.ts`: seleção, sucesso, erro).
+- **Arranque:** o fundo da janela é o verde do ecrã de arranque e, depois, o fundo do tema (`expo-system-ui`); o
+  arranque em modo escuro tem o verde escuro. Sem clarão branco.
+
+## 2026-10-13 — Bloqueio com Face ID e «Esconder valores»
+
+- **Bloqueio opcional** (Definições → Privacidade), com `expo-local-authentication` (dependência aprovada; precisa de
+  build nativa). Desligado por omissão e guardado só no telemóvel (`bloqueioAoAbrir`). Pede Face ID, Touch ID ou
+  impressão digital, sempre com o código do telemóvel como alternativa; sem biometria nem código, não bloqueia (ninguém
+  fica fechado fora da própria app). Ligar pede uma confirmação primeiro. Pede ao abrir a app e ao voltar depois de
+  mais de 1 minuto fora; enquanto a app está em segundo plano o ecrã de bloqueio tapa o conteúdo (captura do seletor
+  de apps). Nunca no modo demo nem sem sessão. O texto do Face ID no `app.json` passa a ser o do
+  `expo-local-authentication`, que fica antes do `expo-secure-store` na lista de plugins para ganhar.
+- **Esconder valores:** um interruptor (Definições e o olho nas despesas da viagem) que mostra «•••• €» em vez de
+  todos os montantes. Tudo o que mostra dinheiro passa por `useFormatarDinheiro`/`<Valor>` (`src/ui/valor.tsx`); o
+  leitor de ecrã diz «valor escondido». As contas continuam em `src/lib/money.ts`. Os escalões de preço do filtro das
+  casas ficam à vista: são rótulos de filtro, não dinheiro de ninguém.
+
 ## 2026-10-13 — Terminar sessão, limites, vizinho barulhento e desempenho
 
 - **Terminar sessão:** as preferências que vêm da conta (clubes, escolhas de avisos, contas já perguntadas) são

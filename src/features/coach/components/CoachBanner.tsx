@@ -1,9 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import type { CoachMessage } from '@/features/coach/types';
 import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons } from '@/ui/icon';
+import { Skeleton } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 type CoachBannerProps = {
@@ -62,12 +63,12 @@ export function CoachBanner({ message, loading, sobreRelvado = false, onPress }:
         </>
       ) : (
         <>
-          <View style={[styles.azulejo, { backgroundColor: theme.backgroundSelected }]}>
-            <ActivityIndicator size="small" color={theme.accent} />
+          <Skeleton width={42} height={42} radius={13} />
+          <View style={styles.corpo}>
+            <Skeleton width="45%" height={12} />
+            <Skeleton height={16} />
+            <Skeleton width="70%" height={16} />
           </View>
-          <ThemedText themeColor="textSecondary" style={[styles.texto, styles.corpo]}>
-            A preparar uma dica…
-          </ThemedText>
         </>
       )}
     </Pressable>

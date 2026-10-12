@@ -7,6 +7,7 @@ import { reportErrorOnce } from '@/features/feedback/report';
 import { createGroup, GroupRefused } from '@/features/groups/api';
 import { useRefreshGroups } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
+import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { icons } from '@/ui/icon';
@@ -54,10 +55,12 @@ export default function NovoGrupoScreen() {
         void reportErrorOnce('criar-grupo', 'Criar grupo', detalhe, { area: 'grupos' });
       }
       setErro(mensagemDeRecusa(problema));
+      vibrarErro();
       setACriar(false);
       return;
     }
     // The group exists from here on: nothing below may show "could not create it" (a retry would make a second one).
+    vibrarSucesso();
     void refrescar();
     router.back();
     router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });

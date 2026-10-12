@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { Card } from '@/ui/card';
+import { NumeroAnimado } from '@/ui/numero-animado';
 import { ThemedText } from '@/ui/themed-text';
 
 export type LinhaTabela = {
@@ -11,6 +12,8 @@ export type LinhaTabela = {
   detalhe: string;
   /** The big number on the right (points, stadiums…). */
   valor: string;
+  /** When given, the number behind `valor` and how to write it: the value then rolls when it changes. */
+  numero?: { valor: number; formatar: (valor: number) => string };
   sou: boolean;
 };
 
@@ -55,7 +58,11 @@ export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[
                   {linha.detalhe}
                 </ThemedText>
               </View>
-              <ThemedText type="smallBold">{linha.valor}</ThemedText>
+              {linha.numero ? (
+                <NumeroAnimado valor={linha.numero.valor} formatar={linha.numero.formatar} type="smallBold" />
+              ) : (
+                <ThemedText type="smallBold">{linha.valor}</ThemedText>
+              )}
             </View>
           </View>
         );

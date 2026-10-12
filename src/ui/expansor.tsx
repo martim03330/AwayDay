@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Icon, icons, type IconName } from '@/ui/icon';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type ExpansorProps = {
@@ -44,7 +45,7 @@ export function Expansor({
   }));
 
   return (
-    <Pressable
+    <Premivel
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ expanded: aberto }}
@@ -80,7 +81,7 @@ export function Expansor({
       <Animated.View style={[styles.seta, { backgroundColor: circulo }, seta]}>
         <Icon name={icons.seguinte} size={16} color={tinta} />
       </Animated.View>
-    </Pressable>
+    </Premivel>
   );
 }
 
@@ -96,7 +97,6 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
   },
   premido: {
-    transform: [{ scale: 0.98 }],
     opacity: 0.85,
   },
   icone: {

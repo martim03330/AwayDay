@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Switch, View } from 'react-native';
 
 import { ModoDemoCard } from '@/components/modo-demo-card';
@@ -13,6 +14,7 @@ import {
   useUpdateShareCheckins,
 } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
+import { confirmarDono, metodoDeBloqueio, type MetodoDeBloqueio } from '@/lib/bloqueio-local';
 import { useUserId } from '@/lib/session';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
 import { Card } from '@/ui/card';
@@ -52,7 +54,37 @@ export default function DefinicoesScreen() {
     tema,
     escolherTema,
     fonte,
+    bloqueioAoAbrir,
+    mudarBloqueioAoAbrir,
+    esconderValores,
+    alternarEsconderValores,
   } = useAppState();
+  // What this phone can lock with (Face ID, Touch ID, passcode…), to name the option; none hides it.
+  const [metodo, setMetodo] = useState<MetodoDeBloqueio | null>(null);
+  const [aLigarBloqueio, setALigarBloqueio] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    void metodoDeBloqueio().then((encontrado) => {
+      if (vivo) setMetodo(encontrado);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  // The lock only exists with an account, outside demo mode (see BloqueioDaApp).
+  const mostrarBloqueio = fonte === 'conta' && metodo?.disponivel === true;
+
+  /** Turning it on asks once first, so nobody locks themselves out with a method that does not work. */
+  async function mudarBloqueio(ligar: boolean) {
+    if (!ligar) {
+      mudarBloqueioAoAbrir(false);
+      return;
+    }
+    setALigarBloqueio(true);
+    const confirmado = await confirmarDono('Confirmar para ligar o bloqueio');
+    setALigarBloqueio(false);
+    if (confirmado) mudarBloqueioAoAbrir(true);
+  }
   const [permissaoLocalizacao] = useLocationPermission();
   const userId = useUserId();
   const perfil = useMyProfile(fonte === 'conta' ? userId : null);
@@ -167,10 +199,53 @@ export default function DefinicoesScreen() {
         </View>
       </Card>
 
-      {fonte === 'conta' ? (
-        <>
-          <SectionHeader title="Privacidade" />
-          <Card style={styles.grupo}>
+      <SectionHeader title="Privacidade" />
+      <Card style={styles.grupo}>
+        {mostrarBloqueio && metodo?.disponivel ? (
+          <LinhaGrupo
+            separador
+            leading={<Icon name={icons.password} size={20} color={theme.accentInk} />}
+            title={`Bloquear com ${metodo.nome}`}
+            subtitle="Ao abrir a app e ao voltar a ela passado mais de um minuto."
+            trailing={
+              <Switch
+                value={bloqueioAoAbrir}
+                onValueChange={(ligar) => void mudarBloqueio(ligar)}
+                disabled={aLigarBloqueio}
+                trackColor={{ true: theme.accent, false: theme.border }}
+                thumbColor={theme.accentText}
+                ios_backgroundColor={theme.border}
+                accessibilityLabel={`Bloquear com ${metodo.nome}`}
+                testID="interruptor-bloqueio"
+              />
+            }
+          />
+        ) : null}
+        <LinhaGrupo
+          separador={fonte === 'conta'}
+          leading={
+            <Icon
+              name={esconderValores ? icons.naoEspreitar : icons.espreitar}
+              size={20}
+              color={theme.accentInk}
+            />
+          }
+          title="Esconder valores"
+          subtitle="Mostra «•••• €» em vez dos montantes, para quem espreita por cima do ombro."
+          trailing={
+            <Switch
+              value={esconderValores}
+              onValueChange={alternarEsconderValores}
+              trackColor={{ true: theme.accent, false: theme.border }}
+              thumbColor={theme.accentText}
+              ios_backgroundColor={theme.border}
+              accessibilityLabel="Esconder valores"
+              testID="interruptor-esconder-valores"
+            />
+          }
+        />
+        {fonte === 'conta' ? (
+          <>
             <LinhaGrupo
               separador
               leading={<Icon name={icons.ranking} size={20} color={theme.accentInk} />}
@@ -222,9 +297,9 @@ export default function DefinicoesScreen() {
               subtitle="Não vês o que escrevem e não te podem convidar"
               trailing={chevron}
             />
-          </Card>
-        </>
-      ) : null}
+          </>
+        ) : null}
+      </Card>
 
       <SectionHeader title="Sobre o AwayDay" />
       <Card style={styles.grupo}>

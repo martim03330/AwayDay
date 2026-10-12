@@ -1,8 +1,10 @@
 import { type ReactNode } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { vibrarSelecao } from '@/lib/vibrar';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type ChipProps = {
@@ -28,8 +30,11 @@ export function Chip({
   const theme = useTheme();
 
   return (
-    <Pressable
-      onPress={onPress}
+    <Premivel
+      onPress={() => {
+        vibrarSelecao();
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       // 38 pt tall: the slop takes the touch area to 46 pt without spreading the chips apart.
@@ -49,7 +54,7 @@ export function Chip({
       <ThemedText type="smallBold" style={{ color: selected ? theme.accentText : theme.text }}>
         {label}
       </ThemedText>
-    </Pressable>
+    </Premivel>
   );
 }
 
@@ -69,6 +74,6 @@ const styles = StyleSheet.create({
     paddingRight: 14,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.85,
   },
 });

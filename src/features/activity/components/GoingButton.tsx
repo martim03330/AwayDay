@@ -17,9 +17,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { Icon, icons } from '@/ui/icon';
+import { NumeroAnimado } from '@/ui/numero-animado';
 import { ThemedText } from '@/ui/themed-text';
 
 const DURACAO_MS = 300;
+
+const adeptosAVir = (quantos: number) => `${quantos} adeptos da app vão a este jogo`;
 
 /**
  * "Vou a este jogo" on an upcoming fixture. With an account it is saved there (and feeds the match-day suggestions);
@@ -57,11 +60,19 @@ export function GoingButton({ fixtureId }: { fixtureId: string }) {
         </ThemedText>
       )}
       {modoDemo || quantos.isLoading ? null : (
-        <ThemedText type="smallBold" style={styles.help}>
-          {quantos.data != null
-            ? `${quantos.data} adeptos da app vão a este jogo`
-            : 'Menos de 5 adeptos da app vão a este jogo'}
-        </ThemedText>
+        quantos.data != null ? (
+          <NumeroAnimado
+            valor={quantos.data}
+            formatar={adeptosAVir}
+            type="smallBold"
+            style={styles.help}
+            containerStyle={styles.contagem}
+          />
+        ) : (
+          <ThemedText type="smallBold" style={styles.help}>
+            Menos de 5 adeptos da app vão a este jogo
+          </ThemedText>
+        )
       )}
     </View>
   );
@@ -157,6 +168,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontWeight: 800,
+  },
+  contagem: {
+    justifyContent: 'center',
   },
   help: {
     fontSize: 13,

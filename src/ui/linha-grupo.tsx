@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 type LinhaGrupoProps = {
@@ -48,13 +49,15 @@ export function LinhaGrupo({
   if (!onPress) return conteudo;
 
   return (
-    <Pressable
+    <Premivel
       onPress={onPress}
+      // Big surfaces shrink less: 0.97 on a full-width card reads as a jump.
+      escala={0.98}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => pressed && styles.pressed}>
       {conteudo}
-    </Pressable>
+    </Premivel>
   );
 }
 
@@ -79,6 +82,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.85,
   },
 });

@@ -17,6 +17,7 @@ import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
+import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 
 /**
@@ -104,7 +105,7 @@ export default function EntrarNoGrupoScreen() {
   return (
     <Screen>
       {convite.isLoading ? (
-        <ThemedText themeColor="textSecondary">A ver o convite…</ThemedText>
+        <SkeletonCard lines={3} />
       ) : !grupo ? (
         <EmptyState
           icon={icons.naoEncontrado}

@@ -20,6 +20,7 @@ import {
   type ErrorBoundaryProps,
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
@@ -35,6 +36,7 @@ import { PlaceCatalogSync } from '@/features/places/components/PlaceCatalogSync'
 import { restorePlaceCatalog } from '@/features/places/hooks/usePlaceCatalog';
 import { AvisosJogosPerto } from '@/components/avisos-jogos-perto';
 import { BannerDeMensagem } from '@/components/banner-de-mensagem';
+import { BloqueioDaApp } from '@/components/bloqueio-da-app';
 import { AvisosBoleias } from '@/features/rides/components/AvisosBoleias';
 import { QueryProvider } from '@/lib/query-client';
 import { AICoachProvider } from '@/state/ai-coach';
@@ -70,6 +72,12 @@ function TemaDaNavegacao({ children }: { children: ReactNode }) {
   const paleta = useTheme();
   const escuro = useEstaEscuro();
   const base = escuro ? DarkTheme : DefaultTheme;
+
+  // The window behind every screen takes the theme's background: no white flash after the splash, in a modal's
+  // gap or when the keyboard opens, in light or dark.
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(paleta.background).catch(() => undefined);
+  }, [paleta.background]);
 
   return (
     <ThemeProvider
@@ -171,6 +179,8 @@ export default function RootLayout() {
                     <NotificacoesPush />
                     <NavegacaoRaiz />
                     <BannerDeMensagem />
+                    {/* Last, so the optional lock covers everything, the banners included. */}
+                    <BloqueioDaApp />
                   </AICoachProvider>
                 </SonsProvider>
               </PlanosJogosProvider>

@@ -7,7 +7,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { Card } from '@/ui/card';
 import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, icons } from '@/ui/icon';
+import { NumeroAnimado } from '@/ui/numero-animado';
 import { ThemedText } from '@/ui/themed-text';
+
+const ordinal = (posicao: number) => `${posicao}.º`;
 
 function explicacao(ranking: MyRanking) {
   const zona = zonaDaDivisao(ranking);
@@ -45,9 +48,12 @@ export function CartaoDivisao({ ranking, onPress }: { ranking: MyRanking; onPres
           <ThemedText type="subtitle">{nome}</ThemedText>
         </View>
         <View style={styles.posicao}>
-          <ThemedText type="score" style={styles.posicaoNumero}>
-            {`${ranking.divisionPosition}.º`}
-          </ThemedText>
+          <NumeroAnimado
+            valor={ranking.divisionPosition}
+            formatar={ordinal}
+            type="score"
+            style={styles.posicaoNumero}
+          />
           <ThemedText type="small" themeColor="textSecondary">
             {`de ${ranking.divisionSize}`}
           </ThemedText>
