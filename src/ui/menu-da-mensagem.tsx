@@ -1,5 +1,5 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { Easing, FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, Keyframe, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
@@ -8,8 +8,23 @@ import { REACOES, type Emoji } from '@/lib/conversa';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
-/** Quick and soft: about 140 ms, easing out, from 25 px below. */
-const ENTRADA_DO_MENU = FadeInDown.duration(140).easing(Easing.out(Easing.cubic));
+/**
+ * As in WhatsApp, but calm: the message and the reactions grow in from just below their size (0.94) with a soft
+ * ease-out, the emojis follow one after the other, and the actions fade in last. No springs: nothing overshoots.
+ */
+const SUAVE = Easing.out(Easing.cubic);
+const ENTRADA_DA_BOLHA = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.94 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }], easing: SUAVE },
+}).duration(180);
+const entradaDoEmoji = (indice: number) =>
+  new Keyframe({
+    0: { opacity: 0, transform: [{ scale: 0.7 }] },
+    100: { opacity: 1, transform: [{ scale: 1 }], easing: SUAVE },
+  })
+    .delay(30 + indice * 18)
+    .duration(170);
+const ENTRADA_DAS_ACOES = FadeIn.delay(70).duration(150).easing(SUAVE);
 
 export type AcaoDaMensagem = {
   label: string;
@@ -21,6 +36,8 @@ export type AcaoDaMensagem = {
 type MenuDaMensagemProps = {
   /** The message the menu is about; `null` keeps it closed. */
   texto: string | null;
+  /** Yours: the bubble shows green, on the right, as in the chat. */
+  minha?: boolean;
   /** Reactions are offered only when there is somewhere to send them. */
   onReagir?: (emoji: Emoji) => void;
   minhaReacao: Emoji | null;
@@ -32,9 +49,11 @@ type MenuDaMensagemProps = {
  * What opens on a long press on a message, as in WhatsApp: a bar of reactions on top (yours highlighted; the same one
  * again takes it away) and the actions below (reply, edit, delete, report). Tapping outside closes it.
  */
-export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }: MenuDaMensagemProps) {
+export function MenuDaMensagem({ texto, minha = false, onReagir, minhaReacao, acoes, onFechar }: MenuDaMensagemProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const reduzirMovimento = useReducedMotion();
+  const anima = <T,>(animacao: T) => (reduzirMovimento ? undefined : animacao);
 
   return (
     // No Modal animation (its fade is slow): the backdrop fades in and the menu appears where it stays, with a short
@@ -46,20 +65,16 @@ export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }
         onPress={onFechar}
         accessibilityRole="button"
         accessibilityLabel="Fechar">
-        <Animated.View entering={ENTRADA_DO_MENU} style={styles.conteudo}>
-          {texto ? (
-            <View style={[styles.mensagem, { backgroundColor: theme.backgroundElement }]}>
-              <ThemedText numberOfLines={4}>{texto}</ThemedText>
-            </View>
-          ) : null}
-
+        <View style={styles.conteudo}>
+          {/* Reactions above the message, actions below it, as in WhatsApp. */}
           {onReagir ? (
-            <View
-              style={[styles.reacoes, { backgroundColor: theme.backgroundElement }]}
+            <Animated.View
+              entering={anima(ENTRADA_DA_BOLHA)}
+              style={[styles.reacoes, minha ? styles.aDireita : styles.aEsquerda, { backgroundColor: theme.backgroundElement }]}
               accessibilityRole="toolbar">
-              {REACOES.map((emoji) => (
+              {REACOES.map((emoji, indice) => (
+                <Animated.View key={emoji} entering={anima(entradaDoEmoji(indice))}>
                 <Pressable
-                  key={emoji}
                   onPress={() => {
                     onReagir(emoji);
                     onFechar();
@@ -74,11 +89,29 @@ export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }
                   ]}>
                   <ThemedText style={styles.textoEmoji}>{emoji}</ThemedText>
                 </Pressable>
+                </Animated.View>
               ))}
-            </View>
+            </Animated.View>
           ) : null}
 
-          <View style={[styles.acoes, { backgroundColor: theme.backgroundElement }]}>
+          {texto ? (
+            <Animated.View
+              entering={anima(ENTRADA_DA_BOLHA)}
+              style={[
+                styles.mensagem,
+                minha
+                  ? [styles.aDireita, { backgroundColor: theme.accent, borderBottomRightRadius: 6 }]
+                  : [styles.aEsquerda, { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 }],
+              ]}>
+              <ThemedText numberOfLines={6} style={{ color: minha ? theme.accentText : theme.text }}>
+                {texto}
+              </ThemedText>
+            </Animated.View>
+          ) : null}
+
+          <Animated.View
+            entering={anima(ENTRADA_DAS_ACOES)}
+            style={[styles.acoes, minha ? styles.aDireita : styles.aEsquerda, { backgroundColor: theme.backgroundElement }]}>
             {acoes.map((acao, indice) => (
               <Pressable
                 key={acao.label}
@@ -101,8 +134,8 @@ export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }
                 <Icon name={acao.icon} size={20} color={acao.perigo ? theme.dangerText : theme.text} />
               </Pressable>
             ))}
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
       </Pressable>
       </Animated.View>
     </Modal>
@@ -125,8 +158,14 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     alignSelf: 'center',
   },
+  aDireita: {
+    alignSelf: 'flex-end',
+  },
+  aEsquerda: {
+    alignSelf: 'flex-start',
+  },
   mensagem: {
-    alignSelf: 'stretch',
+    maxWidth: '85%',
     borderRadius: 18,
     borderCurve: 'continuous',
     paddingHorizontal: Spacing.three,
@@ -134,7 +173,7 @@ const styles = StyleSheet.create({
   },
   reacoes: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 2,
     borderRadius: Radius.pill,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
@@ -151,9 +190,10 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   premido: {
-    transform: [{ scale: 1.15 }],
+    transform: [{ scale: 1.2 }],
   },
   acoes: {
+    minWidth: 240,
     borderRadius: Radius.card,
     borderCurve: 'continuous',
     overflow: 'hidden',

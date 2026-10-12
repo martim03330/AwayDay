@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View, type FlatList } from 'react-native';
 import Animated, { Easing, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -73,6 +73,8 @@ export default function ConversaDoCarroScreen() {
     ...new Set((mensagens.data ?? []).map((mensagem) => mensagem.profileId)),
   ]);
   const refrescar = useRefreshRideChat();
+  const listaRef = useRef<FlatList<NonNullable<typeof mensagens.data>[number]>>(null);
+  const [destaque, setDestaque] = useState<string | null>(null);
   const moderacao = useModeracao();
   const agora = useNow(60 * 1000);
 
@@ -112,6 +114,14 @@ export default function ConversaDoCarroScreen() {
   const fechada = jogo ? agora > Date.parse(jogo.inicio) + 24 * 60 * 60 * 1000 : false;
   // A mais recente primeiro: a lista está invertida.
   const lista = [...(mensagens.data ?? [])].reverse();
+  // Tapping the quote of a reply: the chat goes to the original message and it flashes (as in WhatsApp).
+  const irParaMensagem = (id: string) => {
+    const indice = lista.findIndex((mensagem) => mensagem.id === id);
+    if (indice < 0) return;
+    listaRef.current?.scrollToIndex({ index: indice, animated: true, viewPosition: 0.5 });
+    setDestaque(id);
+    setTimeout(() => setDestaque((atual) => (atual === id ? null : atual)), 1500);
+  };
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
   // The car: the driver and whoever has a seat. Everyone but you can be mentioned.
@@ -216,6 +226,7 @@ export default function ConversaDoCarroScreen() {
       {moderacao.elemento}
       <MenuDaMensagem
         texto={menuDe?.mensagem.body ?? null}
+        minha={menuDe?.mensagem.mine ?? false}
         minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
         onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
         acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
@@ -261,6 +272,15 @@ export default function ConversaDoCarroScreen() {
           </View>
         ) : (
           <Animated.FlatList
+            ref={listaRef}
+            // A message far up (not measured yet): go near it first, then to it.
+            onScrollToIndexFailed={(falhou) => {
+              listaRef.current?.scrollToOffset({ offset: falhou.averageItemLength * falhou.index, animated: true });
+              setTimeout(
+                () => listaRef.current?.scrollToIndex({ index: falhou.index, animated: true, viewPosition: 0.5 }),
+                250
+              );
+            }}
             // The other messages slide up with the new one instead of jumping in one frame.
             itemLayoutAnimation={DESLIZAR_MENSAGENS}
             data={lista}
@@ -287,6 +307,8 @@ export default function ConversaDoCarroScreen() {
                     mostrarQuem={novoDia || anterior?.profileId !== item.profileId}
                     fotoUrl={fotoDe(item.profileId)}
                     citacao={item.replyTo}
+                    onAbrirCitacao={item.replyTo ? () => item.replyTo && irParaMensagem(item.replyTo.id) : undefined}
+                    destacada={destaque === item.id}
                     editada={item.editedAt !== null}
                     reacoes={item.reactions}
                     pendente={eLocal(item.id)}

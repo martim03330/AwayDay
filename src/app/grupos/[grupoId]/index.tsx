@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,7 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
-} from 'react-native';
+ type FlatList } from 'react-native';
 import Animated, { Easing, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -106,6 +106,8 @@ export default function ConversaDoGrupoScreen() {
   const conflitos = usePlanConflicts(idsDosPlanos);
   const queryClient = useQueryClient();
   const refrescar = useRefreshGroups();
+  const listaRef = useRef<FlatList<NonNullable<typeof mensagens.data>[number]>>(null);
+  const [destaque, setDestaque] = useState<string | null>(null);
   const moderacao = useModeracao();
   const acoes = useGroupChatActions(grupo ? grupo.id : null, userId ? { profileId: userId, nome: 'Tu' } : null);
 
@@ -181,6 +183,14 @@ export default function ConversaDoGrupoScreen() {
   }
 
   const lista = mensagens.data ?? [];
+  // Tapping the quote of a reply: the chat goes to the original message and it flashes (as in WhatsApp).
+  const irParaMensagem = (id: string) => {
+    const indice = lista.findIndex((mensagem) => mensagem.id === id);
+    if (indice < 0) return;
+    listaRef.current?.scrollToIndex({ index: indice, animated: true, viewPosition: 0.5 });
+    setDestaque(id);
+    setTimeout(() => setDestaque((atual) => (atual === id ? null : atual)), 1500);
+  };
   const escuro = fundoEscuro(grupo.fundo);
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
@@ -331,6 +341,7 @@ export default function ConversaDoGrupoScreen() {
       {moderacao.elemento}
       <MenuDaMensagem
         texto={menuDe?.mensagem.body ?? null}
+        minha={menuDe?.mensagem.mine ?? false}
         minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
         onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
         acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
@@ -366,6 +377,15 @@ export default function ConversaDoGrupoScreen() {
           </View>
         ) : (
           <Animated.FlatList
+            ref={listaRef}
+            // A message far up (not measured yet): go near it first, then to it.
+            onScrollToIndexFailed={(falhou) => {
+              listaRef.current?.scrollToOffset({ offset: falhou.averageItemLength * falhou.index, animated: true });
+              setTimeout(
+                () => listaRef.current?.scrollToIndex({ index: falhou.index, animated: true, viewPosition: 0.5 }),
+                250
+              );
+            }}
             // The other messages slide up with the new one instead of jumping in one frame.
             itemLayoutAnimation={DESLIZAR_MENSAGENS}
             data={lista}
@@ -437,6 +457,8 @@ export default function ConversaDoGrupoScreen() {
                       mostrarQuem={!mesmaPessoa}
                       fotoUrl={fotoDe(item.profileId)}
                       citacao={item.replyTo}
+                      onAbrirCitacao={item.replyTo ? () => item.replyTo && irParaMensagem(item.replyTo.id) : undefined}
+                      destacada={destaque === item.id}
                       editada={item.editedAt !== null}
                       reacoes={item.reactions}
                       pendente={eLocal(item.id)}

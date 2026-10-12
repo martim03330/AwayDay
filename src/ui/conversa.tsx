@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -8,6 +8,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -105,6 +106,10 @@ type BolhaProps = {
   onResponder?: () => void;
   /** Tocar na cara ou no nome de quem escreveu. */
   onAbrirPessoa?: () => void;
+  /** Tocar na citação de uma resposta: a conversa vai até à mensagem original (como no WhatsApp). */
+  onAbrirCitacao?: () => void;
+  /** This message was just jumped to: it flashes for a moment so the eye finds it. */
+  destacada?: boolean;
   onLongPress?: () => void;
 };
 
@@ -117,6 +122,16 @@ const ENTRADA_DA_MENSAGEM = new Keyframe({
   0: { opacity: 0, transform: [{ translateY: 56 }, { scale: 0.86 }] },
   100: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }], easing: Easing.out(Easing.cubic) },
 }).duration(260);
+
+/** The bubble under a finger held on it: grows a little while held, pops when the menu opens (as in WhatsApp). */
+const ESCALA_A_SEGURAR = 1.03;
+const PressableAnimado = Animated.createAnimatedComponent(Pressable);
+
+/** A reaction that arrives: grows in from small with a soft ease-out, no bounce. */
+const ENTRADA_DA_REACAO = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.6 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }], easing: Easing.out(Easing.cubic) },
+}).duration(200);
 
 const GATILHO_RESPOSTA_PX = 56;
 const MAXIMO_RESPOSTA_PX = 80;
@@ -139,12 +154,28 @@ export function BolhaDeConversa({
   onReagir,
   onResponder,
   onAbrirPessoa,
+  onAbrirCitacao,
+  destacada = false,
   onLongPress,
 }: BolhaProps) {
   const theme = useTheme();
   const reduzirMovimento = useReducedMotion();
   const deslocamento = useSharedValue(0);
   const passouOGatilho = useSharedValue(false);
+  const escala = useSharedValue(1);
+  const escalaDaBolha = useAnimatedStyle(() => ({ transform: [{ scale: escala.get() }] }));
+  const brilho = useSharedValue(0);
+  const brilhoDaBolha = useAnimatedStyle(() => ({ opacity: brilho.get() }));
+
+  useEffect(() => {
+    if (!destacada) return;
+    brilho.set(
+      withSequence(
+        withTiming(0.55, { duration: 220, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 1100, easing: Easing.inOut(Easing.quad) })
+      )
+    );
+  }, [destacada, brilho]);
 
   const deslizar = Gesture.Pan()
     .runOnJS(true)
@@ -168,6 +199,10 @@ export function BolhaDeConversa({
   const movimento = useAnimatedStyle(() => ({ transform: [{ translateX: deslocamento.get() }] }));
   const setaDeResposta = useAnimatedStyle(() => ({
     opacity: interpolate(deslocamento.get(), [0, GATILHO_RESPOSTA_PX], [0, 1], 'clamp'),
+    // The arrow grows as the bubble goes, and is biggest when letting go would reply.
+    transform: [
+      { scale: interpolate(deslocamento.get(), [0, GATILHO_RESPOSTA_PX, MAXIMO_RESPOSTA_PX], [0.5, 1.15, 1.15], 'clamp') },
+    ],
   }));
 
   const corDoTexto = minha ? theme.accentText : theme.text;
@@ -191,11 +226,27 @@ export function BolhaDeConversa({
             </Pressable>
           ) : null}
           <View style={[styles.coluna, minha ? styles.colunaDireita : styles.colunaEsquerda]}>
-            <Pressable
+            <PressableAnimado
+              onPressIn={() => {
+                if (onLongPress && !reduzirMovimento) {
+                  escala.set(withTiming(ESCALA_A_SEGURAR, { duration: 300, easing: Easing.out(Easing.quad) }));
+                }
+              }}
+              onPressOut={() => {
+                if (!reduzirMovimento) escala.set(withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) }));
+              }}
               onLongPress={
                 onLongPress
                   ? () => {
                       vibrarLeve();
+                      if (!reduzirMovimento) {
+                        escala.set(
+                          withSequence(
+                            withTiming(1.05, { duration: 110, easing: Easing.out(Easing.quad) }),
+                            withTiming(1, { duration: 200, easing: Easing.inOut(Easing.quad) })
+                          )
+                        );
+                      }
                       onLongPress();
                     }
                   : undefined
@@ -212,6 +263,7 @@ export function BolhaDeConversa({
                 !mostrarQuem && styles.seguida,
                 pendente && styles.pendente,
                 mencionaMe && !minha && { borderLeftWidth: 3, borderLeftColor: theme.highlight },
+                escalaDaBolha,
               ]}>
               {!minha && mostrarQuem ? (
                 <Pressable onPress={onAbrirPessoa} disabled={!onAbrirPessoa} hitSlop={6}>
@@ -220,7 +272,12 @@ export function BolhaDeConversa({
                   </ThemedText>
                 </Pressable>
               ) : null}
-              {citacao ? <CitacaoNaBolha citacao={citacao} minha={minha} /> : null}
+              {/* The flash when jumped to: a soft yellow over the bubble that fades out. */}
+              <Animated.View
+                pointerEvents="none"
+                style={[StyleSheet.absoluteFill, styles.brilho, { backgroundColor: theme.highlight }, brilhoDaBolha]}
+              />
+              {citacao ? <CitacaoNaBolha citacao={citacao} minha={minha} onPress={onAbrirCitacao} /> : null}
               <ThemedText style={{ color: corDoTexto }}>
                 {partesComMencoes(texto, nomesMencionaveis).map((parte, indice) =>
                   parte.mencao ? (
@@ -243,7 +300,7 @@ export function BolhaDeConversa({
                     ? `editada · ${formatarHora(new Date(criadaEm))}`
                     : formatarHora(new Date(criadaEm))}
               </ThemedText>
-            </Pressable>
+            </PressableAnimado>
             {reacoes.length > 0 ? (
               <ReacoesDaMensagem reacoes={reacoes} onReagir={onReagir} minha={minha} />
             ) : null}
@@ -255,12 +312,17 @@ export function BolhaDeConversa({
 }
 
 /** The quoted message at the top of a reply, with a bar on the side like WhatsApp. */
-function CitacaoNaBolha({ citacao, minha }: { citacao: Citacao; minha: boolean }) {
+function CitacaoNaBolha({ citacao, minha, onPress }: { citacao: Citacao; minha: boolean; onPress?: () => void }) {
   const theme = useTheme();
   const cor = minha ? theme.accentText : theme.accentInk;
   return (
-    <View
-      style={[
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityHint={onPress ? 'Vai até à mensagem original.' : undefined}
+      style={({ pressed }) => [
+        pressed && styles.citacaoPremida,
         styles.citacao,
         {
           borderLeftColor: cor,
@@ -276,7 +338,7 @@ function CitacaoNaBolha({ citacao, minha }: { citacao: Citacao; minha: boolean }
         style={{ color: minha ? theme.accentText : theme.textSecondary, opacity: citacao.body ? 1 : 0.7 }}>
         {citacao.body ?? 'Mensagem indisponível'}
       </ThemedText>
-    </View>
+    </Pressable>
   );
 }
 
@@ -291,11 +353,20 @@ function ReacoesDaMensagem({
   minha: boolean;
 }) {
   const theme = useTheme();
+  const reduzirMovimento = useReducedMotion();
+  // Only reactions that arrive while the chat is open pop in; the ones already there when it opens just show.
+  const [aberta, setAberta] = useState(false);
+  useEffect(() => {
+    const espera = setTimeout(() => setAberta(true), 0);
+    return () => clearTimeout(espera);
+  }, []);
   return (
     <View style={[styles.reacoes, minha ? styles.reacoesDireita : null]}>
       {reacoes.map((reacao) => (
-        <Pressable
+        <Animated.View
           key={reacao.emoji}
+          entering={aberta && !reduzirMovimento ? ENTRADA_DA_REACAO : undefined}>
+        <Pressable
           onPress={onReagir ? () => onReagir(reacao.emoji) : undefined}
           disabled={!onReagir}
           accessibilityRole="button"
@@ -314,6 +385,7 @@ function ReacoesDaMensagem({
             </ThemedText>
           ) : null}
         </Pressable>
+        </Animated.View>
       ))}
     </View>
   );
@@ -468,6 +540,13 @@ function SugestoesDeMencao({
 }
 
 const styles = StyleSheet.create({
+  brilho: {
+    borderRadius: 18,
+    opacity: 0,
+  },
+  citacaoPremida: {
+    opacity: 0.7,
+  },
   mencao: {
     fontWeight: 700,
   },

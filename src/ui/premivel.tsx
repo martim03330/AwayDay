@@ -6,7 +6,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -36,13 +37,13 @@ export function Premivel({ style, escala = ESCALA_PREMIDO, onPressIn, onPressOut
 
   function entrar(evento: GestureResponderEvent) {
     setPremido(true);
-    if (!reduzirMovimento && escala !== 1) tamanho.set(withTiming(escala, { duration: ENTRAR_MS }));
+    if (!reduzirMovimento && escala !== 1) tamanho.set(withTiming(escala, { duration: ENTRAR_MS, easing: Easing.out(Easing.quad) }));
     onPressIn?.(evento);
   }
 
   function sair(evento: GestureResponderEvent) {
     setPremido(false);
-    tamanho.set(withTiming(1, { duration: reduzirMovimento ? 0 : SAIR_MS }));
+    tamanho.set(withTiming(1, { duration: reduzirMovimento ? 0 : SAIR_MS, easing: Easing.out(Easing.quad) }));
     onPressOut?.(evento);
   }
 
