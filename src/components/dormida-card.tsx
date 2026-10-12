@@ -58,13 +58,12 @@ import { useFormatarDinheiro } from '@/ui/valor';
 const NOITES = [1, 2, 3];
 const PESSOAS_PESQUISA = [1, 2, 3, 4, 5, 6, 7, 8];
 
-/** "até 50 €", "50–100 €", "mais de 200 €". */
-function rotuloDoEscalao(escalao: Escalao) {
-  if (escalao.minCentimos === 0 && escalao.maxCentimos !== null) {
-    return `até ${formatarCentimosCurto(escalao.maxCentimos)}`;
-  }
-  if (escalao.maxCentimos === null) return `mais de ${formatarCentimosCurto(escalao.minCentimos)}`;
-  return `${formatarCentimosCurto(escalao.minCentimos).replace(/\s*€$/, '')}–${formatarCentimosCurto(escalao.maxCentimos)}`;
+/** For the budget bar, where five options share one line: "≤50", "50–100", "200+" (the € is in the title). */
+function rotuloCurtoDoEscalao(escalao: Escalao) {
+  const euros = (centimos: number) => String(Math.round(centimos / 100));
+  if (escalao.minCentimos === 0 && escalao.maxCentimos !== null) return `≤${euros(escalao.maxCentimos)}`;
+  if (escalao.maxCentimos === null) return `${euros(escalao.minCentimos)}+`;
+  return `${euros(escalao.minCentimos)}–${euros(escalao.maxCentimos)}`;
 }
 
 /** O que a casa toda pode custar: "até 400 € ao todo", "200–400 € ao todo", "mais de 400 € ao todo". */
@@ -466,33 +465,25 @@ export function DormidaCard({
           {`${estadio.cidade} · ${formatarDiaMes(new Date(estadia.checkin))} a ${formatarDiaMes(new Date(estadia.checkout))}`}
         </ThemedText>
 
-        <ThemedText style={styles.rotulo}>Quantas noites</ThemedText>
-        <View style={styles.chips}>
-          {NOITES.map((numero) => (
-            <Chip
-              key={`noite-${numero}`}
-              label={plural(numero, 'noite', 'noites')}
-              selected={numero === noitesUsadas}
-              emCartao
-              onPress={() => setNoitesPesquisa(numero)}
-            />
-          ))}
+        <View style={styles.seccao}>
+          <ThemedText style={styles.rotulo}>Noites</ThemedText>
+          <Segmentado
+            opcoes={NOITES.map((numero) => ({ valor: String(numero), label: plural(numero, 'noite', 'noites') }))}
+            valor={String(noitesUsadas)}
+            onChange={(escolha) => setNoitesPesquisa(Number(escolha))}
+          />
         </View>
 
         {pessoasDoGrupo !== null ? (
           <>
-            <ThemedText style={styles.rotulo}>Para quantas pessoas</ThemedText>
-            <View style={styles.chips}>
-              {PESSOAS_PESQUISA.map((numero) => (
-                <Chip
-                  key={`pessoa-${numero}`}
-                  label={plural(numero, 'pessoa', 'pessoas')}
-                  selected={numero === pessoasUsadas}
-                  emCartao
-                  onPress={() => setPessoasPesquisa(numero)}
-                />
-              ))}
-            </View>
+            <Quantidade
+              rotulo="Pessoas"
+              valor={pessoasUsadas}
+              min={1}
+              max={PESSOAS_PESQUISA.length}
+              onChange={setPessoasPesquisa}
+              dizer={(numero) => plural(numero, 'pessoa', 'pessoas')}
+            />
             <Button
               label="Procurar no Airbnb"
               icon={icons.casa}
@@ -501,17 +492,21 @@ export function DormidaCard({
           </>
         ) : (
           <>
-            <ThemedText style={styles.rotulo}>Quanto queres pagar, só tu?</ThemedText>
-            <View style={styles.chips}>
-              {ESCALOES_POR_PESSOA.map((opcao, indice) => (
-                <Chip
-                  key={`escalao-${opcao.minCentimos}`}
-                  label={rotuloDoEscalao(opcao)}
-                  selected={indice === escalao}
-                  emCartao
-                  onPress={() => setEscalao(indice)}
-                />
-              ))}
+            <View style={styles.seccao}>
+              <View style={styles.linhaTitulo}>
+                <ThemedText style={styles.rotulo}>Quanto pagas, só tu</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  € por pessoa
+                </ThemedText>
+              </View>
+              <Segmentado
+                opcoes={ESCALOES_POR_PESSOA.map((opcao, indice) => ({
+                  valor: String(indice),
+                  label: rotuloCurtoDoEscalao(opcao),
+                }))}
+                valor={String(escalao)}
+                onChange={(escolha) => setEscalao(Number(escolha))}
+              />
             </View>
             <View style={styles.pesquisas}>
               {pesquisas.map((pesquisa) => (
@@ -772,7 +767,7 @@ export function DormidaCard({
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
   destaque: {
     fontWeight: 800,
@@ -798,6 +793,12 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.one,
   },
   seccao: {
+    gap: Spacing.two,
+  },
+  linhaTitulo: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
     gap: Spacing.two,
   },
   caixa: {
