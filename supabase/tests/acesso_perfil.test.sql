@@ -103,11 +103,11 @@ select pg_temp.expect('the sign-up trigger creates the profile',
   (select count(*)::integer from public.profile where id::text like 'ad000001-%'), 9);
 select pg_temp.expect('a name too short becomes Adepto',
   (select display_name from public.profile where id = 'ad000001-0000-4000-8000-0000000000f1'), 'Adepto');
-select pg_temp.expect('a fresh account starts without AI tips, recap, rankings, admin or check-in sharing',
+select pg_temp.expect('a fresh account starts without AI tips, recap, admin or check-in sharing, and in the rankings',
   (select format('%s/%s/%s/%s/%s', nudges_enabled, recap_enabled, show_in_rankings, is_admin,
      coalesce(share_checkins_with_groups, false))
    from public.profile where id = 'ad000001-0000-4000-8000-0000000000f1'),
-  'f/f/f/f/f');
+  'f/f/t/f/f');
 
 -- 1. Anon reads nothing and calls nothing.
 set local role anon;

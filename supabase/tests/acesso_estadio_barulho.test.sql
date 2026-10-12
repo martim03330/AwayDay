@@ -97,7 +97,9 @@ select
   'authenticated', 'authenticated'
 from generate_series(1, 6) as n;
 -- 01 = S, 02 = O, 03 = C, 04 = M, 05 = A (admin), 06 = N.
-update public.profile set show_in_rankings = true where id = 'e6000000-0000-4000-8000-000000000001';
+-- Appearing is on by default: everyone but S turned it off here.
+update public.profile set show_in_rankings = (id = 'e6000000-0000-4000-8000-000000000001')
+where id::text like 'e6000000-%';
 update public.profile set is_admin = true where id = 'e6000000-0000-4000-8000-000000000005';
 
 insert into public.venue (id, name, city, country, region, location)

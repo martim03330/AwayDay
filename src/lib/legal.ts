@@ -19,7 +19,7 @@ export type DocumentoLegal = {
 };
 
 /** Bump when the terms or the privacy policy change in a way people must accept again. */
-export const VERSAO_DOS_TERMOS = '2026-10-06';
+export const VERSAO_DOS_TERMOS = '2026-10-12';
 
 /**
  * Who provides the app. Shown in every document and on the about page (RGPD, art. 13.º: identity and contact).
@@ -42,7 +42,7 @@ export const IDADE_MINIMA = 18;
 const p = (texto: string): BlocoLegal => ({ tipo: 'paragrafo', texto });
 const l = (...itens: string[]): BlocoLegal => ({ tipo: 'lista', itens });
 
-const ATUALIZADO = '9 de outubro de 2026';
+const ATUALIZADO = '12 de outubro de 2026';
 
 export const PRIVACIDADE: DocumentoLegal = {
   id: 'privacidade',
@@ -82,7 +82,7 @@ export const PRIVACIDADE: DocumentoLegal = {
           'Boleias: o ponto de encontro que escolhes (nome e local no mapa, visíveis a quem vê a boleia), a hora, os lugares, o consumo e o preço do combustível que indicas, os pedidos, as presenças, os imprevistos e a conversa do carro. Base: execução do contrato.',
           'Grupos e viagens: mensagens, fotos, planos, casas propostas, despesas e acertos de contas. Base: execução do contrato.',
           'Fotos: as das missões são privadas; as de tascos só aparecem depois de aprovadas e sem o teu nome; as do álbum da viagem só as vê quem foi e os grupos dessa viagem. Base: execução do contrato.',
-          'Rankings: o teu nome só aparece se escolheres aparecer. Base: o teu consentimento, que retiras na aba Ranking.',
+          'Rankings: aparecem o teu nome, o clube, o nível e os pontos (nunca onde estás). Podes deixar de aparecer quando quiseres, em Definições → Privacidade. Base: interesse legítimo (o ranking faz parte da app), com direito de oposição.',
           'Notificações: o identificador do teu telemóvel para receberes avisos. Base: o teu consentimento, dado na permissão do telemóvel e nas Definições.',
           'Segurança e moderação: denúncias, bloqueios e limites de utilização, para proteger quem usa a app e travar abusos. Base: interesse legítimo.',
           'Relatórios de erro que nos envias: o texto que escreves, o modelo do telemóvel e a versão da app. Base: interesse legítimo em corrigir erros.'

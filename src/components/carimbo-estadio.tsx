@@ -4,7 +4,6 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { getCurrentPosition } from '@/features/presence/location';
-import { useMyProfile, useUpdateRankingVisibility } from '@/features/profile/hooks/useMyProfile';
 import { fetchMyStamps, stampStadium, StampRefused } from '@/features/stamps/api';
 import { useNow } from '@/hooks/use-now';
 import { podeCarimbar } from '@/lib/carimbos';
@@ -50,8 +49,6 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
   const userId = useUserId();
   const agora = useNow(60 * 1000);
   const queryClient = useQueryClient();
-  const perfil = useMyProfile(userId);
-  const mudarRanking = useUpdateRankingVisibility(userId);
   const [aCarimbar, setACarimbar] = useState(false);
 
   const carimbos = useQuery({
@@ -65,18 +62,6 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
   const hoje = hojeEmLisboa();
   const meu = (carimbos.data ?? []).find((carimbo) => carimbo.venueId === estadio.id);
   const carimbadoHoje = meu?.lastVisit === hoje;
-
-  function convidarParaORanking() {
-    if (perfil.data?.showInRankings !== false) return;
-    Alert.alert(
-      'Queres aparecer no ranking?',
-      'O ranking de estádios é público: quem entrar vê o teu nome e quantos estádios já carimbaste. Podes sair quando quiseres, nas definições.',
-      [
-        { text: 'Agora não', style: 'cancel' },
-        { text: 'Quero aparecer', onPress: () => mudarRanking.mutate(true) },
-      ]
-    );
-  }
 
   async function carimbar() {
     setACarimbar(true);
@@ -101,7 +86,6 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
         'Carimbado!',
         `${estadio.nome} entra no teu passaporte como visitado: estavas a ${formatarDistancia(distancia)} do estádio.`
       );
-      convidarParaORanking();
     } catch (problema) {
       Alert.alert('Não deu para carimbar', mensagemDeRecusa(problema));
     } finally {

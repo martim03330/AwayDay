@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Linking, StyleSheet, Switch, View } from 'react-native';
 
@@ -5,7 +6,12 @@ import { ModoDemoCard } from '@/components/modo-demo-card';
 import { Spacing } from '@/constants/theme';
 import { versionLabel } from '@/features/feedback/versao';
 import { useLocationPermission } from '@/features/presence/location';
-import { useMyProfile, useUpdateShareCheckins } from '@/features/profile/hooks/useMyProfile';
+import { rankingsKey } from '@/features/presence/hooks/usePresence';
+import {
+  useMyProfile,
+  useUpdateRankingVisibility,
+  useUpdateShareCheckins,
+} from '@/features/profile/hooks/useMyProfile';
 import { SegundoFatorAdmin } from '@/features/profile/components/SegundoFatorAdmin';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
@@ -52,6 +58,13 @@ export default function DefinicoesScreen() {
   const userId = useUserId();
   const perfil = useMyProfile(fonte === 'conta' ? userId : null);
   const partilha = useUpdateShareCheckins(userId);
+  // Appearing in the rankings: on by default, turned off here (it used to sit on the Ranking tab, always in sight).
+  const queryClient = useQueryClient();
+  const visibilidadeNoRanking = useUpdateRankingVisibility(userId);
+  const aparecoNoRanking =
+    visibilidadeNoRanking.isPending && visibilidadeNoRanking.variables !== undefined
+      ? visibilidadeNoRanking.variables
+      : (perfil.data?.showInRankings ?? true);
   const partilharCheckIns =
     partilha.isPending && partilha.variables !== undefined
       ? partilha.variables
@@ -162,6 +175,31 @@ export default function DefinicoesScreen() {
         <>
           <SectionHeader title="Privacidade" />
           <Card style={styles.grupo}>
+            <LinhaGrupo
+              separador
+              leading={<Icon name={icons.ranking} size={20} color={theme.accentInk} />}
+              title="Aparecer no ranking"
+              subtitle="O teu nome, nível e pontos nas tabelas. Nunca onde estás."
+              trailing={
+                <Switch
+                  value={aparecoNoRanking}
+                  onValueChange={(ligar) =>
+                    visibilidadeNoRanking.mutate(ligar, {
+                      onSuccess: () => {
+                        void queryClient.invalidateQueries({ queryKey: ['ranking'] });
+                        void queryClient.invalidateQueries({ queryKey: rankingsKey(userId) });
+                      },
+                    })
+                  }
+                  disabled={!perfil.data}
+                  trackColor={{ true: theme.accent, false: theme.border }}
+                  thumbColor={theme.accentText}
+                  ios_backgroundColor={theme.border}
+                  accessibilityLabel="Aparecer no ranking"
+                  testID="interruptor-aparecer-ranking"
+                />
+              }
+            />
             <LinhaGrupo
               separador
               leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}

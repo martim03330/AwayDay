@@ -3,7 +3,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { AparecerNoRanking } from '@/components/aparecer-no-ranking';
 import { Spacing } from '@/constants/theme';
 import { rankingsKey, useVerifiedPlacesRanking } from '@/features/presence/hooks/usePresence';
 import { type LinhaTabela, TabelaRanking } from '@/features/ranks/components/TabelaRanking';
@@ -185,7 +184,6 @@ export default function TabelasScreen() {
       ) : null}
 
       <View style={styles.espaco} />
-      <AparecerNoRanking userId={conta} />
     </Screen>
   );
 }

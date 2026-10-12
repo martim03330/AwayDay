@@ -98,6 +98,8 @@ from t_ids,
                   (c, 'ranking-c@test.invalid', 'Teste C')) as u(id, email, name);
 
 update public.profile set show_in_rankings = true where id in (select a from t_ids union select b from t_ids);
+-- Appearing is on by default: C turned it off.
+update public.profile set show_in_rankings = false where id in (select c from t_ids);
 insert into public.profile_club (profile_id, relation, club_id) select a, 'supporter', club from t_ids;
 
 -- Fixed weekly challenges for this week, so the totals do not depend on the random pick.
