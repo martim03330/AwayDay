@@ -114,7 +114,7 @@ export default function ConversaDoGrupoScreen() {
   const [texto, setTexto] = useState('');
   const [aResponder, setAResponder] = useState<GroupMessage | null>(null);
   const [aEditar, setAEditar] = useState<GroupMessage | null>(null);
-  const [menuDe, setMenuDe] = useState<{ mensagem: GroupMessage; podeEditar: boolean; posicao: PosicaoNoEcra | null } | null>(null);
+  const [menuDe, setMenuDe] = useState<{ mensagem: GroupMessage; podeEditar: boolean; posicao: PosicaoNoEcra | null; comNome: boolean } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aTentar, setATentar] = useState(false);
 
@@ -343,7 +343,13 @@ export default function ConversaDoGrupoScreen() {
         texto={menuDe?.mensagem.body ?? null}
         minha={menuDe?.mensagem.mine ?? false}
         posicao={menuDe?.posicao ?? null}
-        hora={menuDe ? formatarHora(new Date(menuDe.mensagem.createdAt)) : undefined}
+        hora={
+          menuDe
+            ? `${menuDe.mensagem.editedAt !== null ? 'editada · ' : ''}${formatarHora(new Date(menuDe.mensagem.createdAt))}`
+            : undefined
+        }
+        nome={menuDe?.comNome ? menuDe.mensagem.displayName : null}
+        citacao={menuDe?.mensagem.replyTo ?? null}
         minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
         onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
         acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
@@ -478,6 +484,7 @@ export default function ConversaDoGrupoScreen() {
                                 mensagem: item,
                                 podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
                                 posicao,
+                              comNome: !item.mine && (!mesmaPessoa),
                               })
                       }
                     />

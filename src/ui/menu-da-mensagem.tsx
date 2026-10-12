@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { REACOES, type Emoji } from '@/lib/conversa';
+import { REACOES, type Citacao, type Emoji } from '@/lib/conversa';
 import type { PosicaoNoEcra } from '@/ui/conversa';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -77,8 +77,12 @@ type MenuDaMensagemProps = {
   minha?: boolean;
   /** Where the held bubble is: the message is drawn right there, reactions above it and actions below. */
   posicao?: PosicaoNoEcra | null;
-  /** The message's time, as under the bubble. */
+  /** The message's time, as under the bubble («editada · 14:27» when edited). */
   hora?: string;
+  /** Who wrote it, when the bubble shows the name on top (someone else's, first of a run). */
+  nome?: string | null;
+  /** The message it replies to, as quoted on top of the bubble. */
+  citacao?: Citacao | null;
   /** Reactions are offered only when there is somewhere to send them. */
   onReagir?: (emoji: Emoji) => void;
   minhaReacao: Emoji | null;
@@ -95,6 +99,8 @@ export function MenuDaMensagem({
   minha = false,
   posicao = null,
   hora,
+  nome = null,
+  citacao = null,
   onReagir,
   minhaReacao,
   acoes,
@@ -166,6 +172,35 @@ export function MenuDaMensagem({
                   ? [styles.solto, { top: lugar.mensagem, left: lugar.x, width: lugar.largura, maxHeight: lugar.altura }]
                   : [styles.mensagemLivre, minha ? styles.aDireita : styles.aEsquerda],
               ]}>
+              {/* The same parts as the bubble in the chat (name, quote, text, time), so the copy sits right over it. */}
+              {nome ? (
+                <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
+                  {nome}
+                </ThemedText>
+              ) : null}
+              {citacao ? (
+                <View
+                  style={[
+                    styles.citacao,
+                    {
+                      borderLeftColor: minha ? theme.accentText : theme.accentInk,
+                      backgroundColor: minha ? 'rgba(255,255,255,0.16)' : theme.backgroundSelected,
+                    },
+                  ]}>
+                  <ThemedText
+                    type="smallBold"
+                    numberOfLines={1}
+                    style={{ color: minha ? theme.accentText : theme.accentInk }}>
+                    {citacao.displayName ?? 'Um adepto'}
+                  </ThemedText>
+                  <ThemedText
+                    type="small"
+                    numberOfLines={2}
+                    style={{ color: minha ? theme.accentText : theme.textSecondary }}>
+                    {citacao.body ?? 'Mensagem indisponível'}
+                  </ThemedText>
+                </View>
+              ) : null}
               <ThemedText
                 numberOfLines={lugar ? undefined : 6}
                 style={{ color: minha ? theme.accentText : theme.text }}>
@@ -250,6 +285,13 @@ const styles = StyleSheet.create({
   },
   mensagemLivre: {
     maxWidth: '85%',
+  },
+  citacao: {
+    borderLeftWidth: 3,
+    borderRadius: 8,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+    marginBottom: 2,
   },
   hora: {
     alignSelf: 'flex-end',
