@@ -24,6 +24,7 @@ import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 const MARGEM = 20;
 
@@ -51,6 +52,7 @@ function resumo(grupo: GroupInboxItem) {
  * boleias e as contas.
  */
 export default function MaltaScreen() {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -82,103 +84,109 @@ export default function MaltaScreen() {
     router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="never"
-      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
-      refreshControl={
-        userId ? (
-          <RefreshControl
-            refreshing={inbox.isRefetching}
-            onRefresh={() => void Promise.all([refrescarGrupos(), refrescarAmigos()])}
-            progressViewOffset={insets.top}
-            tintColor={theme.accentText}
-          />
-        ) : undefined
-      }>
-      <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
-      <CabecalhoRelvado title="Malta" eyebrow="A tua gente dos jogos" />
-
-      <View style={[styles.largura, styles.conteudo]}>
-        {!userId ? (
-          <EmptyState
-            icon={icons.perfil}
-            title="A malta precisa de conta"
-            message="Os grupos juntam pessoas reais: entra para criares o teu e falares com quem vai contigo."
-            action={{ label: 'Entrar', onPress: () => router.push('/conta/entrar') }}
-          />
-        ) : (
-          <>
-            {porResponder.length > 0 ? (
-              <View style={styles.bloco}>
-                <SectionHeader title="Convites" trailing={String(porResponder.length)} />
-                {porResponder.map((convite) => (
-                  <Card key={convite.groupId} style={styles.convite}>
-                    <ThemedText style={styles.negrito}>{convite.groupName}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {[
-                        convite.invitedByName ? `${convite.invitedByName} convidou-te` : 'Convite',
-                        plural(convite.members, 'pessoa', 'pessoas'),
-                      ].join(' · ')}
-                    </ThemedText>
-                    <Button
-                      label="Entrar no grupo"
-                      icon={icons.perfil}
-                      onPress={() => void responder(() => acceptGroupInvite(convite.groupId))}
-                    />
-                    <LinkTexto
-                      neutro
-                      label="Agora não"
-                      onPress={() => void responder(() => declineGroupInvite(convite.groupId))}
-                    />
-                  </Card>
-                ))}
-              </View>
-            ) : null}
-
-            {erro ? <MensagemErro>{erro}</MensagemErro> : null}
-
-            <View style={styles.bloco}>
-              {inbox.isLoading ? (
-                <>
-                  <SkeletonCard />
-                  <SkeletonCard />
-                </>
-              ) : semLigacao ? (
-                <EmptyState
-                  icon={icons.erro}
-                  title="Sem ligação"
-                  message="Puxa para baixo para tentar outra vez."
-                  action={{
-                    label: 'Tentar outra vez',
-                    onPress: () => void Promise.all([refrescarGrupos(), refrescarAmigos()]),
-                  }}
-                />
-              ) : grupos.length === 0 ? (
-                <Card style={styles.convite}>
-                  <ThemedText type="subtitle">Ainda sem malta</ThemedText>
-                  <ThemedText themeColor="textSecondary">
-                    Cria um grupo para a malta do costume e manda-lhes o link.
-                  </ThemedText>
-                </Card>
-              ) : (
-                grupos.map((grupo) => (
-                  <CartaoDoGrupo key={grupo.id} grupo={grupo} onPress={() => abrir(grupo.id)} />
-                ))
-              )}
-            </View>
-
-            <Button
-              label="Criar um grupo"
-              icon={icons.perfil}
-              variant={grupos.length === 0 && !semLigacao ? 'primary' : 'secondary'}
-              onPress={() => router.push('/malta/novo')}
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
+        refreshControl={
+          userId ? (
+            <RefreshControl
+              refreshing={inbox.isRefetching}
+              onRefresh={() => void Promise.all([refrescarGrupos(), refrescarAmigos()])}
+              progressViewOffset={insets.top}
+              tintColor={theme.accentText}
             />
-            <EntrarComCodigo />
-          </>
-        )}
-      </View>
-    </ScrollView>
+          ) : undefined
+        }>
+        <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
+        <CabecalhoRelvado title="Malta" eyebrow="A tua gente dos jogos" />
+
+        <View style={[styles.largura, styles.conteudo]}>
+          {!userId ? (
+            <EmptyState
+              icon={icons.perfil}
+              title="A malta precisa de conta"
+              message="Os grupos juntam pessoas reais: entra para criares o teu e falares com quem vai contigo."
+              action={{ label: 'Entrar', onPress: () => router.push('/conta/entrar') }}
+            />
+          ) : (
+            <>
+              {porResponder.length > 0 ? (
+                <View style={styles.bloco}>
+                  <SectionHeader title="Convites" trailing={String(porResponder.length)} />
+                  {porResponder.map((convite) => (
+                    <Card key={convite.groupId} style={styles.convite}>
+                      <ThemedText style={styles.negrito}>{convite.groupName}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {[
+                          convite.invitedByName ? `${convite.invitedByName} convidou-te` : 'Convite',
+                          plural(convite.members, 'pessoa', 'pessoas'),
+                        ].join(' · ')}
+                      </ThemedText>
+                      <Button
+                        label="Entrar no grupo"
+                        icon={icons.perfil}
+                        onPress={() => void responder(() => acceptGroupInvite(convite.groupId))}
+                      />
+                      <LinkTexto
+                        neutro
+                        label="Agora não"
+                        onPress={() => void responder(() => declineGroupInvite(convite.groupId))}
+                      />
+                    </Card>
+                  ))}
+                </View>
+              ) : null}
+
+              {erro ? <MensagemErro>{erro}</MensagemErro> : null}
+
+              <View style={styles.bloco}>
+                {inbox.isLoading ? (
+                  <>
+                    <SkeletonCard />
+                    <SkeletonCard />
+                  </>
+                ) : semLigacao ? (
+                  <EmptyState
+                    icon={icons.erro}
+                    title="Sem ligação"
+                    message="Puxa para baixo para tentar outra vez."
+                    action={{
+                      label: 'Tentar outra vez',
+                      onPress: () => void Promise.all([refrescarGrupos(), refrescarAmigos()]),
+                    }}
+                  />
+                ) : grupos.length === 0 ? (
+                  <Card style={styles.convite}>
+                    <ThemedText type="subtitle">Ainda sem malta</ThemedText>
+                    <ThemedText themeColor="textSecondary">
+                      Cria um grupo para a malta do costume e manda-lhes o link.
+                    </ThemedText>
+                  </Card>
+                ) : (
+                  grupos.map((grupo) => (
+                    <CartaoDoGrupo key={grupo.id} grupo={grupo} onPress={() => abrir(grupo.id)} />
+                  ))
+                )}
+              </View>
+
+              <Button
+                label="Criar um grupo"
+                icon={icons.perfil}
+                variant={grupos.length === 0 && !semLigacao ? 'primary' : 'secondary'}
+                onPress={() => router.push('/malta/novo')}
+              />
+              <EntrarComCodigo />
+            </>
+          )}
+        </View>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 

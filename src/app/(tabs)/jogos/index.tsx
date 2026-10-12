@@ -48,6 +48,7 @@ import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
   { id: 'todas', label: 'Todas', emTexto: '' },
@@ -149,6 +150,7 @@ function quemNaoJoga(clubes: readonly Clube[]) {
 }
 
 export default function JogosScreen() {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();
@@ -303,80 +305,86 @@ export default function JogosScreen() {
   }
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="never"
-      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void refresh()}
-          progressViewOffset={insets.top}
-          tintColor={theme.accentText}
-        />
-      }>
-      {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
-      <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            progressViewOffset={insets.top}
+            tintColor={theme.accentText}
+          />
+        }>
+        {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
+        <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
 
-      <CabecalhoRelvado title="Jogos" eyebrow={hoje}>
-        <CoachBanner
-          message={treinador.message}
-          loading={treinador.loading}
-          sobreRelvado
-          onPress={destinoDaDica ? () => router.push(destinoDaDica) : undefined}
-        />
-        <ConviteTreinador />
-      </CabecalhoRelvado>
+        <CabecalhoRelvado title="Jogos" eyebrow={hoje}>
+          <CoachBanner
+            message={treinador.message}
+            loading={treinador.loading}
+            sobreRelvado
+            onPress={destinoDaDica ? () => router.push(destinoDaDica) : undefined}
+          />
+          <ConviteTreinador />
+        </CabecalhoRelvado>
 
-      <View style={styles.largura}>
-        <View style={styles.filtros}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentInsetAdjustmentBehavior="never"
-            contentContainerStyle={styles.chips}>
-            {filtrosCompeticao.map((filtro) => (
-              <Chip
-                key={filtro.id}
-                label={filtro.label}
-                selected={competicao === filtro.id}
-                onPress={() => setCompeticao(filtro.id)}
+        <View style={styles.largura}>
+          <View style={styles.filtros}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentInsetAdjustmentBehavior="never"
+              contentContainerStyle={styles.chips}>
+              {filtrosCompeticao.map((filtro) => (
+                <Chip
+                  key={filtro.id}
+                  label={filtro.label}
+                  selected={competicao === filtro.id}
+                  onPress={() => setCompeticao(filtro.id)}
+                />
+              ))}
+            </ScrollView>
+            {verConcorrencia && !semClube && !clubesSemJogos ? (
+              <View style={styles.filtrosClube}>
+                <Chip
+                  label="Voltar aos meus clubes"
+                  selected={false}
+                  onPress={() => setVerConcorrencia(false)}
+                  leading={
+                    <View style={styles.escudos}>
+                      {meusClubes.map((clube) => (
+                        <Escudo key={clube.id} clube={clube} size={18} />
+                      ))}
+                    </View>
+                  }
+                />
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.conteudo}>
+            <SessoesAbertas />
+            <ConvitesDeBoleia />
+            <AlertasBoleias boleiasComSessao={boleiasComSessao} />
+            {clubesSemJogos ? (
+              <Aviso
+                title={meusClubes.length === 1 ? 'Ainda sem jogos do teu clube' : 'Ainda sem jogos dos teus clubes'}
+                message={`${TEXTO_SEM_JOGOS} Até lá, vês aqui os jogos da Liga Portugal Betclic.`}
+                icon={icons.semJogos}
               />
-            ))}
-          </ScrollView>
-          {verConcorrencia && !semClube && !clubesSemJogos ? (
-            <View style={styles.filtrosClube}>
-              <Chip
-                label="Voltar aos meus clubes"
-                selected={false}
-                onPress={() => setVerConcorrencia(false)}
-                leading={
-                  <View style={styles.escudos}>
-                    {meusClubes.map((clube) => (
-                      <Escudo key={clube.id} clube={clube} size={18} />
-                    ))}
-                  </View>
-                }
-              />
-            </View>
-          ) : null}
+            ) : null}
+            {renderConteudo()}
+          </View>
         </View>
-
-        <View style={styles.conteudo}>
-          <SessoesAbertas />
-          <ConvitesDeBoleia />
-          <AlertasBoleias boleiasComSessao={boleiasComSessao} />
-          {clubesSemJogos ? (
-            <Aviso
-              title={meusClubes.length === 1 ? 'Ainda sem jogos do teu clube' : 'Ainda sem jogos dos teus clubes'}
-              message={`${TEXTO_SEM_JOGOS} Até lá, vês aqui os jogos da Liga Portugal Betclic.`}
-              icon={icons.semJogos}
-            />
-          ) : null}
-          {renderConteudo()}
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 

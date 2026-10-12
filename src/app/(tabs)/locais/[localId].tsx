@@ -44,6 +44,7 @@ import { SectionHeader } from '@/ui/section-header';
 import { SeletorNota } from '@/ui/seletor-nota';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 /** Yellow header with a back button; the tasco's details go in `children`. */
 function CabecalhoTasco({ children }: { children?: ReactNode }) {
@@ -81,20 +82,27 @@ function CabecalhoTasco({ children }: { children?: ReactNode }) {
 }
 
 function Pagina({ children, cabecalho }: { children: ReactNode; cabecalho: ReactNode }) {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="never"
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{
-        paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
-      }}>
-      {cabecalho}
-      <View style={styles.conteudo}>{children}</View>
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
+        }}>
+        {cabecalho}
+        <View style={styles.conteudo}>{children}</View>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 

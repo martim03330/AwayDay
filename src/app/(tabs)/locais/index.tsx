@@ -26,6 +26,7 @@ import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 function temLocaisPerto(estadioId: string) {
   return filtrarPorTempoAPe(locaisDoEstadio(estadioId)).perto.length > 0;
@@ -71,6 +72,7 @@ function ChipRelvado({ clubeId, nome, selected, onPress }: ChipRelvadoProps) {
 }
 
 export default function LocaisScreen() {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();
@@ -252,52 +254,58 @@ export default function LocaisScreen() {
   }
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="never"
-      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void refresh()}
-          progressViewOffset={insets.top}
-        />
-      }>
-      <CabecalhoRelvado title="Locais" eyebrow={`Tascos a menos de ${MAX_MINUTOS_A_PE} min a pé`}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentInsetAdjustmentBehavior="never"
-          style={styles.chipsScroll}
-          contentContainerStyle={styles.chips}>
-          {estadiosOrdenados.map((opcao) => (
-            <ChipRelvado
-              key={opcao.id}
-              clubeId={opcao.clubeId}
-              nome={opcao.nome}
-              selected={opcao.id === estadio.id}
-              onPress={() => router.setParams({ estadio: opcao.id })}
-            />
-          ))}
-        </ScrollView>
-      </CabecalhoRelvado>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            progressViewOffset={insets.top}
+          />
+        }>
+        <CabecalhoRelvado title="Locais" eyebrow={`Tascos a menos de ${MAX_MINUTOS_A_PE} min a pé`}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentInsetAdjustmentBehavior="never"
+            style={styles.chipsScroll}
+            contentContainerStyle={styles.chips}>
+            {estadiosOrdenados.map((opcao) => (
+              <ChipRelvado
+                key={opcao.id}
+                clubeId={opcao.clubeId}
+                nome={opcao.nome}
+                selected={opcao.id === estadio.id}
+                onPress={() => router.setParams({ estadio: opcao.id })}
+              />
+            ))}
+          </ScrollView>
+        </CabecalhoRelvado>
 
-      <View style={styles.conteudo}>
-        <View style={styles.cabecalho}>
-          <IconCircle name={icons.estadio} size={21} />
-          <View style={styles.flex}>
-            <ThemedText type="section" style={styles.estadioNome}>
-              {estadio.nome}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {`${plural(perto.length, 'local', 'locais')} a menos de ${MAX_MINUTOS_A_PE} min a pé · ${estadio.cidade}`}
-            </ThemedText>
+        <View style={styles.conteudo}>
+          <View style={styles.cabecalho}>
+            <IconCircle name={icons.estadio} size={21} />
+            <View style={styles.flex}>
+              <ThemedText type="section" style={styles.estadioNome}>
+                {estadio.nome}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {`${plural(perto.length, 'local', 'locais')} a menos de ${MAX_MINUTOS_A_PE} min a pé · ${estadio.cidade}`}
+              </ThemedText>
+            </View>
           </View>
-        </View>
 
-        {renderConteudo()}
-      </View>
-    </ScrollView>
+          {renderConteudo()}
+        </View>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 

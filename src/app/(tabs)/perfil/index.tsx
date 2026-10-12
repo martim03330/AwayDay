@@ -37,6 +37,7 @@ import { LinhaGrupo } from '@/ui/linha-grupo';
 import { ListRow } from '@/ui/list-row';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 /** Toques seguidos no cartão do perfil para revelar o modo demo. */
 const TOQUES_MODO_DEMO = 5;
@@ -59,6 +60,7 @@ function iniciais(nome: string) {
 }
 
 export default function PerfilScreen() {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();
@@ -101,251 +103,257 @@ export default function PerfilScreen() {
   }
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="never"
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={styles.scroll}>
-      <Pressable
-        onPress={tocarNoPerfil}
-        accessibilityRole="button"
-        accessibilityLabel="O teu perfil"
-        testID="cabecalho-perfil"
-        style={[styles.relvado, { paddingTop: insets.top + Spacing.five }]}>
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          {RISCAS_RELVADO.map((left) => (
-            <View key={left} style={[styles.riscaRelvado, { left }]} />
-          ))}
-        </View>
-        <Svg
-          width={220}
-          height={220}
-          viewBox="0 0 220 220"
-          fill="none"
-          stroke={Colors.accentText}
-          strokeWidth={3}
-          style={styles.grandeArea}
-          pointerEvents="none">
-          <Path d="M0 60H160V220" />
-          <Path d="M60 60a60 60 0 0 0 100 60" />
-        </Svg>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scroll}>
+        <Pressable
+          onPress={tocarNoPerfil}
+          accessibilityRole="button"
+          accessibilityLabel="O teu perfil"
+          testID="cabecalho-perfil"
+          style={[styles.relvado, { paddingTop: insets.top + Spacing.five }]}>
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            {RISCAS_RELVADO.map((left) => (
+              <View key={left} style={[styles.riscaRelvado, { left }]} />
+            ))}
+          </View>
+          <Svg
+            width={220}
+            height={220}
+            viewBox="0 0 220 220"
+            fill="none"
+            stroke={Colors.accentText}
+            strokeWidth={3}
+            style={styles.grandeArea}
+            pointerEvents="none">
+            <Path d="M0 60H160V220" />
+            <Path d="M60 60a60 60 0 0 0 100 60" />
+          </Svg>
 
-        <View style={styles.identidade}>
-          <AvatarCachecol iniciais={iniciais(nome)} foto={perfilDaConta.data?.avatarUrl} />
-          <View style={styles.flex}>
-            <ThemedText type="title" style={styles.nome} numberOfLines={2}>
-              {nome}
-            </ThemedText>
-            <Pressable
-              onPress={() => router.push('/perfil/clube')}
-              accessibilityRole="button"
-              accessibilityLabel={
-                clube ? `Clube que apoio: ${clube.nomeCurto}. Toca para mudar.` : 'Escolher o clube que apoio'
-              }
-              hitSlop={6}
-              style={({ pressed }) => [styles.clubePilula, pressed && styles.premido]}>
-              {clube ? <Escudo clube={clube} size={22} /> : null}
-              <ThemedText style={styles.clubePilulaTexto} numberOfLines={1}>
-                {clube ? clube.nomeCurto : 'Escolhe o teu clube'}
+          <View style={styles.identidade}>
+            <AvatarCachecol iniciais={iniciais(nome)} foto={perfilDaConta.data?.avatarUrl} />
+            <View style={styles.flex}>
+              <ThemedText type="title" style={styles.nome} numberOfLines={2}>
+                {nome}
               </ThemedText>
-              <Icon name={icons.seguinte} size={14} color="rgba(255, 255, 255, 0.88)" strokeWidth={2.6} />
-            </Pressable>
-            <View style={styles.verificados}>
-              <Icon name={icons.checkInFeito} size={16} color={theme.highlight} strokeWidth={2.6} />
-              <ThemedText style={styles.verificadosTexto}>
-                {plural(tascosVerificados, 'tasco verificado', 'tascos verificados')}
-              </ThemedText>
+              <Pressable
+                onPress={() => router.push('/perfil/clube')}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  clube ? `Clube que apoio: ${clube.nomeCurto}. Toca para mudar.` : 'Escolher o clube que apoio'
+                }
+                hitSlop={6}
+                style={({ pressed }) => [styles.clubePilula, pressed && styles.premido]}>
+                {clube ? <Escudo clube={clube} size={22} /> : null}
+                <ThemedText style={styles.clubePilulaTexto} numberOfLines={1}>
+                  {clube ? clube.nomeCurto : 'Escolhe o teu clube'}
+                </ThemedText>
+                <Icon name={icons.seguinte} size={14} color="rgba(255, 255, 255, 0.88)" strokeWidth={2.6} />
+              </Pressable>
+              <View style={styles.verificados}>
+                <Icon name={icons.checkInFeito} size={16} color={theme.highlight} strokeWidth={2.6} />
+                <ThemedText style={styles.verificadosTexto}>
+                  {plural(tascosVerificados, 'tasco verificado', 'tascos verificados')}
+                </ThemedText>
+              </View>
             </View>
           </View>
-        </View>
-        {simulacao ? (
-          <View style={styles.etiqueta}>
-            <Etiqueta icon={icons.demo} label="Hora simulada ativa" tone="destaque" />
-          </View>
-        ) : null}
-      </Pressable>
+          {simulacao ? (
+            <View style={styles.etiqueta}>
+              <Etiqueta icon={icons.demo} label="Hora simulada ativa" tone="destaque" />
+            </View>
+          ) : null}
+        </Pressable>
 
-      <View style={styles.conteudo}>
-        <SectionHeader title="Passaporte de estádios" />
-        <PassaporteCard estadiosVisitados={estadiosVisitados} avaliacoes={avaliacoes} limite={3} />
-        <Button
-          label="Ver o passaporte"
-          variant="secondary"
-          icon={icons.estadio}
-          onPress={() => router.push('/perfil/passaporte')}
-        />
-
-        <SectionHeader
-          title="Tascos visitados"
-          trailing={plural(tascosVerificados, 'verificado', 'verificados')}
-        />
-        <HistoricoTascos
-          visitas={visitasLocais}
-          onAbrirLocal={(localId) =>
-            router.push({ pathname: '/locais/[localId]', params: { localId } })
-          }
-        />
-
-        <SectionHeader
-          title="Álbum de recordações"
-          trailing={
-            fotosMissoes.length > 0 ? plural(fotosMissoes.length, 'foto', 'fotos') : undefined
-          }
-        />
-        <AlbumResumo fotos={fotosMissoes} onAbrir={() => router.push('/perfil/album')} />
-
-        <SectionHeader
-          title="Os teus jogos"
-          trailing={historico.length > 0 ? plural(historico.length, 'jogo', 'jogos') : undefined}
-        />
-        <Card style={styles.grupo}>
-          <LinhaGrupo
-            onPress={() => router.push('/perfil/os-meus-jogos')}
-            accessibilityLabel={`Os teus jogos: ${plural(historico.length, 'jogo', 'jogos')}. Toca para abrir.`}
-            leading={
-              <Azulejo
-                icon={icons.acesso}
-                fundo={theme.successBackground}
-                tinta={theme.accentInk}
-              />
-            }
-            title={
-              ultimoJogo
-                ? `${obterClube(ultimoJogo.casaId)?.nomeCurto ?? ''} x ${obterClube(ultimoJogo.foraId)?.nomeCurto ?? ''}`
-                : 'Ainda sem jogos'
-            }
-            subtitle={
-              ultimoJogo
-                ? `Último jogo · ${formatarData(new Date(ultimoJogo.inicio))}`
-                : 'Os jogos a que fores ficam aqui depois do apito.'
-            }
-            trailing={chevron}
+        <View style={styles.conteudo}>
+          <SectionHeader title="Passaporte de estádios" />
+          <PassaporteCard estadiosVisitados={estadiosVisitados} avaliacoes={avaliacoes} limite={3} />
+          <Button
+            label="Ver o passaporte"
+            variant="secondary"
+            icon={icons.estadio}
+            onPress={() => router.push('/perfil/passaporte')}
           />
-        </Card>
 
-        {MOSTRAR_CLUBE_DA_TERRA ? (
-          <>
-            <SectionHeader title="Clube da terra" />
-            {clubeDaTerra ? (
-              <CartaoClube
-                clube={clubeDaTerra}
-                onPress={() => router.push('/perfil/clube-terra')}
-                accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
-                subtitle={textoAdeptosNaApp(adeptos.data?.[clubeDaTerra.id]) ?? 'Toca para mudar'}
-                chevron={chevron}
-              />
-            ) : (
-              <Card style={styles.semClube}>
-                <ListRow
-                  leading={<IconCircle name={icons.casa} />}
-                  title="Ainda sem clube da terra"
-                  subtitle="Diz-nos de onde és. Nós sugerimos, tu confirmas."
+          <SectionHeader
+            title="Tascos visitados"
+            trailing={plural(tascosVerificados, 'verificado', 'verificados')}
+          />
+          <HistoricoTascos
+            visitas={visitasLocais}
+            onAbrirLocal={(localId) =>
+              router.push({ pathname: '/locais/[localId]', params: { localId } })
+            }
+          />
+
+          <SectionHeader
+            title="Álbum de recordações"
+            trailing={
+              fotosMissoes.length > 0 ? plural(fotosMissoes.length, 'foto', 'fotos') : undefined
+            }
+          />
+          <AlbumResumo fotos={fotosMissoes} onAbrir={() => router.push('/perfil/album')} />
+
+          <SectionHeader
+            title="Os teus jogos"
+            trailing={historico.length > 0 ? plural(historico.length, 'jogo', 'jogos') : undefined}
+          />
+          <Card style={styles.grupo}>
+            <LinhaGrupo
+              onPress={() => router.push('/perfil/os-meus-jogos')}
+              accessibilityLabel={`Os teus jogos: ${plural(historico.length, 'jogo', 'jogos')}. Toca para abrir.`}
+              leading={
+                <Azulejo
+                  icon={icons.acesso}
+                  fundo={theme.successBackground}
+                  tinta={theme.accentInk}
                 />
-                <Button
-                  label="Escolher clube da terra"
-                  variant="secondary"
-                  icon={icons.localizacao}
+              }
+              title={
+                ultimoJogo
+                  ? `${obterClube(ultimoJogo.casaId)?.nomeCurto ?? ''} x ${obterClube(ultimoJogo.foraId)?.nomeCurto ?? ''}`
+                  : 'Ainda sem jogos'
+              }
+              subtitle={
+                ultimoJogo
+                  ? `Último jogo · ${formatarData(new Date(ultimoJogo.inicio))}`
+                  : 'Os jogos a que fores ficam aqui depois do apito.'
+              }
+              trailing={chevron}
+            />
+          </Card>
+
+          {MOSTRAR_CLUBE_DA_TERRA ? (
+            <>
+              <SectionHeader title="Clube da terra" />
+              {clubeDaTerra ? (
+                <CartaoClube
+                  clube={clubeDaTerra}
                   onPress={() => router.push('/perfil/clube-terra')}
+                  accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
+                  subtitle={textoAdeptosNaApp(adeptos.data?.[clubeDaTerra.id]) ?? 'Toca para mudar'}
+                  chevron={chevron}
+                />
+              ) : (
+                <Card style={styles.semClube}>
+                  <ListRow
+                    leading={<IconCircle name={icons.casa} />}
+                    title="Ainda sem clube da terra"
+                    subtitle="Diz-nos de onde és. Nós sugerimos, tu confirmas."
+                  />
+                  <Button
+                    label="Escolher clube da terra"
+                    variant="secondary"
+                    icon={icons.localizacao}
+                    onPress={() => router.push('/perfil/clube-terra')}
+                  />
+                </Card>
+              )}
+            </>
+          ) : null}
+
+          {userId ? (
+            <>
+              <SectionHeader title="O teu perfil" />
+              <Card style={styles.grupo}>
+                <LinhaGrupo
+                  onPress={() => router.push('/perfil/editar')}
+                  accessibilityLabel="O teu perfil: foto, nome e de onde partes. Toca para abrir."
+                  leading={
+                    <Azulejo
+                      icon={icons.camara}
+                      fundo={theme.highlight}
+                      tinta={theme.highlightText}
+                    />
+                  }
+                  title="Foto, nome e de onde partes"
+                  subtitle={
+                    perfilDaConta.data?.avatarUrl
+                      ? 'A tua cara nas boleias e nos grupos'
+                      : 'Põe uma foto: ajuda quem vai contigo'
+                  }
+                  trailing={chevron}
+                  separador
+                />
+                <LinhaGrupo
+                  onPress={() => router.push('/perfil/amigos')}
+                  accessibilityLabel="Os teus amigos. Toca para abrir."
+                  leading={
+                    <Azulejo
+                      icon={icons.perfil}
+                      fundo={theme.successBackground}
+                      tinta={theme.successText}
+                    />
+                  }
+                  title="Os teus amigos"
+                  subtitle={
+                    pedidosDeAmizade > 0
+                      ? plural(pedidosDeAmizade, 'pedido por responder', 'pedidos por responder')
+                      : 'Quem já foi contigo a um jogo'
+                  }
+                  trailing={
+                    <View style={styles.trailing}>
+                      {pedidosDeAmizade > 0 ? (
+                        <Badge label={String(pedidosDeAmizade)} tone="highlight" />
+                      ) : null}
+                      {chevron}
+                    </View>
+                  }
                 />
               </Card>
-            )}
-          </>
-        ) : null}
+            </>
+          ) : null}
 
-        {userId ? (
-          <>
-            <SectionHeader title="O teu perfil" />
-            <Card style={styles.grupo}>
-              <LinhaGrupo
-                onPress={() => router.push('/perfil/editar')}
-                accessibilityLabel="O teu perfil: foto, nome e de onde partes. Toca para abrir."
-                leading={
-                  <Azulejo
-                    icon={icons.camara}
-                    fundo={theme.highlight}
-                    tinta={theme.highlightText}
-                  />
-                }
-                title="Foto, nome e de onde partes"
-                subtitle={
-                  perfilDaConta.data?.avatarUrl
-                    ? 'A tua cara nas boleias e nos grupos'
-                    : 'Põe uma foto: ajuda quem vai contigo'
-                }
-                trailing={chevron}
-                separador
-              />
-              <LinhaGrupo
-                onPress={() => router.push('/perfil/amigos')}
-                accessibilityLabel="Os teus amigos. Toca para abrir."
-                leading={
-                  <Azulejo
-                    icon={icons.perfil}
-                    fundo={theme.successBackground}
-                    tinta={theme.successText}
-                  />
-                }
-                title="Os teus amigos"
-                subtitle={
-                  pedidosDeAmizade > 0
-                    ? plural(pedidosDeAmizade, 'pedido por responder', 'pedidos por responder')
-                    : 'Quem já foi contigo a um jogo'
-                }
-                trailing={
-                  <View style={styles.trailing}>
-                    {pedidosDeAmizade > 0 ? (
-                      <Badge label={String(pedidosDeAmizade)} tone="highlight" />
-                    ) : null}
-                    {chevron}
-                  </View>
-                }
-              />
-            </Card>
-          </>
-        ) : null}
+          {retrospetiva.data ? (
+            <>
+              <SectionHeader title="A tua época" />
+              <Card style={styles.grupo}>
+                <LinhaGrupo
+                  onPress={() => router.push('/perfil/retrospetiva')}
+                  accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}
+                  leading={
+                    <Azulejo
+                      icon={icons.ranking}
+                      fundo={theme.successBackground}
+                      tinta={theme.accentInk}
+                    />
+                  }
+                  title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
+                  subtitle={retrospetiva.data.headline}
+                  trailing={chevron}
+                />
+              </Card>
+            </>
+          ) : null}
 
-        {retrospetiva.data ? (
-          <>
-            <SectionHeader title="A tua época" />
-            <Card style={styles.grupo}>
-              <LinhaGrupo
-                onPress={() => router.push('/perfil/retrospetiva')}
-                accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}
-                leading={
-                  <Azulejo
-                    icon={icons.ranking}
-                    fundo={theme.successBackground}
-                    tinta={theme.accentInk}
-                  />
-                }
-                title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
-                subtitle={retrospetiva.data.headline}
-                trailing={chevron}
-              />
-            </Card>
-          </>
-        ) : null}
+          <SectionHeader title="Definições" />
+          <Card style={styles.grupo}>
+            <LinhaGrupo
+              onPress={() => router.push('/perfil/definicoes')}
+              accessibilityLabel="Definições: sons, notificações, aspeto e privacidade. Toca para abrir."
+              leading={<Icon name={icons.definicoes} size={20} color={theme.accentInk} />}
+              title="Definições"
+              subtitle="Sons, notificações, aspeto e privacidade"
+              trailing={chevron}
+            />
+          </Card>
 
-        <SectionHeader title="Definições" />
-        <Card style={styles.grupo}>
-          <LinhaGrupo
-            onPress={() => router.push('/perfil/definicoes')}
-            accessibilityLabel="Definições: sons, notificações, aspeto e privacidade. Toca para abrir."
-            leading={<Icon name={icons.definicoes} size={20} color={theme.accentInk} />}
-            title="Definições"
-            subtitle="Sons, notificações, aspeto e privacidade"
-            trailing={chevron}
-          />
-        </Card>
-
-        {supabase ? (
-          <>
-            <SectionHeader title="Conta" />
-            <AccountCard displayName={perfilDaConta.data?.displayName ?? null} />
-          </>
-        ) : null}
-      </View>
-    </ScrollView>
+          {supabase ? (
+            <>
+              <SectionHeader title="Conta" />
+              <AccountCard displayName={perfilDaConta.data?.displayName ?? null} />
+            </>
+          ) : null}
+        </View>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 

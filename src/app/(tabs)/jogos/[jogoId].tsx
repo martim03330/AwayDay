@@ -40,6 +40,7 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 /** Mowing stripes: 36 px wide, every 72 px. */
 const RISCAS = Array.from({ length: 24 }, (_, index) => index * 72 + 36);
@@ -87,6 +88,7 @@ function LinhaSeccao({
 }
 
 export default function JogoScreen() {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();
@@ -184,169 +186,175 @@ export default function JogoScreen() {
   );
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={styles.conteudo}
-      stickyHeaderIndices={relogioVisivel ? [1] : undefined}>
-      <View>
-        <Stack.Screen options={{ title: `${casa.nomeCurto} x ${fora.nomeCurto}` }} />
-        {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
-        <View
-          style={[styles.relvadoAcima, { backgroundColor: theme.accent }]}
-          pointerEvents="none"
-        />
-
-        <View
-          style={[
-            styles.relvado,
-            { backgroundColor: theme.accent },
-            relogioSobreposto && { paddingBottom: SOBREPOSICAO_RELOGIO + 22 },
-          ]}>
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            {RISCAS.map((left) => (
-              <View key={left} style={[styles.risca, { left }]} />
-            ))}
-          </View>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.conteudo}
+        stickyHeaderIndices={relogioVisivel ? [1] : undefined}>
+        <View>
+          <Stack.Screen options={{ title: `${casa.nomeCurto} x ${fora.nomeCurto}` }} />
+          {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
           <View
-            style={styles.circuloCentral}
+            style={[styles.relvadoAcima, { backgroundColor: theme.accent }]}
             pointerEvents="none"
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants">
-            <Svg
-              width={300}
-              height={300}
-              viewBox="0 0 300 300"
-              fill="none"
-              stroke={theme.accentText}
-              strokeWidth={3}>
-              <Circle cx={150} cy={150} r={92} />
-              <Path d="M0 150H300" />
-              <Circle cx={150} cy={150} r={5} fill={theme.accentText} />
-            </Svg>
-          </View>
+          />
 
-          <ThemedText type="eyebrow" style={[styles.centro, { color: theme.accentText }]}>
-            {nomesCompeticao[jogo.competicao]} · {jogo.fase}
-          </ThemedText>
-
-          <View style={styles.equipas}>
-            <Equipa clube={casa} size={66} sobreRelvado />
-            <View style={[styles.apito, { backgroundColor: theme.background }]}>
-              <ThemedText type="score" style={styles.hora}>
-                {jogo.horaConfirmada ? formatarHora(inicio) : '--:--'}
-              </ThemedText>
-              <ThemedText type="eyebrow" themeColor="accentInk">
-                {rotuloApito}
-              </ThemedText>
+          <View
+            style={[
+              styles.relvado,
+              { backgroundColor: theme.accent },
+              relogioSobreposto && { paddingBottom: SOBREPOSICAO_RELOGIO + 22 },
+            ]}>
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              {RISCAS.map((left) => (
+                <View key={left} style={[styles.risca, { left }]} />
+              ))}
             </View>
-            <Equipa clube={fora} size={66} sobreRelvado />
+            <View
+              style={styles.circuloCentral}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants">
+              <Svg
+                width={300}
+                height={300}
+                viewBox="0 0 300 300"
+                fill="none"
+                stroke={theme.accentText}
+                strokeWidth={3}>
+                <Circle cx={150} cy={150} r={92} />
+                <Path d="M0 150H300" />
+                <Circle cx={150} cy={150} r={5} fill={theme.accentText} />
+              </Svg>
+            </View>
+
+            <ThemedText type="eyebrow" style={[styles.centro, { color: theme.accentText }]}>
+              {nomesCompeticao[jogo.competicao]} · {jogo.fase}
+            </ThemedText>
+
+            <View style={styles.equipas}>
+              <Equipa clube={casa} size={66} sobreRelvado />
+              <View style={[styles.apito, { backgroundColor: theme.background }]}>
+                <ThemedText type="score" style={styles.hora}>
+                  {jogo.horaConfirmada ? formatarHora(inicio) : '--:--'}
+                </ThemedText>
+                <ThemedText type="eyebrow" themeColor="accentInk">
+                  {rotuloApito}
+                </ThemedText>
+              </View>
+              <Equipa clube={fora} size={66} sobreRelvado />
+            </View>
+
+            <ThemedText style={[styles.centro, styles.quando, { color: theme.accentText }]}>
+              {`${jogo.horaConfirmada ? formatarDiaEHora(inicio, agora) : `${dia} · hora por definir`} · ${estadio.nome}`}
+            </ThemedText>
           </View>
-
-          <ThemedText style={[styles.centro, styles.quando, { color: theme.accentText }]}>
-            {`${jogo.horaConfirmada ? formatarDiaEHora(inicio, agora) : `${dia} · hora por definir`} · ${estadio.nome}`}
-          </ThemedText>
         </View>
-      </View>
 
-      {relogioVisivel ? (
-        <View
-          style={[
-            styles.relogio,
-            relogioSobreposto
-              ? { marginTop: -SOBREPOSICAO_RELOGIO }
-              : { paddingTop: Spacing.three, backgroundColor: theme.background },
-          ]}>
-          <RelogioDiaDeJogo jogo={jogo} venue={estadio} />
-        </View>
-      ) : null}
-
-      <View style={styles.corpo}>
-        {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
-
-        <SectionHeader title="Com quem vais" />
-        {estado === 'agendado' ? (
-          <CombinarComAMalta onPress={() => abrir('/jogos/combinar')} />
+        {relogioVisivel ? (
+          <View
+            style={[
+              styles.relogio,
+              relogioSobreposto
+                ? { marginTop: -SOBREPOSICAO_RELOGIO }
+                : { paddingTop: Spacing.three, backgroundColor: theme.background },
+            ]}>
+            <RelogioDiaDeJogo jogo={jogo} venue={estadio} />
+          </View>
         ) : null}
-        <Card style={styles.lista}>
-          <LinhaSeccao
-            icone={icons.carro}
-            titulo="Boleias"
-            resumo={resumoBoleias}
-            onPress={() => abrir('/jogos/boleias')}
-            separador={dormidaFazSentido}
-          />
-          {dormidaFazSentido ? (
-            <LinhaSeccao
-              icone={icons.casa}
-              titulo="Onde dormir"
-              resumo="Juntar a malta para uma casa, nos jogos longe"
-              onPress={() => abrir('/jogos/dormir')}
-            />
+
+        <View style={styles.corpo}>
+          {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
+
+          <SectionHeader title="Com quem vais" />
+          {estado === 'agendado' ? (
+            <CombinarComAMalta onPress={() => abrir('/jogos/combinar')} />
           ) : null}
-        </Card>
-
-        <SectionHeader title="Antes de ir" />
-        <Card style={styles.lista}>
-          <LinhaSeccao
-            icone={icons.rota}
-            titulo={estado === 'a-decorrer' ? 'Como voltar' : 'Chegar e estacionar'}
-            resumo="O caminho e os parques à volta"
-            onPress={() => abrir('/jogos/chegar')}
-            separador
-          />
-          <LinhaSeccao
-            icone={icons.estadio}
-            titulo="O estádio"
-            resumo={[
-              nota ? `${formatarNota(nota)} de 5` : 'Ficha do estádio',
-              'WC',
-              jogo.meteorologia ? `${Math.round(jogo.meteorologia.temperatura)}°` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            onPress={() => abrir('/jogos/estadio')}
-            separador
-          />
-          <LinhaSeccao
-            icone={icons.locais}
-            titulo="Mapa e sítios"
-            resumo={
-              perto.length > 0
-                ? `${plural(perto.length, 'tasco', 'tascos')} a menos de 20 min a pé`
-                : 'Tascos, parques e WC à volta'
-            }
-            onPress={() => abrir('/jogos/mapa')}
-          />
-        </Card>
-
-        {/* A chuva muda o que se leva: fica junto ao que se vê antes de sair de casa. */}
-        {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
-
-        {/* O carimbo é uma ação de um toque: fica à mão, não atrás de um botão. */}
-        <CarimboEstadio jogo={jogo} estadio={estadio} />
-
-        {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
           <Card style={styles.lista}>
             <LinhaSeccao
-              icone={icons.som}
-              tom="destaque"
-              titulo="Barulhómetro"
+              icone={icons.carro}
+              titulo="Boleias"
+              resumo={resumoBoleias}
+              onPress={() => abrir('/jogos/boleias')}
+              separador={dormidaFazSentido}
+            />
+            {dormidaFazSentido ? (
+              <LinhaSeccao
+                icone={icons.casa}
+                titulo="Onde dormir"
+                resumo="Juntar a malta para uma casa, nos jogos longe"
+                onPress={() => abrir('/jogos/dormir')}
+              />
+            ) : null}
+          </Card>
+
+          <SectionHeader title="Antes de ir" />
+          <Card style={styles.lista}>
+            <LinhaSeccao
+              icone={icons.rota}
+              titulo={estado === 'a-decorrer' ? 'Como voltar' : 'Chegar e estacionar'}
+              resumo="O caminho e os parques à volta"
+              onPress={() => abrir('/jogos/chegar')}
+              separador
+            />
+            <LinhaSeccao
+              icone={icons.estadio}
+              titulo="O estádio"
+              resumo={[
+                nota ? `${formatarNota(nota)} de 5` : 'Ficha do estádio',
+                'WC',
+                jogo.meteorologia ? `${Math.round(jogo.meteorologia.temperatura)}°` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              onPress={() => abrir('/jogos/estadio')}
+              separador
+            />
+            <LinhaSeccao
+              icone={icons.locais}
+              titulo="Mapa e sítios"
               resumo={
-                estado === 'a-decorrer' ? 'Em jogo — mede agora' : 'Mede o barulho da bancada'
+                perto.length > 0
+                  ? `${plural(perto.length, 'tasco', 'tascos')} a menos de 20 min a pé`
+                  : 'Tascos, parques e WC à volta'
               }
-              onPress={() => abrir('/jogos/barulho')}
+              onPress={() => abrir('/jogos/mapa')}
             />
           </Card>
-        ) : null}
 
-        {/* O teu plano (horas e avisos) fica no fim: primeiro o que se combina. */}
-        {vou(jogo.id) && estado !== 'terminado' ? <PlanoDoJogo jogo={jogo} agora={agora} /> : null}
+          {/* A chuva muda o que se leva: fica junto ao que se vê antes de sair de casa. */}
+          {aviso ? <Aviso title={aviso.titulo} message={aviso.mensagem} /> : null}
 
-        {avaliacao}
-      </View>
-    </ScrollView>
+          {/* O carimbo é uma ação de um toque: fica à mão, não atrás de um botão. */}
+          <CarimboEstadio jogo={jogo} estadio={estadio} />
+
+          {mostrarBarulhometro(jogo, agora, medicoesBarulho) ? (
+            <Card style={styles.lista}>
+              <LinhaSeccao
+                icone={icons.som}
+                tom="destaque"
+                titulo="Barulhómetro"
+                resumo={
+                  estado === 'a-decorrer' ? 'Em jogo — mede agora' : 'Mede o barulho da bancada'
+                }
+                onPress={() => abrir('/jogos/barulho')}
+              />
+            </Card>
+          ) : null}
+
+          {/* O teu plano (horas e avisos) fica no fim: primeiro o que se combina. */}
+          {vou(jogo.id) && estado !== 'terminado' ? <PlanoDoJogo jogo={jogo} agora={agora} /> : null}
+
+          {avaliacao}
+        </View>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 

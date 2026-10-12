@@ -36,6 +36,7 @@ import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
 const MARGEM = 20;
 /** Lines of the season table shown here; the full table is one tap away. */
@@ -46,6 +47,7 @@ const TOPO = 3;
  * app confirmou — carimbos no estádio, check-ins no tasco, fotos aprovadas. Marcar à mão não dá pontos.
  */
 export default function RankingScreen() {
+  const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   const router = useRouter();
   const theme = useTheme();
   const agir = useAcaoDaMissao();
@@ -83,149 +85,155 @@ export default function RankingScreen() {
   const refrescar = () => queryClient.invalidateQueries({ queryKey: rankingKey(conta) });
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.background }}
-      contentInsetAdjustmentBehavior="never"
-      contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
-      refreshControl={
-        conta ? (
-          <RefreshControl
-            refreshing={ranking.isRefetching}
-            onRefresh={() => void refrescar()}
-            progressViewOffset={insets.top}
-            tintColor={theme.accentText}
-          />
-        ) : undefined
-      }>
-      <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
-      <CabecalhoRelvado
-        title="Ranking"
-        eyebrow={eu?.seasonId ? `Época ${seasonLabel(eu.seasonId)}` : 'Pontos, níveis e divisões'}
-      />
-
-      <View style={[styles.largura, styles.conteudo]}>
-        {fonte === 'demo' ? (
-          <View style={styles.bloco}>
-            {BUILD_DE_CAPTURAS ? null : (
-              <ThemedText themeColor="textSecondary">
-                No modo demo, o ranking mostra adeptos de exemplo. Com conta, os pontos vêm do que a
-                app confirmou: carimbos no estádio, check-ins nos tascos e fotos aprovadas.
-              </ThemedText>
-            )}
-            <SectionHeader title="Tascos verificados" />
-            <RankingCard
-              ranking={montarRanking(rankingMock, {
-                id: ID_UTILIZADOR,
-                nome: 'Tu',
-                clubeId: clubeFavoritoId,
-                tascosVerificados: contarTascosVerificados(visitasLocais),
-              })}
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={paginaRef}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+        style={{ backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.four }}
+        refreshControl={
+          conta ? (
+            <RefreshControl
+              refreshing={ranking.isRefetching}
+              onRefresh={() => void refrescar()}
+              progressViewOffset={insets.top}
+              tintColor={theme.accentText}
             />
-          </View>
-        ) : !conta ? (
-          <EmptyState
-            icon={icons.ranking}
-            title="O ranking precisa de conta"
-            message="Os pontos são de pessoas reais, confirmados no estádio e nos tascos: entra para começares a somar."
-            action={{ label: 'Entrar', onPress: () => router.push('/conta/entrar') }}
-          />
-        ) : ranking.isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
-        ) : !eu ? (
-          <EmptyState
-            icon={icons.erro}
-            title="O ranking não carregou"
-            message="Verifica a ligação e puxa para baixo para tentar outra vez."
-          />
-        ) : (
-          <>
-            <CartaoNivel ranking={eu} />
+          ) : undefined
+        }>
+        <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
+        <CabecalhoRelvado
+          title="Ranking"
+          eyebrow={eu?.seasonId ? `Época ${seasonLabel(eu.seasonId)}` : 'Pontos, níveis e divisões'}
+        />
 
+        <View style={[styles.largura, styles.conteudo]}>
+          {fonte === 'demo' ? (
             <View style={styles.bloco}>
-              <SectionHeader
-                title="Desafios da semana"
-                trailing={desafios.length > 0 ? `${feitos} de ${desafios.length}` : undefined}
+              {BUILD_DE_CAPTURAS ? null : (
+                <ThemedText themeColor="textSecondary">
+                  No modo demo, o ranking mostra adeptos de exemplo. Com conta, os pontos vêm do que a
+                  app confirmou: carimbos no estádio, check-ins nos tascos e fotos aprovadas.
+                </ThemedText>
+              )}
+              <SectionHeader title="Tascos verificados" />
+              <RankingCard
+                ranking={montarRanking(rankingMock, {
+                  id: ID_UTILIZADOR,
+                  nome: 'Tu',
+                  clubeId: clubeFavoritoId,
+                  tascosVerificados: contarTascosVerificados(visitasLocais),
+                })}
               />
-              <Card style={styles.lista}>
-                {desafios.length > 0 ? (
-                  desafios.map((missao, indice) => (
-                    <LinhaMissao
-                      key={missao.id}
-                      missao={missao}
-                      separador={indice < desafios.length - 1}
-                      onAcao={(acao) => agir(missao, acao)}
-                    />
-                  ))
-                ) : (
-                  <ThemedText themeColor="textSecondary" style={styles.semDesafios}>
-                    Esta semana não há jogos, por isso não há desafios. Voltam com a próxima jornada.
-                  </ThemedText>
-                )}
-              </Card>
-              {proximos.length > 0 ? (
-                <LinkTexto
-                  label="Ver os desafios da próxima semana"
-                  onPress={() => router.push('/ranking/missoes')}
-                />
-              ) : null}
             </View>
+          ) : !conta ? (
+            <EmptyState
+              icon={icons.ranking}
+              title="O ranking precisa de conta"
+              message="Os pontos são de pessoas reais, confirmados no estádio e nos tascos: entra para começares a somar."
+              action={{ label: 'Entrar', onPress: () => router.push('/conta/entrar') }}
+            />
+          ) : ranking.isLoading ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : !eu ? (
+            <EmptyState
+              icon={icons.erro}
+              title="O ranking não carregou"
+              message="Verifica a ligação e puxa para baixo para tentar outra vez."
+            />
+          ) : (
+            <>
+              <CartaoNivel ranking={eu} />
 
-            {eu.seasonId ? (
               <View style={styles.bloco}>
-                <SectionHeader title="Divisão" />
-                <CartaoDivisao
-                  ranking={eu}
-                  onPress={() =>
-                    router.push({ pathname: '/ranking/tabelas', params: { ambito: 'divisao' } })
-                  }
+                <SectionHeader
+                  title="Desafios da semana"
+                  trailing={desafios.length > 0 ? `${feitos} de ${desafios.length}` : undefined}
+                />
+                <Card style={styles.lista}>
+                  {desafios.length > 0 ? (
+                    desafios.map((missao, indice) => (
+                      <LinhaMissao
+                        key={missao.id}
+                        missao={missao}
+                        separador={indice < desafios.length - 1}
+                        onAcao={(acao) => agir(missao, acao)}
+                      />
+                    ))
+                  ) : (
+                    <ThemedText themeColor="textSecondary" style={styles.semDesafios}>
+                      Esta semana não há jogos, por isso não há desafios. Voltam com a próxima jornada.
+                    </ThemedText>
+                  )}
+                </Card>
+                {proximos.length > 0 ? (
+                  <LinkTexto
+                    label="Ver os desafios da próxima semana"
+                    onPress={() => router.push('/ranking/missoes')}
+                  />
+                ) : null}
+              </View>
+
+              {eu.seasonId ? (
+                <View style={styles.bloco}>
+                  <SectionHeader title="Divisão" />
+                  <CartaoDivisao
+                    ranking={eu}
+                    onPress={() =>
+                      router.push({ pathname: '/ranking/tabelas', params: { ambito: 'divisao' } })
+                    }
+                  />
+                </View>
+              ) : null}
+
+              <View style={styles.bloco}>
+                <SectionHeader title="Tabela da época" />
+                <TabelaRanking
+                  linhas={linhasTopo}
+                  vazio="Ainda ninguém somou pontos esta época. Carimba o estádio no próximo jogo."
                 />
               </View>
-            ) : null}
 
-            <View style={styles.bloco}>
-              <SectionHeader title="Tabela da época" />
-              <TabelaRanking
-                linhas={linhasTopo}
-                vazio="Ainda ninguém somou pontos esta época. Carimba o estádio no próximo jogo."
-              />
-            </View>
-
-            <Card style={styles.lista}>
-              <LinhaGrupo
-                separador
-                onPress={() => router.push('/ranking/tabelas')}
-                leading={<IconCircle name={icons.ranking} tone="yellow" />}
-                title="Tabelas"
-                subtitle="Amigos, o teu clube, estádios e tascos"
-                trailing={chevron}
-              />
-              <LinhaGrupo
-                separador
-                onPress={() => router.push('/ranking/missoes')}
-                leading={<IconCircle name={icons.missao} />}
-                title="Missões e distintivos"
-                subtitle={`${conquistasFeitas} de ${conquistasLista.length} conquistas feitas`}
-                trailing={chevron}
-              />
-              <LinhaGrupo
-                onPress={() => router.push('/ranking/estadios')}
-                leading={<IconCircle name={icons.estadio} tone="sky" />}
-                title="Quem vai à bola"
-                subtitle={
-                  afluencia.data
-                    ? `${formatarNumero(afluencia.data.people)} adeptos nos estádios esta época`
-                    : 'Os estádios e clubes com mais adeptos'
-                }
-                trailing={chevron}
-              />
-            </Card>
-          </>
-        )}
-      </View>
-    </ScrollView>
+              <Card style={styles.lista}>
+                <LinhaGrupo
+                  separador
+                  onPress={() => router.push('/ranking/tabelas')}
+                  leading={<IconCircle name={icons.ranking} tone="yellow" />}
+                  title="Tabelas"
+                  subtitle="Amigos, o teu clube, estádios e tascos"
+                  trailing={chevron}
+                />
+                <LinhaGrupo
+                  separador
+                  onPress={() => router.push('/ranking/missoes')}
+                  leading={<IconCircle name={icons.missao} />}
+                  title="Missões e distintivos"
+                  subtitle={`${conquistasFeitas} de ${conquistasLista.length} conquistas feitas`}
+                  trailing={chevron}
+                />
+                <LinhaGrupo
+                  onPress={() => router.push('/ranking/estadios')}
+                  leading={<IconCircle name={icons.estadio} tone="sky" />}
+                  title="Quem vai à bola"
+                  subtitle={
+                    afluencia.data
+                      ? `${formatarNumero(afluencia.data.people)} adeptos nos estádios esta época`
+                      : 'Os estádios e clubes com mais adeptos'
+                  }
+                  trailing={chevron}
+                />
+              </Card>
+            </>
+          )}
+        </View>
+      </ScrollView>
+      {voltarAoTopo}
+    </View>
   );
 }
 
