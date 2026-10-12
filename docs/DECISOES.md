@@ -2,6 +2,18 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Navegação: listas sempre por baixo, barras de cor fixa
+
+- **Cada stack das tabs começa na sua lista** (`unstable_settings = { anchor: 'index' }`). Um link (por exemplo, uma
+  boleia partilhada) abria a ficha sozinha no separador: «voltar» não tinha para onde ir e tocar no separador voltava
+  à mesma ficha. Os testers ficavam presos até reiniciar a app.
+- **Sem os efeitos de borda do iOS 26** (`scrollEdgeEffects` escondidos em todas as stacks,
+  `src/constants/navegacao.ts`) e a barra de baixo sem transparência no fim da página: as barras pareciam mudar de cor
+  com o scroll.
+- **«Voltar ao topo»**: botão redondo nas páginas longas. As páginas principais (que começam no 0) voltam ao sítio se
+  ficarem presas a meio de um «puxar para atualizar». Nas folhas (formSheet) o `Screen` não leva o botão: o
+  contentor com `flex: 1` ficava sem altura e a folha aparecia em branco.
+
 ## 2026-10-12 — A app usa-se sempre com conta
 
 - **Decisão do Martim:** deixa de haver «Espreitar sem conta». As boas-vindas só oferecem «Criar conta» e «Já tenho
