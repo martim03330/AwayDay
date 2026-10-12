@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { Spacing } from '@/constants/theme';
 import { FriendRefused, sendFriendRequest } from '@/features/friends/api';
 import { useRefreshFriends, useTripCompanions } from '@/features/friends/hooks/useFriends';
@@ -51,6 +52,7 @@ function saldo(centimos: number) {
  * abertas para consulta muito depois do apito.
  */
 export default function ResumoScreen() {
+  const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const userId = useUserId();
   const { avaliacaoDoJogo } = useAppState();
@@ -129,6 +131,7 @@ export default function ResumoScreen() {
           {companheiros.map((pessoa, indice) => (
             <LinhaGrupo
               key={pessoa.profileId}
+              onPress={() => abrirPerfil(pessoa.profileId)}
               leading={<Avatar nome={pessoa.displayName} size={38} />}
               title={pessoa.displayName}
               subtitle={

@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View, Pressable } from 'react-native';
 
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { Spacing } from '@/constants/theme';
 import {
   acceptFriendRequest,
@@ -57,6 +58,7 @@ function sinais(amigo: Pick<Friend, 'tripsTogether'>) {
  * aparece, de propósito.
  */
 export default function AmigosScreen() {
+  const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const userId = useUserId();
   const refrescar = useRefreshFriends();
@@ -119,9 +121,15 @@ export default function AmigosScreen() {
           {recebidos.map((pedido) => (
             <Card key={pedido.profileId} style={styles.cartao}>
               <View style={styles.linha}>
-                <ThemedText style={[styles.nome, styles.flex]} numberOfLines={1}>
-                  {pedido.displayName}
-                </ThemedText>
+                <Pressable
+                  style={styles.flex}
+                  onPress={() => abrirPerfil(pedido.profileId)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver o perfil de ${pedido.displayName}`}>
+                  <ThemedText style={styles.nome} numberOfLines={1}>
+                    {pedido.displayName}
+                  </ThemedText>
+                </Pressable>
                 <BotaoMais
                   nome={pedido.displayName}
                   onPress={() =>
@@ -163,9 +171,15 @@ export default function AmigosScreen() {
         lista.map((amigo) => (
           <Card key={amigo.profileId} style={styles.cartao}>
             <View style={styles.linha}>
-              <ThemedText style={[styles.nome, styles.flex]} numberOfLines={1}>
-                {amigo.displayName}
-              </ThemedText>
+              <Pressable
+                style={styles.flex}
+                onPress={() => abrirPerfil(amigo.profileId)}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver o perfil de ${amigo.displayName}`}>
+                <ThemedText style={styles.nome} numberOfLines={1}>
+                  {amigo.displayName}
+                </ThemedText>
+              </Pressable>
               <Etiqueta icon={icons.perfil} label="Amigo" tone="positivo" />
               {/* Unfriend, report and block sit behind one discreet «⋯». */}
               <BotaoMais
@@ -196,7 +210,12 @@ export default function AmigosScreen() {
           <SectionHeader title="Pedidos por responder" trailing={String(enviados.length)} />
           {enviados.map((pedido) => (
             <Card key={pedido.profileId} style={styles.cartao}>
-              <ThemedText style={styles.nome}>{pedido.displayName}</ThemedText>
+              <Pressable
+                onPress={() => abrirPerfil(pedido.profileId)}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver o perfil de ${pedido.displayName}`}>
+                <ThemedText style={styles.nome}>{pedido.displayName}</ThemedText>
+              </Pressable>
               <ThemedText type="small" themeColor="textMuted">
                 À espera de resposta · {sinais(pedido)}
               </ThemedText>

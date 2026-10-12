@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { Spacing } from '@/constants/theme';
 import type { FixturePlan } from '@/features/groups/plans';
 import { useTheme } from '@/hooks/use-theme';
@@ -51,6 +52,7 @@ export function CartaoDaBoleia({
   onTirar,
 }: CartaoDaBoleiaProps) {
   const theme = useTheme();
+  const abrirPerfil = useAbrirPerfil();
   const saida = new Date(boleia.departureAt);
   const livres = Math.max(0, boleia.seatsOffered - boleia.seatsTaken);
   const vou = boleia.myStatus === 'accepted';
@@ -58,7 +60,12 @@ export function CartaoDaBoleia({
   return (
     <Card style={styles.cartao}>
       <View style={styles.topo}>
-        <Avatar nome={boleia.driverName} url={fotoDoCondutor} size={44} />
+        <Pressable
+          onPress={() => abrirPerfil(boleia.driverId)}
+          accessibilityRole="button"
+          accessibilityLabel={`Ver o perfil de ${boleia.driverName}`}>
+          <Avatar nome={boleia.driverName} url={fotoDoCondutor} size={44} />
+        </Pressable>
         <View style={styles.flex}>
           <ThemedText style={styles.nome} numberOfLines={1}>
             {souCondutor ? 'O teu carro' : boleia.driverName}

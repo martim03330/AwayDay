@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { LayoutAnimation, StyleSheet, View } from 'react-native';
 
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { Spacing } from '@/constants/theme';
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
 import { CartaoDaBoleia } from '@/features/groups/components/CartaoDaBoleia';
@@ -84,6 +85,7 @@ function lugaresLivres(plano: FixturePlan) {
  * convidar a malta de outro grupo e fechá-lo; quem dá a boleia pode abri-la ao público e deixar a volta aberta.
  */
 export default function PlanoScreen() {
+  const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
@@ -257,6 +259,7 @@ export default function PlanoScreen() {
             {pessoasQueResponderam.map((pessoa, indice) => (
               <LinhaGrupo
                 key={pessoa.profileId}
+                onPress={() => abrirPerfil(pessoa.profileId)}
                 separador={indice < pessoasQueResponderam.length - 1}
                 leading={
                   <Avatar nome={pessoa.displayName} url={fotoDe(pessoa.profileId)} size={36} />

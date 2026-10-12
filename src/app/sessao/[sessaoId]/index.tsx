@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { Radius, Spacing } from '@/constants/theme';
 import { nomeDoJogo } from '@/features/groups/components/CartaoDoPlano';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
@@ -46,6 +47,7 @@ function parteDaBoleia(centimos: number, pessoas: number) {
  * add an expense; then the day (car and kick-off) and who is going.
  */
 export default function SessaoScreen() {
+  const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const theme = useTheme();
   const userId = useUserId();
@@ -266,6 +268,7 @@ export default function SessaoScreen() {
             {gente.map((pessoa, indice) => (
               <LinhaGrupo
                 key={pessoa.profileId}
+                onPress={() => abrirPerfil(pessoa.profileId)}
                 separador={indice < gente.length - 1}
                 leading={
                   <Avatar nome={pessoa.displayName} url={fotoDe(pessoa.profileId)} size={36} />

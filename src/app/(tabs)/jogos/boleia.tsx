@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Alert, Share, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, Switch, View } from 'react-native';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
 import { GrupoDaBoleia } from '@/components/grupo-da-boleia';
@@ -37,6 +37,7 @@ import {
   useRidePeople,
   useReturnPeople,
 } from '@/features/rides/hooks/useRides';
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
@@ -149,6 +150,7 @@ function Pessoa({
   separador?: boolean;
   onMais?: () => void;
 }) {
+  const abrirPerfil = useAbrirPerfil();
   const etiqueta =
     pessoa.status === 'driver' ? (
       <Etiqueta icon={icons.carro} label="Condutor" tone="neutro" />
@@ -157,6 +159,8 @@ function Pessoa({
     ) : null;
   return (
     <LinhaGrupo
+      onPress={() => abrirPerfil(pessoa.profileId)}
+      accessibilityLabel={`${pessoa.name}. Toca para ver o perfil.`}
       leading={<Avatar nome={pessoa.name} url={cartao?.avatarUrl} />}
       title={pessoa.name}
       subtitle={reputacao(pessoa.completed, pessoa.faults)}
@@ -207,6 +211,7 @@ function Seta({ aberta = false }: { aberta?: boolean }) {
  * departure — unforeseen events with votes and confirming who turned up.
  */
 export default function BoleiaScreen() {
+  const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const theme = useTheme();
   const agora = useNow(60 * 1000);
@@ -536,6 +541,7 @@ export default function BoleiaScreen() {
           chave: `volta-${pessoa.profileId}`,
           desenhar: (separador: boolean) => (
             <LinhaGrupo
+              onPress={() => abrirPerfil(pessoa.profileId)}
               leading={<Avatar nome={pessoa.displayName} />}
               title={pessoa.displayName}
               subtitle={`Só na volta · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${formatarCentimos(pessoa.shareCents)}`}
@@ -563,6 +569,7 @@ export default function BoleiaScreen() {
                 chave: `amigo-${amigo.profileId}`,
                 desenhar: (separador: boolean) => (
                   <LinhaGrupo
+                    onPress={() => abrirPerfil(amigo.profileId)}
                     leading={<Avatar nome={amigo.displayName} />}
                     title={amigo.displayName}
                     subtitle={
@@ -606,7 +613,12 @@ export default function BoleiaScreen() {
       ) : null}
       <Card>
         <View style={styles.condutor}>
-          <Avatar nome={boleia.driverName} url={cartaoDe(boleia.driverId)?.avatarUrl} size={48} />
+          <Pressable
+            onPress={() => abrirPerfil(boleia.driverId)}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver o perfil de ${boleia.driverName}`}>
+            <Avatar nome={boleia.driverName} url={cartaoDe(boleia.driverId)?.avatarUrl} size={48} />
+          </Pressable>
           <View style={styles.flex}>
             <ThemedText type="eyebrow" themeColor="accentInk" numberOfLines={1}>
               {boleia.isMine ? 'A tua boleia' : `Boleia de ${boleia.driverName}`}
@@ -710,6 +722,7 @@ export default function BoleiaScreen() {
                 key={pedido.profileId}
                 style={[styles.bloco, linhaSeparada(indice === pedidosVolta.length - 1)]}>
                 <LinhaGrupo
+                  onPress={() => abrirPerfil(pedido.profileId)}
                   leading={<Avatar nome={pedido.displayName} />}
                   title={pedido.displayName}
                   subtitle={`A ${formatarDistancia(pedido.distanceToCarM)} do carro · ${reputacao(pedido.completed, pedido.faults)}`}
