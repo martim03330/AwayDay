@@ -225,7 +225,7 @@ async function carregar(
     if (!id) return null;
     const { data } = await admin
       .from('trip_expense')
-      .select('id, session_id, created_by, description, cents, source')
+      .select('id, session_id, payer_id, created_by, description, cents, source')
       .eq('id', id)
       .maybeSingle();
     if (!data || data.source !== 'manual') return null;
@@ -387,15 +387,30 @@ async function construir(
       admin.from('trip_expense_share').select('profile_id').eq('expense_id', expenseId),
     ]);
     const nome = autor ? await nameOf(admin, autor) : 'Alguém';
-    return {
+    const pagador = texto(body.payer_id);
+    const data = { type: 'contas', sessionId, fixtureId: texto(sessao.data?.fixture_id) ?? '' };
+    const divisao: Aviso = {
       recipients: (partes.data ?? [])
         .map((row) => String(row.profile_id))
-        .filter((pessoa) => pessoa !== autor),
+        .filter((pessoa) => pessoa !== autor && pessoa !== pagador),
       preferencia: 'trip_money',
       title: `${nome} lançou ${euros(cents)} nas contas`,
       body: descricao ? `${descricao}. Entras nesta divisão.` : 'Entras nesta divisão.',
-      data: { type: 'contas', sessionId, fixtureId: texto(sessao.data?.fixture_id) ?? '' },
+      data,
     };
+    // Recorded in someone else's name: the payer always hears about it, so a wrong one is caught at once.
+    if (!pagador || pagador === autor) return divisao;
+    return [
+      divisao,
+      {
+        recipients: [pagador],
+        // Even with money notices turned off: it is about money said to be theirs.
+        preferencia: null,
+        title: `${nome} registou que pagaste ${euros(cents)}`,
+        body: `${descricao ? `${descricao}. ` : ''}Se não foste tu, podes apagá-la nas contas.`,
+        data,
+      },
+    ];
   }
 
   if (kind === 'trip_settlement') {

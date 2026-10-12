@@ -50,12 +50,12 @@ Deno.serve(async (request) => {
 
   const options = asRecord(await request.json().catch(() => null));
   const realNow = new Date();
-  // Demo mode moves the app's clock (up to 60 days either way); it only changes this user's own messages, and new
-  // messages stay under the hourly limit below whatever clock the app sends.
-  const now = contextInstant(options?.now, realNow);
 
-  const profile = await admin.from('profile').select('nudges_enabled').eq('id', profileId).maybeSingle();
+  const profile = await admin.from('profile').select('nudges_enabled, is_admin').eq('id', profileId).maybeSingle();
   if (profile.error) return json(500, { error: 'profile_failed' });
+  // The app's simulated clock (up to 60 days either way) is only honoured for admins, who use it to test. For
+  // everyone else the server's clock decides: a moved clock would make new contexts, and new AI messages, on demand.
+  const now = asRecord(profile.data)?.is_admin === true ? contextInstant(options?.now, realNow) : realNow;
   if (asRecord(profile.data)?.nudges_enabled !== true) return json(200, { message: null });
 
   const context = await admin.rpc('coach_context', { p_profile_id: profileId, p_now: now.toISOString() });

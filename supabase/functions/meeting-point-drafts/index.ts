@@ -84,14 +84,25 @@ Deno.serve(async (request) => {
 
   const decision = { decided_at: new Date().toISOString(), decided_by: caller.user.id };
 
-  if (body.action === 'dismiss') {
-    const updated = await admin
+  /**
+   * Takes the decision only if nobody took it in the meantime (two admins at once): the status changes from
+   * 'pending' in one step, and `false` means someone else got there first.
+   */
+  async function claim(status: 'dismissed' | 'approved') {
+    const claimed = await admin
       .from('meeting_point_draft')
-      .update({ status: 'dismissed', ...decision })
-      .eq('id', draftId);
-    return updated.error
-      ? json(500, { error: 'update_failed' })
-      : json(200, { status: 'dismissed' });
+      .update({ status, ...decision })
+      .eq('id', draftId)
+      .eq('status', 'pending')
+      .select('id');
+    if (claimed.error) return null;
+    return (claimed.data ?? []).length === 1;
+  }
+
+  if (body.action === 'dismiss') {
+    const claimed = await claim('dismissed');
+    if (claimed === null) return json(500, { error: 'update_failed' });
+    return claimed ? json(200, { status: 'dismissed' }) : json(409, { error: 'already_decided' });
   }
 
   const name = field(body.name, 2, 120);
@@ -113,6 +124,10 @@ Deno.serve(async (request) => {
     return json(422, { error: 'invalid_fields' });
   }
 
+  const claimed = await claim('approved');
+  if (claimed === null) return json(500, { error: 'update_failed' });
+  if (!claimed) return json(409, { error: 'already_decided' });
+
   const point = await geocode(`${name}, ${address}`);
   const upserted = await admin.from('fixture_meeting_point').upsert(
     {
@@ -132,11 +147,13 @@ Deno.serve(async (request) => {
     },
     { onConflict: 'fixture_id' }
   );
-  if (upserted.error) return json(500, { error: 'publish_failed' });
-
-  await admin
-    .from('meeting_point_draft')
-    .update({ status: 'approved', ...decision })
-    .eq('id', draftId);
+  if (upserted.error) {
+    // Not published: the draft goes back to the list, for another try.
+    await admin
+      .from('meeting_point_draft')
+      .update({ status: 'pending', decided_at: null, decided_by: null })
+      .eq('id', draftId);
+    return json(500, { error: 'publish_failed' });
+  }
   return json(200, { status: 'approved', located: point !== null });
 });

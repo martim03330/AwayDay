@@ -26,6 +26,7 @@ import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native'
 
 import { LigacaoDemo } from '@/components/ligacao-demo';
 import { Colors, ColorsEscuro, fontFamily, Radius, Spacing } from '@/constants/theme';
+import { ligarErrosGlobais } from '@/features/feedback/erros-globais';
 import { reportErrorOnce } from '@/features/feedback/report';
 import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
 import { FixtureCatalogSync } from '@/features/fixtures/components/FixtureCatalogSync';
@@ -50,6 +51,9 @@ import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 // Keep the splash screen up until the fonts are ready, so text never flashes in the system font.
 SplashScreen.preventAutoHideAsync();
+
+// Errors outside the screens (timers, events, promises nobody caught) go to the automatic reports too.
+ligarErrosGlobais();
 
 const tipos: typeof DefaultTheme.fonts = {
   regular: { fontFamily: fontFamily('body', 500), fontWeight: 'normal' },

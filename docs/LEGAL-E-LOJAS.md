@@ -53,8 +53,8 @@ descrevem o que a app faz de facto, mas devem ser revistos por um jurista antes 
    Contacto de suporte: o email do responsável.
 6. **Ficha do Google Play**: «Segurança dos dados», questionário IARC e público-alvo 18+ em
    `docs/REVISAO-LOJAS.md`; link para eliminar a conta: `apagar-conta.html` (acima).
-7. **Mapillary**: há uma chave `MAPILLARY_ACCESS_TOKEN` no `.env.local`. Confirmar que só é usada em scripts e nunca
-   chega à app (não tem o prefixo `EXPO_PUBLIC_`, por isso não chega).
+7. **Mapillary**: a chave `MAPILLARY_ACCESS_TOKEN` está em `scripts/.env` (fora do Git). Saiu do `.env.local` a
+   2026-10-13 porque o Expo copiava todas as variáveis desse ficheiro para os seus logs locais. Nenhum código a usa.
 
 ## Riscos assinalados
 

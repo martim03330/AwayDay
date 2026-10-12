@@ -48,8 +48,10 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
   if (!hasCronSecret(request)) return json(401, { error: 'unauthorized' });
 
-  const options = asRecord(await request.json().catch(() => null));
-  // `force` skips the 10:00 check; `profile_ids` limits a run to some users. Both only for tests.
+  // `force`, `profile_ids` (and `season_id` for recaps) are for tests only: honoured only where ALLOW_TEST_OPTIONS is
+  // set, never in production, so a leaked cron secret cannot push outside the hours or pick who receives what.
+  const testing = Deno.env.get('ALLOW_TEST_OPTIONS') === 'true';
+  const options = testing ? asRecord(await request.json().catch(() => null)) : null;
   const force = options?.force === true;
   const onlyProfiles = Array.isArray(options?.profile_ids)
     ? options.profile_ids.filter((id): id is string => typeof id === 'string')
