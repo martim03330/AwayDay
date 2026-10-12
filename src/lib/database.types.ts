@@ -39,6 +39,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_action_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          at: string
+          details: Json
+          id: number
+          target_id: string | null
+          target_table: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          at?: string
+          details?: Json
+          id?: never
+          target_id?: string | null
+          target_table: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          at?: string
+          details?: Json
+          id?: never
+          target_id?: string | null
+          target_table?: string
+        }
+        Relationships: []
+      }
       ai_run: {
         Row: {
           candidates: number
