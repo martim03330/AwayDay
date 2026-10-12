@@ -1,7 +1,16 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { fetchMyRideChats, fetchRideMessages } from '@/features/rides/chat';
+import {
+  editRideMessage,
+  fetchMyRideChats,
+  fetchRideMessages,
+  reactRideMessage,
+  removeRideMessage,
+  sendRideMessage,
+  type RideMessage,
+} from '@/features/rides/chat';
+import { comAMinhaReacao, idLocal, type Emoji } from '@/lib/conversa';
 import { supabase } from '@/lib/supabase';
 
 const CHAT_KEY = 'ride-chat';
@@ -79,4 +88,101 @@ export function useRideChannel(rideId: string | null, enabled: boolean) {
       if (canal) void cliente.removeChannel(canal);
     };
   }, [rideId, enabled, queryClient]);
+}
+
+/**
+ * What you do in the car chat shows at once; the server confirms behind (same as the group chat). If the server
+ * refuses, the list goes back to what the server has, and `enviar` throws so the screen can give the text back.
+ */
+export function useRideChatActions(rideId: string | null, eu: { profileId: string; nome: string } | null) {
+  const queryClient = useQueryClient();
+  const chave = rideMessagesKey(rideId);
+  const aCaminho = useRef(0);
+
+  async function mudarLista(mudar: (lista: RideMessage[]) => RideMessage[]) {
+    await queryClient.cancelQueries({ queryKey: chave });
+    queryClient.setQueryData<RideMessage[]>(chave, (lista) => mudar(lista ?? []));
+  }
+
+  function confirmar() {
+    if (aCaminho.current > 0) return;
+    void queryClient.invalidateQueries({ queryKey: chave });
+    void queryClient.invalidateQueries({ queryKey: myRideChatsKey() });
+  }
+
+  async function enviar(texto: string, resposta: RideMessage | null) {
+    if (!rideId || !eu) return;
+    const local: RideMessage = {
+      id: idLocal(Date.now()),
+      profileId: eu.profileId,
+      displayName: eu.nome,
+      body: texto.trim(),
+      mine: true,
+      canRemove: false,
+      createdAt: new Date().toISOString(),
+      editedAt: null,
+      replyTo: resposta
+        ? { id: resposta.id, displayName: resposta.displayName, body: resposta.body }
+        : null,
+      reactions: [],
+    };
+    aCaminho.current += 1;
+    // Oldest first: the new one goes at the end.
+    await mudarLista((lista) => [...lista, local]);
+    try {
+      const id = await sendRideMessage(rideId, texto, resposta?.id ?? null);
+      queryClient.setQueryData<RideMessage[]>(chave, (lista) =>
+        (lista ?? []).map((mensagem) =>
+          mensagem.id === local.id ? { ...mensagem, id, canRemove: true } : mensagem
+        )
+      );
+    } catch (erro) {
+      queryClient.setQueryData<RideMessage[]>(chave, (lista) =>
+        (lista ?? []).filter((mensagem) => mensagem.id !== local.id)
+      );
+      throw erro;
+    } finally {
+      aCaminho.current -= 1;
+      confirmar();
+    }
+  }
+
+  async function reagir(mensagem: RideMessage, emoji: Emoji | null) {
+    await mudarLista((lista) =>
+      lista.map((outra) =>
+        outra.id === mensagem.id ? { ...outra, reactions: comAMinhaReacao(outra.reactions, emoji) } : outra
+      )
+    );
+    try {
+      await reactRideMessage(mensagem.id, emoji);
+    } finally {
+      confirmar();
+    }
+  }
+
+  async function editar(mensagem: RideMessage, texto: string) {
+    await mudarLista((lista) =>
+      lista.map((outra) =>
+        outra.id === mensagem.id
+          ? { ...outra, body: texto.trim(), editedAt: new Date().toISOString() }
+          : outra
+      )
+    );
+    try {
+      await editRideMessage(mensagem.id, texto);
+    } finally {
+      confirmar();
+    }
+  }
+
+  async function apagar(mensagemId: string) {
+    await mudarLista((lista) => lista.filter((outra) => outra.id !== mensagemId));
+    try {
+      await removeRideMessage(mensagemId);
+    } finally {
+      confirmar();
+    }
+  }
+
+  return { enviar, reagir, editar, apagar };
 }

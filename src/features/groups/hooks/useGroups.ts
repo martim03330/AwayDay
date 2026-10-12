@@ -1,12 +1,17 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
+  editGroupMessage,
   fetchGroupMembers,
   fetchGroupMessages,
   fetchGroupPlans,
   fetchGroupTrips,
   fetchMyGroupInbox,
+  reactGroupMessage,
+  removeGroupMessage,
+  sendGroupMessage,
+  type GroupMessage,
 } from '@/features/groups/api';
 import {
   fetchGroupFixturePlans,
@@ -17,6 +22,7 @@ import {
   fetchPlans,
 } from '@/features/groups/plans';
 import { fetchGroupHistory } from '@/features/groups/history';
+import { comAMinhaReacao, idLocal, type Emoji } from '@/lib/conversa';
 import { supabase } from '@/lib/supabase';
 
 // Os ecrãs antigos dos grupos já invalidavam ['groups']: as chaves daqui continuam debaixo desse prefixo.
@@ -231,4 +237,106 @@ export function useGroupChannel(groupId: string | null, userId: string | null) {
   }, [groupId, userId, queryClient]);
 
   return online;
+}
+
+/**
+ * What you do in a group chat shows at once, like in any messaging app: the message, the reaction, the edit or the
+ * deletion goes into the list straight away and the server confirms it behind. If the server refuses, the list goes
+ * back to what the server has (and `enviar` throws, so the screen can give the text back).
+ */
+export function useGroupChatActions(groupId: string | null, eu: { profileId: string; nome: string } | null) {
+  const queryClient = useQueryClient();
+  const chave = groupMessagesKey(groupId);
+  // Messages still on their way: the list is only fetched again once none is left, or a refetch would drop them.
+  const aCaminho = useRef(0);
+
+  async function mudarLista(mudar: (lista: GroupMessage[]) => GroupMessage[]) {
+    await queryClient.cancelQueries({ queryKey: chave });
+    queryClient.setQueryData<GroupMessage[]>(chave, (lista) => mudar(lista ?? []));
+  }
+
+  function confirmar() {
+    if (aCaminho.current > 0) return;
+    void queryClient.invalidateQueries({ queryKey: chave });
+    void queryClient.invalidateQueries({ queryKey: groupInboxKey() });
+  }
+
+  async function enviar(texto: string, resposta: GroupMessage | null) {
+    if (!groupId || !eu) return;
+    const local: GroupMessage = {
+      id: idLocal(Date.now()),
+      profileId: eu.profileId,
+      displayName: eu.nome,
+      kind: 'texto',
+      body: texto.trim(),
+      placeId: null,
+      planId: null,
+      mine: true,
+      canRemove: false,
+      createdAt: new Date().toISOString(),
+      editedAt: null,
+      replyTo: resposta
+        ? { id: resposta.id, displayName: resposta.displayName, body: resposta.body }
+        : null,
+      reactions: [],
+    };
+    aCaminho.current += 1;
+    // Newest first: the list is drawn from the bottom up.
+    await mudarLista((lista) => [local, ...lista]);
+    try {
+      const id = await sendGroupMessage(groupId, texto, resposta?.id ?? null);
+      queryClient.setQueryData<GroupMessage[]>(chave, (lista) =>
+        (lista ?? []).map((mensagem) =>
+          mensagem.id === local.id ? { ...mensagem, id, canRemove: true } : mensagem
+        )
+      );
+    } catch (erro) {
+      queryClient.setQueryData<GroupMessage[]>(chave, (lista) =>
+        (lista ?? []).filter((mensagem) => mensagem.id !== local.id)
+      );
+      throw erro;
+    } finally {
+      aCaminho.current -= 1;
+      confirmar();
+    }
+  }
+
+  async function reagir(mensagem: GroupMessage, emoji: Emoji | null) {
+    await mudarLista((lista) =>
+      lista.map((outra) =>
+        outra.id === mensagem.id ? { ...outra, reactions: comAMinhaReacao(outra.reactions, emoji) } : outra
+      )
+    );
+    try {
+      await reactGroupMessage(mensagem.id, emoji);
+    } finally {
+      confirmar();
+    }
+  }
+
+  async function editar(mensagem: GroupMessage, texto: string) {
+    await mudarLista((lista) =>
+      lista.map((outra) =>
+        outra.id === mensagem.id
+          ? { ...outra, body: texto.trim(), editedAt: new Date().toISOString() }
+          : outra
+      )
+    );
+    try {
+      await editGroupMessage(mensagem.id, texto);
+    } finally {
+      confirmar();
+    }
+  }
+
+  async function apagar(mensagem: GroupMessage) {
+    await mudarLista((lista) => lista.filter((outra) => outra.id !== mensagem.id));
+    try {
+      await removeGroupMessage(mensagem.id);
+    } finally {
+      confirmar();
+    }
+  }
+
+  return { enviar, reagir, editar, apagar };
 }

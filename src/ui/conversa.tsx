@@ -80,6 +80,8 @@ type BolhaProps = {
   /** A mensagem a que esta responde. */
   citacao?: Citacao | null;
   editada?: boolean;
+  /** Still on its way to the server: shows at once, a little faded, with «a enviar…» instead of the time. */
+  pendente?: boolean;
   reacoes?: readonly Reacao[];
   /** Tocar numa reação: põe ou tira a tua com esse emoji. */
   onReagir?: (emoji: Emoji) => void;
@@ -104,6 +106,7 @@ export function BolhaDeConversa({
   fotoUrl,
   citacao,
   editada = false,
+  pendente = false,
   reacoes = [],
   onReagir,
   onResponder,
@@ -179,6 +182,7 @@ export function BolhaDeConversa({
                   ? { backgroundColor: theme.accent, borderBottomRightRadius: 6 }
                   : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
                 !mostrarQuem && styles.seguida,
+                pendente && styles.pendente,
               ]}>
               {!minha && mostrarQuem ? (
                 <Pressable onPress={onAbrirPessoa} disabled={!onAbrirPessoa} hitSlop={6}>
@@ -192,7 +196,11 @@ export function BolhaDeConversa({
               <ThemedText
                 type="small"
                 style={[styles.hora, { color: minha ? theme.accentText : theme.textMuted }]}>
-                {editada ? `editada · ${formatarHora(new Date(criadaEm))}` : formatarHora(new Date(criadaEm))}
+                {pendente
+                  ? 'a enviar…'
+                  : editada
+                    ? `editada · ${formatarHora(new Date(criadaEm))}`
+                    : formatarHora(new Date(criadaEm))}
               </ThemedText>
             </Pressable>
             {reacoes.length > 0 ? (
@@ -407,6 +415,9 @@ const styles = StyleSheet.create({
   },
   seguida: {
     marginTop: 0,
+  },
+  pendente: {
+    opacity: 0.7,
   },
   hora: {
     alignSelf: 'flex-end',

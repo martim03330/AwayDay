@@ -7,24 +7,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing } from '@/constants/theme';
 import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
-import {
-  ChatRefused,
-  editRideMessage,
-  markRideMessagesRead,
-  reactRideMessage,
-  removeRideMessage,
-  sendRideMessage,
-  type RideMessage,
-} from '@/features/rides/chat';
+import { ChatRefused, markRideMessagesRead, type RideMessage } from '@/features/rides/chat';
 import { useRideBoard } from '@/features/rides/hooks/useRides';
 import {
   useRefreshRideChat,
   useRideChannel,
+  useRideChatActions,
   useRideMessages,
 } from '@/features/rides/hooks/useRideChat';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { aindaDaParaEditar, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
+import { aindaDaParaEditar, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
@@ -69,6 +62,7 @@ export default function ConversaDoCarroScreen() {
   const souDoCarro = boleia?.isMine === true || boleia?.myStatus === 'accepted';
   const mensagens = useRideMessages(rideId ?? null, souDoCarro);
   useRideChannel(rideId ?? null, souDoCarro);
+  const acoes = useRideChatActions(rideId ?? null, userId ? { profileId: userId, nome: 'Tu' } : null);
   const cartoes = useProfileCards([
     ...new Set((mensagens.data ?? []).map((mensagem) => mensagem.profileId)),
   ]);
@@ -80,7 +74,6 @@ export default function ConversaDoCarroScreen() {
   const [aResponder, setAResponder] = useState<RideMessage | null>(null);
   const [aEditar, setAEditar] = useState<RideMessage | null>(null);
   const [menuDe, setMenuDe] = useState<{ mensagem: RideMessage; podeEditar: boolean } | null>(null);
-  const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   // Abrir a conversa é lê-la.
@@ -116,25 +109,24 @@ export default function ConversaDoCarroScreen() {
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
 
+  // Shows at once (see useRideChatActions). If the server refuses, the text and the reply come back to the box.
   async function enviar() {
     if (!rideId || texto.trim().length === 0) return;
+    const escrito = texto;
+    const resposta = aResponder;
+    const edicao = aEditar;
     setErro(null);
-    setAEnviar(true);
+    setTexto('');
+    setAResponder(null);
+    setAEditar(null);
     try {
-      if (aEditar) {
-        await editRideMessage(aEditar.id, texto);
-        setAEditar(null);
-      } else {
-        await sendRideMessage(rideId, texto, aResponder?.id ?? null);
-        setAResponder(null);
-      }
-      setTexto('');
-      await mensagens.refetch();
-      void refrescar();
+      if (edicao) await acoes.editar(edicao, escrito);
+      else await acoes.enviar(escrito, resposta);
     } catch (problema) {
+      setTexto(escrito);
+      setAResponder(resposta);
+      setAEditar(edicao);
       setErro(mensagemDeRecusa(problema));
-    } finally {
-      setAEnviar(false);
     }
   }
 
@@ -145,16 +137,13 @@ export default function ConversaDoCarroScreen() {
         text: 'Apagar',
         style: 'destructive',
         onPress: () =>
-          void removeRideMessage(id)
-            .then(() => mensagens.refetch())
-            .then(() => refrescar())
-            .catch((problema: unknown) => setErro(mensagemDeRecusa(problema))),
+          void acoes.apagar(id).catch((problema: unknown) => setErro(mensagemDeRecusa(problema))),
       },
     ]);
 
   function reagir(mensagem: RideMessage, emoji: Emoji) {
-    void reactRideMessage(mensagem.id, proximaReacao(mensagem.reactions, emoji))
-      .then(() => mensagens.refetch())
+    void acoes
+      .reagir(mensagem, proximaReacao(mensagem.reactions, emoji))
       .catch(() => setErro('Não deu para reagir. Tenta outra vez.'));
   }
 
@@ -284,14 +273,18 @@ export default function ConversaDoCarroScreen() {
                     citacao={item.replyTo}
                     editada={item.editedAt !== null}
                     reacoes={item.reactions}
-                    onReagir={(emoji) => reagir(item, emoji)}
-                    onResponder={fechada ? undefined : () => responder(item)}
+                    pendente={eLocal(item.id)}
+                    onReagir={eLocal(item.id) ? undefined : (emoji) => reagir(item, emoji)}
+                    onResponder={fechada || eLocal(item.id) ? undefined : () => responder(item)}
                     onAbrirPessoa={() => abrirPessoa(item.profileId)}
-                    onLongPress={() =>
-                      setMenuDe({
-                        mensagem: item,
-                        podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
-                      })
+                    onLongPress={
+                      eLocal(item.id)
+                        ? undefined
+                        : () =>
+                            setMenuDe({
+                              mensagem: item,
+                              podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
+                            })
                     }
                   />
                 </View>
@@ -323,7 +316,7 @@ export default function ConversaDoCarroScreen() {
               valor={texto}
               onChange={setTexto}
               onEnviar={() => void enviar()}
-              aEnviar={aEnviar}
+              aEnviar={false}
               placeholder="Escreve ao carro…"
               accessibilityLabel="Escrever ao carro"
               contexto={

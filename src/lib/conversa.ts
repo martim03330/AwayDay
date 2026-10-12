@@ -54,3 +54,34 @@ export function aindaDaParaEditar(criadaEm: string, agora: number) {
   const criada = Date.parse(criadaEm);
   return Number.isFinite(criada) && agora - criada < JANELA_DE_EDICAO_MS;
 }
+
+/** A message shown before the server confirms it (optimistic): its id starts with this. */
+const PREFIXO_LOCAL = 'local-';
+
+export function idLocal(agora: number) {
+  return `${PREFIXO_LOCAL}${agora}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Still on its way to the server. */
+export function eLocal(id: string) {
+  return id.startsWith(PREFIXO_LOCAL);
+}
+
+/**
+ * The reactions after you choose `emoji` (or null to take yours away), as the server will count them: one per
+ * person, so yours moves from the old emoji to the new one. Most used first, like the server sends them.
+ */
+export function comAMinhaReacao(reacoes: readonly Reacao[], emoji: Emoji | null): Reacao[] {
+  const semAMinha = reacoes.flatMap((reacao) => {
+    if (!reacao.mine) return [reacao];
+    return reacao.count > 1 ? [{ ...reacao, count: reacao.count - 1, mine: false }] : [];
+  });
+  if (!emoji) return semAMinha;
+  const existente = semAMinha.find((reacao) => reacao.emoji === emoji);
+  const novas = existente
+    ? semAMinha.map((reacao) =>
+        reacao.emoji === emoji ? { ...reacao, count: reacao.count + 1, mine: true } : reacao
+      )
+    : [...semAMinha, { emoji, count: 1, mine: true }];
+  return novas.sort((a, b) => b.count - a.count);
+}

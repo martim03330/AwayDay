@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
@@ -33,13 +34,15 @@ export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={texto !== null} transparent animationType="fade" onRequestClose={onFechar}>
+    // No Modal animation (its fade is slow): the backdrop fades in and the menu springs up, quick like WhatsApp.
+    <Modal visible={texto !== null} transparent animationType="none" onRequestClose={onFechar}>
+      <Animated.View entering={FadeIn.duration(120)} style={styles.tudo}>
       <Pressable
         style={[styles.fundo, { paddingBottom: Math.max(insets.bottom, Spacing.three) }]}
         onPress={onFechar}
         accessibilityRole="button"
         accessibilityLabel="Fechar">
-        <View style={styles.conteudo}>
+        <Animated.View entering={SlideInDown.springify().damping(22).stiffness(260)} style={styles.conteudo}>
           {texto ? (
             <View style={[styles.mensagem, { backgroundColor: theme.backgroundElement }]}>
               <ThemedText numberOfLines={4}>{texto}</ThemedText>
@@ -95,13 +98,17 @@ export function MenuDaMensagem({ texto, onReagir, minhaReacao, acoes, onFechar }
               </Pressable>
             ))}
           </View>
-        </View>
+        </Animated.View>
       </Pressable>
+      </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  tudo: {
+    flex: 1,
+  },
   fundo: {
     flex: 1,
     justifyContent: 'flex-end',

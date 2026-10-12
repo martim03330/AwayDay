@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { aindaDaParaEditar, lerCitacao, lerReacoes, minhaReacao, proximaReacao } from './conversa';
+import {
+  aindaDaParaEditar,
+  comAMinhaReacao,
+  eLocal,
+  idLocal,
+  lerCitacao,
+  lerReacoes,
+  minhaReacao,
+  proximaReacao,
+} from './conversa';
 
 describe('lerReacoes', () => {
   it('reads what the server sends', () => {
@@ -51,5 +60,46 @@ describe('aindaDaParaEditar', () => {
 
   it('refuses a date it cannot read', () => {
     expect(aindaDaParaEditar('', t)).toBe(false);
+  });
+});
+
+describe('comAMinhaReacao', () => {
+  const de = (valor: unknown) => lerReacoes(valor);
+
+  it('adds mine', () => {
+    expect(comAMinhaReacao([], '👍')).toEqual([{ emoji: '👍', count: 1, mine: true }]);
+    expect(comAMinhaReacao(de([{ emoji: '👍', count: 2, mine: false }]), '👍')).toEqual([
+      { emoji: '👍', count: 3, mine: true },
+    ]);
+  });
+
+  it('moves mine to another emoji (one per person)', () => {
+    expect(
+      comAMinhaReacao(
+        de([
+          { emoji: '👍', count: 2, mine: true },
+          { emoji: '⚽', count: 1, mine: false },
+        ]),
+        '⚽'
+      )
+    ).toEqual([
+      { emoji: '⚽', count: 2, mine: true },
+      { emoji: '👍', count: 1, mine: false },
+    ]);
+  });
+
+  it('takes mine away, and the emoji with it when it was only mine', () => {
+    expect(comAMinhaReacao(de([{ emoji: '😂', count: 1, mine: true }]), null)).toEqual([]);
+    expect(comAMinhaReacao(de([{ emoji: '😂', count: 3, mine: true }]), null)).toEqual([
+      { emoji: '😂', count: 2, mine: false },
+    ]);
+  });
+});
+
+describe('local messages', () => {
+  it('are told apart from the server ones', () => {
+    expect(eLocal(idLocal(1))).toBe(true);
+    expect(eLocal('0b6c6c8e-0000-4000-8000-000000000000')).toBe(false);
+    expect(idLocal(1)).not.toBe(idLocal(1));
   });
 });

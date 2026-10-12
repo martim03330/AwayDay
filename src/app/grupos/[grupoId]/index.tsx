@@ -16,15 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
-import {
-  editGroupMessage,
-  GroupRefused,
-  markGroupMessagesRead,
-  reactGroupMessage,
-  removeGroupMessage,
-  sendGroupMessage,
-  type GroupMessage,
-} from '@/features/groups/api';
+import { GroupRefused, markGroupMessagesRead, type GroupMessage } from '@/features/groups/api';
 import type { FixturePlan } from '@/features/groups/plans';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
@@ -33,6 +25,7 @@ import { PlanoFixado } from '@/features/groups/components/PlanoFixado';
 import {
   plansKey,
   useGroupChannel,
+  useGroupChatActions,
   useGroupFixturePlans,
   useGroupFromInbox,
   useGroupMessages,
@@ -43,7 +36,7 @@ import {
 import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
-import { aindaDaParaEditar, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
+import { aindaDaParaEditar, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
@@ -107,12 +100,12 @@ export default function ConversaDoGrupoScreen() {
   const queryClient = useQueryClient();
   const refrescar = useRefreshGroups();
   const moderacao = useModeracao();
+  const acoes = useGroupChatActions(grupo ? grupo.id : null, userId ? { profileId: userId, nome: 'Tu' } : null);
 
   const [texto, setTexto] = useState('');
   const [aResponder, setAResponder] = useState<GroupMessage | null>(null);
   const [aEditar, setAEditar] = useState<GroupMessage | null>(null);
   const [menuDe, setMenuDe] = useState<{ mensagem: GroupMessage; podeEditar: boolean } | null>(null);
-  const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aTentar, setATentar] = useState(false);
 
@@ -185,25 +178,24 @@ export default function ConversaDoGrupoScreen() {
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
 
+  // Shows at once (see useGroupChatActions). If the server refuses, the text and the reply come back to the box.
   async function enviar() {
     if (!grupo || texto.trim().length === 0) return;
+    const escrito = texto;
+    const resposta = aResponder;
+    const edicao = aEditar;
     setErro(null);
-    setAEnviar(true);
+    setTexto('');
+    setAResponder(null);
+    setAEditar(null);
     try {
-      if (aEditar) {
-        await editGroupMessage(aEditar.id, texto);
-        setAEditar(null);
-      } else {
-        await sendGroupMessage(grupo.id, texto, aResponder?.id ?? null);
-        setAResponder(null);
-      }
-      setTexto('');
-      await mensagens.refetch();
-      void refrescar();
+      if (edicao) await acoes.editar(edicao, escrito);
+      else await acoes.enviar(escrito, resposta);
     } catch (problema) {
+      setTexto(escrito);
+      setAResponder(resposta);
+      setAEditar(edicao);
       setErro(mensagemDeRecusa(problema));
-    } finally {
-      setAEnviar(false);
     }
   }
 
@@ -214,16 +206,13 @@ export default function ConversaDoGrupoScreen() {
         text: 'Apagar',
         style: 'destructive',
         onPress: () =>
-          void removeGroupMessage(mensagem.id)
-            .then(() => mensagens.refetch())
-            .then(() => refrescar())
-            .catch(() => setErro('Não deu para apagar. Tenta outra vez.')),
+          void acoes.apagar(mensagem).catch(() => setErro('Não deu para apagar. Tenta outra vez.')),
       },
     ]);
 
   function reagir(mensagem: GroupMessage, emoji: Emoji) {
-    void reactGroupMessage(mensagem.id, proximaReacao(mensagem.reactions, emoji))
-      .then(() => mensagens.refetch())
+    void acoes
+      .reagir(mensagem, proximaReacao(mensagem.reactions, emoji))
       .catch(() => setErro('Não deu para reagir. Tenta outra vez.'));
   }
 
@@ -436,14 +425,18 @@ export default function ConversaDoGrupoScreen() {
                       citacao={item.replyTo}
                       editada={item.editedAt !== null}
                       reacoes={item.reactions}
-                      onReagir={(emoji) => reagir(item, emoji)}
-                      onResponder={() => responder(item)}
+                      pendente={eLocal(item.id)}
+                      onReagir={eLocal(item.id) ? undefined : (emoji) => reagir(item, emoji)}
+                      onResponder={eLocal(item.id) ? undefined : () => responder(item)}
                       onAbrirPessoa={() => abrirPessoa(item.profileId)}
-                      onLongPress={() =>
-                        setMenuDe({
-                          mensagem: item,
-                          podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
-                        })
+                      onLongPress={
+                        eLocal(item.id)
+                          ? undefined
+                          : () =>
+                              setMenuDe({
+                                mensagem: item,
+                                podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
+                              })
                       }
                     />
                   )}
@@ -492,7 +485,7 @@ export default function ConversaDoGrupoScreen() {
             valor={texto}
             onChange={setTexto}
             onEnviar={() => void enviar()}
-            aEnviar={aEnviar}
+            aEnviar={false}
             placeholder="Escreve à malta…"
             accessibilityLabel="Escrever ao grupo"
             contexto={
