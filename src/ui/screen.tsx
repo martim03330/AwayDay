@@ -11,38 +11,54 @@ type ScreenProps = {
   onRefresh?: () => void;
   /** Bloco que fica fixo no topo durante o scroll (ex.: relógio do dia de jogo). */
   cabecalhoFixo?: ReactNode;
+  /**
+   * Num ecrã aberto como folha (formSheet), `false`: a folha não dá altura a um contentor com `flex: 1` e o ecrã
+   * ficava em branco. Sem o botão «voltar ao topo», a página é só o ScrollView, como antes.
+   */
+  voltarAoTopo?: boolean;
 };
 
 /** Contentor com scroll para ecrãs dentro de uma Stack com cabeçalho nativo. */
-export function Screen({ children, refreshing = false, onRefresh, cabecalhoFixo }: ScreenProps) {
+export function Screen({
+  children,
+  refreshing = false,
+  onRefresh,
+  cabecalhoFixo,
+  voltarAoTopo = true,
+}: ScreenProps) {
   const theme = useTheme();
   const { ref: lista, onScroll, scrollEventThrottle, botao } = useVoltarAoTopo();
 
+  const pagina = (
+    <ScrollView
+      ref={lista}
+      onScroll={onScroll}
+      scrollEventThrottle={scrollEventThrottle}
+      style={{ backgroundColor: theme.background }}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      // iOS: the keyboard becomes a bottom inset, so the focused field and the button under it can scroll into
+      // view. Android resizes the window for the keyboard on its own.
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+      contentContainerStyle={styles.content}
+      stickyHeaderIndices={cabecalhoFixo ? [0] : undefined}
+      refreshControl={
+        onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
+      }>
+      {cabecalhoFixo ? (
+        <View style={[styles.cabecalhoFixo, { backgroundColor: theme.background }]}>
+          {cabecalhoFixo}
+        </View>
+      ) : null}
+      {children}
+    </ScrollView>
+  );
+
+  if (!voltarAoTopo) return pagina;
   return (
     <View style={[styles.tudo, { backgroundColor: theme.background }]}>
-      <ScrollView
-        ref={lista}
-        onScroll={onScroll}
-        scrollEventThrottle={scrollEventThrottle}
-        style={{ backgroundColor: theme.background }}
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        // iOS: the keyboard becomes a bottom inset, so the focused field and the button under it can scroll into
-        // view. Android resizes the window for the keyboard on its own.
-        automaticallyAdjustKeyboardInsets
-        keyboardDismissMode="interactive"
-        contentContainerStyle={styles.content}
-        stickyHeaderIndices={cabecalhoFixo ? [0] : undefined}
-        refreshControl={
-          onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
-        }>
-        {cabecalhoFixo ? (
-          <View style={[styles.cabecalhoFixo, { backgroundColor: theme.background }]}>
-            {cabecalhoFixo}
-          </View>
-        ) : null}
-        {children}
-      </ScrollView>
+      {pagina}
       {botao}
     </View>
   );

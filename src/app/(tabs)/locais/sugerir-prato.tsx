@@ -35,7 +35,7 @@ export default function SugerirPratoScreen() {
 
   if (!local) {
     return (
-      <Screen>
+      <Screen voltarAoTopo={false}>
         <EmptyState
           icon={icons.naoEncontrado}
           title="Tasco não encontrado"
@@ -48,7 +48,7 @@ export default function SugerirPratoScreen() {
 
   if (!userId) {
     return (
-      <Screen>
+      <Screen voltarAoTopo={false}>
         <EmptyState
           icon={icons.perfil}
           title="Precisas de conta"
@@ -104,7 +104,7 @@ export default function SugerirPratoScreen() {
   }
 
   return (
-    <Screen>
+    <Screen voltarAoTopo={false}>
       <View style={styles.cabecalho}>
         <ThemedText type="eyebrow" themeColor="accentInk">
           {local.nome}

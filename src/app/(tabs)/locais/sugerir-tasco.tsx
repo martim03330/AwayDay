@@ -143,7 +143,7 @@ export default function SugerirTascoScreen() {
 
   if (!userId) {
     return (
-      <Screen>
+      <Screen voltarAoTopo={false}>
         <EmptyState
           icon={icons.perfil}
           title="Precisas de conta"
@@ -179,7 +179,7 @@ export default function SugerirTascoScreen() {
   const podeEnviar = nomeLimpo.length >= 2 && ponto !== null && !aEnviar;
 
   return (
-    <Screen>
+    <Screen voltarAoTopo={false}>
       <ThemedText type="title" accessibilityRole="header">
         Sugerir um tasco
       </ThemedText>
