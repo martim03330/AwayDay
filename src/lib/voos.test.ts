@@ -5,6 +5,7 @@ import {
   AEROPORTOS,
   aeroportoMaisPerto,
   avisoDeBoleiaNaIlha,
+  avisoDeBoleiaPelaRegiao,
   linkGoogleFlights,
   partidaNaIlha,
   precisaDeVoo,
@@ -78,6 +79,13 @@ describe('boleias para jogos nas ilhas', () => {
     expect(avisoDeBoleiaNaIlha('acores')?.titulo).toBe('Jogo nos Açores');
     expect(avisoDeBoleiaNaIlha('continente')).toBeNull();
     expect(avisoDeBoleiaNaIlha('estrangeiro')).toBeNull();
+  });
+
+  it('warns on rides abroad and to the islands, never on the mainland', () => {
+    expect(avisoDeBoleiaPelaRegiao('estrangeiro')?.titulo).toBe('Jogo fora de Portugal');
+    expect(avisoDeBoleiaPelaRegiao('madeira')?.titulo).toBe('Jogo na Madeira');
+    expect(avisoDeBoleiaPelaRegiao('acores')?.titulo).toBe('Jogo nos Açores');
+    expect(avisoDeBoleiaPelaRegiao('continente')).toBeNull();
   });
 
   it('a meeting point must be on the island of the stadium', () => {

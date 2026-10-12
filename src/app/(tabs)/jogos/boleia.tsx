@@ -47,6 +47,7 @@ import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regr
 import { podeResponderVolta } from '@/lib/regras-volta';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
+import { avisoDeBoleiaPelaRegiao } from '@/lib/voos';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
@@ -595,9 +596,14 @@ export default function BoleiaScreen() {
   const linhaSeparada = (ultima: boolean) =>
     ultima ? null : { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected };
 
+  const avisoRegiao = estadio ? avisoDeBoleiaPelaRegiao(estadio.regiao) : null;
+
   return (
     <Screen>
       {moderacao.elemento}
+      {avisoRegiao ? (
+        <Aviso title={avisoRegiao.titulo} message={avisoRegiao.mensagem} icon={icons.aviao} />
+      ) : null}
       <Card>
         <View style={styles.condutor}>
           <Avatar nome={boleia.driverName} url={cartaoDe(boleia.driverId)?.avatarUrl} size={48} />

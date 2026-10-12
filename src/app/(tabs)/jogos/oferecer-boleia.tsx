@@ -41,7 +41,7 @@ import { CRIAR_HORAS_ANTES } from '@/lib/regras-boleia';
 import { ativarNotificacoesDeBoleias } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { usePlanosJogos } from '@/state/planos-jogos';
-import { avisoDeBoleiaNaIlha, partidaNaIlha } from '@/lib/voos';
+import { avisoDeBoleiaNaIlha, avisoDeBoleiaPelaRegiao, partidaNaIlha } from '@/lib/voos';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import type { Coordenadas } from '@/mocks/tipos';
@@ -357,6 +357,7 @@ export default function OferecerBoleiaScreen() {
     Math.abs(aquiEstou.longitude - partida.longitude) < 0.0002;
   // A game on an island: the car only makes sense on that island, so the meeting point must be there.
   const avisoIlha = estadio ? avisoDeBoleiaNaIlha(estadio.regiao) : null;
+  const avisoRegiao = estadio ? avisoDeBoleiaPelaRegiao(estadio.regiao) : null;
   const foraDaIlha =
     avisoIlha !== null && partida !== null && estadio !== undefined && !partidaNaIlha(partida, estadio.coordenadas);
   const podeCotar = partida !== null && consumoCl !== null && precoMilesimas !== null && !foraDaIlha;
@@ -533,7 +534,7 @@ export default function OferecerBoleiaScreen() {
 
   return (
     <Screen>
-      {avisoIlha ? <Aviso title={avisoIlha.titulo} message={avisoIlha.mensagem} icon={icons.aviao} /> : null}
+      {avisoRegiao ? <Aviso title={avisoRegiao.titulo} message={avisoRegiao.mensagem} icon={icons.aviao} /> : null}
       <SectionHeader title="Ponto de encontro" trailing="Toca no mapa para acertar" />
       <Card>
         <View style={styles.mapaArea}>

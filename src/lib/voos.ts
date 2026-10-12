@@ -90,6 +90,21 @@ export function avisoDeBoleiaNaIlha(regiao: Regiao) {
   };
 }
 
+/**
+ * The notice shown on a ride to a game, for whoever offers or asks for a seat: the islands (see above) or abroad,
+ * where the trip is long and crosses a border. `null` on the mainland.
+ */
+export function avisoDeBoleiaPelaRegiao(regiao: Regiao) {
+  if (regiao === 'estrangeiro') {
+    return {
+      titulo: 'Jogo fora de Portugal',
+      mensagem:
+        'A viagem é longa: combinem paragens e quem conduz. Levem o cartão de cidadão e confirmem que o seguro do carro cobre o país do jogo.',
+    };
+  }
+  return avisoDeBoleiaNaIlha(regiao);
+}
+
 /** Whether a meeting point is on the island of the stadium (only asked for island games). */
 export function partidaNaIlha(partida: Coordenadas, estadio: Coordenadas) {
   return distanciaEmLinhaRetaKm(partida, estadio) <= RAIO_DA_ILHA_KM;
