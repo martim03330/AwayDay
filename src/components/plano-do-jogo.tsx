@@ -3,7 +3,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { avisosDoJogo, horasDoPlano } from '@/lib/avisos-jogo';
-import { formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarHora } from '@/lib/datas';
 import { obterClube } from '@/mocks/clubes';
 import { obterLocal } from '@/mocks/locais';
 import type { Jogo } from '@/mocks/tipos';
@@ -79,11 +79,6 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
               primeira
             />
             <LinhaHora rotulo="Apito inicial" hora={formatarHora(inicio)} />
-            <ThemedText type="small" themeColor="textMuted">
-              {onde
-                ? `Conta ${onde.minutosAPe} min a pé, 15 para entrar e 10 de folga.`
-                : 'Conta 15 min para entrar e 10 de folga. Com check-in, acertamos a partir daí.'}
-            </ThemedText>
           </>
         ) : (
           <ThemedText themeColor="textSecondary">
@@ -92,12 +87,7 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
         )}
 
         <View style={[styles.linha, styles.separado, { borderTopColor: theme.backgroundSelected }]}>
-          <View style={styles.flex}>
-            <ThemedText style={styles.rotuloAvisos}>Avisar-me neste telemóvel</ThemedText>
-            <ThemedText type="small" themeColor="textMuted">
-              O primeiro chega 3 dias antes.
-            </ThemedText>
-          </View>
+          <ThemedText style={[styles.rotuloAvisos, styles.flex]}>Avisos neste telemóvel</ThemedText>
           <Switch
             value={avisosLigados(jogo.id)}
             onValueChange={() => alternarAvisos(jogo.id)}
@@ -107,14 +97,22 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
             accessibilityLabel="Avisos deste jogo"
           />
         </View>
-        {avisos.map((aviso) => (
-          <View key={aviso.id} style={styles.aviso}>
-            <ThemedText type="smallBold">{formatarDiaEHora(aviso.quando, agora)}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-              {aviso.titulo}
-            </ThemedText>
-          </View>
-        ))}
+        {/* Only when on, in two aligned columns: the short date over the time, then what it says. */}
+        {avisosLigados(jogo.id)
+          ? avisos.map((aviso) => (
+              <View key={aviso.id} style={styles.aviso}>
+                <View style={styles.quando}>
+                  <ThemedText type="smallBold">{formatarDiaCurto(aviso.quando, agora)}</ThemedText>
+                  <ThemedText type="small" themeColor="textMuted">
+                    {formatarHora(aviso.quando)}
+                  </ThemedText>
+                </View>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                  {aviso.titulo}
+                </ThemedText>
+              </View>
+            ))
+          : null}
       </Card>
     </>
   );
@@ -122,7 +120,7 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
 
 const styles = StyleSheet.create({
   cartao: {
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
   },
   linha: {
     flexDirection: 'row',
@@ -151,7 +149,11 @@ const styles = StyleSheet.create({
   },
   aviso: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: Spacing.two,
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.one,
+  },
+  quando: {
+    width: 64,
   },
 });

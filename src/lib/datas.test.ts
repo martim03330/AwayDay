@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   chaveDoDia,
   dataEmLisboaAPartirDe,
+  diaDaSemana,
   formatarDia,
+  formatarDiaComSemana,
+  formatarDiaCurto,
+  formatarDiaMes,
   formatarDiaEHora,
   formatarHora,
   minutosDoDiaEmLisboa,
@@ -144,5 +148,31 @@ describe('formatarDiaEHora', () => {
     expect(formatarDiaEHora(em('2026-07-15T19:30:00Z'), Date.parse('2026-07-15T10:00:00Z'))).toBe(
       'Hoje às 20:30'
     );
+  });
+});
+
+describe('datas curtas', () => {
+  const agora = Date.parse('2026-10-12T12:00:00Z');
+
+  it('day and month in Lisbon, also late at night (UTC is still the day before)', () => {
+    expect(formatarDiaMes(new Date('2026-10-15T19:00:00Z'))).toBe('15/10');
+    expect(formatarDiaMes(new Date('2026-10-14T23:30:00Z'))).toBe('15/10');
+  });
+
+  it('weekday in Portuguese', () => {
+    expect(diaDaSemana(new Date('2026-10-15T19:00:00Z'))).toBe('5.ª feira');
+    expect(diaDaSemana(new Date('2026-10-17T19:00:00Z'))).toBe('sábado');
+    expect(diaDaSemana(new Date('2026-10-18T19:00:00Z'))).toBe('domingo');
+  });
+
+  it('today and tomorrow stay as words', () => {
+    expect(formatarDiaCurto(new Date('2026-10-12T19:00:00Z'), agora)).toBe('Hoje');
+    expect(formatarDiaCurto(new Date('2026-10-13T19:00:00Z'), agora)).toBe('Amanhã');
+    expect(formatarDiaCurto(new Date('2026-10-15T19:00:00Z'), agora)).toBe('15/10');
+  });
+
+  it('game list titles: «15/10 (5.ª feira)»', () => {
+    expect(formatarDiaComSemana(new Date('2026-10-15T19:00:00Z'), agora)).toBe('15/10 (5.ª feira)');
+    expect(formatarDiaComSemana(new Date('2026-10-12T19:00:00Z'), agora)).toBe('Hoje');
   });
 });

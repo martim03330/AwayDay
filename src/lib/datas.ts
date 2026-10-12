@@ -132,6 +132,32 @@ export function formatarDia(data: Date, agora = Date.now()) {
   return formatoDia.format(data);
 }
 
+const DIAS_DA_SEMANA = ['domingo', '2.ª feira', '3.ª feira', '4.ª feira', '5.ª feira', '6.ª feira', 'sábado'];
+
+/** "15/10", o dia e o mês em Lisboa. */
+export function formatarDiaMes(data: Date) {
+  const { mes, dia } = partesEmLisboa(data);
+  return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+}
+
+/** "5.ª feira", "sábado": o dia da semana em Lisboa. */
+export function diaDaSemana(data: Date) {
+  const { ano, mes, dia } = partesEmLisboa(data);
+  return DIAS_DA_SEMANA[new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay()] ?? '';
+}
+
+/** "Hoje", "Amanhã", "Ontem" ou "15/10": para listas onde o espaço conta. */
+export function formatarDiaCurto(data: Date, agora = Date.now()) {
+  const relativo = formatarDia(data, agora);
+  return relativo === 'Hoje' || relativo === 'Amanhã' || relativo === 'Ontem' ? relativo : formatarDiaMes(data);
+}
+
+/** "Hoje", "Amanhã" ou "15/10 (5.ª feira)": os títulos dos dias na lista de jogos. */
+export function formatarDiaComSemana(data: Date, agora = Date.now()) {
+  const curto = formatarDiaCurto(data, agora);
+  return curto === formatarDiaMes(data) ? `${curto} (${diaDaSemana(data)})` : curto;
+}
+
 /** "Hoje às 20:30" ou "sábado, 19 de setembro às 20:30" */
 export function formatarDiaEHora(data: Date, agora = Date.now()) {
   return `${formatarDia(data, agora)} às ${formatarHora(data)}`;
