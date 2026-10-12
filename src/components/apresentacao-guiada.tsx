@@ -43,9 +43,17 @@ function barraDosSeparadores(largura: number, fundo: number) {
   if (flutuante) {
     // Measured on an iPhone 17 Pro: the floating bar's tabs sit 26 pt in from each side of the screen.
     const margem = 26;
-    return { esquerda: margem, largura: largura - margem * 2, altura: 62, baixo: Math.max(fundo - 12, 8) };
+    return {
+      esquerda: margem,
+      largura: largura - margem * 2,
+      altura: 62,
+      baixo: Math.max(fundo - 12, 8),
+      // Its 5 tabs are not evenly spread (iOS gives longer names a little more room): where each one's centre sits,
+      // as a share of the bar, measured on an iPhone 17 Pro with Jogos, Malta, Locais, Ranking and Perfil.
+      centros: [0.1046, 0.3091, 0.5129, 0.7049, 0.8997] as readonly number[],
+    };
   }
-  return { esquerda: 0, largura, altura: ios ? 49 : 80, baixo: ios ? fundo : 0 };
+  return { esquerda: 0, largura, altura: ios ? 49 : 80, baixo: ios ? fundo : 0, centros: null };
 }
 
 /** A dim layer with a rounded hole around the highlighted tab (even-odd fill: the hole is left out). */
@@ -84,7 +92,9 @@ export function ApresentacaoGuiada({ onFim }: { onFim: () => void }) {
 
   const barra = barraDosSeparadores(width, insets.bottom);
   const larguraSeparador = barra.largura / PASSOS.length;
-  const centro = barra.esquerda + larguraSeparador * (indice + 0.5);
+  const fracao =
+    barra.centros && barra.centros.length === PASSOS.length ? barra.centros[indice] : (indice + 0.5) / PASSOS.length;
+  const centro = barra.esquerda + barra.largura * (fracao ?? (indice + 0.5) / PASSOS.length);
   const topoDaBarra = height - barra.baixo - barra.altura;
   const buraco = {
     x: centro - larguraSeparador / 2 + 2,
