@@ -1,14 +1,20 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { acceptFriendRequest, sendFriendRequest } from '@/features/friends/api';
+import { useFriendshipStates, useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { usePublicProfile } from '@/features/profile/hooks/useMyProfile';
 import { plural } from '@/lib/formatos';
+import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { Avatar } from '@/ui/avatar';
+import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
+import { Etiqueta } from '@/ui/etiqueta';
 import { Escudo } from '@/ui/escudo';
 import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
@@ -30,6 +36,29 @@ export default function PerfilPublicoScreen() {
   const perfil = usePublicProfile(pessoaId ?? null);
   const moderacao = useModeracao();
   const pessoa = perfil.data;
+  const userId = useUserId();
+  const estados = useFriendshipStates(pessoaId ? [pessoaId] : [], userId !== null);
+  const refrescarAmigos = useRefreshFriends();
+  const [aTratar, setATratar] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const amizade = pessoaId ? estados.data?.[pessoaId] : undefined;
+
+  // Add as a friend straight from the profile (testers: from a group you could see someone but not add them). The
+  // server only allows it with people you crossed paths with (a group, a car, a trip).
+  async function pedirAmizade() {
+    if (!pessoaId) return;
+    setErro(null);
+    setATratar(true);
+    try {
+      if (amizade === 'pedido_recebido') await acceptFriendRequest(pessoaId);
+      else await sendFriendRequest(pessoaId);
+      await refrescarAmigos();
+    } catch {
+      setErro('Não deu para enviar o pedido. Tenta outra vez.');
+    } finally {
+      setATratar(false);
+    }
+  }
 
   if (perfil.isLoading) {
     return (
@@ -107,6 +136,33 @@ export default function PerfilPublicoScreen() {
         </ThemedText>
       ) : null}
 
+      {pessoa.isMe ? null : amizade === 'amigos' ? (
+        <View style={styles.centroLinha}>
+          <Etiqueta icon={icons.selecionado} label="Amigos" tone="positivo" />
+        </View>
+      ) : amizade === 'pedido_enviado' ? (
+        <Button label="Pedido enviado" variant="secondary" icon={icons.selecionado} disabled onPress={() => undefined} />
+      ) : amizade === 'pode_pedir' || amizade === 'pedido_recebido' ? (
+        <Button
+          label={
+            aTratar
+              ? 'A enviar…'
+              : amizade === 'pedido_recebido'
+                ? 'Aceitar pedido de amizade'
+                : 'Adicionar amigo'
+          }
+          variant="highlight"
+          icon={icons.perfil}
+          disabled={aTratar}
+          onPress={() => void pedirAmizade()}
+        />
+      ) : null}
+      {erro ? (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.centro}>
+          {erro}
+        </ThemedText>
+      ) : null}
+
       {pessoa.isMe ? null : (
         <LinkTexto
           neutro
@@ -131,6 +187,9 @@ const styles = StyleSheet.create({
   },
   centro: {
     textAlign: 'center',
+  },
+  centroLinha: {
+    alignItems: 'center',
   },
   linha: {
     flexDirection: 'row',
