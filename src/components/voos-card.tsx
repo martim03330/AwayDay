@@ -11,8 +11,8 @@ import { AEROPORTOS, aeroportoMaisPerto, linkGoogleFlights, precisaDeVoo } from 
 import type { Regiao, Venue } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
-import { Chip } from '@/ui/chip';
 import { icons } from '@/ui/icon';
+import { Segmentado } from '@/ui/segmentado';
 import { ThemedText } from '@/ui/themed-text';
 
 const REGIAO: Record<Municipality['region'], Regiao> = {
@@ -48,17 +48,14 @@ export function VoosCard({ estadio, estadia }: { estadio: Venue; estadia: Estadi
         {`${estadio.cidade} · ida ${formatarDiaMes(new Date(estadia.checkin))}, volta ${formatarDiaMes(new Date(estadia.checkout))}`}
       </ThemedText>
 
-      <ThemedText style={styles.rotulo}>De onde partes</ThemedText>
-      <View style={styles.chips}>
-        {AEROPORTOS.map((aeroporto) => (
-          <Chip
-            key={aeroporto.codigo}
-            label={aeroporto.nome}
-            selected={aeroporto.codigo === origem.codigo}
-            emCartao
-            onPress={() => setEscolhido(aeroporto.codigo)}
-          />
-        ))}
+      <View style={styles.seccao}>
+        <ThemedText style={styles.rotulo}>De onde partes</ThemedText>
+        <Segmentado
+          opcoes={AEROPORTOS.map((aeroporto) => ({ valor: aeroporto.codigo, label: aeroporto.nome }))}
+          valor={origem.codigo}
+          onChange={setEscolhido}
+          deslizante
+        />
       </View>
 
       <Button
@@ -72,14 +69,12 @@ export function VoosCard({ estadio, estadia }: { estadio: Venue; estadia: Estadi
 
 const styles = StyleSheet.create({
   card: {
+    gap: Spacing.three,
+  },
+  seccao: {
     gap: Spacing.two,
   },
   rotulo: {
     fontWeight: 700,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
   },
 });
