@@ -271,6 +271,8 @@ export default function LocaisScreen() {
             progressViewOffset={insets.top}
           />
         }>
+        {/* Paints the iOS overscroll area above the header green instead of white, like the other tabs. */}
+        <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
         <CabecalhoRelvado title="Locais" eyebrow={`Tascos a menos de ${MAX_MINUTOS_A_PE} min a pé`}>
           <ScrollView
             horizontal
@@ -312,6 +314,13 @@ export default function LocaisScreen() {
 }
 
 const styles = StyleSheet.create({
+  relvadoAcima: {
+    position: 'absolute',
+    top: -1000,
+    left: 0,
+    right: 0,
+    height: 1000,
+  },
   sugerir: {
     gap: Spacing.twoAndHalf,
   },

@@ -114,6 +114,8 @@ export default function PerfilScreen() {
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scroll}>
+        {/* Paints the iOS overscroll area above the header green instead of white, like the other tabs. */}
+        <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
         <Pressable
           onPress={tocarNoPerfil}
           accessibilityRole="button"
@@ -450,6 +452,13 @@ function CartaoClube({ clube, subtitle, onPress, accessibilityLabel, chevron }: 
 }
 
 const styles = StyleSheet.create({
+  relvadoAcima: {
+    position: 'absolute',
+    top: -1000,
+    left: 0,
+    right: 0,
+    height: 1000,
+  },
   scroll: {
     paddingBottom: Spacing.six,
   },
