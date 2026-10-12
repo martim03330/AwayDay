@@ -478,7 +478,7 @@ describe('Expansor', () => {
     const onPress = jest.fn();
     render(<Expansor titulo="Outros parques" contagem={16} aberto={false} onPress={onPress} />);
     const faixa = screen.getByRole('button', { name: 'Outros parques, 16' });
-    expect(faixa).toHaveAccessibilityState({ expanded: false });
+    expect(faixa).not.toBeExpanded();
     fireEvent.press(faixa);
     expect(onPress).toHaveBeenCalled();
   });
