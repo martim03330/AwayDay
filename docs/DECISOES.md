@@ -2,6 +2,20 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Sem clube por omissão; voltar atrás sempre visível
+
+- **Clube:** deixou de haver clube por omissão (era o Benfica). Quem salta a escolha na introdução fica sem clube
+  (`clubeFavoritoId: null`) e nada é gravado na conta. Antes, saltar gravava o Benfica no servidor como clube apoiado.
+  Sem clube, os Jogos mostram todos os jogos com um atalho para escolher o clube, e os Locais abrem num estádio que já
+  tem tascos. Contas antigas que saltaram a escolha continuam gravadas como Benfica: não dá para as distinguir de quem
+  escolheu mesmo o Benfica, por isso não se mexe nelas.
+- **Voltar atrás:** a conversa do grupo, a do carro e a viagem abrem por cima das tabs, num stack próprio. Abertas por
+  uma notificação, podiam ficar sem botão de voltar. Agora têm sempre um (`src/ui/botao-voltar.tsx`), que sem
+  histórico vai para a Malta ou para os Jogos.
+- **Criar grupo:** só a chamada ao servidor conta como falha. O refresh e a navegação a seguir já não mostram «Não deu
+  para criar o grupo» com o grupo já criado (tentar outra vez criava um segundo). Erros desconhecidos vão para o relatório
+  automático com a mensagem real.
+
 ## 2026-10-09 — Fotos até 1 600 px, e plano Pro do Supabase
 
 - **Fotos:** antes de enviar, o lado maior é reduzido a 1 600 px (`src/lib/medida-da-foto.ts`), além de a foto ser

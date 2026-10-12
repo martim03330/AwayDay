@@ -18,11 +18,9 @@ import { ThemedText } from '@/ui/themed-text';
 export default function OnboardingClubeScreen() {
   const adeptos = useClubSupporterCounts();
   const router = useRouter();
-  const { clubeFavoritoId, escolherClube, introducaoVista } = useAppState();
+  const { clubeFavoritoId, escolherClube } = useAppState();
   // Na primeira vez nada vem escolhido; ao rever a introdução, mostra a escolha atual.
-  const [selecionadoId, setSelecionadoId] = useState<string | null>(
-    introducaoVista ? clubeFavoritoId : null
-  );
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(clubeFavoritoId);
   const selecionado = selecionadoId ? obterClube(selecionadoId) : undefined;
   const comConta = useSession().status === 'signed-in';
   const { passo, total } = posicaoNaIntroducao('clube', comConta);

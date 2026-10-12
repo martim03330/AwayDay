@@ -52,6 +52,6 @@ subscribeToFixtureCatalog((catalogo) => {
   );
 });
 
-export function obterClube(id: string) {
+export function obterClube(id: string | null | undefined) {
   return clubes.find((clube) => clube.id === id);
 }

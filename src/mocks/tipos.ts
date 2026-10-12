@@ -323,6 +323,7 @@ export type VisitaLocal = {
 export type UtilizadorRanking = {
   id: string;
   nome: string;
-  clubeId: string;
+  /** `null` when the fan has not picked a club. */
+  clubeId: string | null;
   tascosVerificados: number;
 };

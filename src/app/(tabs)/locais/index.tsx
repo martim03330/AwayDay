@@ -80,7 +80,9 @@ export default function LocaisScreen() {
 
   const estadiosOrdenados = ordenarEstadios();
   const estadioComLocais = estadiosOrdenados.find((candidato) => temLocaisPerto(candidato.id));
-  const estadioDoClube = obterClube(clubeFavoritoId)?.estadioId ?? estadiosNacionais[0].id;
+  // Without a club, open on a stadium that already has tascos rather than an arbitrary club's.
+  const estadioDoClube =
+    obterClube(clubeFavoritoId)?.estadioId ?? estadioComLocais?.id ?? estadiosNacionais[0].id;
   const estadio =
     obterEstadio(params.estadio ?? estadioDoClube) ??
     obterEstadio(estadioDoClube) ??

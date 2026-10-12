@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { reportErrorOnce } from '@/features/feedback/report';
 import { createGroup, GroupRefused } from '@/features/groups/api';
 import { useRefreshGroups } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,6 +20,8 @@ function mensagemDeRecusa(erro: unknown) {
       return 'O nome do grupo tem de ter entre 2 e 60 letras.';
     case 'rate_limited':
       return 'Já criaste grupos que cheguem por hoje.';
+    case 'not_signed_in':
+      return 'A tua sessão terminou. Entra outra vez para criar o grupo.';
     default:
       return 'Não deu para criar o grupo. Tenta outra vez.';
   }
@@ -42,15 +45,22 @@ export default function NovoGrupoScreen() {
     }
     setErro(null);
     setACriar(true);
+    let grupoId: string;
     try {
-      const grupoId = await createGroup(limpo);
-      await refrescar();
-      router.back();
-      router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });
+      grupoId = await createGroup(limpo);
     } catch (problema) {
+      if (!(problema instanceof GroupRefused) || problema.reason === 'unknown') {
+        const detalhe = problema instanceof GroupRefused ? problema.detail : problema;
+        void reportErrorOnce('criar-grupo', 'Criar grupo', detalhe, { area: 'grupos' });
+      }
       setErro(mensagemDeRecusa(problema));
       setACriar(false);
+      return;
     }
+    // The group exists from here on: nothing below may show "could not create it" (a retry would make a second one).
+    void refrescar();
+    router.back();
+    router.push({ pathname: '/grupos/[grupoId]', params: { grupoId } });
   }
 
   return (

@@ -1,9 +1,13 @@
 import { Stack } from 'expo-router';
 
+import { BotaoVoltar } from '@/ui/botao-voltar';
+
 export default function SessaoLayout() {
   return (
     <Stack>
-      <Stack.Screen name="[sessaoId]/index" options={{ headerBackTitle: 'Jogos' }}>
+      <Stack.Screen
+        name="[sessaoId]/index"
+        options={{ headerLeft: () => <BotaoVoltar destino="/jogos" /> }}>
         <Stack.Screen.Title>A viagem</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="[sessaoId]/despesas">

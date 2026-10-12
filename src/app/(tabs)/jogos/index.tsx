@@ -192,17 +192,20 @@ export default function JogosScreen() {
   const meusClubes = idsMeusClubes
     .map((id) => obterClube(id))
     .filter((clube): clube is Clube => clube !== undefined);
+  // Without a club there is nothing to filter by: every game shows, never someone else's club by default.
+  const semClube = idsMeusClubes.length === 0;
+  const verTodos = verConcorrencia || semClube;
   const filtrados = jogos.filter(
     (jogo) =>
       ficaNaListaDeJogos(jogo, agora, foste(jogo.id)) &&
       correspondeCompeticao(jogo, competicao) &&
-      (verConcorrencia || eJogoDosClubes(jogo, idsMeusClubes))
+      (verTodos || eJogoDosClubes(jogo, idsMeusClubes))
   );
   const proximos = filtrados.filter((jogo) => estadoDoJogo(jogo, agora) !== 'terminado');
   const terminados = filtrados
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado')
     .reverse();
-  const resumido = !verConcorrencia && !verCalendario;
+  const resumido = !verTodos && !verCalendario;
   const grupos = agruparPorDia(resumido ? proximos.slice(0, PROXIMOS_DO_CLUBE) : proximos);
   const clubeFavorito = obterClube(clubeFavoritoId);
   // The earliest game the fan marked as going to (the catalogue is sorted by kick-off).
@@ -228,7 +231,7 @@ export default function JogosScreen() {
     if (filtrados.length === 0) {
       const emCompeticao =
         filtrosCompeticao.find((filtro) => filtro.id === competicao)?.emTexto ?? '';
-      if (!verConcorrencia) {
+      if (!verTodos) {
         return (
           <View style={styles.grupo}>
             <EmptyState
@@ -263,7 +266,7 @@ export default function JogosScreen() {
             {grupo.jogos.map(renderJogo)}
           </View>
         ))}
-        {!verConcorrencia && proximos.length > PROXIMOS_DO_CLUBE ? (
+        {!verTodos && proximos.length > PROXIMOS_DO_CLUBE ? (
           <LinkTexto
             label={
               verCalendario
@@ -279,7 +282,12 @@ export default function JogosScreen() {
             {terminados.map(renderJogo)}
           </View>
         ) : null}
-        {verConcorrencia ? null : (
+        {semClube ? (
+          <LinkTexto
+            label="Escolhe o teu clube para veres primeiro os jogos dele"
+            onPress={() => router.push('/perfil/clube')}
+          />
+        ) : verConcorrencia ? null : (
           <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
         )}
       </>
@@ -328,7 +336,7 @@ export default function JogosScreen() {
               />
             ))}
           </ScrollView>
-          {verConcorrencia ? (
+          {verConcorrencia && !semClube ? (
             <View style={styles.filtrosClube}>
               <Chip
                 label="Voltar aos meus clubes"

@@ -1,5 +1,7 @@
 import { Stack } from 'expo-router';
 
+import { BotaoVoltar } from '@/ui/botao-voltar';
+
 export default function GruposLayout() {
   return (
     <Stack>
@@ -7,7 +9,10 @@ export default function GruposLayout() {
         <Stack.Screen.Title>Convite</Stack.Screen.Title>
       </Stack.Screen>
       {/* A conversa desenha o próprio título: a cara do grupo, o nome e quem está online. */}
-      <Stack.Screen name="[grupoId]/index" options={{ title: 'Grupo', headerBackTitle: 'Malta' }} />
+      <Stack.Screen
+        name="[grupoId]/index"
+        options={{ title: 'Grupo', headerLeft: () => <BotaoVoltar destino="/malta" /> }}
+      />
       <Stack.Screen name="[grupoId]/definicoes">
         <Stack.Screen.Title>Grupo</Stack.Screen.Title>
       </Stack.Screen>

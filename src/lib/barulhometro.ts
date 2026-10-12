@@ -262,7 +262,7 @@ export type EntradaRankingBarulho = {
 export function rankingBarulho(
   jogo: Pick<Jogo, 'casaId' | 'foraId'>,
   adeptos: readonly MedicaoAdepto[],
-  tu: { clubeId: string; nivel: number | null }
+  tu: { clubeId: string | null; nivel: number | null }
 ): EntradaRankingBarulho[] {
   const outros = adeptos.map((adepto) => ({
     id: adepto.id,

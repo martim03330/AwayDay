@@ -27,11 +27,14 @@ export type GroupRefusal =
 
 export class GroupRefused extends Error {
   readonly reason: GroupRefusal;
+  /** For 'unknown': what the server or network actually said, so an error report can name the real cause. */
+  readonly detail: string | null;
 
-  constructor(reason: GroupRefusal) {
+  constructor(reason: GroupRefusal, detail: string | null = null) {
     super(reason);
     this.name = 'GroupRefused';
     this.reason = reason;
+    this.detail = detail;
   }
 }
 
@@ -50,8 +53,11 @@ const RECUSAS: GroupRefusal[] = [
   'not_yours',
 ];
 
-function refusal(error: { message: string }) {
-  return new GroupRefused(RECUSAS.find((reason) => error.message === reason) ?? 'unknown');
+function refusal(error: { message: string; code?: string }) {
+  const reason = RECUSAS.find((known) => error.message === known);
+  return reason
+    ? new GroupRefused(reason)
+    : new GroupRefused('unknown', [error.code, error.message].filter(Boolean).join(' '));
 }
 
 export type GroupRole = 'owner' | 'member';

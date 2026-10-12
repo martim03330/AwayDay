@@ -45,10 +45,11 @@ export function notaMedia(avaliacao: Pick<AvaliacaoVisita, 'estadio' | 'ambiente
 }
 
 /** The user's clubs: the one they support and, when set and different, their home-town club. */
-export function clubesDoUtilizador(clubeFavoritoId: string, clubeDaTerraId: string | null): string[] {
-  return clubeDaTerraId && clubeDaTerraId !== clubeFavoritoId
-    ? [clubeFavoritoId, clubeDaTerraId]
-    : [clubeFavoritoId];
+export function clubesDoUtilizador(
+  clubeFavoritoId: string | null,
+  clubeDaTerraId: string | null,
+): string[] {
+  return [...new Set([clubeFavoritoId, clubeDaTerraId].filter((id): id is string => id !== null))];
 }
 
 export function eJogoDosClubes(jogo: Pick<Jogo, 'casaId' | 'foraId'>, clubeIds: readonly string[]) {

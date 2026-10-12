@@ -76,7 +76,8 @@ export function SincronizarConta() {
     const estado = reconciliacao.current;
     if (!userId || !dados || estado?.userId !== userId || guardarClube.isPending) return;
 
-    const clubeDiferente = clubeFavoritoId !== dados.supporterClubId;
+    // Sem clube escolhido no telemóvel não há nada para guardar (nunca se inventa um).
+    const clubeDiferente = clubeFavoritoId !== null && clubeFavoritoId !== dados.supporterClubId;
     const terraDiferente = clubeDaTerraId !== null && clubeDaTerraId !== dados.hometownClubId;
 
     if (estado.aEsperarPeloTelemovel) {
@@ -85,7 +86,7 @@ export function SincronizarConta() {
       return;
     }
 
-    if (clubeDiferente) {
+    if (clubeDiferente && clubeFavoritoId !== null) {
       guardarClube.mutate({ relation: 'supporter', clubId: clubeFavoritoId });
     } else if (terraDiferente) {
       guardarClube.mutate({ relation: 'hometown', clubId: clubeDaTerraId });

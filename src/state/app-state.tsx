@@ -116,9 +116,6 @@ const NOTAS_TASCOS_DEMO: Record<string, Nota> = {
   'bifanas-campanha': 4,
 };
 
-/** Used only before the user picks a club in the introduction. */
-const CLUBE_POR_OMISSAO = 'benfica';
-
 const TIPO_NA_CONTA: Record<TipoNotificacao, NotificationKind> = {
   'alteracao-horario': 'kickoff_change',
   meteorologia: 'weather',
@@ -163,7 +160,8 @@ type AppState = {
   /** Só para o deep link de demo: entra nas tabs sem mexer nas escolhas. */
   saltarOnboarding: () => void;
   reverIntroducao: () => void;
-  clubeFavoritoId: string;
+  /** `null` enquanto a pessoa não escolher um clube: nunca há clube por omissão. */
+  clubeFavoritoId: string | null;
   escolherClube: (clubeId: string) => void;
   /** Só muda quando o utilizador confirma; a sugestão nunca é aplicada sozinha. */
   clubeDaTerraId: string | null;
@@ -1011,7 +1009,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: true })),
     reverIntroducao: () =>
       mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: false })),
-    clubeFavoritoId: preferencias.clubeFavoritoId ?? CLUBE_POR_OMISSAO,
+    clubeFavoritoId: preferencias.clubeFavoritoId,
     escolherClube: (clubeId) =>
       mudarPreferencias((atuais) => ({ ...atuais, clubeFavoritoId: clubeId })),
     clubeDaTerraId: preferencias.clubeDaTerraId,

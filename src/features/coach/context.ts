@@ -31,7 +31,7 @@ export type CoachInput = {
   userId: string;
   /** App time in ms (moved in demo mode). */
   now: number;
-  supporterClubId: string;
+  supporterClubId: string | null;
   hometownClubId: string | null;
   fixtures: readonly Fixture[];
   visitedVenueIds: readonly string[];
