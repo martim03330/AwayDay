@@ -1194,6 +1194,8 @@ export type Database = {
           hidden_by: string | null
           id: string
           kind: string
+          mentions: string[]
+          mentions_all: boolean
           place_id: string | null
           plan_id: string | null
           profile_id: string
@@ -1208,6 +1210,8 @@ export type Database = {
           hidden_by?: string | null
           id?: string
           kind?: string
+          mentions?: string[]
+          mentions_all?: boolean
           place_id?: string | null
           plan_id?: string | null
           profile_id: string
@@ -1222,6 +1226,8 @@ export type Database = {
           hidden_by?: string | null
           id?: string
           kind?: string
+          mentions?: string[]
+          mentions_all?: boolean
           place_id?: string | null
           plan_id?: string | null
           profile_id?: string
@@ -2825,6 +2831,8 @@ export type Database = {
           hidden_at: string | null
           hidden_by: string | null
           id: string
+          mentions: string[]
+          mentions_all: boolean
           profile_id: string
           reply_to_id: string | null
           ride_id: string
@@ -2836,6 +2844,8 @@ export type Database = {
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
+          mentions?: string[]
+          mentions_all?: boolean
           profile_id: string
           reply_to_id?: string | null
           ride_id: string
@@ -2847,6 +2857,8 @@ export type Database = {
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
+          mentions?: string[]
+          mentions_all?: boolean
           profile_id?: string
           reply_to_id?: string | null
           ride_id?: string
@@ -4479,6 +4491,7 @@ export type Database = {
           edited_at: string
           id: string
           kind: string
+          mentions_me: boolean
           mine: boolean
           place_id: string
           plan_id: string
@@ -5188,6 +5201,7 @@ export type Database = {
           display_name: string
           edited_at: string
           id: string
+          mentions_me: boolean
           mine: boolean
           profile_id: string
           reactions: Json
@@ -5312,11 +5326,23 @@ export type Database = {
       }
       send_friend_request: { Args: { p_profile_id: string }; Returns: string }
       send_group_message: {
-        Args: { p_body: string; p_group_id: string; p_reply_to?: string }
+        Args: {
+          p_body: string
+          p_group_id: string
+          p_mention_all?: boolean
+          p_mentions?: string[]
+          p_reply_to?: string
+        }
         Returns: string
       }
       send_ride_message: {
-        Args: { p_body: string; p_reply_to?: string; p_ride_id: string }
+        Args: {
+          p_body: string
+          p_mention_all?: boolean
+          p_mentions?: string[]
+          p_reply_to?: string
+          p_ride_id: string
+        }
         Returns: string
       }
       set_display_name: { Args: { p_name: string }; Returns: undefined }

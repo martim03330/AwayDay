@@ -11,7 +11,8 @@
 //
 // As notificações de boleias (pedidos de lugar, aceites, cancelamentos) vivem em `ride-notify`; esta função é para
 // tudo o resto. Cada notificação abre o sítio da app onde a coisa aconteceu, e nada é enviado a quem desligou este
-// tipo de aviso nem a quem não tem telemóvel registado. Quem bloqueou o autor de uma mensagem, de um convite ou de um
+// tipo de aviso nem a quem não tem telemóvel registado — exceto uma menção («@Nome» ou «@todos»), que chega sempre,
+// como no WhatsApp. Quem bloqueou o autor de uma mensagem, de um convite ou de um
 // pedido de amizade também não recebe nada dele.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
@@ -73,17 +74,19 @@ async function gameOf(admin: SupabaseClient, fixtureId: string | null) {
 async function tokensOf(
   admin: SupabaseClient,
   profileIds: readonly string[],
-  preferencia: Preferencia
+  preferencia: Preferencia | null
 ) {
   const pessoas = [...new Set(profileIds)].filter(Boolean);
   if (pessoas.length === 0) return [];
 
-  const desligou = await admin
-    .from('notification_preference')
-    .select('profile_id')
-    .eq('kind', preferencia)
-    .eq('enabled', false)
-    .in('profile_id', pessoas);
+  const desligou = preferencia
+    ? await admin
+        .from('notification_preference')
+        .select('profile_id')
+        .eq('kind', preferencia)
+        .eq('enabled', false)
+        .in('profile_id', pessoas)
+    : { data: [] };
   const fora = new Set((desligou.data ?? []).map((row) => String(row.profile_id)));
 
   const querem = pessoas.filter((pessoa) => !fora.has(pessoa));
@@ -124,17 +127,45 @@ type Aviso = {
   recipients: string[];
   /** Who caused it: anyone who blocked this person is left out. */
   from?: string;
-  preferencia: Preferencia;
+  /** `null`: goes even to whoever turned this kind off (a mention, like in WhatsApp). */
+  preferencia: Preferencia | null;
   title: string;
   body: string;
   data: Record<string, string>;
 };
 
+/** Who a chat message mentions: everyone in the chat with «@todos», or the people the server kept. */
+function mencionados(body: Readonly<Record<string, unknown>>, naConversa: readonly string[], autor: string) {
+  const todos = body.mentions_all === true;
+  const lista = Array.isArray(body.mentions) ? body.mentions.filter((id): id is string => typeof id === 'string') : [];
+  return { todos, pessoas: (todos ? naConversa : lista).filter((pessoa) => pessoa !== autor) };
+}
+
+/**
+ * A chat message as notifications: whoever was mentioned gets «X mencionou-te» (even with that chat turned off), the
+ * others the usual one.
+ */
+function comMencoes(normal: Aviso, body: Readonly<Record<string, unknown>>, autor: string, nome: string, onde: string) {
+  const mencao = mencionados(body, normal.recipients, autor);
+  if (mencao.pessoas.length === 0) return [normal];
+  const ja = new Set(mencao.pessoas);
+  return [
+    {
+      ...normal,
+      recipients: mencao.pessoas,
+      preferencia: null,
+      title: mencao.todos ? `${nome} mencionou todos` : `${nome} mencionou-te`,
+      body: `${onde}: ${resumir(texto(body.body) ?? '')}`,
+    },
+    { ...normal, recipients: normal.recipients.filter((pessoa) => !ja.has(pessoa)) },
+  ];
+}
+
 async function construir(
   admin: SupabaseClient,
   kind: string,
   body: Readonly<Record<string, unknown>>
-): Promise<Aviso | null> {
+): Promise<Aviso | Aviso[] | null> {
   if (kind === 'ride_message') {
     const rideId = texto(body.ride_id);
     const autor = texto(body.profile_id);
@@ -143,7 +174,7 @@ async function construir(
 
     const carro = await ridePeople(admin, rideId);
     const nome = await nameOf(admin, autor);
-    return {
+    const normal: Aviso = {
       recipients: carro.people.filter((pessoa) => pessoa !== autor),
       from: autor,
       preferencia: 'ride_message',
@@ -151,6 +182,7 @@ async function construir(
       body: resumir(mensagem),
       data: { type: 'conversa', rideId, fixtureId: carro.fixtureId ?? '' },
     };
+    return comMencoes(normal, body, autor, nome, 'Conversa do carro');
   }
 
   if (kind === 'group_message') {
@@ -176,7 +208,7 @@ async function construir(
       const grupoDeOrigem = origem.data as { group_id: string; fan_group: { name: string } | null } | null;
       if (grupoDeOrigem && grupoDeOrigem.group_id !== groupId) deOutroGrupo = texto(grupoDeOrigem.fan_group?.name);
     }
-    return {
+    const normal: Aviso = {
       recipients: (membros.data ?? [])
         .map((row) => String(row.profile_id))
         .filter((pessoa) => pessoa !== autor),
@@ -194,6 +226,8 @@ async function construir(
             : `${nome}: ${resumir(mensagem)}`,
       data: { type: 'grupo', groupId },
     };
+    // Only people's own text messages carry mentions.
+    return local || plano || aviso ? normal : comMencoes(normal, body, autor, nome, nomeDoGrupo);
   }
 
   if (kind === 'ride_invite') {
@@ -333,19 +367,22 @@ Deno.serve(async (request) => {
   const kind = texto(body?.kind);
   if (!body || !kind) return json(400, { error: 'bad_request' });
 
-  const aviso = await construir(admin, kind, body);
-  if (!aviso || aviso.recipients.length === 0) return json(200, { sent: 0 });
+  const construido = await construir(admin, kind, body);
+  const avisos = (Array.isArray(construido) ? construido : construido ? [construido] : []).filter(
+    (aviso) => aviso.recipients.length > 0
+  );
+  if (avisos.length === 0) return json(200, { sent: 0 });
 
-  const recipients = await withoutBlockers(admin, aviso.recipients, aviso.from);
-  if (recipients.length === 0) return json(200, { sent: 0 });
-
-  const tokens = await tokensOf(admin, recipients, aviso.preferencia);
-  const messages: PushMessage[] = tokens.map((token) => ({
-    to: token,
-    title: aviso.title,
-    body: aviso.body,
-    data: aviso.data,
-  }));
+  const messages: PushMessage[] = [];
+  for (const aviso of avisos) {
+    const recipients = await withoutBlockers(admin, aviso.recipients, aviso.from);
+    if (recipients.length === 0) continue;
+    const tokens = await tokensOf(admin, recipients, aviso.preferencia);
+    messages.push(
+      ...tokens.map((token) => ({ to: token, title: aviso.title, body: aviso.body, data: aviso.data }))
+    );
+  }
+  if (messages.length === 0) return json(200, { sent: 0 });
 
   const outcome = await sendExpoPush(messages);
   if (outcome.invalidTokens.length > 0) {
