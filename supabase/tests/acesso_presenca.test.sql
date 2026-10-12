@@ -98,6 +98,8 @@ select
   'authenticated', 'authenticated'
 from generate_series(1, 12) as n;
 update public.profile set is_admin = true where id = 'e1000000-0000-4000-8000-000000000011';
+-- Appearing in the rankings is on by default: these test people turned it off.
+update public.profile set show_in_rankings = false where id::text like 'e1000000-%';
 -- Only accounts with a confirmed email count for the pulse.
 update auth.users set email_confirmed_at = now()
 where id::text like 'e1000000-0000-4000-8000-0000000000%';
