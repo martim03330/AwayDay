@@ -2,6 +2,21 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — «Fui a este jogo» só com o carimbo do estádio
+
+- **Erro corrigido:** marcar «Vou» (ou entrar num plano) e depois avaliar o jogo contava como ter ido: o jogo
+  aparecia em «Jogos a que foste», o estádio entrava no passaporte e soava o carimbo. A avaliação gravava
+  `fixture_attendance = 'attended'`, e o servidor aceitava-o de qualquer pessoa depois do apito.
+- **Regra:** só o carimbo (`stamp_stadium`, verificado no servidor: a menos de 1 km do estádio, de 4 h antes a 5 h
+  depois do apito) marca um jogo como ido. A app só pode escrever «vou» antes do apito; avaliar só é possível a quem
+  carimbou (`stamped_fixture`). Na app, «Jogos a que foste», «Os teus jogos», o passaporte e o «Avaliar» seguem o
+  carimbo; avaliar não dá carimbo nem toca o som.
+- O ranking e as missões já só liam `stadium_visit`: não foram afetados. A retrospetiva, o treinador e as dicas liam
+  'attended', que agora só existe com carimbo.
+- **Dados:** 2 registos «fui» sem carimbo voltaram a «vou». As 2 avaliações sem carimbo ficaram (nunca contaram
+  pontos).
+- **Sem travessões:** nenhum texto da app usa «—» a meio de frases. O ESLint recusa-o e a IA tem a regra no pedido.
+
 ## 2026-10-12 — Menos informação nos ecrãs e apresentação da app
 
 Pedido dos testers: limpar o que estava «amontoado».

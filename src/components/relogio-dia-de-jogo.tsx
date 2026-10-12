@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { modosTransporte } from '@/lib/transportes';
 import { PontoAoVivo } from '@/components/jogo-card';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
@@ -82,6 +83,7 @@ type RelogioDiaDeJogoProps = {
 
 /** Bloco fixo no topo da ficha do jogo, só no próprio dia, com uma sugestão por fase. */
 export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
+  const { foste } = useJogosAQueFoste();
   const router = useRouter();
   const theme = useTheme();
   const agora = useNow(1000);
@@ -216,6 +218,7 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
 
   function renderDepois() {
     const avaliacao = avaliacaoDoJogo(jogo.id);
+    const fosteAoJogo = foste(jogo.id);
     // Os horários do último transporte são valores de exemplo: fora do modo demo não se mostram, que ninguém pode
     // perder o último metro por causa de um número inventado por nós.
     const transporte = modoDemo ? ultimoTransporteDe(venue.id) : null;
@@ -225,14 +228,17 @@ export function RelogioDiaDeJogo({ jogo, venue }: RelogioDiaDeJogoProps) {
     return (
       <>
         <ThemedText type="section" style={styles.apitoFinal}>
-          Apito final. Como foi?
+          {fosteAoJogo ? 'Apito final. Como foi?' : 'Apito final.'}
         </ThemedText>
-        <Button
-          label={avaliacao ? 'Editar avaliação' : 'Avaliar experiência'}
-          variant="highlight"
-          icon={icons.estrela}
-          onPress={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
-        />
+        {/* Rating is for who stamped the stadium. */}
+        {fosteAoJogo ? (
+          <Button
+            label={avaliacao ? 'Editar avaliação' : 'Avaliar experiência'}
+            variant="highlight"
+            icon={icons.estrela}
+            onPress={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
+          />
+        ) : null}
         {transporte ? (
           <View style={[styles.transporte, { borderTopColor: theme.border }]}>
             <Icon name={modosTransporte[transporte.modo].icon} size={20} color={theme.info} />

@@ -51,11 +51,7 @@ export default function OsMeusJogosScreen() {
         <EmptyState
           icon={icons.acesso}
           title="Ainda sem jogos"
-          message={
-            userId
-              ? 'Marca "Vou a este jogo" antes do apito e o jogo fica aqui depois de terminar.'
-              : 'Os jogos que avaliares ficam aqui. Com conta, também guardamos os jogos a que vais.'
-          }
+          message="No dia do jogo, faz o carimbo no estádio: o jogo fica aqui depois do apito final."
         />
       </Screen>
     );

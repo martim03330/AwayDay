@@ -236,12 +236,22 @@ select pg_temp.expect('back to four: the count is hidden again', public.fixture_
 select pg_temp.as_user('e4000000-0000-4000-8000-000000000007');
 select pg_temp.expect('the admin does not see who goes', pg_temp.visible('select * from public.fixture_attendance'), 0);
 
--- 3. Reviews: only after kick-off, only your own, private.
+-- 3. Reviews: only of a game you stamped, only your own, private.
 select pg_temp.as_user('e4000000-0000-4000-8000-000000000001');
 select pg_temp.expect('reviewing a game not yet played is refused',
   split_part(pg_temp.refusal('insert into public.venue_review (profile_id, fixture_id, stadium_score, atmosphere_score, access_score) values (''e4000000-0000-4000-8000-000000000001'', ''tz-jog-futuro'', 5, 5, 5)'), ' ', 1),
   'new');
-select pg_temp.expect('reviewing a game played is accepted',
+select pg_temp.expect('reviewing a game played without the stamp is refused',
+  split_part(pg_temp.refusal('insert into public.venue_review (profile_id, fixture_id, stadium_score, atmosphere_score, access_score, comment) values (''e4000000-0000-4000-8000-000000000001'', ''tz-jog-passado'', 4, 5, 3, ''Bom ambiente'')'), ' ', 1),
+  'new');
+-- The stamp (stamp_stadium checks the location; here it is written directly) opens the review.
+reset role;
+insert into public.stadium_visit (profile_id, venue_id, fixture_id, visited_on)
+values ('e4000000-0000-4000-8000-000000000001', 'tz-jog-estadio', 'tz-jog-passado',
+  (now() at time zone 'Europe/Lisbon')::date - 4);
+set local role authenticated;
+select pg_temp.as_user('e4000000-0000-4000-8000-000000000001');
+select pg_temp.expect('reviewing a game played, with the stamp, is accepted',
   pg_temp.refusal('insert into public.venue_review (profile_id, fixture_id, stadium_score, atmosphere_score, access_score, comment) values (''e4000000-0000-4000-8000-000000000001'', ''tz-jog-passado'', 4, 5, 3, ''Bom ambiente'')'),
   'accepted');
 select pg_temp.expect('a review as someone else is refused',
@@ -266,6 +276,10 @@ select pg_temp.expect('the author reads and edits their review',
 
 -- 4. Stadium and away-support counts: >= 5 different people, signed-in only.
 reset role;
+-- The stamp written for the review above would count as one more visit here.
+delete from public.stadium_visit
+where profile_id = 'e4000000-0000-4000-8000-000000000001'
+  and visited_on = (now() at time zone 'Europe/Lisbon')::date - 4;
 insert into public.profile_club (profile_id, relation, club_id)
 select ('e4000000-0000-4000-8000-0000000000' || lpad(n::text, 2, '0'))::uuid, 'supporter', 'tz-jog-fora'
 from generate_series(1, 4) as n;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia } from '@/lib/datas';
@@ -12,7 +13,6 @@ import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
 import type { Nota } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
-import { useSons } from '@/state/sons';
 import { Button } from '@/ui/button';
 import { CampoTexto } from '@/ui/campo-texto';
 import { Card } from '@/ui/card';
@@ -28,8 +28,8 @@ export function FormularioAvaliacao({ jogoId }: { jogoId: string }) {
   const router = useRouter();
   const theme = useTheme();
   const agora = useNow();
-  const { avaliacaoDoJogo, guardarAvaliacao, estadiosVisitados } = useAppState();
-  const { tocarCarimbo } = useSons();
+  const { avaliacaoDoJogo, guardarAvaliacao } = useAppState();
+  const { foste, aCarregar } = useJogosAQueFoste();
 
   const existente = avaliacaoDoJogo(jogoId);
   const [estadio, setEstadio] = useState<Nota | null>(existente?.estadio ?? null);
@@ -45,7 +45,6 @@ export function FormularioAvaliacao({ jogoId }: { jogoId: string }) {
 
   function guardar() {
     if (!jogo || estadio === null || ambiente === null || acessos === null) return;
-    const estadioNovo = !estadiosVisitados.includes(jogo.estadioId);
     guardarAvaliacao({
       jogoId: jogo.id,
       estadioId: jogo.estadioId,
@@ -55,8 +54,7 @@ export function FormularioAvaliacao({ jogoId }: { jogoId: string }) {
       acessos,
       comentario: comentario.trim(),
     });
-    // O carimbo só soa em resposta direta ao toque em "Guardar".
-    if (estadioNovo) tocarCarimbo();
+    // Rating never gives a stamp (only being at the stadium does), so no stamp sound here.
     router.back();
   }
 
@@ -78,6 +76,18 @@ export function FormularioAvaliacao({ jogoId }: { jogoId: string }) {
           icon={icons.horario}
           title="Ainda não podes avaliar"
           message="Calma, o árbitro ainda não apitou para o fim."
+          action={{ label: 'Fechar', onPress: () => router.back() }}
+        />
+      );
+    }
+
+    // Only who stamped the stadium went to the game, and only they rate it.
+    if (!aCarregar && !foste(jogo.id)) {
+      return (
+        <EmptyState
+          icon={icons.estadio}
+          title="Só avalia quem foi"
+          message="Para avaliar, faz o carimbo no estádio no dia do jogo: a app confirma que lá estás."
           action={{ label: 'Fechar', onPress: () => router.back() }}
         />
       );

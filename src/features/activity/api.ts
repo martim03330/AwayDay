@@ -70,16 +70,11 @@ export async function setGoing(userId: string, fixtureId: string, going: boolean
   if (error) throw error;
 }
 
-/** After a fixture: the user was there, with the scores they gave. */
+/**
+ * The scores for a game the user stamped. Rating never marks the game as attended: only the stamp at the stadium
+ * does, and the server refuses a rating without it.
+ */
 export async function recordReview(userId: string, review: ReviewInput) {
-  const attendance = await client()
-    .from('fixture_attendance')
-    .upsert(
-      { profile_id: userId, fixture_id: review.fixtureId, status: 'attended' },
-      { onConflict: 'profile_id,fixture_id' }
-    );
-  if (attendance.error) throw attendance.error;
-
   const { error } = await client().from('venue_review').upsert(
     {
       profile_id: userId,

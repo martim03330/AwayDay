@@ -5465,6 +5465,7 @@ export type Database = {
         Args: { p_fixture_id: string; p_latitude: number; p_longitude: number }
         Returns: number
       }
+      stamped_fixture: { Args: { p_fixture_id: string }; Returns: boolean }
       start_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: Json

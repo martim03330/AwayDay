@@ -6,17 +6,18 @@ import { jogos } from '@/mocks/jogos';
 import { useAppState } from '@/state/app-state';
 
 /**
- * Fixtures the user went to: marked "going" or attended on their account, or reviewed on this phone.
- * `historico` holds the finished ones, newest first.
+ * Fixtures the user went to: only with the stadium stamp, which the server checks against the phone's location
+ * (`stamp_stadium` is the only thing that marks a game as attended). Saying «Vou», joining a plan or rating a game is
+ * not going. In demo mode, the sample ratings stand in for it. `historico` holds the finished ones, newest first.
  */
 export function useJogosAQueFoste() {
   const agora = useNow();
   const userId = useUserId();
   const presencas = useMyAttendance(userId);
-  const { avaliacaoDoJogo } = useAppState();
+  const { avaliacaoDoJogo, modoDemo } = useAppState();
 
   const foste = (jogoId: string) =>
-    presencas.data?.[jogoId] !== undefined || avaliacaoDoJogo(jogoId) !== undefined;
+    modoDemo ? avaliacaoDoJogo(jogoId) !== undefined : presencas.data?.[jogoId] === 'attended';
 
   const historico = jogos
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado' && foste(jogo.id))

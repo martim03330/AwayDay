@@ -1025,11 +1025,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     clubeDaTerraId: preferencias.clubeDaTerraId,
     confirmarClubeDaTerra: (clubeId) =>
       mudarPreferencias((atuais) => ({ ...atuais, clubeDaTerraId: clubeId })),
+    // Only stamped stadiums (the server marks a game as attended only with the stamp). A rating is not a visit;
+    // in demo mode the sample ratings stand in for stamps.
     estadiosVisitados: [
       ...new Set([
         ...(fonte === 'demo' ? ESTADIOS_VISITADOS_DEMO : []),
         ...visitadosNaConta,
-        ...atividade.avaliacoes.map((avaliacao) => avaliacao.estadioId),
+        ...(fonte === 'demo' ? atividade.avaliacoes.map((avaliacao) => avaliacao.estadioId) : []),
       ]),
     ],
     fezCheckIn: (localId) => checkInsAgora.some((visita) => visita.localId === localId),

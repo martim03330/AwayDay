@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
 import { Equipa } from '@/components/equipa';
 import { CarimboEstadio } from '@/components/carimbo-estadio';
@@ -88,6 +89,7 @@ function LinhaSeccao({
 }
 
 export default function JogoScreen() {
+  const { foste } = useJogosAQueFoste();
   const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo();
   useBarraDeEstadoClara();
   const router = useRouter();
@@ -181,6 +183,7 @@ export default function JogoScreen() {
       jogo={jogo}
       agora={agora}
       avaliacao={avaliacaoDoJogo(jogo.id)}
+      podeAvaliar={foste(jogo.id)}
       onAvaliar={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
     />
   );

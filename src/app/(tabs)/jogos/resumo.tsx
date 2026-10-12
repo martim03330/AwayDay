@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { Spacing } from '@/constants/theme';
 import { FriendRefused, sendFriendRequest } from '@/features/friends/api';
@@ -52,6 +53,7 @@ function saldo(centimos: number) {
  * abertas para consulta muito depois do apito.
  */
 export default function ResumoScreen() {
+  const { foste } = useJogosAQueFoste();
   const abrirPerfil = useAbrirPerfil();
   const router = useRouter();
   const userId = useUserId();
@@ -222,7 +224,7 @@ export default function ResumoScreen() {
             onPress={() => router.push({ pathname: '/jogos/avaliar', params: { jogoId: jogo.id } })}
           />
         </Card>
-      ) : (
+      ) : !foste(jogo.id) ? null : (
         <Card style={styles.cartao}>
           <ThemedText themeColor="textSecondary">Ainda não deste nota a este jogo.</ThemedText>
           <Button

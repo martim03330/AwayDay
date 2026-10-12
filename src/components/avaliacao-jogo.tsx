@@ -11,6 +11,8 @@ import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 type AvaliacaoJogoProps = {
+  /** Stamped at the stadium: the only way to have gone to the game. */
+  podeAvaliar: boolean;
   jogo: Jogo;
   agora: number;
   avaliacao: AvaliacaoVisita | undefined;
@@ -27,11 +29,14 @@ function TileEstrela() {
   );
 }
 
-export function AvaliacaoJogo({ jogo, agora, avaliacao, onAvaliar }: AvaliacaoJogoProps) {
+export function AvaliacaoJogo({ jogo, agora, avaliacao, podeAvaliar, onAvaliar }: AvaliacaoJogoProps) {
   const theme = useTheme();
 
   // Before the final whistle there is nothing to rate: the section stays out of the way instead of a placeholder.
   if (estadoDoJogo(jogo, agora) !== 'terminado') return null;
+
+  // Only who stamped the stadium went, and only they rate it (the server refuses a rating without the stamp).
+  if (!avaliacao && !podeAvaliar) return null;
 
   if (!avaliacao) {
     return (
