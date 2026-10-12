@@ -34,5 +34,7 @@ jobs:
           version: 2.117.0
       - name: Supabase local com as migrações e a seed
         run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor
+      - name: Catálogo de teste (tascos, parques, ruas, jogos)
+        run: psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -X -q -v ON_ERROR_STOP=1 -f supabase/tests/catalogo.sql
       - name: Testes de SQL
         run: SQL_ALVO=--local sh scripts/testes/sql.sh

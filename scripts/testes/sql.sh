@@ -24,7 +24,11 @@ for ficheiro in supabase/tests/*.test.sql; do
   else
     falhou=1
     printf 'FALHA %s\n' "$(basename "$ficheiro")"
-    erros=$(printf '%s\n' "$saida" | grep -oE 'FAILED[^"\\]*|ERROR:[^"\\]*' | head -3)
+    if [ "$alvo" = "--local" ]; then
+      erros=$(printf '%s\n' "$saida" | grep -E 'ERROR|FAILED|DETAIL|LINE' | head -4)
+    else
+      erros=$(printf '%s\n' "$saida" | grep -oE 'FAILED[^"\\]*|ERROR:[^"\\]*' | head -3)
+    fi
     if [ -n "$erros" ]; then printf '%s\n' "$erros"; else printf '%s\n' "$saida" | head -c 400; echo; fi
   fi
 done
