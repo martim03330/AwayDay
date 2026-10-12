@@ -13,7 +13,6 @@ import {
   leaveGroup,
   removeGroupMember,
   renameGroup,
-  rotateGroupInvite,
   saveGroupBackground,
   saveGroupPhoto,
   type GroupMember,
@@ -308,7 +307,7 @@ export default function DefinicoesDoGrupoScreen() {
       </Card>
 
       <SectionHeader title="Convidar" />
-      <Button label="Partilhar o link do grupo" icon={icons.partilhar} onPress={() => void convidar()} />
+      <Button label="Partilhar" icon={icons.partilhar} onPress={() => void convidar()} />
       {porConvidar.length > 0 ? (
         <Card style={styles.lista}>
           {porConvidar.map((amigo, indice) => (
@@ -338,21 +337,6 @@ export default function DefinicoesDoGrupoScreen() {
             />
           ))}
         </Card>
-      ) : null}
-      <ThemedText type="small" themeColor="textMuted">
-        Quem abrir o link entra no grupo: manda-o só a quem queres lá dentro. Os amigos recebem um
-        convite e escolhem se entram.
-      </ThemedText>
-      {souDono ? (
-        <LinkTexto
-          neutro
-          label="Trocar o link (o antigo deixa de servir)"
-          onPress={() =>
-            void tratar(async () => {
-              await rotateGroupInvite(grupo.id);
-            })
-          }
-        />
       ) : null}
 
       <SectionHeader title="Fundo da conversa" />

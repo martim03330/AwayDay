@@ -356,7 +356,7 @@ export default function JogosScreen() {
             {verConcorrencia && !semClube && !clubesSemJogos ? (
               <View style={styles.filtrosClube}>
                 <Chip
-                  label="Voltar aos meus clubes"
+                  label={meusClubes.length === 1 ? 'Voltar ao meu clube' : 'Voltar aos meus clubes'}
                   selected={false}
                   onPress={() => setVerConcorrencia(false)}
                   leading={
