@@ -85,3 +85,16 @@ export function comAMinhaReacao(reacoes: readonly Reacao[], emoji: Emoji | null)
     : [...semAMinha, { emoji, count: 1, mine: true }];
   return novas.sort((a, b) => b.count - a.count);
 }
+
+// The key each message you sent from here had before the server confirmed it, by its real id. The list keeps drawing
+// the same bubble when the server's version arrives: no flash, and the send animation is not cut short.
+const chavesConfirmadas = new Map<string, string>();
+
+export function lembrarChave(id: string, chaveLocal: string) {
+  chavesConfirmadas.set(id, chaveLocal);
+}
+
+/** The key a chat list should use for a message: the same from the moment it is sent. */
+export function chaveDaMensagem(mensagem: { id: string; chaveLocal?: string }) {
+  return mensagem.chaveLocal ?? chavesConfirmadas.get(mensagem.id) ?? mensagem.id;
+}

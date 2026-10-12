@@ -1,7 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import Animated, { Easing, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
@@ -17,7 +18,7 @@ import {
 } from '@/features/rides/hooks/useRideChat';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { aindaDaParaEditar, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
+import { aindaDaParaEditar, chaveDaMensagem, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
 import { mencoesNoTexto, type Mencionavel } from '@/lib/mencoes';
 import { useUserId } from '@/lib/session';
@@ -28,6 +29,9 @@ import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons } from '@/ui/icon';
 import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
 import { ThemedText } from '@/ui/themed-text';
+
+/** How the rest of the chat makes room for a new message: as fast as the send animation, easing out. */
+const DESLIZAR_MENSAGENS = LinearTransition.duration(240).easing(Easing.out(Easing.cubic));
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof ChatRefused)) return 'Não deu para enviar. Tenta outra vez.';
@@ -256,10 +260,12 @@ export default function ConversaDoCarroScreen() {
             )}
           </View>
         ) : (
-          <FlatList
+          <Animated.FlatList
+            // The other messages slide up with the new one instead of jumping in one frame.
+            itemLayoutAnimation={DESLIZAR_MENSAGENS}
             data={lista}
             inverted
-            keyExtractor={(mensagem) => mensagem.chaveLocal ?? mensagem.id}
+            keyExtractor={chaveDaMensagem}
             contentContainerStyle={styles.mensagens}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"

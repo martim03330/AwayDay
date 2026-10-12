@@ -22,7 +22,7 @@ import {
   fetchPlans,
 } from '@/features/groups/plans';
 import { fetchGroupHistory } from '@/features/groups/history';
-import { comAMinhaReacao, idLocal, type Emoji } from '@/lib/conversa';
+import { comAMinhaReacao, idLocal, lembrarChave, type Emoji } from '@/lib/conversa';
 import { supabase } from '@/lib/supabase';
 
 // Os ecrãs antigos dos grupos já invalidavam ['groups']: as chaves daqui continuam debaixo desse prefixo.
@@ -291,6 +291,7 @@ export function useGroupChatActions(groupId: string | null, eu: { profileId: str
     await mudarLista((lista) => [local, ...lista]);
     try {
       const id = await sendGroupMessage(groupId, texto, resposta?.id ?? null, mencoes);
+      lembrarChave(id, local.id);
       queryClient.setQueryData<GroupMessage[]>(chave, (lista) =>
         (lista ?? []).map((mensagem) =>
           mensagem.id === local.id ? { ...mensagem, id, canRemove: true } : mensagem

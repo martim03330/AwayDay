@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   aindaDaParaEditar,
+  chaveDaMensagem,
   comAMinhaReacao,
   eLocal,
   idLocal,
   lerCitacao,
+  lembrarChave,
   lerReacoes,
   minhaReacao,
   proximaReacao,
@@ -101,5 +103,18 @@ describe('local messages', () => {
     expect(eLocal(idLocal(1))).toBe(true);
     expect(eLocal('0b6c6c8e-0000-4000-8000-000000000000')).toBe(false);
     expect(idLocal(1)).not.toBe(idLocal(1));
+  });
+});
+
+describe('chaveDaMensagem', () => {
+  it('keeps the key a message had while it was being sent', () => {
+    const local = idLocal(5);
+    expect(chaveDaMensagem({ id: local, chaveLocal: local })).toBe(local);
+    lembrarChave('id-do-servidor', local);
+    expect(chaveDaMensagem({ id: 'id-do-servidor' })).toBe(local);
+  });
+
+  it('uses the id for everything else', () => {
+    expect(chaveDaMensagem({ id: 'outra' })).toBe('outra');
   });
 });

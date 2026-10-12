@@ -10,7 +10,7 @@ import {
   sendRideMessage,
   type RideMessage,
 } from '@/features/rides/chat';
-import { comAMinhaReacao, idLocal, type Emoji } from '@/lib/conversa';
+import { comAMinhaReacao, idLocal, lembrarChave, type Emoji } from '@/lib/conversa';
 import { supabase } from '@/lib/supabase';
 
 const CHAT_KEY = 'ride-chat';
@@ -137,6 +137,7 @@ export function useRideChatActions(rideId: string | null, eu: { profileId: strin
     await mudarLista((lista) => [...lista, local]);
     try {
       const id = await sendRideMessage(rideId, texto, resposta?.id ?? null, mencoes);
+      lembrarChave(id, local.id);
       queryClient.setQueryData<RideMessage[]>(chave, (lista) =>
         (lista ?? []).map((mensagem) =>
           mensagem.id === local.id ? { ...mensagem, id, canRemove: true } : mensagem
