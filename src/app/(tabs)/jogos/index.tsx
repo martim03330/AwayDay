@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { startTransition, useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,6 +62,8 @@ const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string 
 
 /** How many upcoming games of your club the list shows before "Ver o calendário todo". */
 const PROXIMOS_DO_CLUBE = 2;
+/** With every club's games (or no club), the next few only: drawing the whole season at once froze the screen. */
+const PROXIMOS_DE_TODOS = 12;
 
 /** Today's date for the header eyebrow ("segunda-feira, 14 de setembro"), always in Lisbon. */
 const formatoHoje = new Intl.DateTimeFormat('pt-PT', {
@@ -231,8 +233,8 @@ export default function JogosScreen() {
   const terminados = filtrados
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado')
     .reverse();
-  const resumido = !verTodos && !verCalendario;
-  const grupos = agruparPorDia(resumido ? proximos.slice(0, PROXIMOS_DO_CLUBE) : proximos);
+  const limite = verTodos ? PROXIMOS_DE_TODOS : PROXIMOS_DO_CLUBE;
+  const grupos = agruparPorDia(verCalendario ? proximos : proximos.slice(0, limite));
   const clubeFavorito = obterClube(clubeFavoritoId);
   // The earliest game the fan marked as going to (the catalogue is sorted by kick-off).
   const hoje = formatoHoje.format(new Date(agora));
@@ -270,7 +272,7 @@ export default function JogosScreen() {
                   : { label: 'Limpar filtros', onPress: limparFiltros }
               }
             />
-            <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
+            <EspreitarConcorrencia onPress={() => startTransition(() => setVerConcorrencia(true))} />
           </View>
         );
       }
@@ -292,14 +294,20 @@ export default function JogosScreen() {
             {grupo.jogos.map(renderJogo)}
           </View>
         ))}
-        {!verTodos && proximos.length > PROXIMOS_DO_CLUBE ? (
+        {proximos.length > limite ? (
           <Expansor
             icon={icons.calendario}
             titulo={verCalendario ? 'Só os próximos jogos' : 'Calendário todo'}
-            subtitulo={clubeFavorito ? `Os jogos do ${clubeFavorito.nomeCurto} até ao fim da época` : undefined}
+            subtitulo={
+              verTodos
+                ? 'Os jogos de todos os clubes até ao fim da época'
+                : clubeFavorito
+                  ? `Os jogos do ${clubeFavorito.nomeCurto} até ao fim da época`
+                  : undefined
+            }
             contagem={verCalendario ? undefined : proximos.length}
             aberto={verCalendario}
-            onPress={() => setVerCalendario((atual) => !atual)}
+            onPress={() => startTransition(() => setVerCalendario((atual) => !atual))}
           />
         ) : null}
         {terminados.length > 0 ? (
@@ -314,7 +322,7 @@ export default function JogosScreen() {
             onPress={() => router.push('/perfil/clube')}
           />
         ) : verConcorrencia || clubesSemJogos ? null : (
-          <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
+          <EspreitarConcorrencia onPress={() => startTransition(() => setVerConcorrencia(true))} />
         )}
       </>
     );
@@ -379,7 +387,7 @@ export default function JogosScreen() {
                 <Chip
                   label={meusClubes.length === 1 ? 'Voltar ao meu clube' : 'Voltar aos meus clubes'}
                   selected={false}
-                  onPress={() => setVerConcorrencia(false)}
+                  onPress={() => startTransition(() => setVerConcorrencia(false))}
                   leading={
                     <View style={styles.escudos}>
                       {meusClubes.map((clube) => (
