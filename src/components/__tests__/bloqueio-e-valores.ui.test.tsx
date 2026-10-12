@@ -45,8 +45,10 @@ describe('BloqueioDaApp', () => {
   it('opens once the phone confirms the owner', async () => {
     render(<BloqueioDaApp />);
     await waitFor(() => expect(mockAuthenticate).toHaveBeenCalledTimes(1));
+    // The automatic request must finish first: a tap while it runs is ignored (as on the phone).
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeEnabled());
     mockAuthenticate.mockResolvedValue({ success: true });
-    fireEvent.press(await screen.findByRole('button', { name: 'Desbloquear' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Desbloquear' }));
     await waitFor(() => expect(screen.queryByTestId('bloqueio-da-app')).toBeNull());
     expect(mockAuthenticate).toHaveBeenCalledTimes(2);
   });
