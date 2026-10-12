@@ -97,7 +97,8 @@ export function CaptchaProvider({ children }: { children: ReactNode }) {
                   html: captchaPage(SITE_KEY, escuro),
                   baseUrl: CAPTCHA_BASE_URL,
                 }}
-                originWhitelist={['https://*']}
+                // Turnstile draws its box in an `about:srcdoc` iframe: blocking it means no token ever comes back.
+                originWhitelist={['https://*', 'about:*']}
                 onMessage={aoReceber}
                 javaScriptEnabled
                 scrollEnabled={false}
