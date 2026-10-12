@@ -24,10 +24,26 @@ export default function ConfirmarEmailScreen() {
   const erroPedido = verificar.error ?? reenviar.error;
   const aConfirmar = verificar.isPending || verificar.isSuccess;
 
-  function submeter() {
+  // A wrong code is cleared, so the right one can be typed at once (the keyboard stays open).
+  function submeter(code = codigo) {
     setTentou(true);
-    if (codeError(codigo) || aConfirmar) return;
-    verificar.mutate({ email, code: codigo }, { onSuccess: fecharConta });
+    if (codeError(code) || aConfirmar) return;
+    verificar.mutate(
+      { email, code },
+      {
+        onSuccess: fecharConta,
+        onError: () => {
+          setCodigo('');
+          setTentou(false);
+        },
+      }
+    );
+  }
+
+  function escrever(texto: string) {
+    // Typing again takes the previous error away.
+    if (verificar.isError) verificar.reset();
+    setCodigo(texto);
   }
 
   return (
@@ -48,17 +64,17 @@ export default function ConfirmarEmailScreen() {
       <CampoCodigo
         label="Código"
         value={codigo}
-        onChangeText={setCodigo}
+        onChangeText={escrever}
         erro={tentou ? codeError(codigo) : null}
         digitos={8}
-        maxLength={9}
         autoFocus
         returnKeyType="go"
-        onSubmitEditing={submeter}
+        onSubmitEditing={() => submeter()}
+        onCompleto={submeter}
       />
       <Button
         label={aConfirmar ? 'A confirmar…' : 'Confirmar'}
-        onPress={submeter}
+        onPress={() => submeter()}
         disabled={aConfirmar}
       />
       <View style={styles.rodape}>

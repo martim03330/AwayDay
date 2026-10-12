@@ -18,7 +18,7 @@ import Animated, {
 
 import { COR_ZONA_A_EVITAR } from '@/components/cuidados-visitantes';
 import { CarrosselLocais } from '@/components/carrossel-locais';
-import { corFacilidade, LegendaFacilidade } from '@/components/facilidade-parque';
+import { corFacilidade } from '@/components/facilidade-parque';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, COR_TASCO, Radius, Spacing } from '@/constants/theme';
 import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
@@ -58,8 +58,6 @@ const ATRASO_PRIMEIRO_PONTO_MS = 150;
 const DELTA_CIDADE = 0.12;
 const DELTA_ESTADIO = 0.02;
 const COR_ADEPTOS_DA_CASA = '#E8590C';
-/** Blue square with a P, like road signs for car parks. */
-const COR_ESTACIONAMENTO = '#1F5BB5';
 
 type WcPerto = { wc: Restroom; metros: number; minutos: number };
 
@@ -637,64 +635,6 @@ export function MapaJogo({
         ) : null}
       </View>
 
-      <View style={styles.legenda}>
-        <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-          <View style={[styles.pontoLegendaIcone, { backgroundColor: COR_TASCO }]}>
-            <Icon name={icons.tasco} size={9} color="#FFFFFF" strokeWidth={2.6} />
-          </View>
-          <ThemedText style={styles.legendaTexto}>Tasco</ThemedText>
-        </View>
-        <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-          <View style={[styles.pontoLegenda, { backgroundColor: COR_ADEPTOS_DA_CASA }]} />
-          <ThemedText style={styles.legendaTexto}>Adeptos da casa</ThemedText>
-        </View>
-        <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-          <View
-            style={[styles.pontoLegenda, styles.pontoLegendaWc, { backgroundColor: theme.info }]}
-          />
-          <ThemedText style={styles.legendaTexto}>WC</ThemedText>
-        </View>
-        {parquesNoMapa.length > 0 ? (
-          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-            <View
-              style={[
-                styles.pontoLegenda,
-                styles.pontoLegendaWc,
-                { backgroundColor: COR_ESTACIONAMENTO },
-              ]}
-            />
-            <ThemedText style={styles.legendaTexto}>Estacionamento</ThemedText>
-          </View>
-        ) : null}
-        {zonasCasa.length > 0 ? (
-          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-            <View style={[styles.pontoLegenda, { backgroundColor: COR_ADEPTOS_PESQUISA }]} />
-            <ThemedText style={styles.legendaTexto}>
-              Zonas conhecidas dos adeptos da casa
-            </ThemedText>
-          </View>
-        ) : null}
-        {(ruasDaCasa.data ?? []).length > 0 ? (
-          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-            <View style={[styles.pontoLegenda, { backgroundColor: COR_ADEPTOS_DA_CASA }]} />
-            <ThemedText style={styles.legendaTexto}>Ruas com adeptos da casa</ThemedText>
-          </View>
-        ) : null}
-        {(zonasAdeptos.data ?? []).length > 0 ? (
-          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-            <View style={[styles.pontoLegenda, { backgroundColor: 'rgba(232, 89, 12, 0.5)' }]} />
-            <ThemedText style={styles.legendaTexto}>Adeptos da casa agora</ThemedText>
-          </View>
-        ) : null}
-        {zonas.length > 0 ? (
-          <View style={[styles.itemLegenda, { backgroundColor: theme.backgroundSelected }]}>
-            <View style={[styles.pontoLegenda, { backgroundColor: COR_ZONA_A_EVITAR }]} />
-            <ThemedText style={styles.legendaTexto}>Zona a evitar</ThemedText>
-          </View>
-        ) : null}
-      </View>
-
-      {parquesNoMapa.length > 0 ? <LegendaFacilidade /> : null}
 
       <ThemedText themeColor="textSecondary" style={styles.dica}>
         {dica}
@@ -853,39 +793,6 @@ const styles = StyleSheet.create({
   },
   trancaTexto: {
     fontWeight: '600',
-  },
-  legenda: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
-  itemLegenda: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 28,
-    paddingHorizontal: 10,
-    borderRadius: Radius.pill,
-  },
-  legendaTexto: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: 800,
-  },
-  pontoLegenda: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  pontoLegendaWc: {
-    borderRadius: 3,
-  },
-  pontoLegendaIcone: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   dica: {
     fontSize: 14,

@@ -26,7 +26,7 @@ export default function AlbumScreen() {
           icon={icons.album}
           title="Álbum vazio, por agora"
           message="Cumpre uma missão e tira a foto de prova: fica aqui para mais tarde."
-          action={{ label: 'Ver missões', onPress: () => router.back() }}
+          action={{ label: 'Ver missões', onPress: () => router.navigate('/ranking/missoes') }}
         />
       ) : (
         <>

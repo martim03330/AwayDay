@@ -28,7 +28,10 @@ export default function TabsLayout() {
   const { modoDemo } = useAppState();
   return (
     <View style={styles.flex}>
+      {/* The bar keeps its colour at the end of a page too (iOS makes it transparent there by default, which
+          testers took for a bug). */}
       <NativeTabs
+        disableTransparentOnScrollEdge
         backgroundColor={colors.background}
         indicatorColor={colors.successBackground}
         labelStyle={{ selected: { color: colors.accentInk } }}>

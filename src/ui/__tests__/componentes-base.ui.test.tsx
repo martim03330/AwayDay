@@ -14,6 +14,7 @@ import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { MensagemErro } from '@/ui/mensagem-erro';
 import { Segmentado } from '@/ui/segmentado';
+import { CampoCodigo } from '@/features/auth/components/AuthForm';
 import { MenuDaMensagem } from '@/ui/menu-da-mensagem';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -448,5 +449,25 @@ describe('MenuDaMensagem', () => {
   it('stays closed without a message', () => {
     render(<MenuDaMensagem texto={null} minhaReacao={null} acoes={[]} onFechar={jest.fn()} />);
     expect(screen.queryByText('Bora!')).toBeNull();
+  });
+});
+
+describe('CampoCodigo', () => {
+  it('keeps only digits, at most the code length, and confirms on its own when complete', () => {
+    const onChangeText = jest.fn();
+    const onCompleto = jest.fn();
+    render(
+      <CampoCodigo label="Código" value="" onChangeText={onChangeText} digitos={8} onCompleto={onCompleto} />
+    );
+    fireEvent.changeText(screen.getByLabelText('Código'), '1234 5678 9');
+    expect(onChangeText).toHaveBeenCalledWith('12345678');
+    expect(onCompleto).toHaveBeenCalledWith('12345678');
+  });
+
+  it('does not confirm while incomplete', () => {
+    const onCompleto = jest.fn();
+    render(<CampoCodigo label="Código" value="" onChangeText={jest.fn()} digitos={8} onCompleto={onCompleto} />);
+    fireEvent.changeText(screen.getByLabelText('Código'), '1234');
+    expect(onCompleto).not.toHaveBeenCalled();
   });
 });

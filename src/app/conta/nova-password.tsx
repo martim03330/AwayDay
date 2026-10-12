@@ -54,7 +54,6 @@ export default function NovaPasswordScreen() {
         onChangeText={setCodigo}
         erro={tentou ? codeError(codigo) : null}
         digitos={8}
-        maxLength={9}
         autoFocus
         returnKeyType="next"
       />

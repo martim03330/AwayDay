@@ -1,7 +1,8 @@
-import { useState, type ReactNode, type Ref } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -92,26 +93,46 @@ type CampoCodigoProps = {
   erro?: string | null;
   /** How many digits the code has (one box each). */
   digitos: number;
-  ref?: Ref<TextInput>;
-} & Pick<TextInputProps, 'autoFocus' | 'maxLength' | 'onSubmitEditing' | 'returnKeyType'>;
+  /** Called once all the digits are in (typed, pasted or filled in from Mail): confirms without a tap. */
+  onCompleto?: (codigo: string) => void;
+} & Pick<TextInputProps, 'autoFocus' | 'onSubmitEditing' | 'returnKeyType'>;
 
 /**
- * One-time code field: a transparent TextInput on top of one box per digit. The input keeps the
- * raw text (paste, autofill), the boxes only mirror its digits.
+ * One-time code field: an almost transparent TextInput on top of one box per digit. The input keeps only digits
+ * (a pasted «1234 5678» or the code iOS offers from Mail also work), the boxes mirror them.
+ *
+ * Testers lost the keyboard here: the input had opacity 0, and iOS ignores taps on anything under 0.01, so tapping
+ * the boxes did nothing. Now any tap on the boxes focuses it, the caret is always at the end, and sending keeps the
+ * keyboard open.
  */
-export function CampoCodigo({ label, value, onChangeText, erro, digitos, ref, ...input }: CampoCodigoProps) {
+export function CampoCodigo({
+  label,
+  value,
+  onChangeText,
+  erro,
+  digitos,
+  onCompleto,
+  ...input
+}: CampoCodigoProps) {
   const theme = useTheme();
   useAnunciarErro(label, erro);
+  const caixa = useRef<TextInput>(null);
   const [focado, setFocado] = useState(false);
   const algarismos = value.replace(/\D/g, '').slice(0, digitos);
   const metade = Math.floor(digitos / 2);
+
+  function mudar(texto: string) {
+    const limpo = texto.replace(/\D/g, '').slice(0, digitos);
+    onChangeText(limpo);
+    if (limpo.length === digitos && algarismos.length < digitos) onCompleto?.(limpo);
+  }
 
   return (
     <View style={styles.campo}>
       <ThemedText style={styles.label} importantForAccessibility="no" accessibilityElementsHidden>
         {label}
       </ThemedText>
-      <View>
+      <Pressable onPress={() => caixa.current?.focus()} accessible={false}>
         <View
           style={styles.caixas}
           accessibilityElementsHidden
@@ -151,22 +172,26 @@ export function CampoCodigo({ label, value, onChangeText, erro, digitos, ref, ..
           })}
         </View>
         <TextInput
-          submitBehavior={input.returnKeyType === 'next' ? 'submit' : undefined}
+          // Sending never closes the keyboard: after a wrong code you can type the right one straight away.
+          submitBehavior="submit"
           {...input}
-          ref={ref}
-          value={value}
-          onChangeText={onChangeText}
+          ref={caixa}
+          value={algarismos}
+          onChangeText={mudar}
+          maxLength={digitos}
           keyboardType="number-pad"
           autoComplete="one-time-code"
           textContentType="oneTimeCode"
           autoCorrect={false}
           caretHidden
+          // Typing always goes at the end, wherever the tap landed.
+          selection={{ start: algarismos.length, end: algarismos.length }}
           onFocus={() => setFocado(true)}
           onBlur={() => setFocado(false)}
           accessibilityLabel={erro ? `${label}. Erro: ${erro}` : label}
           style={styles.inputInvisivel}
         />
-      </View>
+      </Pressable>
       {erro ? (
         <ThemedText
           style={[styles.mensagem, { color: theme.danger }]}
@@ -288,7 +313,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    opacity: 0,
+    // Not 0: iOS ignores taps on anything under 0.01 (the text itself stays invisible).
+    opacity: 0.02,
     color: 'transparent',
   },
   mensagem: {
