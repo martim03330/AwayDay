@@ -4686,6 +4686,10 @@ export type Database = {
       join_group_with_code: { Args: { p_code: string }; Returns: string }
       join_plan_ride: { Args: { p_plan_id: string }; Returns: undefined }
       join_plan_stay: { Args: { p_plan_id: string }; Returns: undefined }
+      knows_profile: {
+        Args: { p_profile_id: string; p_viewer: string }
+        Returns: boolean
+      }
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
@@ -5001,6 +5005,10 @@ export type Database = {
           score: number
         }[]
       }
+      plan_for_group_game: {
+        Args: { p_fixture_id: string; p_group_id: string; p_profile_id: string }
+        Returns: string
+      }
       plan_weekly_challenges: { Args: never; Returns: number }
       post_plan_message: {
         Args: { p_group_id: string; p_plan_id: string; p_profile_id: string }
@@ -5079,6 +5087,7 @@ export type Database = {
           division: number
           is_me: boolean
           level: number
+          profile_id: string
           rank_position: number
           xp: number
         }[]
@@ -5765,6 +5774,7 @@ export type Database = {
           club_id: string
           display_name: string
           is_me: boolean
+          profile_id: string
           rank_position: number
           verified_places: number
         }[]

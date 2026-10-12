@@ -109,6 +109,7 @@ export async function fetchVerifiedPlacesRanking(): Promise<RankingRow[]> {
   if (error) throw error;
   return data.map((row) => ({
     position: row.rank_position,
+    profileId: row.profile_id,
     isMe: row.is_me,
     displayName: row.display_name,
     clubId: row.club_id ?? null,

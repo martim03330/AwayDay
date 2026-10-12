@@ -1,8 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { Card } from '@/ui/card';
+import { Icon, icons } from '@/ui/icon';
 import { NumeroAnimado } from '@/ui/numero-animado';
+import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
 export type LinhaTabela = {
@@ -15,10 +18,23 @@ export type LinhaTabela = {
   /** When given, the number behind `valor` and how to write it: the value then rolls when it changes. */
   numero?: { valor: number; formatar: (valor: number) => string };
   sou: boolean;
+  /** Whose line it is: with `onAbrir`, tapping the line opens their profile. */
+  perfilId?: string;
 };
 
 /** A ranking table. Your own line is highlighted, and stays in even when you are outside the top. */
-export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[]; vazio: string }) {
+export function TabelaRanking({
+  linhas,
+  vazio,
+  onAbrir,
+}: {
+  linhas: readonly LinhaTabela[];
+  vazio: string;
+  /** Opens someone's profile; lines with a `perfilId` (other than yours) become tappable. */
+  onAbrir?: (perfilId: string) => void;
+}) {
+  const theme = useTheme();
+  const abrivel = (linha: LinhaTabela) => Boolean(onAbrir && linha.perfilId && !linha.sou);
 
   if (linhas.length === 0) {
     return (
@@ -39,9 +55,13 @@ export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[
                 ⋯
               </ThemedText>
             ) : null}
-            <View
+            <Premivel
+              escala={0.98}
+              disabled={!abrivel(linha)}
+              onPress={() => linha.perfilId && onAbrir?.(linha.perfilId)}
               accessible
-              accessibilityLabel={`${linha.posicao}.º, ${linha.sou ? 'tu' : linha.nome}, ${linha.valor}, ${linha.detalhe}`}
+              accessibilityRole={abrivel(linha) ? 'button' : undefined}
+              accessibilityLabel={`${linha.posicao}.º, ${linha.sou ? 'tu' : linha.nome}, ${linha.valor}, ${linha.detalhe}${abrivel(linha) ? '. Toca para ver o perfil.' : ''}`}
               style={styles.linha}>
               <ThemedText
                 type="score"
@@ -63,7 +83,8 @@ export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[
               ) : (
                 <ThemedText type="smallBold">{linha.valor}</ThemedText>
               )}
-            </View>
+              {abrivel(linha) ? <Icon name={icons.seguinte} size={14} color={theme.textMuted} /> : null}
+            </Premivel>
           </View>
         );
       })}

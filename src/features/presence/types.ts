@@ -43,6 +43,8 @@ export class CheckInRefused extends Error {
 /** One line of a ranking. Other people only appear when they chose to. */
 export type RankingRow = {
   position: number;
+  /** To open their profile from the table; absent where the table is not about people's profiles. */
+  profileId?: string;
   isMe: boolean;
   displayName: string;
   clubId: string | null;

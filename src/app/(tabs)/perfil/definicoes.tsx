@@ -250,7 +250,7 @@ export default function DefinicoesScreen() {
               separador
               leading={<Icon name={icons.ranking} size={20} color={theme.accentInk} />}
               title="Aparecer no ranking"
-              subtitle="O teu nome, nível e pontos nas tabelas. Nunca onde estás."
+              subtitle="Nome, nível e pontos nas tabelas, e o teu perfil a quem tocar em ti (sem o concelho). Nunca onde estás."
               trailing={
                 <Switch
                   value={aparecoNoRanking}

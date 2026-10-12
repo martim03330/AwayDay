@@ -82,7 +82,7 @@ export const PRIVACIDADE: DocumentoLegal = {
           'Boleias: o ponto de encontro que escolhes (nome e local no mapa, visíveis a quem vê a boleia), a hora, os lugares, o consumo e o preço do combustível que indicas, os pedidos, as presenças, os imprevistos e a conversa do carro. Base: execução do contrato.',
           'Grupos e viagens: mensagens, fotos, planos, casas propostas, despesas e acertos de contas. Base: execução do contrato.',
           'Fotos: as das missões são privadas; as de tascos só aparecem depois de aprovadas e sem o teu nome; as do álbum da viagem só as vê quem foi e os grupos dessa viagem. Base: execução do contrato.',
-          'Rankings: aparecem o teu nome, o clube, o nível e os pontos (nunca onde estás). Podes deixar de aparecer quando quiseres, em Definições → Privacidade. Base: interesse legítimo (o ranking faz parte da app), com direito de oposição.',
+          'Rankings: aparecem o teu nome, o clube, o nível e os pontos (nunca onde estás). Quem te vê nas tabelas pode abrir o teu perfil: foto, nome, clube, desde quando estás na app, boleias feitas e estádios carimbados (o concelho não). Podes deixar de aparecer quando quiseres, em Definições → Privacidade. Base: interesse legítimo (o ranking faz parte da app), com direito de oposição.',
           'Notificações: o identificador do teu telemóvel para receberes avisos. Base: o teu consentimento, dado na permissão do telemóvel e nas Definições.',
           'Segurança e moderação: denúncias, bloqueios e limites de utilização, para proteger quem usa a app e travar abusos. Base: interesse legítimo.',
           'Relatórios de erro que nos envias: o texto que escreves, o modelo do telemóvel e a versão da app. Base: interesse legítimo em corrigir erros.'

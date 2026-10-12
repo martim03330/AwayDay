@@ -13,6 +13,7 @@ import { formatarNumero, plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { useAppState } from '@/state/app-state';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
@@ -71,6 +72,7 @@ export default function TabelasScreen() {
   const params = useLocalSearchParams<{ ambito?: string }>();
   const userId = useUserId();
   const queryClient = useQueryClient();
+  const abrirPerfil = useAbrirPerfil();
   const { fonte } = useAppState();
   const conta = fonte === 'conta' ? userId : null;
 
@@ -107,6 +109,7 @@ export default function TabelasScreen() {
     valor: pontosTexto(linha.xp),
     numero: { valor: linha.xp, formatar: pontosTexto },
     sou: linha.isMe,
+    perfilId: linha.profileId,
   }));
 
   const linhasEstadios: LinhaTabela[] = (estadios.data ?? []).map((linha, indice) => ({
@@ -117,6 +120,7 @@ export default function TabelasScreen() {
     valor: estadiosTexto(linha.stadiums),
     numero: { valor: linha.stadiums, formatar: estadiosTexto },
     sou: linha.isMe,
+    perfilId: linha.profileId,
   }));
 
   const linhasTascos: LinhaTabela[] = (tascos.data ?? []).map((linha) => ({
@@ -127,6 +131,7 @@ export default function TabelasScreen() {
     valor: tascosTexto(linha.value),
     numero: { valor: linha.value, formatar: tascosTexto },
     sou: linha.isMe,
+    perfilId: linha.profileId,
   }));
 
   const linhasEstadiosCheios: LinhaTabela[] = (adeptos.venues.data ?? []).map((linha, indice) => {
@@ -179,12 +184,13 @@ export default function TabelasScreen() {
           {ambito === 'divisao' ? null : (
             <Segmentado opcoes={PERIODOS} valor={periodo} onChange={setPeriodo} />
           )}
-          <TabelaRanking linhas={linhasPontos} vazio={VAZIO[ambito]} />
+          <TabelaRanking linhas={linhasPontos} vazio={VAZIO[ambito]} onAbrir={abrirPerfil} />
         </>
       ) : null}
 
       {tabela === 'estadios' ? (
         <TabelaRanking
+          onAbrir={abrirPerfil}
           linhas={linhasEstadios}
           vazio="Ainda ninguém carimbou estádios. Em dia de jogo, carimba no estádio."
         />
@@ -192,6 +198,7 @@ export default function TabelasScreen() {
 
       {tabela === 'tascos' ? (
         <TabelaRanking
+          onAbrir={abrirPerfil}
           linhas={linhasTascos}
           vazio="Ainda ninguém tem tascos verificados. Faz check-in no tasco em dia de jogo."
         />

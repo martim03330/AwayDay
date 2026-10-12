@@ -214,8 +214,22 @@ select pg_temp.expect('non-admin gets no reported photos',
 
 -- 4. Profile cards: name, photo, city and reputation, never the email or the clubs; and only of people A has a
 -- reason to see (crossed paths, a driver with an open ride, a plan A sees), so nobody can dump every profile.
+reset role;
+update public.profile set show_in_rankings = false where id = 'ad000001-0000-4000-8000-0000000000b1';
+set local role authenticated;
+select pg_temp.as_user('ad000001-0000-4000-8000-0000000000a1');
 select pg_temp.expect('a stranger''s card is not given',
   (select count(*)::integer from public.profile_cards(array['ad000001-0000-4000-8000-0000000000b1'::uuid])), 0);
+-- A stranger who shows in the ranking: the card opens (from the tables), but without the home town.
+reset role;
+update public.profile set show_in_rankings = true where id = 'ad000001-0000-4000-8000-0000000000b1';
+set local role authenticated;
+select pg_temp.as_user('ad000001-0000-4000-8000-0000000000a1');
+select pg_temp.expect('a stranger in the ranking: card, without the home town',
+  (select display_name || '/' || coalesce(home_city, '-')
+   from public.profile_cards(array['ad000001-0000-4000-8000-0000000000b1'::uuid])), 'Perfil B/-');
+select pg_temp.expect('and the profile page too, without the home town',
+  (select coalesce(home_city, '-') from public.public_profile('ad000001-0000-4000-8000-0000000000b1')), '-');
 reset role;
 insert into public.fan_group (id, name, created_by, invite_code)
 values ('c0000001-0000-4000-8000-0000000000a1', 'Grupo Perfil', 'ad000001-0000-4000-8000-0000000000a1', 'acperfil01');

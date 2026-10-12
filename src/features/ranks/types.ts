@@ -37,6 +37,8 @@ export type MyRanking = {
 
 export type LeaderboardRow = {
   position: number;
+  /** To open their profile from the table. */
+  profileId: string;
   isMe: boolean;
   displayName: string;
   clubId: string | null;

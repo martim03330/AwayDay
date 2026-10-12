@@ -18,6 +18,7 @@ import {
 } from '@/features/ranks/hooks/useRanking';
 import { segundaFeiraDe } from '@/features/ranks/labels';
 import { seasonLabel } from '@/features/recap/stats';
+import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { useTheme } from '@/hooks/use-theme';
 import { BUILD_DE_CAPTURAS } from '@/lib/capturas';
 import { chaveDoDia } from '@/lib/datas';
@@ -51,6 +52,7 @@ export default function RankingScreen() {
     reporNoTopo: true,
   });
   const router = useRouter();
+  const abrirPerfil = useAbrirPerfil();
   const theme = useTheme();
   const agir = useAcaoDaMissao();
   const insets = useSafeAreaInsets();
@@ -78,6 +80,7 @@ export default function RankingScreen() {
       valor: pontosTexto(linha.xp),
       numero: { valor: linha.xp, formatar: pontosTexto },
       sou: linha.isMe,
+      perfilId: linha.profileId,
     }));
 
   const refrescar = () => queryClient.invalidateQueries({ queryKey: rankingKey(conta) });
@@ -190,6 +193,7 @@ export default function RankingScreen() {
               <View style={styles.bloco}>
                 <SectionHeader title="Tabela da época" />
                 <TabelaRanking
+                  onAbrir={abrirPerfil}
                   linhas={linhasTopo}
                   vazio="Ainda ninguém somou pontos esta época. Carimba o estádio no próximo jogo."
                 />

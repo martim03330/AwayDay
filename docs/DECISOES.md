@@ -2,6 +2,15 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Perfis abertos a partir do ranking
+
+- Tocar numa pessoa das tabelas (pontos, estádios, tascos) abre o perfil dela. Para isso, quem aparece no ranking
+  passa a ter o perfil visível a qualquer utilizador (`can_see_profile_card`: «já se cruzaram» — agora
+  `knows_profile` — ou «está no ranking», sempre respeitando bloqueios). Escolha do Martim: o **concelho** só aparece
+  a quem já se cruzou (`public_profile` e `profile_cards`); a desconhecidos aparecem a foto, o nome, o clube, desde
+  quando está na app, as boleias e os estádios carimbados. Pedir amizade continua a exigir terem-se cruzado.
+- A política de privacidade e o texto de «Aparecer no ranking» dizem-no.
+
 ## 2026-10-13 — Plano de jogo automático, movimento e arranque
 
 - **Plano automático:** uma boleia ou uma casa para um grupo põe o plano do jogo nesse grupo (`plan_for_group_game`,
