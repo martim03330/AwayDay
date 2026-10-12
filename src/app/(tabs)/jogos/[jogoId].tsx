@@ -9,27 +9,20 @@ import { CarimboEstadio } from '@/components/carimbo-estadio';
 import { PlanoDoJogo } from '@/components/plano-do-jogo';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { useRideBoard } from '@/features/rides/hooks/useRides';
 import { GoingButton } from '@/features/activity/components/GoingButton';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useNow } from '@/hooks/use-now';
 import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
-import { notaDoEstadio } from '@/lib/avaliacoes';
-import { formatarCentimos } from '@/lib/money';
-import { useUserId } from '@/lib/session';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
-import { formatarNota, plural } from '@/lib/formatos';
 import { estadoDoJogo } from '@/lib/jogos';
-import { filtrarPorTempoAPe } from '@/lib/locais';
 import { precisaDeDormida } from '@/lib/dormida';
 import { avisoMeteorologico } from '@/lib/meteorologia';
 import { mostrarRelogio } from '@/lib/relogio';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { nomesCompeticao, obterJogo } from '@/mocks/jogos';
-import { locaisDoEstadio } from '@/mocks/locais';
 import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { Aviso } from '@/ui/aviso';
@@ -52,14 +45,12 @@ const SOBREPOSICAO_RELOGIO = 78;
 function LinhaSeccao({
   icone,
   titulo,
-  resumo,
   onPress,
   separador,
   tom = 'normal',
 }: {
   icone: IconName;
   titulo: string;
-  resumo: string;
   onPress: () => void;
   separador?: boolean;
   /** 'destaque': o que está a acontecer agora (amarelo), para saltar à vista. */
@@ -74,14 +65,13 @@ function LinhaSeccao({
   return (
     <LinhaGrupo
       onPress={onPress}
-      accessibilityLabel={`${titulo}. ${resumo}. Toca para abrir.`}
+      accessibilityLabel={`${titulo}. Toca para abrir.`}
       leading={
         <View style={[styles.azulejo, { backgroundColor: cores.fundo }]}>
           <Icon name={icone} size={20} color={cores.tinta} />
         </View>
       }
       title={titulo}
-      subtitle={resumo}
       trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
       separador={separador}
     />
@@ -97,15 +87,13 @@ export default function JogoScreen() {
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
   const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
-  const { avaliacoes, avaliacaoDoJogo, medicoesBarulho, clubeDaTerraId } = useAppState();
+  const { avaliacaoDoJogo, medicoesBarulho, clubeDaTerraId } = useAppState();
 
-  const userId = useUserId();
   const { vou } = usePlanosJogos();
   const jogo = obterJogo(jogoId);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
-  const quadroBoleias = useRideBoard(jogoId ?? null, userId !== null);
 
   if (loading) {
     return (
@@ -136,7 +124,6 @@ export default function JogoScreen() {
   // The live strip is short and green: it sits under the header instead of overlapping it.
   const relogioSobreposto = relogioVisivel && estado !== 'a-decorrer';
   const aviso = estado === 'terminado' ? null : avisoMeteorologico(jogo.meteorologia, estadio);
-  const { perto } = filtrarPorTempoAPe(locaisDoEstadio(estadio.id));
   // Dormir fora não é só para as ilhas e o estrangeiro: quem é das ilhas também dorme fora para vir ao continente.
   const terra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
   const estadioDaTerra = terra?.estadioId ? obterEstadio(terra.estadioId) : undefined;
@@ -144,26 +131,6 @@ export default function JogoScreen() {
 
   const abrir = (pathname: string) =>
     router.push({ pathname: pathname as '/jogos/mapa', params: { jogoId: jogo.id } });
-
-  const nota = notaDoEstadio(avaliacoes, estadio.id)?.media ?? null;
-  const boleias = quadroBoleias.data ?? [];
-  const comLugar = boleias.filter(
-    (boleia) => boleia.status === 'open' && boleia.seatsOffered - boleia.seatsTaken > 0
-  );
-  const maisBarata = comLugar.reduce<number | null>(
-    (menor, boleia) =>
-      menor === null ? boleia.shareNowCents : Math.min(menor, boleia.shareNowCents),
-    null
-  );
-  const resumoBoleias = !userId
-    ? 'Entra para veres quem leva quem'
-    : comLugar.length === 0
-      ? boleias.length > 0
-        ? 'Os carros que há estão cheios'
-        : 'Ainda não há boleias para este jogo'
-      : `${plural(comLugar.length, 'carro com lugar', 'carros com lugar')}${
-          maisBarata !== null ? ` · desde ${formatarCentimos(maisBarata)}` : ''
-        }`;
 
   const inicio = new Date(jogo.inicio);
   const dia = formatarDia(inicio, agora);
@@ -282,7 +249,6 @@ export default function JogoScreen() {
             <LinhaSeccao
               icone={icons.carro}
               titulo="Boleias"
-              resumo={resumoBoleias}
               onPress={() => abrir('/jogos/boleias')}
               separador={dormidaFazSentido}
             />
@@ -290,7 +256,6 @@ export default function JogoScreen() {
               <LinhaSeccao
                 icone={icons.casa}
                 titulo="Onde dormir"
-                resumo="Juntar a malta para uma casa, nos jogos longe"
                 onPress={() => abrir('/jogos/dormir')}
               />
             ) : null}
@@ -301,31 +266,18 @@ export default function JogoScreen() {
             <LinhaSeccao
               icone={icons.rota}
               titulo={estado === 'a-decorrer' ? 'Como voltar' : 'Chegar e estacionar'}
-              resumo="O caminho e os parques à volta"
               onPress={() => abrir('/jogos/chegar')}
               separador
             />
             <LinhaSeccao
               icone={icons.estadio}
               titulo="O estádio"
-              resumo={[
-                nota ? `${formatarNota(nota)} de 5` : 'Ficha do estádio',
-                'WC',
-                jogo.meteorologia ? `${Math.round(jogo.meteorologia.temperatura)}°` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
               onPress={() => abrir('/jogos/estadio')}
               separador
             />
             <LinhaSeccao
               icone={icons.locais}
               titulo="Mapa e sítios"
-              resumo={
-                perto.length > 0
-                  ? `${plural(perto.length, 'tasco', 'tascos')} a menos de 20 min a pé`
-                  : 'Tascos, parques e WC à volta'
-              }
               onPress={() => abrir('/jogos/mapa')}
             />
           </Card>
@@ -342,9 +294,6 @@ export default function JogoScreen() {
                 icone={icons.som}
                 tom="destaque"
                 titulo="Barulhómetro"
-                resumo={
-                  estado === 'a-decorrer' ? 'Em jogo: mede agora' : 'Mede o barulho da bancada'
-                }
                 onPress={() => abrir('/jogos/barulho')}
               />
             </Card>

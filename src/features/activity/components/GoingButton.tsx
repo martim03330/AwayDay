@@ -51,16 +51,16 @@ export function GoingButton({ fixtureId }: { fixtureId: string }) {
   return (
     <View style={styles.block}>
       <BilheteAlternar going={going} onPress={toggle} />
-      <ThemedText themeColor="textSecondary" style={styles.help}>
-        {going
-          ? 'Toca outra vez se mudares de planos.'
-          : 'Marca e preparamos o teu dia: horas, avisos e quem vai contigo.'}
-      </ThemedText>
+      {going ? null : (
+        <ThemedText themeColor="textSecondary" style={styles.help}>
+          Marca e preparamos o teu dia: horas, avisos e quem vai contigo.
+        </ThemedText>
+      )}
       {modoDemo || quantos.isLoading ? null : (
         <ThemedText type="smallBold" style={styles.help}>
           {quantos.data != null
             ? `${quantos.data} adeptos da app vão a este jogo`
-            : 'Ainda são menos de 5 adeptos da app a ir a este jogo. Mostramos o número a partir de 5.'}
+            : 'Menos de 5 adeptos da app vão a este jogo'}
         </ThemedText>
       )}
     </View>
