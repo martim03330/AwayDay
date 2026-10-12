@@ -12,14 +12,24 @@ import { supabase } from '@/lib/supabase';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
-// Shown as a banner even when the app is open.
+/** Chat messages (a group's or a car's). With the app open the app shows its own small banner instead. */
+export function eMensagemDeConversa(dados: unknown) {
+  const tipo = typeof dados === 'object' && dados !== null ? Reflect.get(dados, 'type') : null;
+  return tipo === 'grupo' || tipo === 'conversa';
+}
+
+// Shown as a banner even when the app is open, except chat messages: those get the app's own banner
+// (`BannerDeMensagem`), smaller, and not when that chat is already open.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notificacao) => {
+    const conversa = eMensagemDeConversa(notificacao.request.content.data);
+    return {
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+      shouldShowBanner: !conversa,
+      shouldShowList: true,
+    };
+  },
 });
 
 let registeredToken: string | null = null;

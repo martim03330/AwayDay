@@ -18,6 +18,7 @@ jest.mock('@/state/sons', () => ({ SonsProvider: () => null }));
 jest.mock('@/state/relogio', () => ({ RelogioProvider: () => null }));
 jest.mock('@/components/ligacao-demo', () => ({ LigacaoDemo: () => null }));
 jest.mock('@/components/avisos-jogos-perto', () => ({ AvisosJogosPerto: () => null }));
+jest.mock('@/components/banner-de-mensagem', () => ({ BannerDeMensagem: () => null }));
 jest.mock('@/features/rides/components/AvisosBoleias', () => ({ AvisosBoleias: () => null }));
 jest.mock('@/features/fixtures/components/FixtureCatalogSync', () => ({ FixtureCatalogSync: () => null }));
 jest.mock('@/features/places/components/PlaceCatalogSync', () => ({ PlaceCatalogSync: () => null }));

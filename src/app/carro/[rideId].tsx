@@ -9,15 +9,22 @@ import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import {
   ChatRefused,
+  editRideMessage,
   markRideMessagesRead,
+  reactRideMessage,
   removeRideMessage,
   sendRideMessage,
   type RideMessage,
 } from '@/features/rides/chat';
 import { useRideBoard } from '@/features/rides/hooks/useRides';
-import { useRefreshRideChat, useRideMessages } from '@/features/rides/hooks/useRideChat';
+import {
+  useRefreshRideChat,
+  useRideChannel,
+  useRideMessages,
+} from '@/features/rides/hooks/useRideChat';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
+import { aindaDaParaEditar, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
@@ -25,6 +32,7 @@ import { obterJogo } from '@/mocks/jogos';
 import { BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons } from '@/ui/icon';
+import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
 import { ThemedText } from '@/ui/themed-text';
 
 function mensagemDeRecusa(erro: unknown) {
@@ -60,6 +68,7 @@ export default function ConversaDoCarroScreen() {
   const boleia = (quadro.data ?? []).find((candidata) => candidata.id === rideId);
   const souDoCarro = boleia?.isMine === true || boleia?.myStatus === 'accepted';
   const mensagens = useRideMessages(rideId ?? null, souDoCarro);
+  useRideChannel(rideId ?? null, souDoCarro);
   const cartoes = useProfileCards([
     ...new Set((mensagens.data ?? []).map((mensagem) => mensagem.profileId)),
   ]);
@@ -68,6 +77,9 @@ export default function ConversaDoCarroScreen() {
   const agora = useNow(60 * 1000);
 
   const [texto, setTexto] = useState('');
+  const [aResponder, setAResponder] = useState<RideMessage | null>(null);
+  const [aEditar, setAEditar] = useState<RideMessage | null>(null);
+  const [menuDe, setMenuDe] = useState<{ mensagem: RideMessage; podeEditar: boolean } | null>(null);
   const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -109,7 +121,13 @@ export default function ConversaDoCarroScreen() {
     setErro(null);
     setAEnviar(true);
     try {
-      await sendRideMessage(rideId, texto);
+      if (aEditar) {
+        await editRideMessage(aEditar.id, texto);
+        setAEditar(null);
+      } else {
+        await sendRideMessage(rideId, texto, aResponder?.id ?? null);
+        setAResponder(null);
+      }
       setTexto('');
       await mensagens.refetch();
       void refrescar();
@@ -134,24 +152,72 @@ export default function ConversaDoCarroScreen() {
       },
     ]);
 
-  // Long-press: your own message can be deleted; someone else's can be reported, or its author blocked (the driver
-  // can still delete it too).
-  const aoCarregarSemLargar = (mensagem: RideMessage) => {
-    if (mensagem.mine) return mensagem.canRemove ? () => apagar(mensagem.id) : undefined;
-    return () =>
-      moderacao.abrirMensagem({
-        kind: 'ride_message',
-        messageId: mensagem.id,
-        pessoa: { profileId: mensagem.profileId, nome: mensagem.displayName },
-        extras: mensagem.canRemove
-          ? [{ label: 'Apagar', destrutiva: true, onPress: () => apagar(mensagem.id) }]
-          : [],
+  function reagir(mensagem: RideMessage, emoji: Emoji) {
+    void reactRideMessage(mensagem.id, proximaReacao(mensagem.reactions, emoji))
+      .then(() => mensagens.refetch())
+      .catch(() => setErro('Não deu para reagir. Tenta outra vez.'));
+  }
+
+  function responder(mensagem: RideMessage) {
+    setAEditar(null);
+    setAResponder(mensagem);
+  }
+
+  function editar(mensagem: RideMessage) {
+    setAResponder(null);
+    setAEditar(mensagem);
+    setTexto(mensagem.body);
+  }
+
+  function cancelarContexto() {
+    if (aEditar) setTexto('');
+    setAEditar(null);
+    setAResponder(null);
+  }
+
+  const abrirPessoa = (profileId: string) =>
+    router.push({ pathname: '/pessoa/[pessoaId]', params: { pessoaId: profileId } });
+
+  // Long-press: react, reply, edit (yours, for 15 minutes), delete (yours, or any if you drive), or report.
+  function acoesDoMenu(mensagem: RideMessage, podeEditar: boolean): AcaoDaMensagem[] {
+    const acoes: AcaoDaMensagem[] = fechada
+      ? []
+      : [{ label: 'Responder', icon: icons.responder, onPress: () => responder(mensagem) }];
+    if (podeEditar && !fechada) {
+      acoes.push({ label: 'Editar', icon: icons.editar, onPress: () => editar(mensagem) });
+    }
+    if (!mensagem.mine) {
+      acoes.push({ label: 'Ver perfil', icon: icons.perfil, onPress: () => abrirPessoa(mensagem.profileId) });
+    }
+    if (mensagem.canRemove) {
+      acoes.push({ label: 'Apagar', icon: icons.apagar, perigo: true, onPress: () => apagar(mensagem.id) });
+    }
+    if (!mensagem.mine) {
+      acoes.push({
+        label: 'Denunciar ou bloquear',
+        icon: icons.aviso,
+        perigo: true,
+        onPress: () =>
+          moderacao.abrirMensagem({
+            kind: 'ride_message',
+            messageId: mensagem.id,
+            pessoa: { profileId: mensagem.profileId, nome: mensagem.displayName },
+          }),
       });
-  };
+    }
+    return acoes;
+  }
 
   return (
     <View style={[styles.tudo, { backgroundColor: theme.background }]}>
       {moderacao.elemento}
+      <MenuDaMensagem
+        texto={menuDe?.mensagem.body ?? null}
+        minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
+        onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
+        acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
+        onFechar={() => setMenuDe(null)}
+      />
       <Stack.Screen
         options={{
           title: 'Conversa do carro',
@@ -215,7 +281,18 @@ export default function ConversaDoCarroScreen() {
                     minha={item.mine}
                     mostrarQuem={novoDia || anterior?.profileId !== item.profileId}
                     fotoUrl={fotoDe(item.profileId)}
-                    onLongPress={aoCarregarSemLargar(item)}
+                    citacao={item.replyTo}
+                    editada={item.editedAt !== null}
+                    reacoes={item.reactions}
+                    onReagir={(emoji) => reagir(item, emoji)}
+                    onResponder={fechada ? undefined : () => responder(item)}
+                    onAbrirPessoa={() => abrirPessoa(item.profileId)}
+                    onLongPress={() =>
+                      setMenuDe({
+                        mensagem: item,
+                        podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
+                      })
+                    }
                   />
                 </View>
               );
@@ -249,6 +326,17 @@ export default function ConversaDoCarroScreen() {
               aEnviar={aEnviar}
               placeholder="Escreve ao carro…"
               accessibilityLabel="Escrever ao carro"
+              contexto={
+                aEditar
+                  ? { titulo: 'A editar a mensagem', texto: aEditar.body, onCancelar: cancelarContexto }
+                  : aResponder
+                    ? {
+                        titulo: `A responder a ${aResponder.mine ? 'ti' : aResponder.displayName}`,
+                        texto: aResponder.body,
+                        onCancelar: cancelarContexto,
+                      }
+                    : null
+              }
             />
           )}
         </View>

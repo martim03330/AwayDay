@@ -19,3 +19,15 @@ export function avisoDoPlanoFechado(fase: Exclude<FaseDoPlano, 'antes'>) {
     ? 'O jogo já começou: o plano já não muda.'
     : 'O jogo já foi. O plano fica como recordação de quem foi.';
 }
+
+/** A plan stays pinned until a few hours after kick-off: the group is still talking about that game. */
+const FIXADO_DEPOIS_DO_APITO_MS = 3 * 60 * 60 * 1000;
+
+/** The next game the group combined, if any: the soonest still to come (or just played). */
+export function proximoPlano<P extends { kickoffAt: string }>(planos: readonly P[], agora: number): P | null {
+  return (
+    [...planos]
+      .filter((plano) => Date.parse(plano.kickoffAt) + FIXADO_DEPOIS_DO_APITO_MS > agora)
+      .sort((a, b) => Date.parse(a.kickoffAt) - Date.parse(b.kickoffAt))[0] ?? null
+  );
+}

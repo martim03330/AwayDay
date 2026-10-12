@@ -109,6 +109,9 @@ const glyphs = {
   },
   seguinte: { paths: ['M9 5l7 7-7 7'] },
   voltar: { paths: ['M15 5l-7 7 7 7'] },
+  editar: { paths: ['M4 20h4L19 9l-4-4L4 16v4z', 'M13.5 6.5l4 4'] },
+  /** Reply to a message (the arrow that shows when a bubble is swiped). */
+  responder: { paths: ['M9 7l-5 5 5 5', 'M4 12h10a6 6 0 0 1 6 6v1'] },
   fechar: { paths: ['M6 6l12 12M18 6L6 18'] },
   lista: { paths: ['M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01'] },
   visitado: {

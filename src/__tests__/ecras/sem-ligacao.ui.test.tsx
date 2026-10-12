@@ -42,6 +42,7 @@ jest.mock('@/features/groups/hooks/useGroups', () => ({
   useGroupChannel: () => 1,
   usePlans: () => mockVazio,
   usePlanConflicts: () => mockVazio,
+  useGroupFixturePlans: () => mockVazio,
   plansKey: () => ['plans'],
 }));
 jest.mock('@/features/friends/hooks/useFriends', () => ({

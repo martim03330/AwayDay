@@ -17,8 +17,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
 import {
+  editGroupMessage,
   GroupRefused,
   markGroupMessagesRead,
+  reactGroupMessage,
   removeGroupMessage,
   sendGroupMessage,
   type GroupMessage,
@@ -27,9 +29,11 @@ import type { FixturePlan } from '@/features/groups/plans';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
 import { FundoConversa, fundoEscuro } from '@/features/groups/components/FundoConversa';
+import { PlanoFixado } from '@/features/groups/components/PlanoFixado';
 import {
   plansKey,
   useGroupChannel,
+  useGroupFixturePlans,
   useGroupFromInbox,
   useGroupMessages,
   usePlanConflicts,
@@ -39,12 +43,14 @@ import {
 import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
+import { aindaDaParaEditar, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { AvisoDeConversa, BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
+import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
 import { ThemedText } from '@/ui/themed-text';
 
 function mensagemDeRecusa(erro: unknown) {
@@ -96,12 +102,16 @@ export default function ConversaDoGrupoScreen() {
     mensagem.planId ? [mensagem.planId] : []
   );
   const planos = usePlans(idsDosPlanos);
+  const planosDoGrupo = useGroupFixturePlans(grupo ? grupo.id : null);
   const conflitos = usePlanConflicts(idsDosPlanos);
   const queryClient = useQueryClient();
   const refrescar = useRefreshGroups();
   const moderacao = useModeracao();
 
   const [texto, setTexto] = useState('');
+  const [aResponder, setAResponder] = useState<GroupMessage | null>(null);
+  const [aEditar, setAEditar] = useState<GroupMessage | null>(null);
+  const [menuDe, setMenuDe] = useState<{ mensagem: GroupMessage; podeEditar: boolean } | null>(null);
   const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aTentar, setATentar] = useState(false);
@@ -180,7 +190,13 @@ export default function ConversaDoGrupoScreen() {
     setErro(null);
     setAEnviar(true);
     try {
-      await sendGroupMessage(grupo.id, texto);
+      if (aEditar) {
+        await editGroupMessage(aEditar.id, texto);
+        setAEditar(null);
+      } else {
+        await sendGroupMessage(grupo.id, texto, aResponder?.id ?? null);
+        setAResponder(null);
+      }
       setTexto('');
       await mensagens.refetch();
       void refrescar();
@@ -205,8 +221,62 @@ export default function ConversaDoGrupoScreen() {
       },
     ]);
 
-  // Long-press: your own message can be deleted; someone else's can be reported, or its author blocked (the group
-  // owner can still delete it too). A plan card or a notice is the group's, not a person's: only delete.
+  function reagir(mensagem: GroupMessage, emoji: Emoji) {
+    void reactGroupMessage(mensagem.id, proximaReacao(mensagem.reactions, emoji))
+      .then(() => mensagens.refetch())
+      .catch(() => setErro('Não deu para reagir. Tenta outra vez.'));
+  }
+
+  function responder(mensagem: GroupMessage) {
+    setAEditar(null);
+    setAResponder(mensagem);
+  }
+
+  function editar(mensagem: GroupMessage) {
+    setAResponder(null);
+    setAEditar(mensagem);
+    setTexto(mensagem.body);
+  }
+
+  function cancelarContexto() {
+    if (aEditar) setTexto('');
+    setAEditar(null);
+    setAResponder(null);
+  }
+
+  const abrirPessoa = (profileId: string) =>
+    router.push({ pathname: '/pessoa/[pessoaId]', params: { pessoaId: profileId } });
+
+  // Long-press on a text message: react, reply, edit (yours, for 15 minutes), delete, or report someone else's.
+  function acoesDoMenu(mensagem: GroupMessage, podeEditar: boolean): AcaoDaMensagem[] {
+    const acoes: AcaoDaMensagem[] = [
+      { label: 'Responder', icon: icons.responder, onPress: () => responder(mensagem) },
+    ];
+    if (podeEditar) acoes.push({ label: 'Editar', icon: icons.editar, onPress: () => editar(mensagem) });
+    if (!mensagem.mine) {
+      acoes.push({ label: 'Ver perfil', icon: icons.perfil, onPress: () => abrirPessoa(mensagem.profileId) });
+    }
+    if (mensagem.canRemove) {
+      acoes.push({ label: 'Apagar', icon: icons.apagar, perigo: true, onPress: () => apagar(mensagem) });
+    }
+    if (!mensagem.mine) {
+      acoes.push({
+        label: 'Denunciar ou bloquear',
+        icon: icons.aviso,
+        perigo: true,
+        onPress: () =>
+          moderacao.abrirMensagem({
+            kind: 'message',
+            messageId: mensagem.id,
+            pessoa: { profileId: mensagem.profileId, nome: mensagem.displayName },
+          }),
+      });
+    }
+    return acoes;
+  }
+
+  // Long-press on anything else: a plan card or a notice is the group's, not a person's: only delete. A «Estou aqui»
+  // can be deleted by its author, or reported.
   const aoCarregarSemLargar = (mensagem: GroupMessage) => {
     if (mensagem.mine || mensagem.kind === 'plano' || mensagem.kind === 'aviso') {
       return mensagem.canRemove ? () => apagar(mensagem) : undefined;
@@ -258,11 +328,27 @@ export default function ConversaDoGrupoScreen() {
 
       <FundoConversa fundo={grupo.fundo} />
       {moderacao.elemento}
+      <MenuDaMensagem
+        texto={menuDe?.mensagem.body ?? null}
+        minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
+        onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
+        acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
+        onFechar={() => setMenuDe(null)}
+      />
 
       <KeyboardAvoidingView
         style={styles.tudo}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={alturaDoCabecalho}>
+        <PlanoFixado
+          planos={planosDoGrupo.data ?? []}
+          onAbrir={(plano) =>
+            router.push({
+              pathname: '/grupos/[grupoId]/plano/[planoId]',
+              params: { grupoId: grupo.id, planoId: plano.id },
+            })
+          }
+        />
         {lista.length === 0 ? (
           // Uma lista invertida desenharia isto de pernas para o ar: sem mensagens, fica um ecrã normal.
           <View style={[styles.tudo, styles.centro]}>
@@ -347,7 +433,18 @@ export default function ConversaDoGrupoScreen() {
                       minha={item.mine}
                       mostrarQuem={!mesmaPessoa}
                       fotoUrl={fotoDe(item.profileId)}
-                      onLongPress={aoCarregarSemLargar(item)}
+                      citacao={item.replyTo}
+                      editada={item.editedAt !== null}
+                      reacoes={item.reactions}
+                      onReagir={(emoji) => reagir(item, emoji)}
+                      onResponder={() => responder(item)}
+                      onAbrirPessoa={() => abrirPessoa(item.profileId)}
+                      onLongPress={() =>
+                        setMenuDe({
+                          mensagem: item,
+                          podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
+                        })
+                      }
                     />
                   )}
                 </View>
@@ -398,6 +495,17 @@ export default function ConversaDoGrupoScreen() {
             aEnviar={aEnviar}
             placeholder="Escreve à malta…"
             accessibilityLabel="Escrever ao grupo"
+            contexto={
+              aEditar
+                ? { titulo: 'A editar a mensagem', texto: aEditar.body, onCancelar: cancelarContexto }
+                : aResponder
+                  ? {
+                      titulo: `A responder a ${aResponder.mine ? 'ti' : aResponder.displayName}`,
+                      texto: aResponder.body,
+                      onCancelar: cancelarContexto,
+                    }
+                  : null
+            }
           />
         </View>
       </KeyboardAvoidingView>

@@ -261,6 +261,10 @@ export default function DefinicoesDoGrupoScreen() {
               key={pessoa.profileId}
               separador={indice < lista.length - 1}
               leading={<Avatar nome={pessoa.displayName} url={cartao?.avatarUrl} />}
+              onPress={() =>
+                router.push({ pathname: '/pessoa/[pessoaId]', params: { pessoaId: pessoa.profileId } })
+              }
+              accessibilityLabel={`Ver o perfil de ${pessoa.displayName}`}
               title={pessoa.isMine ? `${pessoa.displayName} (tu)` : pessoa.displayName}
               subtitle={[pessoa.role === 'owner' ? 'Dono' : null, sinais(pessoa)].filter(Boolean).join(' · ') || undefined}
               trailing={

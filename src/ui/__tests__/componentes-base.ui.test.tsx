@@ -14,6 +14,11 @@ import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { MensagemErro } from '@/ui/mensagem-erro';
 import { Segmentado } from '@/ui/segmentado';
+import { MenuDaMensagem } from '@/ui/menu-da-mensagem';
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
 
 /** Apple asks for 44 pt touch targets; this is what a press area really covers (size plus slop). */
 const ALVO_MINIMO = 44;
@@ -313,20 +318,43 @@ describe('MensagemErro', () => {
 describe('Conversa', () => {
   const base = { nome: 'Rui Costa', texto: 'Bora!', criadaEm: '2026-10-06T18:00:00Z', mostrarQuem: true };
 
-  it('your own message: long-press is to delete, and no name on top', () => {
+  it('your own message: long-press opens the menu, and no name on top', () => {
     const onLongPress = jest.fn();
     render(<BolhaDeConversa {...base} minha onLongPress={onLongPress} />);
     expect(screen.queryByText('Rui Costa')).toBeNull();
-    const bolha = screen.getByHintText('Toca sem largar para apagar.');
+    const bolha = screen.getByHintText('Toca sem largar para reagir, responder e mais opções.');
     fireEvent(bolha, 'longPress');
     expect(onLongPress).toHaveBeenCalled();
-    expect(screen.queryByHintText('Toca sem largar para mais opções.')).toBeNull();
   });
 
-  it("someone else's message: long-press is for more options (report, block)", () => {
-    render(<BolhaDeConversa {...base} minha={false} onLongPress={jest.fn()} />);
-    expect(screen.getByText('Rui Costa')).toBeOnTheScreen();
-    expect(screen.getByHintText('Toca sem largar para mais opções.')).toBeOnTheScreen();
+  it("someone else's message shows who wrote it, and tapping the name opens their profile", () => {
+    const onAbrirPessoa = jest.fn();
+    render(<BolhaDeConversa {...base} minha={false} onLongPress={jest.fn()} onAbrirPessoa={onAbrirPessoa} />);
+    fireEvent.press(screen.getByText('Rui Costa'));
+    expect(onAbrirPessoa).toHaveBeenCalled();
+  });
+
+  it('a reply shows the quote, an edited message says so, and reactions can be tapped', () => {
+    const onReagir = jest.fn();
+    render(
+      <BolhaDeConversa
+        {...base}
+        minha={false}
+        citacao={{ id: 'm1', displayName: 'Zé', body: 'Quem vem?' }}
+        editada
+        reacoes={[{ emoji: '👍', count: 2, mine: true }]}
+        onReagir={onReagir}
+      />
+    );
+    expect(screen.getByText('Quem vem?')).toBeOnTheScreen();
+    expect(screen.getByText(/^editada · /)).toBeOnTheScreen();
+    fireEvent.press(screen.getByLabelText('👍 2, a tua'));
+    expect(onReagir).toHaveBeenCalledWith('👍');
+  });
+
+  it('a quote of a message that is gone says it is unavailable', () => {
+    render(<BolhaDeConversa {...base} minha citacao={{ id: 'm1', displayName: 'Zé', body: null }} />);
+    expect(screen.getByText('Mensagem indisponível')).toBeOnTheScreen();
   });
 
   it('with nothing to do on long-press, promises nothing', () => {
@@ -350,5 +378,40 @@ describe('Conversa', () => {
     );
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled();
     expect(screen.getByLabelText('Mensagem')).toHaveProp('maxLength', 500);
+  });
+});
+
+describe('MenuDaMensagem', () => {
+  it('reacting closes the menu; the same emoji again is offered as taking it away', () => {
+    const onReagir = jest.fn();
+    const onFechar = jest.fn();
+    render(
+      <MenuDaMensagem texto="Bora!" minhaReacao="⚽" onReagir={onReagir} acoes={[]} onFechar={onFechar} />
+    );
+    expect(screen.getByLabelText('Tirar ⚽')).toBeOnTheScreen();
+    fireEvent.press(screen.getByLabelText('Reagir com 👍'));
+    expect(onReagir).toHaveBeenCalledWith('👍');
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it('an action closes the menu and runs', () => {
+    const onPress = jest.fn();
+    const onFechar = jest.fn();
+    render(
+      <MenuDaMensagem
+        texto="Bora!"
+        minhaReacao={null}
+        acoes={[{ label: 'Responder', icon: 'responder', onPress }]}
+        onFechar={onFechar}
+      />
+    );
+    fireEvent.press(screen.getByText('Responder'));
+    expect(onFechar).toHaveBeenCalled();
+    expect(onPress).toHaveBeenCalled();
+  });
+
+  it('stays closed without a message', () => {
+    render(<MenuDaMensagem texto={null} minhaReacao={null} acoes={[]} onFechar={jest.fn()} />);
+    expect(screen.queryByText('Bora!')).toBeNull();
   });
 });

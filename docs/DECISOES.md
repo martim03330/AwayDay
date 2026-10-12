@@ -2,6 +2,31 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Chat como no WhatsApp: responder, reagir, editar, perfis, plano fixado e aviso de mensagem
+
+Pedido dos testers. Vale para a conversa do grupo e para a do carro (`src/ui/conversa.tsx` é a mesma para as duas).
+
+- **Responder:** deslizar a bolha para a direita (vibra quando apanha) ou «Responder» no menu. A resposta leva a
+  citação (nome e texto). Se a mensagem citada for apagada, escondida ou de alguém que bloqueaste, fica
+  «Mensagem indisponível» — a citação vem do servidor, que aplica as mesmas regras de visibilidade.
+- **Reagir:** carregar sem largar abre o menu com 6 reações (👍 ❤️ 😂 😮 😢 ⚽) e as ações. Uma reação por pessoa e
+  por mensagem; a mesma outra vez tira-a. **Exceção à regra «sem emojis na interface»**: nas reações usam-se emojis,
+  porque é o que toda a gente conhece do WhatsApp (decisão do Martim). As reações de quem bloqueaste não contam.
+- **Editar:** só as tuas mensagens de texto e só até **15 minutos** depois de enviadas (como no WhatsApp: corrigir uma
+  gralha, não reescrever a conversa depois de os outros responderem). Fica «editada» junto à hora.
+- **Perfil público** (`/pessoa/[pessoaId]`): tocar na cara ou no nome numa conversa, ou numa pessoa da lista do
+  grupo. Só o que já era público nos cartões (nome, foto, cidade, desde quando, boleias) mais o clube e os estádios
+  carimbados. Nunca localização. Só para quem partilha um grupo, uma boleia ou amizade (`can_see_profile_card`).
+- **Plano fixado:** o próximo jogo combinado fica numa barra por baixo do cabeçalho da conversa do grupo, até 3 horas
+  depois do apito. Com a malta a falar, o cartão do plano deixava de se ver.
+- **Aviso de mensagem nova:** com a app aberta, as mensagens de grupos e carros deixam de mostrar o banner do sistema
+  e passam a ter um aviso pequeno da app, que desce do topo e desaparece ao fim de 3,5 s. Não aparece se essa
+  conversa já estiver aberta. Depende das notificações push: não se vê no Expo Go no Android.
+- **Carro com Realtime:** a conversa do carro passou a atualizar logo (canal privado `ride:<id>`, só para quem vai no
+  carro); antes só de 15 em 15 segundos.
+- **Compatibilidade:** os parâmetros novos têm valor por omissão e as funções de leitura só ganharam colunas, por isso
+  as builds já instaladas continuam a funcionar.
+
 ## 2026-10-12 — Atualizações sem compilar (EAS Update) e vibração (expo-haptics)
 
 - **Porquê:** cada correção dos testers obrigava a uma build nova no TestFlight (30 a 60 minutos). Com o
