@@ -364,7 +364,7 @@ export default function ConversaDoGrupoScreen() {
           <FlatList
             data={lista}
             inverted
-            keyExtractor={(mensagem) => mensagem.id}
+            keyExtractor={(mensagem) => mensagem.chaveLocal ?? mensagem.id}
             contentContainerStyle={styles.mensagens}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
@@ -434,6 +434,7 @@ export default function ConversaDoGrupoScreen() {
                       editada={item.editedAt !== null}
                       reacoes={item.reactions}
                       pendente={eLocal(item.id)}
+                      animarEntrada={item.chaveLocal !== undefined}
                       nomesMencionaveis={nomesDoGrupo}
                       mencionaMe={item.mentionsMe}
                       onReagir={eLocal(item.id) ? undefined : (emoji) => reagir(item, emoji)}

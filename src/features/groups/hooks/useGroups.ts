@@ -285,6 +285,7 @@ export function useGroupChatActions(groupId: string | null, eu: { profileId: str
       reactions: [],
       mentionsMe: false,
     };
+    local.chaveLocal = local.id;
     aCaminho.current += 1;
     // Newest first: the list is drawn from the bottom up.
     await mudarLista((lista) => [local, ...lista]);

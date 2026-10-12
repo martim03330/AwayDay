@@ -56,6 +56,11 @@ export type RideMessage = {
   reactions: Reacao[];
   /** Menciona-te: pelo nome, ou com @todos. */
   mentionsMe: boolean;
+  /**
+   * Só nas que enviaste daqui: a chave com que apareceram antes de o servidor confirmar. Fica igual quando o id muda,
+   * para a bolha não ser desenhada outra vez (e a animação de envio não ser cortada).
+   */
+  chaveLocal?: string;
 };
 
 /** As mensagens, da mais antiga para a mais recente — como se lê uma conversa. */

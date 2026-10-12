@@ -2,7 +2,9 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   interpolate,
+  Keyframe,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -90,6 +92,8 @@ type BolhaProps = {
   editada?: boolean;
   /** Still on its way to the server: shows at once, a little faded, with «a enviar…» instead of the time. */
   pendente?: boolean;
+  /** A message you just sent: it rises from the box you wrote it in, like in iMessage. */
+  animarEntrada?: boolean;
   /** The names in this chat: «@Nome» (and «@todos») in the text are drawn in bold. */
   nomesMencionaveis?: readonly string[];
   /** It mentions you (by name or with @todos): the bubble gets a mark on the side. */
@@ -105,6 +109,15 @@ type BolhaProps = {
 };
 
 /** How far the bubble has to go for a swipe to become a reply, and how far it can go at most. */
+/**
+ * A message you send rises from the writing box to its place, a little small and faint at first: about a quarter of
+ * a second, easing out. The list is inverted, but each row is drawn upright, so «down» is towards the box.
+ */
+const ENTRADA_DA_MENSAGEM = new Keyframe({
+  0: { opacity: 0, transform: [{ translateY: 56 }, { scale: 0.86 }] },
+  100: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }], easing: Easing.out(Easing.cubic) },
+}).duration(260);
+
 const GATILHO_RESPOSTA_PX = 56;
 const MAXIMO_RESPOSTA_PX = 80;
 
@@ -119,6 +132,7 @@ export function BolhaDeConversa({
   citacao,
   editada = false,
   pendente = false,
+  animarEntrada = false,
   nomesMencionaveis = [],
   mencionaMe = false,
   reacoes = [],
@@ -160,7 +174,7 @@ export function BolhaDeConversa({
 
   return (
     <GestureDetector gesture={deslizar}>
-      <View>
+      <Animated.View entering={animarEntrada ? ENTRADA_DA_MENSAGEM : undefined}>
         <Animated.View style={[styles.setaResposta, setaDeResposta]} pointerEvents="none">
           <Icon name={icons.responder} size={20} color={theme.textSecondary} />
         </Animated.View>
@@ -235,7 +249,7 @@ export function BolhaDeConversa({
             ) : null}
           </View>
         </Animated.View>
-      </View>
+      </Animated.View>
     </GestureDetector>
   );
 }

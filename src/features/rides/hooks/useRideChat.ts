@@ -131,6 +131,7 @@ export function useRideChatActions(rideId: string | null, eu: { profileId: strin
       reactions: [],
       mentionsMe: false,
     };
+    local.chaveLocal = local.id;
     aCaminho.current += 1;
     // Oldest first: the new one goes at the end.
     await mudarLista((lista) => [...lista, local]);

@@ -259,7 +259,7 @@ export default function ConversaDoCarroScreen() {
           <FlatList
             data={lista}
             inverted
-            keyExtractor={(mensagem) => mensagem.id}
+            keyExtractor={(mensagem) => mensagem.chaveLocal ?? mensagem.id}
             contentContainerStyle={styles.mensagens}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
@@ -284,6 +284,7 @@ export default function ConversaDoCarroScreen() {
                     editada={item.editedAt !== null}
                     reacoes={item.reactions}
                     pendente={eLocal(item.id)}
+                    animarEntrada={item.chaveLocal !== undefined}
                     nomesMencionaveis={nomesDoCarro}
                     mencionaMe={item.mentionsMe}
                     onReagir={eLocal(item.id) ? undefined : (emoji) => reagir(item, emoji)}
