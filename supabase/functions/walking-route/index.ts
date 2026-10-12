@@ -1,7 +1,8 @@
 // Walking route between two points, for "Levar-me até lá" (the official meeting point; later tascos and stadiums).
 // Uses the public OSRM foot router of the FOSSGIS / OpenStreetMap community (no key, fair use), so the app never calls
 // a third-party service itself. The phone's position is only used to ask for the route: never stored, never logged.
-// Signed-in callers are rate limited per account; anonymous callers per network address, in memory only.
+// Only signed-in callers (the app needs an account), rate limited per account: without a session it would be an open
+// proxy to the community router under our name.
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 
 import { authenticatedCaller } from '../_shared/auth.ts';
@@ -11,11 +12,6 @@ const USER_AGENT = 'AwayDay/1.0 (match-day app for football fans)';
 /** Walking only makes sense up to here (straight line). */
 const MAX_DISTANCE_M = 30_000;
 const ACCOUNT_LIMIT = { bucket: 'walking-route', limit: 60, window: '1 hour' } as const;
-const ANONYMOUS_LIMIT_PER_HOUR = 20;
-const HOUR_MS = 60 * 60 * 1000;
-
-/** Anonymous hits per network address in this instance. Never persisted; forgotten when the instance stops. */
-const anonymousHits = new Map<string, number[]>();
 
 type Point = { latitude: number; longitude: number };
 
@@ -49,20 +45,6 @@ function straightLineM(from: Point, to: Point) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(rad(from.latitude)) * Math.cos(rad(to.latitude)) * Math.sin(dLng / 2) ** 2;
   return 2 * 6_371_000 * Math.asin(Math.sqrt(a));
-}
-
-function anonymousAllowed(request: Request) {
-  // The rightmost address is the one the gateway added; the ones before it are whatever the client sent.
-  const address = request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || 'unknown';
-  const now = Date.now();
-  const recent = (anonymousHits.get(address) ?? []).filter((at) => now - at < HOUR_MS);
-  if (recent.length >= ANONYMOUS_LIMIT_PER_HOUR) {
-    anonymousHits.set(address, recent);
-    return false;
-  }
-  recent.push(now);
-  anonymousHits.set(address, recent);
-  return true;
 }
 
 const MODIFIERS: Readonly<Record<string, string>> = {
@@ -108,18 +90,15 @@ Deno.serve(async (request) => {
   if (straightLineM(from, to) > MAX_DISTANCE_M) return json(422, { error: 'too_far' });
 
   const caller = await authenticatedCaller(request, admin);
-  if (caller) {
-    const allowed = await admin.rpc('take_rate_limit', {
-      p_profile_id: caller.user.id,
-      p_bucket: ACCOUNT_LIMIT.bucket,
-      p_limit: ACCOUNT_LIMIT.limit,
-      p_window: ACCOUNT_LIMIT.window,
-    });
-    if (allowed.error) return json(500, { error: 'rate_limit_failed' });
-    if (allowed.data !== true) return json(429, { error: 'rate_limited' });
-  } else if (!anonymousAllowed(request)) {
-    return json(429, { error: 'rate_limited' });
-  }
+  if (!caller) return json(401, { error: 'not_signed_in' });
+  const allowed = await admin.rpc('take_rate_limit', {
+    p_profile_id: caller.user.id,
+    p_bucket: ACCOUNT_LIMIT.bucket,
+    p_limit: ACCOUNT_LIMIT.limit,
+    p_window: ACCOUNT_LIMIT.window,
+  });
+  if (allowed.error) return json(500, { error: 'rate_limit_failed' });
+  if (allowed.data !== true) return json(429, { error: 'rate_limited' });
 
   const coordinates = `${from.longitude},${from.latitude};${to.longitude},${to.latitude}`;
   let answer: Readonly<Record<string, unknown>> | null = null;

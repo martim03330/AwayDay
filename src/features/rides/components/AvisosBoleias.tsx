@@ -44,6 +44,14 @@ export function AvisosBoleias() {
     meta: { persist: false },
   });
 
+  // Signed out (or another account about to come in): this account's reminders, with its meeting places, go away.
+  useEffect(() => {
+    if (userId !== null) return;
+    void reagendar([]).catch((erro: unknown) => {
+      if (__DEV__) console.warn('Não foi possível apagar os avisos das boleias:', erro);
+    });
+  }, [userId]);
+
   const chave = (boleias.data ?? [])
     .map((boleia) => `${boleia.id}:${boleia.departureAt}:${boleia.status}:${boleia.role}`)
     .join('|');

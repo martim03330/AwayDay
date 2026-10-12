@@ -1,4 +1,6 @@
-// Notificações do resto da app, chamadas por triggers da base de dados com o segredo do cron:
+// Notificações do resto da app, chamadas por triggers da base de dados com o segredo das notificações
+// (NOTIFY_SECRET). Os triggers só mandam o tipo e a chave da linha; tudo o resto (texto, valores, quem) é lido outra
+// vez aqui, na base de dados, para que um pedido forjado não possa pôr palavras na boca de ninguém:
 //
 // - mensagem na conversa do carro -> aos outros que vão no carro;
 // - mensagem na conversa do grupo -> aos outros do grupo (e o «estou aqui» num tasco e o convite para um jogo, que
@@ -16,7 +18,7 @@
 // pedido de amizade também não recebe nada dele.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
-import { hasCronSecret } from '../_shared/auth.ts';
+import { hasNotifySecret } from '../_shared/auth.ts';
 import { sendExpoPush, type PushMessage } from '../_shared/expo-push.ts';
 
 /** Os tipos que uma pessoa pode desligar nas definições. */
@@ -159,6 +161,87 @@ function comMencoes(normal: Aviso, body: Readonly<Record<string, unknown>>, auto
     },
     { ...normal, recipients: normal.recipients.filter((pessoa) => !ja.has(pessoa)) },
   ];
+}
+
+/**
+ * The trusted version of what happened: from the kind and the row's key sent by the trigger, the row as it is in the
+ * database, in the shape `construir` reads. `null` when the row is gone (nothing to say) or the request is malformed.
+ */
+async function carregar(
+  admin: SupabaseClient,
+  kind: string,
+  pedido: Readonly<Record<string, unknown>>
+): Promise<{ kind: string; body: Readonly<Record<string, unknown>> } | null> {
+  if (kind === 'group_message') {
+    const id = texto(pedido.message_id);
+    if (!id) return null;
+    const { data } = await admin
+      .from('group_message')
+      .select('group_id, profile_id, kind, body, plan_id, mentions, mentions_all, hidden_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (!data || data.hidden_at) return null;
+    return { kind, body: { ...data, message_kind: data.kind } };
+  }
+  if (kind === 'ride_message') {
+    const id = texto(pedido.message_id);
+    if (!id) return null;
+    const { data } = await admin
+      .from('ride_message')
+      .select('ride_id, profile_id, body, mentions, mentions_all, hidden_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (!data || data.hidden_at) return null;
+    return { kind, body: data };
+  }
+  if (kind === 'ride_invite' || kind === 'group_invite') {
+    const chave = kind === 'ride_invite' ? 'ride_id' : 'group_id';
+    const alvo = texto(pedido[chave]);
+    const convidado = texto(pedido.profile_id);
+    if (!alvo || !convidado) return null;
+    const { data } = await admin
+      .from(kind)
+      .select(`${chave}, profile_id, invited_by`)
+      .eq(chave, alvo)
+      .eq('profile_id', convidado)
+      .maybeSingle();
+    return data ? { kind, body: data } : null;
+  }
+  if (kind === 'friendship') {
+    const requester = texto(pedido.requester_id);
+    const addressee = texto(pedido.addressee_id);
+    if (!requester || !addressee) return null;
+    const { data } = await admin
+      .from('friendship')
+      .select('requester_id, addressee_id, status')
+      .eq('requester_id', requester)
+      .eq('addressee_id', addressee)
+      .maybeSingle();
+    if (!data) return null;
+    return { kind: data.status === 'aceite' ? 'friend_accepted' : 'friend_request', body: data };
+  }
+  if (kind === 'trip_expense') {
+    const id = texto(pedido.expense_id);
+    if (!id) return null;
+    const { data } = await admin
+      .from('trip_expense')
+      .select('id, session_id, created_by, description, cents, source')
+      .eq('id', id)
+      .maybeSingle();
+    if (!data || data.source !== 'manual') return null;
+    return { kind, body: { ...data, expense_id: data.id } };
+  }
+  if (kind === 'trip_settlement') {
+    const id = texto(pedido.settlement_id);
+    if (!id) return null;
+    const { data } = await admin
+      .from('trip_settlement')
+      .select('session_id, from_profile_id, to_profile_id, created_by, cents')
+      .eq('id', id)
+      .maybeSingle();
+    return data ? { kind, body: data } : null;
+  }
+  return null;
 }
 
 async function construir(
@@ -354,7 +437,7 @@ async function construir(
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
-  if (!hasCronSecret(request)) return json(401, { error: 'not_authorized' });
+  if (!hasNotifySecret(request)) return json(401, { error: 'not_authorized' });
 
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -367,7 +450,10 @@ Deno.serve(async (request) => {
   const kind = texto(body?.kind);
   if (!body || !kind) return json(400, { error: 'bad_request' });
 
-  const construido = await construir(admin, kind, body);
+  const confiavel = await carregar(admin, kind, body);
+  if (!confiavel) return json(200, { sent: 0 });
+
+  const construido = await construir(admin, confiavel.kind, confiavel.body);
   const avisos = (Array.isArray(construido) ? construido : construido ? [construido] : []).filter(
     (aviso) => aviso.recipients.length > 0
   );

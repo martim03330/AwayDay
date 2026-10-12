@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { hasCronSecret } from '../../supabase/functions/_shared/cron-secret';
+import { hasCronSecret, hasNotifySecret } from '../../supabase/functions/_shared/cron-secret';
 import {
   assuranceLevel,
   REAUTHENTICATION_WINDOW_MS,
@@ -49,6 +49,40 @@ describe('hasCronSecret', () => {
     expect(hasCronSecret(request('s3cret-valuf'))).toBe(false);
     expect(hasCronSecret(request('t3cret-value'))).toBe(false);
     expect(hasCronSecret(request('S3CRET-VALUE'))).toBe(false);
+  });
+});
+
+describe('hasNotifySecret', () => {
+  afterEach(() => {
+    delete globalWithDeno.Deno;
+  });
+
+  const notify = (header?: string) =>
+    new Request('https://example.test/fn', {
+      method: 'POST',
+      headers: header === undefined ? {} : { 'x-notify-secret': header },
+    });
+
+  it('accepts its own secret in its own header', () => {
+    globalWithDeno.Deno = { env: { get: (name) => (name === 'NOTIFY_SECRET' ? 'notify-123' : undefined) } };
+    expect(hasNotifySecret(notify('notify-123'))).toBe(true);
+    expect(hasNotifySecret(notify('notify-12'))).toBe(false);
+    expect(hasNotifySecret(notify())).toBe(false);
+  });
+
+  it('is not opened by the cron secret, and the cron check is not opened by it', () => {
+    globalWithDeno.Deno = {
+      env: { get: (name) => (name === 'NOTIFY_SECRET' ? 'notify-123' : name === 'CRON_SECRET' ? 'cron-456' : undefined) },
+    };
+    expect(hasNotifySecret(notify('cron-456'))).toBe(false);
+    expect(hasCronSecret(request('notify-123'))).toBe(false);
+    expect(hasNotifySecret(request('notify-123'))).toBe(false);
+  });
+
+  it('refuses everything while it is not set', () => {
+    globalWithDeno.Deno = { env: { get: () => undefined } };
+    expect(hasNotifySecret(notify(''))).toBe(false);
+    expect(hasNotifySecret(notify('anything'))).toBe(false);
   });
 });
 

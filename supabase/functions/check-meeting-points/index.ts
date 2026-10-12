@@ -125,12 +125,20 @@ async function fetchText(url: string) {
   }
 }
 
+/** Same site as the club's news page (www. or a subdomain of it): links elsewhere are never fetched or shown. */
+function sameSite(url: URL, base: URL) {
+  const host = url.hostname.replace(/^www\./, '');
+  const home = base.hostname.replace(/^www\./, '');
+  return host === home || host.endsWith(`.${home}`);
+}
+
 function linksIn(html: string, base: string): Link[] {
   const links: Link[] = [];
+  const page = new URL(base);
   for (const match of html.matchAll(/<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
     try {
       const url = new URL(decodeEntities(match[1]), base);
-      if (url.protocol !== 'https:') continue;
+      if (url.protocol !== 'https:' || !sameSite(url, page)) continue;
       links.push({ url: url.toString(), text: plainText(match[2]) });
     } catch {
       // Not a usable address.

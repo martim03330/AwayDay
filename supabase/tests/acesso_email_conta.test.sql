@@ -54,7 +54,7 @@ $$;
 insert into auth.users (id, email, raw_user_meta_data, aud, role)
 values ('ad000015-0000-4000-8000-0000000000a1', 'email-conta-a@test.invalid', '{"display_name":"Email Conta"}', 'authenticated', 'authenticated');
 
-select set_config('request.headers', '{"x-forwarded-for":"203.0.113.7, 10.0.0.1"}', true);
+select set_config('request.headers', '{"x-forwarded-for":"6.6.6.6, 203.0.113.7","cf-connecting-ip":"203.0.113.7"}', true);
 set local role anon;
 select pg_temp.expect('an email with an account', public.email_has_account('  Email-Conta-A@test.invalid '), true);
 select pg_temp.expect('an email without one', public.email_has_account('ninguem-aqui@test.invalid'), false);
@@ -69,8 +69,24 @@ select 'email-has-account', '203.0.113.7' from generate_series(1, 18);
 set local role anon;
 select pg_temp.expect('the 21st question in the hour is refused',
   pg_temp.refusal('select public.email_has_account(''outro@test.invalid'')'), 'rate_limited');
-select set_config('request.headers', '{"x-forwarded-for":"198.51.100.9"}', true);
+-- The caller writes the start of x-forwarded-for: changing it does not give a fresh limit.
+select set_config('request.headers', '{"x-forwarded-for":"9.9.9.9, 203.0.113.7","cf-connecting-ip":"203.0.113.7"}', true);
+select pg_temp.expect('a made-up forwarded address does not reset the limit',
+  pg_temp.refusal('select public.email_has_account(''outro@test.invalid'')'), 'rate_limited');
+select set_config('request.headers', '{"x-forwarded-for":"9.9.9.9, 203.0.113.7"}', true);
+select pg_temp.expect('without cf-connecting-ip, the last forwarded entry is the address',
+  pg_temp.refusal('select public.email_has_account(''outro@test.invalid'')'), 'rate_limited');
+select set_config('request.headers', '{"x-forwarded-for":"203.0.113.7, 198.51.100.9","cf-connecting-ip":"198.51.100.9"}', true);
 select pg_temp.expect('another address can still ask', public.email_has_account('outro@test.invalid'), false);
+
+-- Everyone together: at most 300 an hour.
+reset role;
+insert into public.anon_rate_limit_hit (bucket, client_key)
+select 'email-has-account', 'muitos-' || g from generate_series(1, 300) as g;
+select set_config('request.headers', '{"cf-connecting-ip":"192.0.2.44"}', true);
+set local role anon;
+select pg_temp.expect('past the hourly cap for everyone, a new address is refused too',
+  pg_temp.refusal('select public.email_has_account(''outro@test.invalid'')'), 'rate_limited');
 
 reset role;
 select count(*) as checks_passed from expect_log;

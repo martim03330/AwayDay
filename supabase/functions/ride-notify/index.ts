@@ -1,4 +1,6 @@
-// Push notifications about rides, called by database triggers (ride_passenger and ride) with the cron secret:
+// Push notifications about rides, called by database triggers (ride_passenger and ride) with the notification
+// secret (NOTIFY_SECRET). The trigger sends the row's key and the previous status; the current status and every value
+// shown are read again here, so a forged request cannot make up a request, an amount or a distance:
 // - a seat is requested            -> the driver ("Pedido de lugar", with the deadline to answer);
 // - a request is accepted          -> the passenger (meeting point and time);
 // - a request is declined/expires  -> the passenger;
@@ -9,7 +11,7 @@
 // Every notification opens the ride. Nothing is sent to people without a registered phone.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.116.0';
 
-import { hasCronSecret } from '../_shared/auth.ts';
+import { hasNotifySecret } from '../_shared/auth.ts';
 import { sendExpoPush, type PushMessage } from '../_shared/expo-push.ts';
 
 const TIME_ZONE = 'Europe/Lisbon';
@@ -75,7 +77,7 @@ async function nameOf(admin: SupabaseClient, profileId: string) {
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' });
-  if (!hasCronSecret(request)) return json(401, { error: 'not_authorized' });
+  if (!hasNotifySecret(request)) return json(401, { error: 'not_authorized' });
 
   const url = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -87,18 +89,47 @@ Deno.serve(async (request) => {
   const body = asRecord(await request.json().catch(() => null));
   const kind = body?.kind;
   const rideId = typeof body?.ride_id === 'string' ? body.ride_id : null;
-  const status = typeof body?.status === 'string' ? body.status : null;
   const oldStatus = typeof body?.old_status === 'string' ? body.old_status : null;
-  if (!rideId || !status) return json(400, { error: 'bad_request' });
+  const profileId = typeof body?.profile_id === 'string' ? body.profile_id : null;
+  if (!rideId) return json(400, { error: 'bad_request' });
+
+  // The row as it is now: its status (and, for a seat home, the distance and the share) come from here.
+  let status: string | null = null;
+  let metros: number | null = null;
+  let share: number | null = null;
+  if (kind === 'passenger' || kind === 'return') {
+    if (!profileId) return json(400, { error: 'bad_request' });
+    const linha =
+      kind === 'passenger'
+        ? await admin
+            .from('ride_passenger')
+            .select('status')
+            .eq('ride_id', rideId)
+            .eq('profile_id', profileId)
+            .maybeSingle()
+        : await admin
+            .from('ride_return_request')
+            .select('status, distance_to_car_m, share_cents')
+            .eq('ride_id', rideId)
+            .eq('profile_id', profileId)
+            .maybeSingle();
+    if (!linha.data) return json(200, { sent: 0 });
+    const lida = asRecord(linha.data);
+    status = typeof lida?.status === 'string' ? lida.status : null;
+    metros = typeof lida?.distance_to_car_m === 'number' ? lida.distance_to_car_m : null;
+    share = typeof lida?.share_cents === 'number' ? lida.share_cents : null;
+  }
 
   const ride = await admin
     .from('ride')
     .select(
-      'id, fixture_id, driver_id, origin_name, departure_at, parking:parking_spot_id (name), fixture:fixture_id (home:home_club_id (short_name), away:away_club_id (short_name))'
+      'id, status, fixture_id, driver_id, origin_name, departure_at, parking:parking_spot_id (name), fixture:fixture_id (home:home_club_id (short_name), away:away_club_id (short_name))'
     )
     .eq('id', rideId)
     .maybeSingle();
   if (ride.error || !ride.data) return json(404, { error: 'ride_not_found' });
+  if (kind === 'ride') status = typeof ride.data.status === 'string' ? ride.data.status : null;
+  if (!status) return json(200, { sent: 0 });
 
   const fixture = asRecord(ride.data.fixture);
   const home = asRecord(fixture?.home)?.short_name;
@@ -115,7 +146,7 @@ Deno.serve(async (request) => {
   let text = '';
 
   if (kind === 'passenger') {
-    const passengerId = typeof body?.profile_id === 'string' ? body.profile_id : null;
+    const passengerId = profileId;
     if (!passengerId) return json(400, { error: 'bad_request' });
     if (status === 'requested' && oldStatus !== 'requested') {
       // Someone the driver blocked does not reach them, as in the other notifications.
@@ -148,10 +179,8 @@ Deno.serve(async (request) => {
     }
   } else if (kind === 'return') {
     // A seat home for someone who missed their transport: it is decided in the next minutes, so it goes out at once.
-    const fanId = typeof body?.profile_id === 'string' ? body.profile_id : null;
+    const fanId = profileId;
     if (!fanId) return json(400, { error: 'bad_request' });
-    const metros = typeof body?.distance_m === 'number' ? body.distance_m : null;
-    const share = typeof body?.share_cents === 'number' ? body.share_cents : null;
     const parque = asRecord(ride.data.parking)?.name;
     if (status === 'pending') {
       recipients = [driverId];

@@ -49,6 +49,8 @@ values ('ad00000d-0000-4000-8000-0000000000d1', 'admin-2fa@test.invalid', '{"dis
 update public.profile set is_admin = true where id = 'ad00000d-0000-4000-8000-0000000000d1';
 insert into public.feedback (profile_id, kind, area, body)
 values (null, 'erro', 'outro', 'Uma mensagem de teste para a caixa de entrada.');
+select set_config('test.feedback_id',
+  (select id::text from public.feedback where body = 'Uma mensagem de teste para a caixa de entrada.'), true);
 
 set local role authenticated;
 
@@ -57,8 +59,20 @@ select pg_temp.expect('with the password only, an admin is not an admin', public
 select pg_temp.expect('without the second factor, the feedback inbox stays empty',
   (select count(*)::integer from public.feedback_inbox(null)), 0);
 
+select pg_temp.expect('without the second factor, the feedback status cannot change',
+  pg_temp.refusal(format('select public.set_feedback_status(%L, ''visto'')',
+    current_setting('test.feedback_id'))), 'not_admin');
+
 select pg_temp.as_user('ad00000d-0000-4000-8000-0000000000d1', 'aal2');
 select pg_temp.expect('after the authenticator code, the admin is an admin', public.is_admin(), true);
+select public.set_feedback_status(current_setting('test.feedback_id')::uuid, 'visto');
+select pg_temp.expect('with it, the status changes and the admin sees it in the admin log',
+  (select count(*)::integer from public.admin_action_log
+   where action = 'feedback_status' and actor_id = 'ad00000d-0000-4000-8000-0000000000d1'
+     and details ->> 'to' = 'visto'), 1);
+select pg_temp.expect('nobody writes to the admin log from the app',
+  pg_temp.refusal('insert into public.admin_action_log (action, target_table) values (''x'', ''y'')'),
+  'permission denied for table admin_action_log');
 select pg_temp.expect('and sees the feedback inbox',
   (select count(*)::integer from public.feedback_inbox(null) where body = 'Uma mensagem de teste para a caixa de entrada.'), 1);
 

@@ -26,3 +26,37 @@ jobs:
             -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
           echo "Supabase respondeu $code"
           test "$code" = "200"
+
+  # Daily health check: fails (and GitHub emails the owner) when a scheduled job failed, an Edge Function called by
+  # the database answered with a server error, or the weather stopped updating. Read-only queries; uses the same
+  # SUPABASE_DB_URL secret as the weekly copy. net._http_response only keeps a few hours, so it sees the recent ones.
+  saude:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Verificar as tarefas agendadas e as funções
+        run: |
+          problemas=$(psql "$SUPABASE_DB_URL" -X -A -t -v ON_ERROR_STOP=1 <<'SQL'
+          select 'tarefa falhou: ' || j.jobname || ' (' || count(*) || 'x)'
+          from cron.job_run_details as d join cron.job as j using (jobid)
+          where d.status = 'failed' and d.start_time > now() - interval '26 hours'
+          group by j.jobname
+          union all
+          select 'função respondeu ' || coalesce(status_code::text, 'sem resposta') || ' (' || count(*) || 'x)'
+          from net._http_response
+          where created > now() - interval '26 hours' and (status_code is null or status_code >= 500)
+          group by status_code
+          union all
+          select 'meteorologia parada desde ' || max(updated_at)::text
+          from public.fixture_weather
+          having max(updated_at) < now() - interval '2 days';
+          SQL
+          )
+          if [ -n "$problemas" ]; then
+            echo "Problemas encontrados:"
+            echo "$problemas"
+            exit 1
+          fi
+          echo "Tudo a correr."

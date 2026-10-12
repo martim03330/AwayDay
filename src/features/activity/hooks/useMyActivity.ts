@@ -46,6 +46,8 @@ export function useMyPlaceVisits(userId: string | null) {
     queryKey: myPlaceVisitsKey(userId),
     queryFn: userId ? () => fetchMyPlaceVisits(userId) : skipToken,
     staleTime: STALE_MS,
+    // Which tascos and when: a history of where the person was, so it is never written to the phone's disk.
+    meta: { persist: false },
   });
 }
 

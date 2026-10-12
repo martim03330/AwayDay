@@ -128,7 +128,8 @@ async function route(admin: SupabaseClient, from: Point, to: Point, useTolls: nu
   // A malformed row is ignored: the route is asked again and the upsert below overwrites it.
   const fromCache = cached.data ? routeFromCache(cached.data) : null;
   if (fromCache) return fromCache;
-  if (cached.data) console.error('rides: discarding malformed route_cache row', key);
+  // Without the key: it holds the coordinates of the meeting point and the stadium.
+  if (cached.data) console.error('rides: discarding malformed route_cache row');
   const found = await routeValhalla(from, to, useTolls);
   if (found) {
     await admin.from('route_cache').upsert({

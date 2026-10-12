@@ -2,6 +2,30 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Revisão de segurança (50 pontos)
+
+Revisão completa: segredos, base de dados, edge functions, app, dependências e operação. Sem falhas críticas; o que
+mudou:
+
+- **Notificações só com chaves:** os triggers mandam o tipo e a chave da linha; `social-notify` e `ride-notify` releem
+  tudo na base de dados e só aceitam `NOTIFY_SECRET` (`x-notify-secret`, Vault `notify_secret`), separado do segredo
+  do cron. Razão: com o segredo do cron, alguém podia mandar qualquer texto a qualquer pessoa. A comparação dos
+  segredos passou a não revelar o comprimento.
+- **«Esta conta existe?»:** o limite por endereço usa `cf-connecting-ip` (posto pela Cloudflare) e, sem ele, a última
+  entrada do `x-forwarded-for`; mais um teto de 300 por hora para todos. Antes contornava-se com um cabeçalho
+  inventado (confirmado com 25 pedidos seguidos).
+- **Administração:** `set_feedback_status` passa por `is_admin()` (pede o segundo fator). Registo `admin_action_log`,
+  só de acrescentar, cheio por triggers nas tabelas que a moderação muda (denúncias, fotos, tascos rejeitados,
+  feedback, rascunhos de pontos de encontro, mensagens escondidas, fotos de perfil tiradas, quem é admin). Só ids e
+  o antes/depois da coluna, nunca texto de mensagens.
+- **Edge functions:** `walking-route` só com sessão (era um proxy aberto ao router da comunidade); os links de
+  pontos de encontro só do próprio site do clube; o log de `rides` deixa de levar coordenadas.
+- **App:** os avisos de boleia agendados apagam-se ao sair da conta; o histórico de tascos visitados deixa de ir para
+  o disco do telemóvel.
+- **Operação:** verificação diária (`saude`, no workflow de manter acordado) que falha, e manda email, quando uma
+  tarefa agendada falha, uma função responde com erro do servidor ou a meteorologia para. Versão do Supabase CLI fixa
+  no workflow das cópias.
+
 ## 2026-10-12 — Tabela de pontos com toda a gente, mesmo com 0 pontos
 
 - A tabela de pontos (`ranking_leaderboard`) mostra toda a gente que aparece no ranking, também quem ainda tem 0
