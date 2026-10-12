@@ -262,7 +262,7 @@ async function construir(
       from: quem ?? undefined,
       preferencia: 'invites',
       title: `${nome} convidou-te para um grupo`,
-      body: `«${texto(grupo.data?.name) ?? 'Grupo'}» — entras se quiseres.`,
+      body: `«${texto(grupo.data?.name) ?? 'Grupo'}». Entras se quiseres.`,
       data: { type: 'convite-grupo', groupId },
     };
   }
@@ -310,7 +310,7 @@ async function construir(
         .filter((pessoa) => pessoa !== autor),
       preferencia: 'trip_money',
       title: `${nome} lançou ${euros(cents)} nas contas`,
-      body: descricao ? `${descricao} — entras nesta divisão.` : 'Entras nesta divisão.',
+      body: descricao ? `${descricao}. Entras nesta divisão.` : 'Entras nesta divisão.',
       data: { type: 'contas', sessionId, fixtureId: texto(sessao.data?.fixture_id) ?? '' },
     };
   }

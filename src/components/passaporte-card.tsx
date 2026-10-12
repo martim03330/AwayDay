@@ -176,8 +176,8 @@ export function PassaporteCard({
       {limite === undefined ? (
         <ThemedText type="small" themeColor="textSecondary">
           {carimbadosNoLocal > 0
-            ? `${carimbadosNoLocal} ${carimbadosNoLocal === 1 ? 'carimbo confirmado' : 'carimbos confirmados'} no local — são esses que contam para o ranking. Os restantes ficaste tu a dizer que lá estiveste.`
-            : 'Ainda não tens carimbos confirmados no local. Em dia de jogo, no estádio, a app confirma que lá estás — e esses são os que contam para o ranking.'}
+            ? `${carimbadosNoLocal} ${carimbadosNoLocal === 1 ? 'carimbo confirmado' : 'carimbos confirmados'} no local. São esses que contam para o ranking. Os restantes ficaste tu a dizer que lá estiveste.`
+            : 'Ainda não tens carimbos confirmados no local. Em dia de jogo, no estádio, a app confirma que lá estás, e esses são os que contam para o ranking.'}
         </ThemedText>
       ) : null}
 

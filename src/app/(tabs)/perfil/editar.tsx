@@ -134,7 +134,7 @@ export default function EditarPerfilScreen() {
           <Avatar nome={dados?.displayName || 'Adepto'} url={dados?.avatarUrl} size={96} />
         </View>
         <ThemedText type="small" themeColor="textSecondary">
-          A foto é vista por quem tem conta na app — nas boleias, nos grupos e nas contas das
+          A foto é vista por quem tem conta na app: nas boleias, nos grupos e nas contas das
           viagens. Não é pública na internet, e podes tirá-la quando quiseres.
         </ThemedText>
         <Button

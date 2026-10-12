@@ -163,7 +163,7 @@ export default function AmigosScreen() {
         <Card style={styles.cartao}>
           <ThemedText themeColor="textSecondary">
             Ainda não tens amigos na app. Depois de uma viagem, o resumo do jogo mostra quem foi
-            contigo — é aí que se adiciona.
+            contigo: é aí que se adiciona.
           </ThemedText>
           <LinkTexto label="Os meus jogos" onPress={() => router.push('/perfil/os-meus-jogos')} />
         </Card>

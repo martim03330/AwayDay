@@ -238,7 +238,7 @@ describe('Reporting', () => {
   it.each([
     [new ModerationRefused('rate_limited'), 'Já enviaste muitas denúncias hoje. Volta a tentar amanhã.'],
     [new ModerationRefused('own_content'), 'Isso é teu: em vez de denunciar, podes apagar.'],
-    [new ModerationRefused('not_found'), 'Isto já não está cá — pode ter sido apagado entretanto.'],
+    [new ModerationRefused('not_found'), 'Isto já não está cá. Pode ter sido apagado entretanto.'],
     [new ModerationRefused('no_photo'), 'Essa pessoa já não tem foto.'],
     [new ModerationRefused('not_signed_in'), 'Não deu para enviar. Tenta outra vez.'],
     [new Error('network'), 'Não deu para enviar. Tenta outra vez.'],

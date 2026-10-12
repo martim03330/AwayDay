@@ -32,7 +32,7 @@ export function usePerguntarPartilhaDoCheckIn() {
           : `os teus ${grupos.length} grupos ficam`;
       Alert.alert(
         'Dizer à malta onde estás?',
-        `Sempre que fizeres check-in num tasco, ${quem} a saber em que tasco estás — só o nome do tasco. Mudas quando quiseres nas Definições.`,
+        `Sempre que fizeres check-in num tasco, ${quem} a saber em que tasco estás (só o nome do tasco). Mudas quando quiseres nas Definições.`,
         [
           { text: 'Agora não', style: 'cancel', onPress: () => partilha.mutate(false) },
           {

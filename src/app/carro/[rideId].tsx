@@ -39,7 +39,7 @@ function mensagemDeRecusa(erro: unknown) {
     case 'not_in_ride':
       return 'Já não vais nesta boleia.';
     case 'chat_closed':
-      return 'Esta conversa já fechou — o jogo foi há mais de um dia.';
+      return 'Esta conversa já fechou: o jogo foi há mais de um dia.';
     case 'bad_message':
       return 'Escreve alguma coisa (até 500 letras).';
     case 'rate_limited':

@@ -37,5 +37,5 @@ export function seasonLabel(seasonId: string) {
 
 /** Text for the share sheet: the same words the user sees, signed by the app. */
 export function shareMessage(recap: Pick<SeasonRecap, 'headline' | 'body'>) {
-  return `${recap.headline}\n\n${recap.body}\n\n— AwayDay`;
+  return `${recap.headline}\n\n${recap.body}\n\nAwayDay`;
 }

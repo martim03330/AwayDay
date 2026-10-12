@@ -340,7 +340,7 @@ export default function JogoScreen() {
                 tom="destaque"
                 titulo="Barulhómetro"
                 resumo={
-                  estado === 'a-decorrer' ? 'Em jogo — mede agora' : 'Mede o barulho da bancada'
+                  estado === 'a-decorrer' ? 'Em jogo: mede agora' : 'Mede o barulho da bancada'
                 }
                 onPress={() => abrir('/jogos/barulho')}
               />

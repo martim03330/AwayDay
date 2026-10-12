@@ -115,7 +115,10 @@ export function fill(template: string, slots: Slots): string | null {
   for (const name of slotNames(template)) {
     if (!Object.prototype.hasOwnProperty.call(slots, name)) return null;
   }
-  const text = template.replace(SLOT, (_match, name: string) => slots[name] ?? '');
+  // No dashes in the middle of a sentence in any app text (Martim's rule): a model that writes one gets a comma.
+  const text = template
+    .replace(SLOT, (_match, name: string) => slots[name] ?? '')
+    .replace(/\s+[—–]\s+/g, ', ');
   return /[{}]/.test(text) ? null : text;
 }
 

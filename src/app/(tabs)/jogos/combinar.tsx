@@ -82,7 +82,7 @@ export default function CombinarScreen() {
       {!userId ? (
         <>
           <ThemedText themeColor="textSecondary">
-            Para convidar a malta precisas de conta — os grupos juntam pessoas reais.
+            Para convidar a malta precisas de conta: os grupos juntam pessoas reais.
           </ThemedText>
           <Button label="Entrar" onPress={() => router.push('/conta/entrar')} />
         </>

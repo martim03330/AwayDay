@@ -99,7 +99,7 @@ export function CarimboEstadio({ jogo, estadio }: { jogo: Jogo; estadio: Venue }
       void queryClient.invalidateQueries({ queryKey: ['attendance'] });
       Alert.alert(
         'Carimbado!',
-        `${estadio.nome} entra no teu passaporte como visitado — estavas a ${formatarDistancia(distancia)} do estádio.`
+        `${estadio.nome} entra no teu passaporte como visitado: estavas a ${formatarDistancia(distancia)} do estádio.`
       );
       convidarParaORanking();
     } catch (problema) {

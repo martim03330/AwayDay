@@ -512,8 +512,8 @@ export default function OferecerBoleiaScreen() {
     COMBUSTIVEIS.find((opcao) => opcao.id === combustivel)?.nome ?? COMBUSTIVEIS[0].nome;
   // What "Mais opções" is set to, so the defaults are visible without opening it.
   const resumoOpcoes = [
-    `${consumo || '—'} l/100 km`,
-    `${nomeCombustivel} a ${precoLitro || '—'} €`,
+    `${consumo || '…'} l/100 km`,
+    `${nomeCombustivel} a ${precoLitro || '…'} €`,
     parqueEscolhido ? parqueEscolhido.name : null,
     idaEVolta ? (aceitaVolta ? 'aceitas pedidos de volta' : 'sem pedidos de volta') : null,
     nota.trim() ? 'com nota' : null,

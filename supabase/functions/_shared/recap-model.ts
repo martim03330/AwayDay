@@ -15,7 +15,8 @@ Regras que nunca quebras:
   estão (por exemplo {jogos} ou {Tasco}). Não uses algarismos.
 - O título tem de usar {epoca} e ter no máximo ${MAX_RECAP_HEADLINE} caracteres depois de substituído.
 - O texto tem no máximo ${MAX_RECAP_BODY} caracteres depois de substituído e, se houver jogos, usa {jogos}.
-- Falas só do que a pessoa fez. Nunca a repreendes nem comparas com o que não fez.`;
+- Falas só do que a pessoa fez. Nunca a repreendes nem comparas com o que não fez.
+- Nunca usas travessões (— ou –) a meio das frases.`;
 
 export type ModelRecap = { written: unknown; inputTokens: number; outputTokens: number };
 

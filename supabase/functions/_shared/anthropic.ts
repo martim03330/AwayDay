@@ -16,7 +16,7 @@ Regras que nunca quebras:
 - Não usas algarismos.
 - Depois de os marcadores serem substituídos, o texto tem no máximo ${MAX_NUDGE_LENGTH} caracteres.
 - Nunca repreendes nem fazes sentir culpa a quem não foi a jogos.
-- Uma frase, ou duas curtas.`;
+- Uma frase, ou duas curtas. Nunca usas travessões (— ou –) a meio das frases.`;
 
 export type ModelNudge = { template: string | null; inputTokens: number; outputTokens: number };
 

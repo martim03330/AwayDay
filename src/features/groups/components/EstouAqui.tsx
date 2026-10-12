@@ -14,7 +14,7 @@ function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof GroupRefused)) return 'Não deu para avisar. Tenta outra vez.';
   switch (erro.reason) {
     case 'place_not_found':
-      return 'Este tasco ainda não está na app de verdade — não dá para o partilhar.';
+      return 'Este tasco ainda não está na app de verdade, por isso não dá para o partilhar.';
     case 'rate_limited':
       return 'Já avisaste a malta vezes que cheguem hoje.';
     default:

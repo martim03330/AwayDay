@@ -55,7 +55,7 @@ function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof ModerationRefused)) return 'Não deu para enviar. Tenta outra vez.';
   switch (erro.reason) {
     case 'not_found':
-      return 'Isto já não está cá — pode ter sido apagado entretanto.';
+      return 'Isto já não está cá. Pode ter sido apagado entretanto.';
     case 'own_content':
       return 'Isso é teu: em vez de denunciar, podes apagar.';
     case 'no_photo':
