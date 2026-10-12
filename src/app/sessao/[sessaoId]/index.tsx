@@ -263,7 +263,7 @@ export default function SessaoScreen() {
 
       {gente.length > 0 ? (
         <>
-          <SectionHeader title="Quem vai" trailing={String(sessao.people)} />
+          <SectionHeader title="Quem vai" contagem={sessao.people} />
           <Card style={styles.grupo}>
             {gente.map((pessoa, indice) => (
               <LinhaGrupo

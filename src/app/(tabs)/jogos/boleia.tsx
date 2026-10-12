@@ -712,7 +712,7 @@ export default function BoleiaScreen() {
 
       {boleia.isMine && pedidosVolta.length > 0 ? (
         <>
-          <SectionHeader title="Pedidos para a volta" trailing={String(pedidosVolta.length)} />
+          <SectionHeader title="Pedidos para a volta" contagem={pedidosVolta.length} />
           <ThemedText type="small" themeColor="textSecondary">
             Ficaram sem transporte. Só vês a que distância estão do carro.
           </ThemedText>

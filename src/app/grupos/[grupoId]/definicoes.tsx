@@ -275,7 +275,7 @@ export default function DefinicoesDoGrupoScreen() {
 
       {erro ? <ThemedText style={{ color: theme.dangerText }}>{erro}</ThemedText> : null}
 
-      <SectionHeader title="Quem está no grupo" trailing={String(lista.length)} />
+      <SectionHeader title="Quem está no grupo" contagem={lista.length} />
       <Card style={styles.lista}>
         {lista.map((pessoa, indice) => {
           const cartao = (cartoes.data ?? []).find((c) => c.profileId === pessoa.profileId);

@@ -119,7 +119,7 @@ export default function MaltaScreen() {
             <>
               {porResponder.length > 0 ? (
                 <View style={styles.bloco}>
-                  <SectionHeader title="Convites" trailing={String(porResponder.length)} />
+                  <SectionHeader title="Convites" contagem={porResponder.length} />
                   {porResponder.map((convite) => (
                     <Card key={convite.groupId} style={styles.convite}>
                       <ThemedText style={styles.negrito}>{convite.groupName}</ThemedText>

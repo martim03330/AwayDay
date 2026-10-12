@@ -1,15 +1,19 @@
+import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { avisosDoJogo, horasDoPlano } from '@/lib/avisos-jogo';
 import { formatarDiaCurto, formatarHora } from '@/lib/datas';
+import { plural } from '@/lib/formatos';
 import { obterClube } from '@/mocks/clubes';
 import { obterLocal } from '@/mocks/locais';
 import type { Jogo } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
 import { usePlanosJogos } from '@/state/planos-jogos';
 import { Card } from '@/ui/card';
+import { Expansor } from '@/ui/expansor';
+import { IconCircle, icons } from '@/ui/icon';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -64,6 +68,14 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
     casa && fora
       ? avisosDoJogo(jogo, { casa: casa.nomeCurto, fora: fora.nomeCurto }, onde, agora)
       : [];
+  const [verAvisos, setVerAvisos] = useState(false);
+  const ligados = avisosLigados(jogo.id);
+  const proximo = avisos[0];
+  const resumoDosAvisos = !ligados
+    ? 'Desligados'
+    : proximo
+      ? `${plural(avisos.length, 'aviso', 'avisos')} · o próximo ${formatarDiaCurto(proximo.quando, agora).toLowerCase()} às ${formatarHora(proximo.quando)}`
+      : 'Sem avisos por enviar';
 
   // Hours and alerts are one plan: one title, one card.
   return (
@@ -87,9 +99,15 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
         )}
 
         <View style={[styles.linha, styles.separado, { borderTopColor: theme.backgroundSelected }]}>
-          <ThemedText style={[styles.rotuloAvisos, styles.flex]}>Avisos neste telemóvel</ThemedText>
+          <IconCircle name={icons.notificacoes} />
+          <View style={styles.flex}>
+            <ThemedText style={styles.rotuloAvisos}>Avisos para este jogo</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {resumoDosAvisos}
+            </ThemedText>
+          </View>
           <Switch
-            value={avisosLigados(jogo.id)}
+            value={ligados}
             onValueChange={() => alternarAvisos(jogo.id)}
             trackColor={{ true: theme.accent, false: theme.border }}
             thumbColor={theme.accentText}
@@ -97,19 +115,30 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
             accessibilityLabel="Avisos deste jogo"
           />
         </View>
-        {/* Only when on, in two aligned columns: the short date over the time, then what it says. */}
-        {avisosLigados(jogo.id)
-          ? avisos.map((aviso) => (
+        {ligados && avisos.length > 0 ? (
+          <Expansor
+            titulo="Ver os avisos"
+            contagem={avisos.length}
+            aberto={verAvisos}
+            onPress={() => setVerAvisos((atual) => !atual)}
+          />
+        ) : null}
+        {/* A small timeline: a dot per alert, joined by a line; what it says, then when. */}
+        {ligados && verAvisos
+          ? avisos.map((aviso, indice) => (
               <View key={aviso.id} style={styles.aviso}>
-                <View style={styles.quando}>
-                  <ThemedText type="smallBold">{formatarDiaCurto(aviso.quando, agora)}</ThemedText>
+                <View style={styles.trilho}>
+                  <View style={[styles.ponto, { backgroundColor: theme.accent }]} />
+                  {indice < avisos.length - 1 ? (
+                    <View style={[styles.traco, { backgroundColor: theme.backgroundSelected }]} />
+                  ) : null}
+                </View>
+                <View style={[styles.flex, styles.avisoTexto]}>
+                  <ThemedText type="small">{aviso.titulo}</ThemedText>
                   <ThemedText type="small" themeColor="textMuted">
-                    {formatarHora(aviso.quando)}
+                    {`${formatarDiaCurto(aviso.quando, agora)} · ${formatarHora(aviso.quando)}`}
                   </ThemedText>
                 </View>
-                <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-                  {aviso.titulo}
-                </ThemedText>
               </View>
             ))
           : null}
@@ -149,11 +178,26 @@ const styles = StyleSheet.create({
   },
   aviso: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: Spacing.one,
+    gap: Spacing.two,
   },
-  quando: {
-    width: 64,
+  trilho: {
+    width: 12,
+    alignItems: 'center',
+    paddingTop: 6,
+  },
+  ponto: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  traco: {
+    width: 2,
+    flex: 1,
+    marginTop: 4,
+    marginBottom: -6,
+    borderRadius: 1,
+  },
+  avisoTexto: {
+    paddingBottom: Spacing.one,
   },
 });

@@ -117,7 +117,7 @@ export default function AmigosScreen() {
     <Screen>
       {recebidos.length > 0 ? (
         <>
-          <SectionHeader title="Pedidos de amizade" trailing={String(recebidos.length)} />
+          <SectionHeader title="Pedidos de amizade" contagem={recebidos.length} />
           {recebidos.map((pedido) => (
             <Card key={pedido.profileId} style={styles.cartao}>
               <View style={styles.linha}>
@@ -158,7 +158,7 @@ export default function AmigosScreen() {
         </>
       ) : null}
 
-      <SectionHeader title="Amigos" trailing={String(lista.length)} />
+      <SectionHeader title="Amigos" contagem={lista.length} />
       {lista.length === 0 ? (
         <Card style={styles.cartao}>
           <ThemedText themeColor="textSecondary">
@@ -207,7 +207,7 @@ export default function AmigosScreen() {
 
       {enviados.length > 0 ? (
         <>
-          <SectionHeader title="Pedidos por responder" trailing={String(enviados.length)} />
+          <SectionHeader title="Pedidos por responder" contagem={enviados.length} />
           {enviados.map((pedido) => (
             <Card key={pedido.profileId} style={styles.cartao}>
               <Pressable
