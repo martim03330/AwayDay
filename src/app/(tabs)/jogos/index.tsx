@@ -1,8 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { setStatusBarStyle } from 'expo-status-bar';
 
 import { JogoCard } from '@/components/jogo-card';
 import { ConvitesDeBoleia } from '@/components/convites-de-boleia';
@@ -18,7 +20,7 @@ import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
-import { useTheme } from '@/hooks/use-theme';
+import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
 import { chaveDoDia, formatarDiaComSemana } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import {
@@ -157,6 +159,7 @@ export default function JogosScreen() {
   useBarraDeEstadoClara();
   const router = useRouter();
   const theme = useTheme();
+  const escuro = useEstaEscuro();
   const insets = useSafeAreaInsets();
   const agora = useNow();
   const { clubeFavoritoId, clubeDaTerraId, avaliacaoDoJogo } = useAppState();
@@ -173,6 +176,16 @@ export default function JogosScreen() {
   const [verConcorrencia, setVerConcorrencia] = useState(false);
   // The next games of your club by default; the whole season only when asked for.
   const [verCalendario, setVerCalendario] = useState(false);
+  // Once the filters have scrolled away, a bar stays at the top with the leagues and «Esconder jogos» (testers had to
+  // scroll all the way back to close a long list).
+  const [yDosFiltros, setYDosFiltros] = useState(0);
+  const [barraFixa, setBarraFixa] = useState(false);
+  // Coming back to the tab with the bar showing: dark status bar text again (useBarraDeEstadoClara set it light).
+  useFocusEffect(
+    useCallback(() => {
+      if (barraFixa && !escuro) setStatusBarStyle('dark', true);
+    }, [barraFixa, escuro])
+  );
   const queryClient = useQueryClient();
   const refrescarAmigos = useRefreshFriends();
   const [refreshing, setRefreshing] = useState(false);
@@ -311,7 +324,15 @@ export default function JogosScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView
         ref={paginaRef}
-        onScroll={onScroll}
+        onScroll={(evento) => {
+          onScroll(evento);
+          const fixa = yDosFiltros > 0 && evento.nativeEvent.contentOffset.y > yDosFiltros - insets.top;
+          if (fixa !== barraFixa) {
+            setBarraFixa(fixa);
+            // Dark status bar text over the light bar; light again over the green header.
+            setStatusBarStyle(fixa && !escuro ? 'dark' : 'light', true);
+          }
+        }}
         scrollEventThrottle={scrollEventThrottle}
         style={{ backgroundColor: theme.background }}
         contentInsetAdjustmentBehavior="never"
@@ -337,7 +358,7 @@ export default function JogosScreen() {
           <ConviteTreinador />
         </CabecalhoRelvado>
 
-        <View style={styles.largura}>
+        <View style={styles.largura} onLayout={(evento) => setYDosFiltros(evento.nativeEvent.layout.y)}>
           <View style={styles.filtros}>
             <ScrollView
               horizontal
@@ -386,6 +407,44 @@ export default function JogosScreen() {
           </View>
         </View>
       </ScrollView>
+      {barraFixa ? (
+        <Animated.View
+          entering={FadeIn.duration(150)}
+          exiting={FadeOut.duration(120)}
+          style={[
+            styles.barraFixa,
+            { paddingTop: insets.top + Spacing.one, backgroundColor: theme.background, borderBottomColor: theme.border },
+          ]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentInsetAdjustmentBehavior="never"
+            contentContainerStyle={styles.chips}
+            style={styles.flex}>
+            {/* The two leagues; the chosen one again goes back to all. */}
+            {filtrosCompeticao
+              .filter((filtro) => filtro.id !== 'todas')
+              .map((filtro) => (
+                <Chip
+                  key={filtro.id}
+                  label={filtro.label}
+                  selected={competicao === filtro.id}
+                  onPress={() => setCompeticao(competicao === filtro.id ? 'todas' : filtro.id)}
+                />
+              ))}
+          </ScrollView>
+          {verCalendario || verConcorrencia ? (
+            <Chip
+              label="Esconder jogos"
+              selected={false}
+              onPress={() => {
+                setVerCalendario(false);
+                setVerConcorrencia(false);
+              }}
+            />
+          ) : null}
+        </Animated.View>
+      ) : null}
       {voltarAoTopo}
     </View>
   );
@@ -394,6 +453,18 @@ export default function JogosScreen() {
 const MARGEM = 20;
 
 const styles = StyleSheet.create({
+  barraFixa: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.two,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   relvadoAcima: {
     position: 'absolute',
     top: -1000,
