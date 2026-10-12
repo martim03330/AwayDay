@@ -14,7 +14,7 @@ import { obterEstadio } from '@/mocks/estadios';
 import type { Coordenadas } from '@/mocks/tipos';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
-import { Chip } from '@/ui/chip';
+import { Segmentado } from '@/ui/segmentado';
 import { EmptyState } from '@/ui/empty-state';
 import { IconCircle, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
@@ -199,16 +199,13 @@ export default function SugerirTascoScreen() {
       />
 
       <ThemedText style={styles.rotulo}>Que tipo de sítio é</ThemedText>
-      <View style={styles.chips}>
-        {TIPOS.map((opcao) => (
-          <Chip
-            key={opcao.id}
-            label={opcao.nome}
-            selected={opcao.id === tipo}
-            onPress={() => setTipo(opcao.id)}
-          />
-        ))}
-      </View>
+      {/* A calm bar that slides sideways, like the other choices: the green chips flashed too much here. */}
+      <Segmentado
+        opcoes={TIPOS.map((opcao) => ({ valor: opcao.id, label: opcao.nome }))}
+        valor={tipo}
+        onChange={setTipo}
+        deslizante
+      />
 
       <ThemedText style={styles.rotulo}>Onde fica</ThemedText>
       <Campo
