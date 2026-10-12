@@ -1,7 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { Card } from '@/ui/card';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -17,7 +16,6 @@ export type LinhaTabela = {
 
 /** A ranking table. Your own line is highlighted, and stays in even when you are outside the top. */
 export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[]; vazio: string }) {
-  const theme = useTheme();
 
   if (linhas.length === 0) {
     return (
@@ -41,10 +39,7 @@ export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[
             <View
               accessible
               accessibilityLabel={`${linha.posicao}.º, ${linha.sou ? 'tu' : linha.nome}, ${linha.valor}, ${linha.detalhe}`}
-              style={[
-                styles.linha,
-                linha.sou && { backgroundColor: theme.backgroundSelected, borderRadius: 12 },
-              ]}>
+              style={styles.linha}>
               <ThemedText
                 type="score"
                 style={styles.posicao}
@@ -52,7 +47,8 @@ export function TabelaRanking({ linhas, vazio }: { linhas: readonly LinhaTabela[
                 {linha.posicao}
               </ThemedText>
               <View style={styles.flex}>
-                <ThemedText type="smallBold" numberOfLines={1}>
+                {/* Your row stands out by its green name, not a grey box (testers did not like the box). */}
+                <ThemedText type="smallBold" numberOfLines={1} themeColor={linha.sou ? 'accentInk' : undefined}>
                   {linha.sou ? `${linha.nome} (tu)` : linha.nome}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>

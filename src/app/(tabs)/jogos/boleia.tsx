@@ -979,19 +979,19 @@ export default function BoleiaScreen() {
             onPress={() => setFormImprevisto(true)}
           />
         ) : null}
-        {ativa && souPassageiro ? (
-          <LinkTexto
-            perigo={boleia.myStatus === 'accepted'}
-            neutro={boleia.myStatus !== 'accepted'}
-            label={boleia.myStatus === 'accepted' ? 'Sair da boleia' : 'Cancelar pedido'}
-            disabled={aTratar}
-            onPress={sair}
-          />
-        ) : null}
-        {ativa && boleia.isMine ? (
-          <LinkTexto perigo label="Cancelar boleia" disabled={aTratar} onPress={cancelar} />
-        ) : null}
       </View>
+      {/* Leaving or cancelling is a real button, in the same box as the others (testers' feedback). */}
+      {ativa && souPassageiro ? (
+        <Button
+          variant="secondary"
+          label={boleia.myStatus === 'accepted' ? 'Sair da boleia' : 'Cancelar pedido'}
+          disabled={aTratar}
+          onPress={sair}
+        />
+      ) : null}
+      {ativa && boleia.isMine ? (
+        <Button variant="secondary" label="Cancelar boleia" disabled={aTratar} onPress={cancelar} />
+      ) : null}
 
       <ThemedText type="small" themeColor="textMuted" style={styles.centro}>
         Percurso: © contribuidores do OpenStreetMap, Valhalla (FOSSGIS)
