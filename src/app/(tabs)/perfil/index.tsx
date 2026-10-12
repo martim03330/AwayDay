@@ -1,13 +1,10 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, type ColorValue } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, Path, Pattern, Rect } from 'react-native-svg';
 
-import { AlbumResumo } from '@/components/album-resumo';
-import { HistoricoTascos } from '@/components/historico-tascos';
-import { PassaporteCard } from '@/components/passaporte-card';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AccountCard } from '@/features/auth/components/AccountCard';
 import { useClubSupporterCounts, useMyProfile } from '@/features/profile/hooks/useMyProfile';
@@ -16,7 +13,6 @@ import { seasonLabel } from '@/features/recap/stats';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarData } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { textoAdeptosNaApp } from '@/lib/clubes';
 import { useMyFriendRequests } from '@/features/friends/hooks/useFriends';
@@ -24,6 +20,7 @@ import { useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { contarTascosVerificados } from '@/lib/tascos';
 import { MOSTRAR_CLUBE_DA_TERRA, obterClube } from '@/mocks/clubes';
+import { estadiosNacionais } from '@/mocks/estadios';
 import type { Clube } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
 import { useRelogio } from '@/state/relogio';
@@ -72,12 +69,10 @@ export default function PerfilScreen() {
     clubeFavoritoId,
     clubeDaTerraId,
     estadiosVisitados,
-    avaliacoes,
     visitasLocais,
     fotosMissoes,
   } = useAppState();
   const { historico } = useJogosAQueFoste();
-  const ultimoJogo = historico[0];
   const [toques, setToques] = useState<readonly number[]>([]);
   const userId = useUserId();
   const pedidosDeAmizade = (useMyFriendRequests(userId !== null).data ?? []).filter(
@@ -176,61 +171,45 @@ export default function PerfilScreen() {
         </Pressable>
 
         <View style={styles.conteudo}>
-          <SectionHeader title="Passaporte de estádios" />
-          <PassaporteCard estadiosVisitados={estadiosVisitados} avaliacoes={avaliacoes} limite={3} />
-          <Button
-            label="Ver o passaporte"
-            variant="secondary"
-            icon={icons.estadio}
-            onPress={() => router.push('/perfil/passaporte')}
-          />
-
-          <SectionHeader
-            title="Tascos visitados"
-            trailing={plural(tascosVerificados, 'verificado', 'verificados')}
-          />
-          <HistoricoTascos
-            visitas={visitasLocais}
-            onAbrirLocal={(localId) =>
-              router.push({ pathname: '/locais/[localId]', params: { localId } })
-            }
-          />
-
-          <SectionHeader
-            title="Álbum de recordações"
-            trailing={
-              fotosMissoes.length > 0 ? plural(fotosMissoes.length, 'foto', 'fotos') : undefined
-            }
-          />
-          <AlbumResumo fotos={fotosMissoes} onAbrir={() => router.push('/perfil/album')} />
-
-          <SectionHeader
-            title="Os teus jogos"
-            trailing={historico.length > 0 ? plural(historico.length, 'jogo', 'jogos') : undefined}
-          />
+          {/* Like a settings menu (testers' reference: Betclic): one line per thing, title only. What is inside opens
+              on its own page. */}
+          <SectionHeader title="A tua bola" />
           <Card style={styles.grupo}>
-            <LinhaGrupo
-              onPress={() => router.push('/perfil/os-meus-jogos')}
-              accessibilityLabel={`Os teus jogos: ${plural(historico.length, 'jogo', 'jogos')}. Toca para abrir.`}
-              leading={
-                <Azulejo
-                  icon={icons.acesso}
-                  fundo={theme.successBackground}
-                  tinta={theme.accentInk}
-                />
-              }
-              title={
-                ultimoJogo
-                  ? `${obterClube(ultimoJogo.casaId)?.nomeCurto ?? ''} x ${obterClube(ultimoJogo.foraId)?.nomeCurto ?? ''}`
-                  : 'Ainda sem jogos'
-              }
-              subtitle={
-                ultimoJogo
-                  ? `Último jogo · ${formatarData(new Date(ultimoJogo.inicio))}`
-                  : 'Os jogos a que fores ficam aqui depois do apito.'
-              }
-              trailing={chevron}
+            <Opcao
+              icon={icons.estadio}
+              titulo="Passaporte de estádios"
+              valor={`${estadiosNacionais.filter((estadio) => estadiosVisitados.includes(estadio.id)).length}/${estadiosNacionais.length}`}
+              onPress={() => router.push('/perfil/passaporte')}
+              separador
             />
+            <Opcao
+              icon={icons.tasco}
+              titulo="Tascos visitados"
+              valor={visitasLocais.length > 0 ? String(tascosVerificados) : undefined}
+              onPress={() => router.push('/perfil/tascos')}
+              separador
+            />
+            <Opcao
+              icon={icons.album}
+              titulo="Álbum de recordações"
+              valor={fotosMissoes.length > 0 ? String(fotosMissoes.length) : undefined}
+              onPress={() => router.push('/perfil/album')}
+              separador
+            />
+            <Opcao
+              icon={icons.acesso}
+              titulo="Os teus jogos"
+              valor={historico.length > 0 ? String(historico.length) : undefined}
+              onPress={() => router.push('/perfil/os-meus-jogos')}
+              separador={retrospetiva.data !== undefined && retrospetiva.data !== null}
+            />
+            {retrospetiva.data ? (
+              <Opcao
+                icon={icons.ranking}
+                titulo={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
+                onPress={() => router.push('/perfil/retrospetiva')}
+              />
+            ) : null}
           </Card>
 
           {MOSTRAR_CLUBE_DA_TERRA ? (
@@ -262,89 +241,29 @@ export default function PerfilScreen() {
             </>
           ) : null}
 
-          {userId ? (
-            <>
-              <SectionHeader title="O teu perfil" />
-              <Card style={styles.grupo}>
-                <LinhaGrupo
+          <SectionHeader title="Gerir conta" />
+          <Card style={styles.grupo}>
+            {userId ? (
+              <>
+                <Opcao
+                  icon={icons.camara}
+                  titulo="Editar nome e foto"
                   onPress={() => router.push('/perfil/editar')}
-                  accessibilityLabel="Editar o teu nome, a foto e de onde partes."
-                  leading={
-                    <Azulejo
-                      icon={icons.camara}
-                      fundo={theme.highlight}
-                      tinta={theme.highlightText}
-                    />
-                  }
-                  title="Editar nome e foto"
-                  subtitle={
-                    perfilDaConta.data?.avatarUrl
-                      ? 'A tua cara nas boleias e nos grupos'
-                      : 'Põe uma foto: ajuda quem vai contigo'
-                  }
-                  trailing={chevron}
                   separador
                 />
-                <LinhaGrupo
+                <Opcao
+                  icon={icons.perfil}
+                  titulo="Os teus amigos"
+                  destaque={pedidosDeAmizade > 0 ? String(pedidosDeAmizade) : undefined}
                   onPress={() => router.push('/perfil/amigos')}
-                  accessibilityLabel="Os teus amigos. Toca para abrir."
-                  leading={
-                    <Azulejo
-                      icon={icons.perfil}
-                      fundo={theme.successBackground}
-                      tinta={theme.successText}
-                    />
-                  }
-                  title="Os teus amigos"
-                  subtitle={
-                    pedidosDeAmizade > 0
-                      ? plural(pedidosDeAmizade, 'pedido por responder', 'pedidos por responder')
-                      : 'Quem já foi contigo a um jogo'
-                  }
-                  trailing={
-                    <View style={styles.trailing}>
-                      {pedidosDeAmizade > 0 ? (
-                        <Badge label={String(pedidosDeAmizade)} tone="highlight" />
-                      ) : null}
-                      {chevron}
-                    </View>
-                  }
+                  separador
                 />
-              </Card>
-            </>
-          ) : null}
-
-          {retrospetiva.data ? (
-            <>
-              <SectionHeader title="A tua época" />
-              <Card style={styles.grupo}>
-                <LinhaGrupo
-                  onPress={() => router.push('/perfil/retrospetiva')}
-                  accessibilityLabel={`Retrospetiva da época ${seasonLabel(retrospetiva.data.seasonId)}. Toca para abrir.`}
-                  leading={
-                    <Azulejo
-                      icon={icons.ranking}
-                      fundo={theme.successBackground}
-                      tinta={theme.accentInk}
-                    />
-                  }
-                  title={`A tua época ${seasonLabel(retrospetiva.data.seasonId)}`}
-                  subtitle={retrospetiva.data.headline}
-                  trailing={chevron}
-                />
-              </Card>
-            </>
-          ) : null}
-
-          <SectionHeader title="Definições" />
-          <Card style={styles.grupo}>
-            <LinhaGrupo
+              </>
+            ) : null}
+            <Opcao
+              icon={icons.definicoes}
+              titulo="Definições"
               onPress={() => router.push('/perfil/definicoes')}
-              accessibilityLabel="Definições: sons, notificações, aspeto e privacidade. Toca para abrir."
-              leading={<Icon name={icons.definicoes} size={20} color={theme.accentInk} />}
-              title="Definições"
-              subtitle="Sons, notificações, aspeto e privacidade"
-              trailing={chevron}
             />
           </Card>
 
@@ -358,6 +277,49 @@ export default function PerfilScreen() {
       </ScrollView>
       {voltarAoTopo}
     </View>
+  );
+}
+
+/** One line of the profile menu: an icon, the title, sometimes a number, and the arrow. Everything else is inside. */
+function Opcao({
+  icon,
+  titulo,
+  valor,
+  destaque,
+  onPress,
+  separador = false,
+}: {
+  icon: IconName;
+  titulo: string;
+  /** A quiet number on the right (e.g. «3/57»). */
+  valor?: string;
+  /** A number that needs an answer (e.g. friend requests), in yellow. */
+  destaque?: string;
+  onPress: () => void;
+  separador?: boolean;
+}) {
+  const theme = useTheme();
+  return (
+    <LinhaGrupo
+      onPress={onPress}
+      accessibilityLabel={[titulo, valor, destaque ? `${destaque} por responder` : null]
+        .filter(Boolean)
+        .join(', ')}
+      leading={<Icon name={icon} size={22} color={theme.accentInk} />}
+      title={titulo}
+      trailing={
+        <View style={styles.trailing}>
+          {valor ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {valor}
+            </ThemedText>
+          ) : null}
+          {destaque ? <Badge label={destaque} tone="highlight" /> : null}
+          <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
+        </View>
+      }
+      separador={separador}
+    />
   );
 }
 
@@ -403,14 +365,6 @@ function AvatarCachecol({ iniciais: letras, foto }: { iniciais: string; foto?: s
           {letras}
         </ThemedText>
       </View>
-    </View>
-  );
-}
-
-function Azulejo({ icon, fundo, tinta }: { icon: IconName; fundo: ColorValue; tinta: ColorValue }) {
-  return (
-    <View style={[styles.azulejo, { backgroundColor: fundo }]}>
-      <Icon name={icon} size={20} color={tinta} />
     </View>
   );
 }
@@ -572,14 +526,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  azulejo: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    borderCurve: 'continuous',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   linhaSubtitulo: {
     fontSize: 13,

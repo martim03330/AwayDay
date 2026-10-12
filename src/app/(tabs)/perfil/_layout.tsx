@@ -44,6 +44,9 @@ export default function PerfilLayout() {
       <Stack.Screen name="definicoes">
         <Stack.Screen.Title>Definições</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="tascos">
+        <Stack.Screen.Title>Tascos visitados</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="album">
         <Stack.Screen.Title>Álbum de recordações</Stack.Screen.Title>
       </Stack.Screen>
