@@ -9,6 +9,7 @@ import {
   pushPermission,
   registerThisDevice,
   takePushAskOnSignIn,
+  forgetPendingDeviceToken,
 } from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterJogo } from '@/mocks/jogos';
@@ -92,6 +93,8 @@ export function NotificacoesPush() {
   useEffect(() => {
     if (!userId) {
       registadoPara.current = null;
+      // A token whose removal failed at the last sign-out (offline): forgotten now, without a session.
+      void forgetPendingDeviceToken().catch(() => undefined);
       return;
     }
     if (!perfilCarregado || registadoPara.current === userId) return;

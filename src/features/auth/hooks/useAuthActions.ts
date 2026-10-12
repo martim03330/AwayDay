@@ -45,7 +45,7 @@ export function useSignIn() {
 }
 
 export function useSignOut() {
-  return useMutation({ mutationFn: signOut });
+  return useMutation({ mutationFn: (onde: 'local' | 'global' = 'local') => signOut(onde) });
 }
 
 export function useRequestPasswordReset() {

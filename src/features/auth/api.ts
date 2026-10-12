@@ -1,4 +1,8 @@
+import { Image } from 'expo-image';
+import * as Notifications from 'expo-notifications';
+
 import { signUpOutcome } from '@/features/auth/outcomes';
+import { clearPendingInvite } from '@/features/auth/pending-invite';
 import { normalizeCode, normalizeEmail } from '@/features/auth/validation';
 import { unregisterThisDevice } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
@@ -79,12 +83,32 @@ export async function isNameAllowed(name: string) {
   return error ? true : data;
 }
 
-/** Signs out on this phone only; other devices stay signed in. */
-export async function signOut() {
+/**
+ * What the account leaves on the phone besides the session and the query cache (those are cleared by Supabase and by
+ * SincronizarConta): delivered notifications and the badge, private photos in the image cache, open realtime
+ * channels and an invite still waiting. Each step on its own: one failing does not stop the others.
+ */
+async function limparTelemovel() {
+  await Promise.allSettled([
+    Notifications.dismissAllNotificationsAsync(),
+    Notifications.setBadgeCountAsync(0),
+    Image.clearDiskCache(),
+    Image.clearMemoryCache(),
+    client().removeAllChannels(),
+    clearPendingInvite(),
+  ]);
+}
+
+/**
+ * Signs out on this phone (`'local'`), or on every device of the account (`'global'`, for a lost phone or a password
+ * someone else may know).
+ */
+export async function signOut(onde: 'local' | 'global' = 'local') {
   // While still signed in: stop sending this account's notifications to this phone.
   await unregisterThisDevice().catch(() => undefined);
-  const { error } = await client().auth.signOut({ scope: 'local' });
+  const { error } = await client().auth.signOut({ scope: onde });
   if (error) throw error;
+  await limparTelemovel();
 }
 
 /** The email asked about has no account: the screen says so instead of waiting for a code that never comes. */
@@ -122,6 +146,8 @@ export async function resetPassword({ email, code, password }: ResetPasswordInpu
 
   const update = await client().auth.updateUser({ password });
   if (update.error) throw update.error;
+  // A new password ends every other session: whoever knew the old one is out.
+  await client().auth.signOut({ scope: 'others' }).catch(() => undefined);
 }
 
 /**
@@ -149,4 +175,5 @@ export async function deleteAccount({ password, captchaToken }: DeleteAccountInp
   if (error) throw error;
   // The user no longer exists, so the server may reject the sign-out; the local session goes anyway.
   await client().auth.signOut({ scope: 'local' });
+  await limparTelemovel();
 }

@@ -78,6 +78,8 @@ export async function registerThisDevice() {
   });
   if (error) throw error;
   registeredToken = token;
+  // Registered again for this account: a removal still pending from an earlier sign-out no longer applies.
+  await AsyncStorage.removeItem(CHAVE_TOKEN_POR_ESQUECER).catch(() => undefined);
 }
 
 /** Asks for permission (only when the user turns suggestions on) and registers this phone. */
@@ -93,11 +95,40 @@ export async function enablePushOnThisDevice(): Promise<PushPermission> {
   return permission;
 }
 
-/** Stops pushes to this phone for the current account. Call it before signing out. */
+// A token whose removal failed (signed out offline): tried again on the next launch, no session needed.
+const CHAVE_TOKEN_POR_ESQUECER = 'awayday:push:token-por-esquecer';
+
+/** This phone's push token: the one registered in this launch, or asked again from the system. */
+async function tokenDesteTelemovel() {
+  if (registeredToken) return registeredToken;
+  const projectId = easProjectId();
+  if (!canUsePush() || !projectId) return null;
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== Notifications.PermissionStatus.GRANTED) return null;
+  const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
+  return data;
+}
+
+/**
+ * Stops pushes to this phone for the account that is leaving. Call it before signing out. Never throws: if the
+ * server cannot be reached, the token is kept and forgotten on the next launch (`forgetPendingDeviceToken`).
+ */
 export async function unregisterThisDevice() {
-  if (!supabase || !registeredToken) return;
-  await supabase.from('device_token').delete().eq('token', registeredToken);
+  if (!supabase) return;
+  const token = await tokenDesteTelemovel().catch(() => null);
   registeredToken = null;
+  if (!token) return;
+  const { error } = await supabase.rpc('forget_device_token', { p_token: token });
+  if (error) await AsyncStorage.setItem(CHAVE_TOKEN_POR_ESQUECER, token).catch(() => undefined);
+}
+
+/** On launch: forgets a token whose removal failed at the last sign-out. */
+export async function forgetPendingDeviceToken() {
+  if (!supabase) return;
+  const token = await AsyncStorage.getItem(CHAVE_TOKEN_POR_ESQUECER).catch(() => null);
+  if (!token) return;
+  const { error } = await supabase.rpc('forget_device_token', { p_token: token });
+  if (!error) await AsyncStorage.removeItem(CHAVE_TOKEN_POR_ESQUECER).catch(() => undefined);
 }
 
 /**

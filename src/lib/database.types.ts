@@ -4483,6 +4483,7 @@ export type Database = {
           visibility: string
         }[]
       }
+      forget_device_token: { Args: { p_token: string }; Returns: undefined }
       friendship_states: {
         Args: { p_profile_ids: string[] }
         Returns: {

@@ -75,9 +75,31 @@ export function AccountCard({ displayName }: AccountCardProps) {
         variant="secondary"
         disabled={signOut.isPending}
         onPress={() =>
-          signOut.mutate(undefined, {
+          signOut.mutate('local', {
             onError: (error) => Alert.alert('Não deu para sair', authErrorMessage(error)),
           })
+        }
+      />
+      <LinkTexto
+        neutro
+        label="Terminar sessão em todos os dispositivos"
+        disabled={signOut.isPending}
+        onPress={() =>
+          Alert.alert(
+            'Sair em todo o lado?',
+            'A conta fica fechada neste telemóvel e em todos os outros onde entraste. Para voltar, entras outra vez.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Sair em todo o lado',
+                style: 'destructive',
+                onPress: () =>
+                  signOut.mutate('global', {
+                    onError: (error) => Alert.alert('Não deu para sair', authErrorMessage(error)),
+                  }),
+              },
+            ]
+          )
         }
       />
       {/* Deleting asks for the password again, on its own screen. */}

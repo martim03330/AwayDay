@@ -32,11 +32,13 @@ jest.mock('expo-notifications', () => ({
 
 const mockEnable = jest.fn();
 const mockRegister = jest.fn();
+const mockEsquecer = jest.fn();
 let mockPedirAoEntrar = false;
 let mockPermissao = 'granted';
 jest.mock('@/lib/push', () => ({
   enablePushOnThisDevice: () => mockEnable(),
   registerThisDevice: () => mockRegister(),
+  forgetPendingDeviceToken: () => mockEsquecer(),
   takePushAskOnSignIn: () => Promise.resolve(mockPedirAoEntrar),
   pushPermission: () => Promise.resolve(mockPermissao),
 }));
@@ -60,6 +62,7 @@ beforeEach(() => {
   mockLimpar.mockReset();
   mockEnable.mockReset().mockResolvedValue('granted');
   mockRegister.mockReset().mockResolvedValue(undefined);
+  mockEsquecer.mockReset().mockResolvedValue(undefined);
   mockUltima = null;
   mockOuvinte = null;
   mockNavegacaoPronta = true;
@@ -111,6 +114,13 @@ describe('Signing in', () => {
     definirUtilizador(UTILIZADORES.comConta);
     render(<NotificacoesPush />);
     await waitFor(() => expect(mockEnable).toHaveBeenCalledTimes(1));
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+
+  it('without a session, forgets a token whose removal failed at the last sign-out', async () => {
+    definirUtilizador(UTILIZADORES.semConta);
+    render(<NotificacoesPush />);
+    await waitFor(() => expect(mockEsquecer).toHaveBeenCalledTimes(1));
     expect(mockRegister).not.toHaveBeenCalled();
   });
 
