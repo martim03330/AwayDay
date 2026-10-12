@@ -70,11 +70,10 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
       : [];
   const [verAvisos, setVerAvisos] = useState(false);
   const ligados = avisosLigados(jogo.id);
-  const proximo = avisos[0];
   const resumoDosAvisos = !ligados
     ? 'Desligados'
-    : proximo
-      ? `${plural(avisos.length, 'aviso', 'avisos')} · o próximo ${formatarDiaCurto(proximo.quando, agora).toLowerCase()} às ${formatarHora(proximo.quando)}`
+    : avisos.length > 0
+      ? plural(avisos.length, 'aviso', 'avisos')
       : 'Sem avisos por enviar';
 
   // Hours and alerts are one plan: one title, one card.
