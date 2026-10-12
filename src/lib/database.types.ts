@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   graphql_public: {
     Tables: {
@@ -1188,6 +1188,7 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          edited_at: string | null
           group_id: string
           hidden_at: string | null
           hidden_by: string | null
@@ -1196,10 +1197,12 @@ export type Database = {
           place_id: string | null
           plan_id: string | null
           profile_id: string
+          reply_to_id: string | null
         }
         Insert: {
           body: string
           created_at?: string
+          edited_at?: string | null
           group_id: string
           hidden_at?: string | null
           hidden_by?: string | null
@@ -1208,10 +1211,12 @@ export type Database = {
           place_id?: string | null
           plan_id?: string | null
           profile_id: string
+          reply_to_id?: string | null
         }
         Update: {
           body?: string
           created_at?: string
+          edited_at?: string | null
           group_id?: string
           hidden_at?: string | null
           hidden_by?: string | null
@@ -1220,6 +1225,7 @@ export type Database = {
           place_id?: string | null
           plan_id?: string | null
           profile_id?: string
+          reply_to_id?: string | null
         }
         Relationships: [
           {
@@ -1252,6 +1258,49 @@ export type Database = {
           },
           {
             foreignKeyName: "group_message_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "group_message"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_message_reaction: {
+        Row: {
+          created_at: string
+          emoji: string
+          message_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          message_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          message_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_message_reaction_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "group_message"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_message_reaction_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profile"
@@ -2772,28 +2821,34 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          edited_at: string | null
           hidden_at: string | null
           hidden_by: string | null
           id: string
           profile_id: string
+          reply_to_id: string | null
           ride_id: string
         }
         Insert: {
           body: string
           created_at?: string
+          edited_at?: string | null
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
           profile_id: string
+          reply_to_id?: string | null
           ride_id: string
         }
         Update: {
           body?: string
           created_at?: string
+          edited_at?: string | null
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
           profile_id?: string
+          reply_to_id?: string | null
           ride_id?: string
         }
         Relationships: [
@@ -2812,10 +2867,53 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ride_message_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "ride_message"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ride_message_ride_id_fkey"
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "ride"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_message_reaction: {
+        Row: {
+          created_at: string
+          emoji: string
+          message_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          message_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          message_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_message_reaction_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ride_message"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ride_message_reaction_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
             referencedColumns: ["id"]
           },
         ]
@@ -4120,8 +4218,11 @@ export type Database = {
       }
       can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
       can_use_group_topic: { Args: { p_topic: string }; Returns: boolean }
+      can_use_ride_topic: { Args: { p_topic: string }; Returns: boolean }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
+      chat_edit_window: { Args: never; Returns: string }
+      chat_reaction_allowed: { Args: { p_emoji: string }; Returns: boolean }
       clear_profile_photo: { Args: never; Returns: undefined }
       close_finished_seasons: { Args: never; Returns: number }
       close_plans_with_full_ride: {
@@ -4179,6 +4280,14 @@ export type Database = {
       division_spots: {
         Args: { p_active: number }
         Returns: Record<string, unknown>
+      }
+      edit_group_message: {
+        Args: { p_body: string; p_message_id: string }
+        Returns: undefined
+      }
+      edit_ride_message: {
+        Args: { p_body: string; p_message_id: string }
+        Returns: undefined
       }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
@@ -4367,12 +4476,17 @@ export type Database = {
           can_remove: boolean
           created_at: string
           display_name: string
+          edited_at: string
           id: string
           kind: string
           mine: boolean
           place_id: string
           plan_id: string
           profile_id: string
+          reactions: Json
+          reply_body: string
+          reply_display_name: string
+          reply_to_id: string
         }[]
       }
       group_plan_for_fixture: {
@@ -4806,6 +4920,21 @@ export type Database = {
           rides_faults: number
         }[]
       }
+      public_profile: {
+        Args: { p_profile_id: string }
+        Returns: {
+          avatar_path: string
+          display_name: string
+          home_city: string
+          is_me: boolean
+          member_since: string
+          profile_id: string
+          rides_completed: number
+          rides_faults: number
+          stadiums_stamped: number
+          supporter_club_id: string
+        }[]
+      }
       publish_place_candidate: {
         Args: {
           p_kind: string
@@ -4870,6 +4999,14 @@ export type Database = {
           points: number
           profile_id: string
         }[]
+      }
+      react_group_message: {
+        Args: { p_emoji: string; p_message_id: string }
+        Returns: undefined
+      }
+      react_ride_message: {
+        Args: { p_emoji: string; p_message_id: string }
+        Returns: undefined
       }
       record_noise_measurement: {
         Args: { p_fixture_id: string; p_level: number }
@@ -5049,9 +5186,14 @@ export type Database = {
           can_remove: boolean
           created_at: string
           display_name: string
+          edited_at: string
           id: string
           mine: boolean
           profile_id: string
+          reactions: Json
+          reply_body: string
+          reply_display_name: string
+          reply_to_id: string
         }[]
       }
       ride_people: {
@@ -5170,11 +5312,11 @@ export type Database = {
       }
       send_friend_request: { Args: { p_profile_id: string }; Returns: string }
       send_group_message: {
-        Args: { p_body: string; p_group_id: string }
+        Args: { p_body: string; p_group_id: string; p_reply_to?: string }
         Returns: string
       }
       send_ride_message: {
-        Args: { p_body: string; p_ride_id: string }
+        Args: { p_body: string; p_reply_to?: string; p_ride_id: string }
         Returns: string
       }
       set_display_name: { Args: { p_name: string }; Returns: undefined }
