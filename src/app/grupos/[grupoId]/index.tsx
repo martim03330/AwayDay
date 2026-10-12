@@ -42,7 +42,7 @@ import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
 import { mencoesNoTexto, type Mencionavel } from '@/lib/mencoes';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
-import { AvisoDeConversa, BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
+import { AvisoDeConversa, BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa, type PosicaoNoEcra } from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
@@ -114,7 +114,7 @@ export default function ConversaDoGrupoScreen() {
   const [texto, setTexto] = useState('');
   const [aResponder, setAResponder] = useState<GroupMessage | null>(null);
   const [aEditar, setAEditar] = useState<GroupMessage | null>(null);
-  const [menuDe, setMenuDe] = useState<{ mensagem: GroupMessage; podeEditar: boolean } | null>(null);
+  const [menuDe, setMenuDe] = useState<{ mensagem: GroupMessage; podeEditar: boolean; posicao: PosicaoNoEcra | null } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [aTentar, setATentar] = useState(false);
 
@@ -342,6 +342,8 @@ export default function ConversaDoGrupoScreen() {
       <MenuDaMensagem
         texto={menuDe?.mensagem.body ?? null}
         minha={menuDe?.mensagem.mine ?? false}
+        posicao={menuDe?.posicao ?? null}
+        hora={menuDe ? formatarHora(new Date(menuDe.mensagem.createdAt)) : undefined}
         minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
         onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
         acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
@@ -471,10 +473,11 @@ export default function ConversaDoGrupoScreen() {
                       onLongPress={
                         eLocal(item.id)
                           ? undefined
-                          : () =>
+                          : (posicao) =>
                               setMenuDe({
                                 mensagem: item,
                                 podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
+                                posicao,
                               })
                       }
                     />

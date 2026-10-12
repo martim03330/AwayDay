@@ -110,7 +110,8 @@ type BolhaProps = {
   onAbrirCitacao?: () => void;
   /** This message was just jumped to: it flashes for a moment so the eye finds it. */
   destacada?: boolean;
-  onLongPress?: () => void;
+  /** Held: opens the menu, with where the bubble is (null if it could not be measured). */
+  onLongPress?: (posicao: PosicaoNoEcra | null) => void;
 };
 
 /** How far the bubble has to go for a swipe to become a reply, and how far it can go at most. */
@@ -135,6 +136,9 @@ const ENTRADA_DA_REACAO = new Keyframe({
 
 const GATILHO_RESPOSTA_PX = 56;
 const MAXIMO_RESPOSTA_PX = 80;
+
+/** Where a bubble is on the screen when held: the menu draws the message right there, as in WhatsApp. */
+export type PosicaoNoEcra = { x: number; y: number; largura: number; altura: number };
 
 /** Uma mensagem: verde e à direita se é tua, branca e à esquerda com a cara de quem a escreveu. */
 export function BolhaDeConversa({
@@ -163,6 +167,7 @@ export function BolhaDeConversa({
   const deslocamento = useSharedValue(0);
   const passouOGatilho = useSharedValue(false);
   const escala = useSharedValue(1);
+  const bolhaRef = useRef<View>(null);
   const escalaDaBolha = useAnimatedStyle(() => ({ transform: [{ scale: escala.get() }] }));
   const brilho = useSharedValue(0);
   const brilhoDaBolha = useAnimatedStyle(() => ({ opacity: brilho.get() }));
@@ -239,6 +244,18 @@ export function BolhaDeConversa({
                 onLongPress
                   ? () => {
                       vibrarLeve();
+                      // Measured before it pops, so the menu draws the message at its real size and place.
+                      // If the measure never answers (the bubble left the screen), the menu opens anyway, at the bottom.
+                      let aberto = false;
+                      const abrir = (posicao: PosicaoNoEcra | null) => {
+                        if (aberto) return;
+                        aberto = true;
+                        onLongPress(posicao);
+                      };
+                      bolhaRef.current?.measureInWindow((x, y, largura, altura) =>
+                        abrir(largura > 0 ? { x, y, largura, altura } : null)
+                      );
+                      setTimeout(() => abrir(null), 100);
                       if (!reduzirMovimento) {
                         escala.set(
                           withSequence(
@@ -247,10 +264,11 @@ export function BolhaDeConversa({
                           )
                         );
                       }
-                      onLongPress();
                     }
                   : undefined
               }
+              ref={bolhaRef}
+              collapsable={false}
               delayLongPress={300}
               accessibilityHint={
                 onLongPress ? 'Toca sem largar para reagir, responder e mais opções.' : undefined

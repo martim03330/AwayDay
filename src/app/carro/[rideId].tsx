@@ -19,12 +19,12 @@ import {
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { aindaDaParaEditar, chaveDaMensagem, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
-import { chaveDoDia, formatarDia } from '@/lib/datas';
+import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
 import { mencoesNoTexto, type Mencionavel } from '@/lib/mencoes';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
-import { BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
+import { BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa, type PosicaoNoEcra } from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons } from '@/ui/icon';
 import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
@@ -81,7 +81,7 @@ export default function ConversaDoCarroScreen() {
   const [texto, setTexto] = useState('');
   const [aResponder, setAResponder] = useState<RideMessage | null>(null);
   const [aEditar, setAEditar] = useState<RideMessage | null>(null);
-  const [menuDe, setMenuDe] = useState<{ mensagem: RideMessage; podeEditar: boolean } | null>(null);
+  const [menuDe, setMenuDe] = useState<{ mensagem: RideMessage; podeEditar: boolean; posicao: PosicaoNoEcra | null } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   // Abrir a conversa é lê-la.
@@ -227,6 +227,8 @@ export default function ConversaDoCarroScreen() {
       <MenuDaMensagem
         texto={menuDe?.mensagem.body ?? null}
         minha={menuDe?.mensagem.mine ?? false}
+        posicao={menuDe?.posicao ?? null}
+        hora={menuDe ? formatarHora(new Date(menuDe.mensagem.createdAt)) : undefined}
         minhaReacao={menuDe ? minhaReacao(menuDe.mensagem.reactions) : null}
         onReagir={menuDe ? (emoji) => reagir(menuDe.mensagem, emoji) : undefined}
         acoes={menuDe ? acoesDoMenu(menuDe.mensagem, menuDe.podeEditar) : []}
@@ -321,10 +323,11 @@ export default function ConversaDoCarroScreen() {
                     onLongPress={
                       eLocal(item.id)
                         ? undefined
-                        : () =>
+                        : (posicao) =>
                             setMenuDe({
                               mensagem: item,
                               podeEditar: item.mine && aindaDaParaEditar(item.createdAt, Date.now()),
+                              posicao,
                             })
                     }
                   />

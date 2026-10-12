@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import { BotaoAlternar } from '@/ui/botao-alternar';
@@ -320,13 +320,14 @@ describe('MensagemErro', () => {
 describe('Conversa', () => {
   const base = { nome: 'Rui Costa', texto: 'Bora!', criadaEm: '2026-10-06T18:00:00Z', mostrarQuem: true };
 
-  it('your own message: long-press opens the menu, and no name on top', () => {
+  it('your own message: long-press opens the menu, and no name on top', async () => {
     const onLongPress = jest.fn();
     render(<BolhaDeConversa {...base} minha onLongPress={onLongPress} />);
     expect(screen.queryByText('Rui Costa')).toBeNull();
     const bolha = screen.getByHintText('Toca sem largar para reagir, responder e mais opções.');
     fireEvent(bolha, 'longPress');
-    expect(onLongPress).toHaveBeenCalled();
+    // Opens once the bubble is measured (or, here, after the short wait for a measure that never comes).
+    await waitFor(() => expect(onLongPress).toHaveBeenCalledTimes(1));
   });
 
   it("someone else's message shows who wrote it, and tapping the name opens their profile", () => {

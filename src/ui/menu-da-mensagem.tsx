@@ -1,10 +1,11 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, FadeIn, Keyframe, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { REACOES, type Emoji } from '@/lib/conversa';
+import type { PosicaoNoEcra } from '@/ui/conversa';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -26,6 +27,42 @@ const entradaDoEmoji = (indice: number) =>
     .duration(170);
 const ENTRADA_DAS_ACOES = FadeIn.delay(70).duration(150).easing(SUAVE);
 
+const ALTURA_REACOES = 54;
+const ALTURA_ACAO = 51;
+const ESPACO = 8;
+const MARGEM = 12;
+
+/**
+ * Where each part goes: the message where it was, the reactions just above, the actions just below. When they would
+ * leave the screen, everything moves up (or down) together, and a very tall message is cut to what fits.
+ */
+function arrumar(
+  posicao: PosicaoNoEcra,
+  larguraDoEcra: number,
+  alturaDoEcra: number,
+  margens: { top: number; bottom: number },
+  comReacoes: boolean,
+  quantasAcoes: number
+) {
+  const topo = margens.top + MARGEM;
+  const fundo = alturaDoEcra - Math.max(margens.bottom, MARGEM) - MARGEM;
+  const alturaReacoes = comReacoes ? ALTURA_REACOES + ESPACO : 0;
+  const alturaAcoes = quantasAcoes * ALTURA_ACAO + ESPACO;
+  const altura = Math.max(40, Math.min(posicao.altura, fundo - topo - alturaReacoes - alturaAcoes));
+  let mensagem = posicao.y;
+  if (mensagem + altura + alturaAcoes > fundo) mensagem = fundo - alturaAcoes - altura;
+  if (mensagem - alturaReacoes < topo) mensagem = topo + alturaReacoes;
+  return {
+    x: posicao.x,
+    largura: posicao.largura,
+    altura,
+    margemDireita: Math.max(MARGEM, larguraDoEcra - (posicao.x + posicao.largura)),
+    mensagem,
+    reacoes: mensagem - alturaReacoes,
+    acoes: mensagem + altura + ESPACO,
+  };
+}
+
 export type AcaoDaMensagem = {
   label: string;
   icon: IconName;
@@ -38,6 +75,10 @@ type MenuDaMensagemProps = {
   texto: string | null;
   /** Yours: the bubble shows green, on the right, as in the chat. */
   minha?: boolean;
+  /** Where the held bubble is: the message is drawn right there, reactions above it and actions below. */
+  posicao?: PosicaoNoEcra | null;
+  /** The message's time, as under the bubble. */
+  hora?: string;
   /** Reactions are offered only when there is somewhere to send them. */
   onReagir?: (emoji: Emoji) => void;
   minhaReacao: Emoji | null;
@@ -49,9 +90,20 @@ type MenuDaMensagemProps = {
  * What opens on a long press on a message, as in WhatsApp: a bar of reactions on top (yours highlighted; the same one
  * again takes it away) and the actions below (reply, edit, delete, report). Tapping outside closes it.
  */
-export function MenuDaMensagem({ texto, minha = false, onReagir, minhaReacao, acoes, onFechar }: MenuDaMensagemProps) {
+export function MenuDaMensagem({
+  texto,
+  minha = false,
+  posicao = null,
+  hora,
+  onReagir,
+  minhaReacao,
+  acoes,
+  onFechar,
+}: MenuDaMensagemProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const ecra = useWindowDimensions();
+  const lugar = posicao ? arrumar(posicao, ecra.width, ecra.height, insets, onReagir !== undefined, acoes.length) : null;
   const reduzirMovimento = useReducedMotion();
   const anima = <T,>(animacao: T) => (reduzirMovimento ? undefined : animacao);
 
@@ -65,30 +117,38 @@ export function MenuDaMensagem({ texto, minha = false, onReagir, minhaReacao, ac
         onPress={onFechar}
         accessibilityRole="button"
         accessibilityLabel="Fechar">
-        <View style={styles.conteudo}>
+        <View style={lugar ? styles.camada : styles.conteudo} pointerEvents="box-none">
           {/* Reactions above the message, actions below it, as in WhatsApp. */}
           {onReagir ? (
             <Animated.View
               entering={anima(ENTRADA_DA_BOLHA)}
-              style={[styles.reacoes, minha ? styles.aDireita : styles.aEsquerda, { backgroundColor: theme.backgroundElement }]}
+              style={[
+                styles.reacoes,
+                { backgroundColor: theme.backgroundElement },
+                lugar
+                  ? [styles.solto, { top: lugar.reacoes }, minha ? { right: lugar.margemDireita } : { left: lugar.x }]
+                  : minha
+                    ? styles.aDireita
+                    : styles.aEsquerda,
+              ]}
               accessibilityRole="toolbar">
               {REACOES.map((emoji, indice) => (
                 <Animated.View key={emoji} entering={anima(entradaDoEmoji(indice))}>
-                <Pressable
-                  onPress={() => {
-                    onReagir(emoji);
-                    onFechar();
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={minhaReacao === emoji ? `Tirar ${emoji}` : `Reagir com ${emoji}`}
-                  accessibilityState={{ selected: minhaReacao === emoji }}
-                  style={({ pressed }) => [
-                    styles.emoji,
-                    minhaReacao === emoji && { backgroundColor: theme.successBackground },
-                    pressed && styles.premido,
-                  ]}>
-                  <ThemedText style={styles.textoEmoji}>{emoji}</ThemedText>
-                </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      onReagir(emoji);
+                      onFechar();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={minhaReacao === emoji ? `Tirar ${emoji}` : `Reagir com ${emoji}`}
+                    accessibilityState={{ selected: minhaReacao === emoji }}
+                    style={({ pressed }) => [
+                      styles.emoji,
+                      minhaReacao === emoji && { backgroundColor: theme.successBackground },
+                      pressed && styles.premido,
+                    ]}>
+                    <ThemedText style={styles.textoEmoji}>{emoji}</ThemedText>
+                  </Pressable>
                 </Animated.View>
               ))}
             </Animated.View>
@@ -100,18 +160,36 @@ export function MenuDaMensagem({ texto, minha = false, onReagir, minhaReacao, ac
               style={[
                 styles.mensagem,
                 minha
-                  ? [styles.aDireita, { backgroundColor: theme.accent, borderBottomRightRadius: 6 }]
-                  : [styles.aEsquerda, { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 }],
+                  ? { backgroundColor: theme.accent, borderBottomRightRadius: 6 }
+                  : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
+                lugar
+                  ? [styles.solto, { top: lugar.mensagem, left: lugar.x, width: lugar.largura, maxHeight: lugar.altura }]
+                  : [styles.mensagemLivre, minha ? styles.aDireita : styles.aEsquerda],
               ]}>
-              <ThemedText numberOfLines={6} style={{ color: minha ? theme.accentText : theme.text }}>
+              <ThemedText
+                numberOfLines={lugar ? undefined : 6}
+                style={{ color: minha ? theme.accentText : theme.text }}>
                 {texto}
               </ThemedText>
+              {hora ? (
+                <ThemedText type="small" style={[styles.hora, { color: minha ? theme.accentText : theme.textMuted }]}>
+                  {hora}
+                </ThemedText>
+              ) : null}
             </Animated.View>
           ) : null}
 
           <Animated.View
             entering={anima(ENTRADA_DAS_ACOES)}
-            style={[styles.acoes, minha ? styles.aDireita : styles.aEsquerda, { backgroundColor: theme.backgroundElement }]}>
+            style={[
+              styles.acoes,
+              { backgroundColor: theme.backgroundElement },
+              lugar
+                ? [styles.solto, { top: lugar.acoes }, minha ? { right: lugar.margemDireita } : { left: lugar.x }]
+                : minha
+                  ? styles.aDireita
+                  : styles.aEsquerda,
+            ]}>
             {acoes.map((acao, indice) => (
               <Pressable
                 key={acao.label}
@@ -164,11 +242,27 @@ const styles = StyleSheet.create({
   aEsquerda: {
     alignSelf: 'flex-start',
   },
-  mensagem: {
+  camada: {
+    ...StyleSheet.absoluteFill,
+  },
+  solto: {
+    position: 'absolute',
+  },
+  mensagemLivre: {
     maxWidth: '85%',
+  },
+  hora: {
+    alignSelf: 'flex-end',
+    fontSize: 11,
+    opacity: 0.75,
+  },
+  mensagem: {
+    overflow: 'hidden',
+    gap: 2,
     borderRadius: 18,
     borderCurve: 'continuous',
-    paddingHorizontal: Spacing.three,
+    // Same as the chat bubble, so the copy sits exactly over it.
+    paddingHorizontal: Spacing.twoAndHalf,
     paddingVertical: Spacing.two,
   },
   reacoes: {
