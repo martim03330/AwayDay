@@ -1,7 +1,7 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { fetchMyGroups } from '@/features/groups/api';
@@ -51,10 +51,11 @@ import { Icon, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { Quantidade } from '@/ui/quantidade';
+import { Segmentado } from '@/ui/segmentado';
 import { useFormatarDinheiro } from '@/ui/valor';
 
 const NOITES = [1, 2, 3];
-const LUGARES = [1, 2, 3, 4, 5, 6, 7, 8];
 const PESSOAS_PESQUISA = [1, 2, 3, 4, 5, 6, 7, 8];
 
 /** "até 50 €", "50–100 €", "mais de 200 €". */
@@ -590,7 +591,7 @@ export function DormidaCard({
       {/* Propor uma casa: cartão próprio, para não ser mais uma secção de uma parede. */}
       <Card style={styles.card}>
         <ThemedText type="eyebrow" themeColor="accentInk">
-          Viste uma casa?
+          {aberto ? 'Propor uma casa' : 'Viste uma casa?'}
         </ThemedText>
         {!userId ? (
           <LinkTexto
@@ -604,69 +605,75 @@ export function DormidaCard({
           </ThemedText>
         ) : aberto ? (
           <View style={styles.form}>
-            <Campo
-              label="Quanto custa a casa ao todo"
-              value={valor}
-              onChangeText={setValor}
-              placeholder="Ex.: 320"
-              keyboardType="decimal-pad"
-              ajuda="O valor que o Airbnb mostra pelas noites todas, para a casa inteira."
-              erro={valor && centimos === null ? 'Escreve um valor como 320 ou 320,50' : null}
-            />
-
-            <ThemedText style={styles.rotulo}>Lugares para outras pessoas</ThemedText>
-            <View style={styles.chips}>
-              {LUGARES.map((numero) => (
-                <Chip
-                  key={numero}
-                  label={String(numero)}
-                  selected={numero === lugares}
-                  emCartao
-                  onPress={() => setLugares(numero)}
-                />
-              ))}
-            </View>
-            {precoPorPessoa !== null ? (
-              <ThemedText style={styles.destaque}>
-                {`Com a casa cheia ficam ${dinheiro.formatar(precoPorPessoa)} a cada um.`}
-              </ThemedText>
-            ) : null}
-
-            <ThemedText style={styles.rotulo}>Quantas noites</ThemedText>
-            <View style={styles.chips}>
-              {NOITES.map((numero) => (
-                <Chip
-                  key={numero}
-                  label={plural(numero, 'noite', 'noites')}
-                  selected={numero === noites}
-                  emCartao
-                  onPress={() => setNoites(numero)}
-                />
-              ))}
-            </View>
-
-            <ThemedText style={styles.rotulo}>E se não se juntar ninguém?</ThemedText>
-            <View style={styles.chips}>
-              <Chip
-                label="Reservo à mesma"
-                selected={conviccao === 'certo'}
-                emCartao
-                onPress={() => setConviccao('certo')}
+            {/* 1. The price, and what it comes to per person, live. */}
+            <View style={styles.seccao}>
+              <Campo
+                label="Quanto custa a casa ao todo"
+                value={valor}
+                onChangeText={setValor}
+                placeholder="Ex.: 320"
+                keyboardType="decimal-pad"
+                ajuda="O preço das noites todas, para a casa inteira."
+                erro={valor && centimos === null ? 'Escreve um valor como 320 ou 320,50' : null}
               />
-              <Chip
-                label="Só reservo se encher"
-                selected={conviccao === 'se_houver'}
-                emCartao
-                onPress={() => setConviccao('se_houver')}
+              {precoPorPessoa !== null ? (
+                <View style={[styles.porPessoa, { backgroundColor: theme.successBackground }]}>
+                  <ThemedText type="small" style={{ color: theme.accentInk }}>
+                    Com a casa cheia
+                  </ThemedText>
+                  <ThemedText style={[styles.porPessoaValor, { color: theme.accentInk }]}>
+                    {`${dinheiro.formatar(precoPorPessoa)} cada`}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+
+            {/* 2. How many and how long: − and + instead of rows of numbers. */}
+            <View style={[styles.caixa, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <Quantidade
+                rotulo="Lugares para outros"
+                detalhe="Além de ti"
+                valor={lugares}
+                min={1}
+                max={8}
+                onChange={setLugares}
+                dizer={(numero) => plural(numero, 'lugar', 'lugares')}
+              />
+              <View style={[styles.divisor, { backgroundColor: theme.border }]} />
+              <Quantidade
+                rotulo="Noites"
+                valor={noites}
+                min={1}
+                max={3}
+                onChange={setNoites}
+                dizer={(numero) => plural(numero, 'noite', 'noites')}
               />
             </View>
 
+            {/* 3. If nobody joins. */}
+            <View style={styles.seccao}>
+              <ThemedText style={styles.rotulo}>Se não encher</ThemedText>
+              <Segmentado
+                opcoes={[
+                  { valor: 'certo' as const, label: 'Reservo à mesma' },
+                  { valor: 'se_houver' as const, label: 'Só se encher' },
+                ]}
+                valor={conviccao}
+                onChange={setConviccao}
+              />
+            </View>
+
+            {/* 4. Who it is for: everyone, or one of my groups. */}
             {(meusGrupos.data ?? []).length > 0 ? (
-              <>
-                <ThemedText style={styles.rotulo}>De quem é esta casa?</ThemedText>
-                <View style={styles.chips}>
+              <View style={styles.seccao}>
+                <ThemedText style={styles.rotulo}>Para quem</ThemedText>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filaGrupos}
+                  style={styles.sangrar}>
                   <Chip
-                    label="De ninguém em especial"
+                    label="Toda a gente"
                     selected={grupoId === null}
                     emCartao
                     onPress={() => setGrupoId(null)}
@@ -680,58 +687,63 @@ export function DormidaCard({
                       onPress={() => setGrupoId(grupo.id)}
                     />
                   ))}
-                </View>
+                </ScrollView>
                 {grupoId ? (
-                  <>
-                    <View style={styles.linhaSwitch}>
-                      <ThemedText style={styles.flex}>Só para o grupo, por agora</ThemedText>
-                      <Switch
-                        value={soParaOGrupo}
-                        onValueChange={setSoParaOGrupo}
-                        trackColor={{ true: theme.accent, false: theme.border }}
-                        thumbColor={theme.accentText}
-                        ios_backgroundColor={theme.border}
-                        accessibilityLabel="Só para o grupo, por agora"
-                      />
+                  <View style={styles.linhaSwitch}>
+                    <View style={styles.flex}>
+                      <ThemedText>Só o grupo vê, por agora</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        Se sobrarem lugares, abres a todos com um toque.
+                      </ThemedText>
                     </View>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {soParaOGrupo
-                        ? 'Só a malta do grupo vê esta casa. Se sobrarem lugares, abres a toda a gente com um toque.'
-                        : 'A casa aparece a qualquer adepto que vá a este jogo.'}
-                    </ThemedText>
-                  </>
+                    <Switch
+                      value={soParaOGrupo}
+                      onValueChange={setSoParaOGrupo}
+                      trackColor={{ true: theme.accent, false: theme.border }}
+                      thumbColor={theme.accentText}
+                      ios_backgroundColor={theme.border}
+                      accessibilityLabel="Só o grupo vê, por agora"
+                    />
+                  </View>
                 ) : null}
-              </>
+              </View>
             ) : null}
 
-            <Campo
-              label="Link da casa no Airbnb ou no Booking (opcional)"
-              value={link}
-              onChangeText={setLink}
-              placeholder="https://www.airbnb.pt/rooms/…"
-              autoCapitalize="none"
-              keyboardType="url"
-              autoComplete="url"
-              textContentType="URL"
-              returnKeyType="done"
-              maxLength={500}
-            />
-            <Campo
-              label="Alguma nota (opcional)"
-              value={nota}
-              onChangeText={setNota}
-              placeholder="Ex.: a 10 min do estádio, dois quartos e sofá-cama"
-              maxLength={200}
-              autoCapitalize="sentences"
-              returnKeyType="done"
-            />
+            {/* 5. Optional extras. */}
+            <View style={styles.seccao}>
+              <Campo
+                label="Link no Airbnb ou Booking (opcional)"
+                value={link}
+                onChangeText={setLink}
+                placeholder="https://www.airbnb.pt/rooms/…"
+                autoCapitalize="none"
+                keyboardType="url"
+                autoComplete="url"
+                textContentType="URL"
+                returnKeyType="done"
+                maxLength={500}
+              />
+              <Campo
+                label="Nota (opcional)"
+                value={nota}
+                onChangeText={setNota}
+                placeholder="Ex.: a 10 min do estádio, dois quartos"
+                maxLength={200}
+                autoCapitalize="sentences"
+                returnKeyType="done"
+              />
+            </View>
+
             {erro ? <MensagemErro>{erro}</MensagemErro> : null}
-            <Button
-              label={aTratar ? 'A guardar…' : 'Guardar'}
-              disabled={aTratar}
-              onPress={() => void guardar()}
-            />
-            <LinkTexto neutro label="Deixa estar" onPress={() => setAberto(false)} />
+            <View style={styles.rodape}>
+              <Button
+                label={aTratar ? 'A guardar…' : 'Propor a casa'}
+                icon={icons.casa}
+                disabled={aTratar}
+                onPress={() => void guardar()}
+              />
+              <LinkTexto neutro label="Cancelar" onPress={() => setAberto(false)} />
+            </View>
           </View>
         ) : minhaCasa ? (
           <ThemedText type="small" themeColor="textSecondary">
@@ -782,7 +794,48 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   form: {
+    gap: Spacing.four,
+    paddingTop: Spacing.one,
+  },
+  seccao: {
     gap: Spacing.two,
+  },
+  caixa: {
+    borderWidth: 1.5,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+  },
+  divisor: {
+    height: StyleSheet.hairlineWidth,
+  },
+  porPessoa: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.twoAndHalf,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+  },
+  porPessoaValor: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: 800,
+    fontVariant: ['tabular-nums'],
+  },
+  // The groups row runs to the card's edges, so a long list scrolls without being cut inside the padding.
+  filaGrupos: {
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.threeAndHalf,
+  },
+  sangrar: {
+    marginHorizontal: -Spacing.threeAndHalf,
+  },
+  rodape: {
+    gap: Spacing.two,
+    alignItems: 'stretch',
   },
   linhaSwitch: {
     flexDirection: 'row',

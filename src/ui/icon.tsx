@@ -114,6 +114,8 @@ const glyphs = {
   /** Reply to a message (the arrow that shows when a bubble is swiped). */
   responder: { paths: ['M9 7l-5 5 5 5', 'M4 12h10a6 6 0 0 1 6 6v1'] },
   fechar: { paths: ['M6 6l12 12M18 6L6 18'] },
+  mais: { paths: ['M12 5v14M5 12h14'] },
+  menos: { paths: ['M5 12h14'] },
   lista: { paths: ['M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01'] },
   visitado: {
     paths: [
