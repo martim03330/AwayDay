@@ -18,7 +18,7 @@ import { Button } from '@/ui/button';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
-import { Icon, icons } from '@/ui/icon';
+import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
@@ -34,16 +34,21 @@ function quando(iso: string) {
   return chaveDoDia(data) === chaveDoDia(new Date()) ? formatarHora(data) : formatarData(data);
 }
 
-/** A última mensagem, como aparece debaixo do nome do grupo. */
+/**
+ * The last message or action under the group's name, kept short: «Rui: bora?», «Rui convidou para um jogo», «Rui
+ * está num tasco». Nothing when nobody has written yet.
+ */
 function resumo(grupo: GroupInboxItem) {
-  if (!grupo.last) return `${plural(grupo.members, 'pessoa', 'pessoas')} · ainda ninguém escreveu`;
+  if (!grupo.last) return null;
   const quem = grupo.last.mine ? 'Tu' : grupo.last.name.split(' ')[0];
   if (grupo.last.kind === 'aviso') return grupo.last.body;
   if (grupo.last.kind === 'plano') {
-    return `${grupo.last.mine ? 'Convidaste' : `${quem} convidou`} para ${grupo.last.body}`;
+    return grupo.last.mine ? 'Convidaste para um jogo' : `${quem} convidou para um jogo`;
   }
   return grupo.last.kind === 'local'
-    ? `${quem} ${grupo.last.mine ? 'estás' : 'está'} ${grupo.last.body}`
+    ? grupo.last.mine
+      ? 'Estás num tasco'
+      : `${quem} está num tasco`
     : `${quem}: ${grupo.last.body}`;
 }
 
@@ -195,19 +200,20 @@ export default function MaltaScreen() {
 function CartaoDoGrupo({ grupo, onPress }: { grupo: GroupInboxItem; onPress: () => void }) {
   const theme = useTheme();
   const porLer = grupo.unread > 0;
+  const ultima = resumo(grupo);
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${grupo.name}. ${resumo(grupo)}${porLer ? `. ${plural(grupo.unread, 'mensagem por ler', 'mensagens por ler')}` : ''}.`}
+      accessibilityLabel={`${grupo.name}${ultima ? `. ${ultima}` : ''}${porLer ? `. ${plural(grupo.unread, 'mensagem por ler', 'mensagens por ler')}` : ''}.`}
       style={({ pressed }) => [
         styles.cartao,
         CardShadow,
         { backgroundColor: theme.backgroundElement },
         pressed && styles.premido,
       ]}>
-      <CaraDoGrupo nome={grupo.name} url={grupo.photoUrl} size={56} />
+      <CaraDoGrupo nome={grupo.name} url={grupo.photoUrl} size={44} />
       <View style={styles.meio}>
         <View style={styles.linha}>
           <ThemedText type="subtitle" numberOfLines={1} style={styles.flex}>
@@ -219,29 +225,24 @@ function CartaoDoGrupo({ grupo, onPress }: { grupo: GroupInboxItem; onPress: () 
             </ThemedText>
           ) : null}
         </View>
-        <View style={styles.linha}>
-          {grupo.last?.kind === 'local' || grupo.last?.kind === 'plano' ? (
-            <Icon
-              name={grupo.last.kind === 'local' ? icons.tasco : icons.calendario}
-              size={14}
-              color={theme.textSecondary}
-            />
-          ) : null}
-          <ThemedText
-            type="small"
-            numberOfLines={1}
-            themeColor={porLer ? 'text' : 'textSecondary'}
-            style={styles.flex}>
-            {resumo(grupo)}
-          </ThemedText>
-          {porLer ? (
-            <View style={[styles.porLer, { backgroundColor: theme.accent }]}>
-              <ThemedText type="smallBold" style={{ color: theme.accentText }}>
-                {grupo.unread > 99 ? '99+' : String(grupo.unread)}
-              </ThemedText>
-            </View>
-          ) : null}
-        </View>
+        {ultima ? (
+          <View style={styles.linha}>
+            <ThemedText
+              type="small"
+              numberOfLines={1}
+              themeColor={porLer ? 'text' : 'textSecondary'}
+              style={styles.flex}>
+              {ultima}
+            </ThemedText>
+            {porLer ? (
+              <View style={[styles.porLer, { backgroundColor: theme.accent }]}>
+                <ThemedText type="smallBold" style={{ color: theme.accentText }}>
+                  {grupo.unread > 99 ? '99+' : String(grupo.unread)}
+                </ThemedText>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -277,8 +278,9 @@ const styles = StyleSheet.create({
   cartao: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.twoAndHalf,
-    padding: Spacing.three,
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.twoAndHalf,
     borderRadius: Radius.card,
     borderCurve: 'continuous',
   },
