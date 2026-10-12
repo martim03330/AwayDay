@@ -101,9 +101,9 @@ type CampoCodigoProps = {
  * One-time code field: an almost transparent TextInput on top of one box per digit. The input keeps only digits
  * (a pasted «1234 5678» or the code iOS offers from Mail also work), the boxes mirror them.
  *
- * Testers lost the keyboard here: the input had opacity 0, and iOS ignores taps on anything under 0.01, so tapping
- * the boxes did nothing. Now any tap on the boxes focuses it, the caret is always at the end, and sending keeps the
- * keyboard open.
+ * Testers lost the keyboard here (tapping the boxes did nothing once it was closed). Now the input never takes taps:
+ * the boxes open the keyboard, every time. Since nobody can tap inside the text, typing and deleting always happen at
+ * the end, and sending keeps the keyboard open.
  */
 export function CampoCodigo({
   label,
@@ -121,6 +121,19 @@ export function CampoCodigo({
   const algarismos = value.replace(/\D/g, '').slice(0, digitos);
   const metade = Math.floor(digitos / 2);
 
+  // The boxes open the keyboard, not the hidden input (taps on a nearly invisible view are unreliable on iOS). If the
+  // input still thinks it has focus with the keyboard gone, it lets go first, so the keyboard always comes back.
+  function abrirTeclado() {
+    const input = caixa.current;
+    if (!input) return;
+    if (input.isFocused()) {
+      input.blur();
+      setTimeout(() => input.focus(), 50);
+    } else {
+      input.focus();
+    }
+  }
+
   function mudar(texto: string) {
     const limpo = texto.replace(/\D/g, '').slice(0, digitos);
     onChangeText(limpo);
@@ -132,7 +145,7 @@ export function CampoCodigo({
       <ThemedText style={styles.label} importantForAccessibility="no" accessibilityElementsHidden>
         {label}
       </ThemedText>
-      <Pressable onPress={() => caixa.current?.focus()} accessible={false}>
+      <Pressable onPress={abrirTeclado} accessible={false} testID="caixas-do-codigo">
         <View
           style={styles.caixas}
           accessibilityElementsHidden
@@ -171,26 +184,26 @@ export function CampoCodigo({
             );
           })}
         </View>
-        <TextInput
-          // Sending never closes the keyboard: after a wrong code you can type the right one straight away.
-          submitBehavior="submit"
-          {...input}
-          ref={caixa}
-          value={algarismos}
-          onChangeText={mudar}
-          maxLength={digitos}
-          keyboardType="number-pad"
-          autoComplete="one-time-code"
-          textContentType="oneTimeCode"
-          autoCorrect={false}
-          caretHidden
-          // Typing always goes at the end, wherever the tap landed.
-          selection={{ start: algarismos.length, end: algarismos.length }}
-          onFocus={() => setFocado(true)}
-          onBlur={() => setFocado(false)}
-          accessibilityLabel={erro ? `${label}. Erro: ${erro}` : label}
-          style={styles.inputInvisivel}
-        />
+        <View style={styles.inputInvisivel} pointerEvents="none">
+          <TextInput
+            // Sending never closes the keyboard: after a wrong code you can type the right one straight away.
+            submitBehavior="submit"
+            {...input}
+            ref={caixa}
+            value={algarismos}
+            onChangeText={mudar}
+            maxLength={digitos}
+            keyboardType="number-pad"
+            autoComplete="one-time-code"
+            textContentType="oneTimeCode"
+            autoCorrect={false}
+            caretHidden
+            onFocus={() => setFocado(true)}
+            onBlur={() => setFocado(false)}
+            accessibilityLabel={erro ? `${label}. Erro: ${erro}` : label}
+            style={styles.inputCheio}
+          />
+        </View>
       </Pressable>
       {erro ? (
         <ThemedText
@@ -313,8 +326,11 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    // Not 0: iOS ignores taps on anything under 0.01 (the text itself stays invisible).
+    // Not 0: an input at opacity 0 may not take autofill. It never takes taps: the boxes do.
     opacity: 0.02,
+  },
+  inputCheio: {
+    flex: 1,
     color: 'transparent',
   },
   mensagem: {
