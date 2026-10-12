@@ -24,6 +24,7 @@ const MESSAGES: ReadonlyMap<string, string> = new Map([
     session_not_found: 'A sessão terminou. Entra outra vez.',
     session_expired: 'A sessão terminou. Entra outra vez.',
     validation_failed: 'Há um campo que não está bem preenchido.',
+    captcha_failed: 'Não conseguimos confirmar que não és um robô. Tenta outra vez.',
   }),
 ]);
 

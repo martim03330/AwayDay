@@ -2,6 +2,18 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Captcha (Cloudflare Turnstile) nas contas
+
+- **Porquê:** criar conta, entrar e recuperar a password estavam abertos a bots, só com o limite por endereço.
+- **Como:** `react-native-webview` (dependência nova, aprovada) com o Turnstile numa WebView escondida
+  (`CaptchaProvider`, por cima dos ecrãs de `/conta`). Antes de cada pedido protegido pelo Supabase (criar conta,
+  entrar, reenviar o código, recuperar a password, confirmar a password ao apagar a conta) pede-se um código novo, de
+  uso único. Normalmente ninguém vê nada; quando a Cloudflare quer um visto, o widget aparece por cima.
+- **Chaves:** o site key é público (`EXPO_PUBLIC_TURNSTILE_SITE_KEY`, no `.env.local` e nos ambientes do EAS); o
+  secret key fica só no Supabase. O hostname do widget é `martim03330.github.io` (o `baseUrl` da WebView).
+- **Ordem:** só se liga o captcha no Supabase depois de o build com captcha (build 10) chegar aos testers; sem isso,
+  quem tem o build 9 deixava de conseguir entrar. Sem site key, a app funciona como antes (testes, builds antigos).
+
 ## 2026-10-13 — Revisão de segurança (50 pontos)
 
 Revisão completa: segredos, base de dados, edge functions, app, dependências e operação. Sem falhas críticas; o que
