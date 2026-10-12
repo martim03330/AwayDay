@@ -35,15 +35,16 @@ export function useVoltarAoTopo({ reporNoTopo = false }: { reporNoTopo?: boolean
     setVisivel(evento.nativeEvent.contentOffset.y > MOSTRAR_DEPOIS_DE);
   }
 
-  // Leaving a page in the middle of a pull (to refresh) can leave it stuck below its top when you come back, with a
-  // band of header colour on top (testers' feedback). Coming back puts it in place. Only for pages whose top is at 0
+  // Switching tabs can leave a page a little below its top (iOS moves it without telling us), so the header looked
+  // stretched, or there was a white band on top (testers' feedback). Whenever the page is back in front it is put back
+  // where it was, never above its top; with no animation, so nothing seems to move. Only for pages whose top is at 0
   // (`contentInsetAdjustmentBehavior="never"`): under a native header the top is a negative offset.
   useFocusEffect(
     useCallback(() => {
-      if (reporNoTopo && posicao.current < 0) {
-        ref.current?.scrollTo({ y: 0, animated: true });
-        posicao.current = 0;
-      }
+      if (!reporNoTopo) return;
+      const y = Math.max(posicao.current, 0);
+      ref.current?.scrollTo({ y, animated: false });
+      posicao.current = y;
     }, [reporNoTopo])
   );
 
