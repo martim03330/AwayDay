@@ -16,8 +16,6 @@ import {
   setRideVisibility,
   quoteRide,
   RideRefused,
-  searchPlace,
-  type PlaceResult,
   type RideQuote,
   type RouteOption,
 } from '@/features/rides/api';
@@ -29,6 +27,7 @@ import { formatarData, formatarDia, formatarHora } from '@/lib/datas';
 import { minutosAPe, minutosExtraDoParque } from '@/lib/facilidade-estacionamento';
 import { formatarDistancia } from '@/lib/formatos';
 import { formatarCentimos } from '@/lib/money';
+import { PlaceSearchRefused, searchPlace, type PlaceResult } from '@/lib/procurar-sitios';
 import { eJogoGrande } from '@/lib/classicos';
 import {
   ajustarSaida,
@@ -414,7 +413,7 @@ export default function OferecerBoleiaScreen() {
     } catch (erro) {
       Alert.alert(
         'Sem resultados',
-        erro instanceof RideRefused && erro.reason === 'rate_limited'
+        erro instanceof PlaceSearchRefused && erro.reason === 'rate_limited'
           ? 'Fizeste muitas pesquisas numa hora. Tenta daqui a pouco.'
           : 'Verifica a ligação e tenta outra vez.'
       );

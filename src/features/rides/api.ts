@@ -149,50 +149,6 @@ export async function quoteRide(settings: TripSettings): Promise<RideQuote[]> {
   });
 }
 
-export type PlaceResult = {
-  name: string;
-  detail: string;
-  latitude: number;
-  longitude: number;
-  /** Straight line from where the search was centred, when it was. */
-  distanceM: number | null;
-};
-
-/** Streets and places for the meeting point, nearest to `near` first (OpenStreetMap, through the server). */
-export async function searchPlace(
-  query: string,
-  near: { latitude: number; longitude: number } | null
-): Promise<PlaceResult[]> {
-  const { data, error } = await client().functions.invoke('rides', {
-    body: { action: 'search', query, near },
-  });
-  if (error) throw await functionError(error);
-  const results: unknown[] =
-    typeof data === 'object' && data !== null && Array.isArray(Reflect.get(data, 'results'))
-      ? Reflect.get(data, 'results')
-      : [];
-  return results.flatMap((item) => {
-    if (typeof item !== 'object' || item === null) return [];
-    const name = Reflect.get(item, 'name');
-    const detail = Reflect.get(item, 'detail');
-    const latitude = Reflect.get(item, 'latitude');
-    const longitude = Reflect.get(item, 'longitude');
-    const distance = Reflect.get(item, 'distance_m');
-    if (typeof name !== 'string' || typeof latitude !== 'number' || typeof longitude !== 'number') {
-      return [];
-    }
-    return [
-      {
-        name,
-        detail: typeof detail === 'string' ? detail : '',
-        latitude,
-        longitude,
-        distanceM: typeof distance === 'number' ? distance : null,
-      },
-    ];
-  });
-}
-
 /** Opens a ride. Returns its id. */
 export async function createRide(ride: NewRide): Promise<string> {
   const { data, error } = await client().functions.invoke('rides', {

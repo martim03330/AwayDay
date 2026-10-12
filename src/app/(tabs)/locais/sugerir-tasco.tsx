@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import MapView, { MapMarker } from 'react-native-maps';
 
@@ -7,6 +7,8 @@ import { Radius, Spacing } from '@/constants/theme';
 import { getCurrentPosition } from '@/features/presence/location';
 import { suggestPlace, SuggestionRefused, type NewPlace } from '@/features/places/api';
 import { useTheme } from '@/hooks/use-theme';
+import { formatarDistancia } from '@/lib/formatos';
+import { PlaceSearchRefused, searchPlace, type PlaceResult } from '@/lib/procurar-sitios';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import type { Coordenadas } from '@/mocks/tipos';
@@ -14,12 +16,16 @@ import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
-import { icons } from '@/ui/icon';
+import { IconCircle, icons } from '@/ui/icon';
+import { LinhaGrupo } from '@/ui/linha-grupo';
 import { LinkTexto } from '@/ui/link-texto';
 import { Screen } from '@/ui/screen';
 import { ThemedText } from '@/ui/themed-text';
 
 const DELTA = 0.006;
+
+/** Mainland Portugal, until there is a stadium, a search result or a tap to start from. */
+const PORTUGAL = { latitude: 39.6, longitude: -8.0, latitudeDelta: 6, longitudeDelta: 6 };
 
 const TIPOS: { id: NewPlace['kind']; nome: string }[] = [
   { id: 'tasca', nome: 'Tasca' },
@@ -30,6 +36,8 @@ const TIPOS: { id: NewPlace['kind']; nome: string }[] = [
   { id: 'cafe', nome: 'Café' },
   { id: 'restaurante', nome: 'Restaurante' },
 ];
+
+const SEM_SITIO = 'Falta dizer onde fica: procura o nome ou a rua, ou toca no mapa.';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof SuggestionRefused)) {
@@ -45,7 +53,7 @@ function mensagemDeRecusa(erro: unknown) {
     case 'bad-name':
       return 'Escreve só o nome do sítio, entre 2 e 60 letras, sem links nem telefones.';
     case 'bad-location':
-      return 'Falta dizer onde fica. Arrasta o pino para o sítio certo.';
+      return SEM_SITIO;
     default:
       return 'Precisas de ter sessão iniciada para sugerir um tasco.';
   }
@@ -66,32 +74,72 @@ export default function SugerirTascoScreen() {
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<NewPlace['kind']>('tasca');
   const [nota, setNota] = useState('');
+  // Starts at the stadium: most tascos are around it. Nothing happens on its own: the fan searches, taps the map or
+  // says «Estou aqui», so it works the same at home or standing in the tasco.
   const [ponto, setPonto] = useState<Coordenadas | null>(estadio?.coordenadas ?? null);
-  const [estadoLocalizacao, setEstadoLocalizacao] = useState<
-    'a-procurar' | 'ok' | 'negada' | 'indisponivel'
-  >('a-procurar');
+  const [pesquisa, setPesquisa] = useState('');
+  const [aProcurar, setAProcurar] = useState(false);
+  const [resultados, setResultados] = useState<PlaceResult[] | null>(null);
+  const [localizacao, setLocalizacao] = useState<'parada' | 'a-procurar' | 'negada' | 'indisponivel'>(
+    'parada'
+  );
   const [aEnviar, setAEnviar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Most people suggest the place they are standing in.
+  const mapa = useRef<MapView>(null);
+  const [mapaPronto, setMapaPronto] = useState(false);
+  const latitude = ponto?.latitude;
+  const longitude = ponto?.longitude;
+
+  // The camera follows the pin, wherever it came from (search, «Estou aqui» or a tap).
   useEffect(() => {
-    let ativo = true;
+    if (!mapaPronto || latitude === undefined || longitude === undefined) return;
+    mapa.current?.animateToRegion(
+      { latitude, longitude, latitudeDelta: DELTA, longitudeDelta: DELTA },
+      350
+    );
+  }, [mapaPronto, latitude, longitude]);
+
+  function estouAqui() {
+    setLocalizacao('a-procurar');
     void getCurrentPosition().then((resultado) => {
-      if (!ativo) return;
       if (resultado.status !== 'ok') {
-        setEstadoLocalizacao(resultado.status === 'denied' ? 'negada' : 'indisponivel');
+        setLocalizacao(resultado.status === 'denied' ? 'negada' : 'indisponivel');
         return;
       }
-      setEstadoLocalizacao('ok');
+      setLocalizacao('parada');
+      setResultados(null);
       setPonto({
         latitude: resultado.position.latitude,
         longitude: resultado.position.longitude,
       });
     });
-    return () => {
-      ativo = false;
-    };
-  }, []);
+  }
+
+  async function procurar() {
+    const texto = pesquisa.trim();
+    if (texto.length < 3) return;
+    setAProcurar(true);
+    try {
+      setResultados(await searchPlace(texto, ponto ?? estadio?.coordenadas ?? null));
+    } catch (problema) {
+      Alert.alert(
+        'Sem resultados',
+        problema instanceof PlaceSearchRefused && problema.reason === 'rate_limited'
+          ? 'Fizeste muitas pesquisas numa hora. Tenta daqui a pouco.'
+          : 'Verifica a ligação e tenta outra vez.'
+      );
+    } finally {
+      setAProcurar(false);
+    }
+  }
+
+  function escolherResultado(resultado: PlaceResult) {
+    setPonto({ latitude: resultado.latitude, longitude: resultado.longitude });
+    // Searching by the tasco's name is the quickest way in: keep that name if none was written yet.
+    if (!nome.trim()) setNome(resultado.name);
+    setResultados(null);
+  }
 
   if (!userId) {
     return (
@@ -108,7 +156,7 @@ export default function SugerirTascoScreen() {
 
   async function enviar() {
     if (!ponto) {
-      setErro('Falta dizer onde fica. Arrasta o pino para o sítio certo.');
+      setErro(SEM_SITIO);
       return;
     }
     setErro(null);
@@ -163,34 +211,95 @@ export default function SugerirTascoScreen() {
       </View>
 
       <ThemedText style={styles.rotulo}>Onde fica</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {estadoLocalizacao === 'ok'
-          ? 'Pusemos o pino onde estás. Arrasta-o se o sítio for ali ao lado.'
-          : estadoLocalizacao === 'a-procurar'
-            ? 'À procura de onde estás…'
-            : estadoLocalizacao === 'negada'
-              ? 'Sem acesso à localização: arrasta o pino para o sítio certo.'
-              : 'Não conseguimos saber onde estás: arrasta o pino para o sítio certo.'}
-      </ThemedText>
-      {ponto ? (
-        <View style={[styles.mapa, { borderColor: theme.border }]}>
-          <MapView
-            style={styles.mapaInterior}
-            initialRegion={{
-              latitude: ponto.latitude,
-              longitude: ponto.longitude,
-              latitudeDelta: DELTA,
-              longitudeDelta: DELTA,
-            }}>
+      <Campo
+        label="Procurar pelo nome ou pela rua"
+        value={pesquisa}
+        onChangeText={setPesquisa}
+        placeholder="Ex.: Tasca do Zé, Porto"
+        returnKeyType="search"
+        onSubmitEditing={() => void procurar()}
+        maxLength={120}
+      />
+      {pesquisa.trim().length >= 3 ? (
+        <Button
+          label={aProcurar ? 'A procurar…' : 'Procurar'}
+          variant="secondary"
+          icon={icons.rota}
+          disabled={aProcurar}
+          onPress={() => void procurar()}
+        />
+      ) : null}
+      {resultados ? (
+        resultados.length === 0 ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            Nada com esse nome. Experimenta a rua e a cidade, ou toca no mapa.
+          </ThemedText>
+        ) : (
+          <View>
+            {resultados.map((resultado, indice) => (
+              <LinhaGrupo
+                key={`${resultado.latitude},${resultado.longitude}`}
+                onPress={() => escolherResultado(resultado)}
+                accessibilityLabel={`${resultado.name}, ${resultado.detail}`}
+                leading={<IconCircle name={icons.locais} tone="neutral" size={16} />}
+                title={resultado.name}
+                subtitle={[
+                  resultado.detail,
+                  resultado.distanceM !== null ? `a ${formatarDistancia(resultado.distanceM)}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                separador={indice < resultados.length - 1}
+              />
+            ))}
+          </View>
+        )
+      ) : null}
+
+      <View style={[styles.mapa, { borderColor: theme.border }]}>
+        <MapView
+          ref={mapa}
+          style={styles.mapaInterior}
+          initialRegion={
+            ponto
+              ? { ...ponto, latitudeDelta: DELTA, longitudeDelta: DELTA }
+              : PORTUGAL
+          }
+          onMapReady={() => setMapaPronto(true)}
+          onPress={(evento) => {
+            setPonto(evento.nativeEvent.coordinate);
+            setResultados(null);
+          }}
+          pitchEnabled={false}
+          rotateEnabled={false}
+          toolbarEnabled={false}
+          accessibilityLabel="Mapa para pôr o tasco. Toca no sítio certo, ou arrasta o pino.">
+          {ponto ? (
             <MapMarker
               coordinate={ponto}
               draggable
               onDragEnd={(evento) => setPonto(evento.nativeEvent.coordinate)}
               title={nomeLimpo || 'O tasco'}
             />
-          </MapView>
-        </View>
-      ) : null}
+          ) : null}
+        </MapView>
+      </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        {localizacao === 'a-procurar'
+          ? 'À procura de onde estás…'
+          : localizacao === 'negada'
+            ? 'Sem acesso à localização. Procura o nome ou toca no mapa.'
+            : localizacao === 'indisponivel'
+              ? 'Não conseguimos saber onde estás. Procura o nome ou toca no mapa.'
+              : 'Toca no mapa ou arrasta o pino para o sítio certo.'}
+      </ThemedText>
+      <Button
+        label="Estou aqui"
+        variant="secondary"
+        icon={icons.locais}
+        disabled={localizacao === 'a-procurar'}
+        onPress={estouAqui}
+      />
 
       <Campo
         label="Porque é que vale a pena (opcional)"
