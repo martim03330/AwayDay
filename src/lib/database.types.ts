@@ -2491,6 +2491,41 @@ export type Database = {
           },
         ]
       }
+      ranking_cache: {
+        Row: {
+          division: number | null
+          profile_id: string
+          refreshed_at: string
+          season_id: string | null
+          season_xp: number
+          total_xp: number
+        }
+        Insert: {
+          division?: number | null
+          profile_id: string
+          refreshed_at?: string
+          season_id?: string | null
+          season_xp: number
+          total_xp: number
+        }
+        Update: {
+          division?: number | null
+          profile_id?: string
+          refreshed_at?: string
+          season_id?: string | null
+          season_xp?: number
+          total_xp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_cache_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_hit: {
         Row: {
           bucket: string
@@ -5098,6 +5133,7 @@ export type Database = {
         }
       }
       refresh_place_pulse: { Args: never; Returns: number }
+      refresh_ranking_cache: { Args: never; Returns: undefined }
       register_device_token: {
         Args: { p_platform: string; p_token: string }
         Returns: undefined

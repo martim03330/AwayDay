@@ -144,6 +144,9 @@ select pg_temp.expect('weekly challenge not reached',
 -- B: 100 + 150 + weekly semana-um-jogo 75 = 325.
 select pg_temp.expect('B total XP', (select total_xp from public.ranking_totals((select b from t_ids), null)), 325);
 
+-- The points table reads others from the cache (refreshed every 5 minutes): refresh it now.
+select public.refresh_ranking_cache();
+
 -- 4. What A sees.
 select set_config('request.jwt.claims', json_build_object('sub', (select a from t_ids), 'role', 'authenticated')::text, true);
 
