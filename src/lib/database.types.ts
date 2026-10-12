@@ -111,6 +111,27 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_rate_limit_hit: {
+        Row: {
+          bucket: string
+          client_key: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          bucket: string
+          client_key: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          bucket?: string
+          client_key?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
       checkin: {
         Row: {
           club_id: string | null
@@ -4301,6 +4322,7 @@ export type Database = {
         Args: { p_body: string; p_message_id: string }
         Returns: undefined
       }
+      email_has_account: { Args: { p_email: string }; Returns: boolean }
       end_checkin: {
         Args: { p_place_id: string; p_profile_id: string }
         Returns: boolean

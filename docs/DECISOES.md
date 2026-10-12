@@ -2,6 +2,15 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — «Esqueceste a password?» diz logo se o email não tem conta
+
+- Antes de enviar o código, a app pergunta ao servidor se o email tem conta (`email_has_account`). Se não tiver,
+  aparece a vermelho por baixo do campo «Não há nenhuma conta com este email», com «Criar conta com este email».
+- **Troca consciente (decisão do Martim):** isto deixa qualquer pessoa saber se um email tem conta na AwayDay. Preferiu
+  a clareza. Para dificultar testar listas de emails, cada endereço de rede só pode perguntar 20 vezes por hora
+  (`anon_rate_limit_hit`; não há conta, por isso o limite não pode ser por pessoa).
+- Se a pergunta falhar (sem rede, limite atingido), a app envia o código na mesma, como antes.
+
 ## 2026-10-12 — Sem nomes ofensivos
 
 - Nomes de pessoas, de grupos e de viagens passam por uma lista de palavrões e insultos (português, algum brasileiro

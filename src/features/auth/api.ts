@@ -77,9 +77,23 @@ export async function signOut() {
   if (error) throw error;
 }
 
-/** Sends an 8-digit code to change the password. Same answer whether or not the account exists. */
+/** The email asked about has no account: the screen says so instead of waiting for a code that never comes. */
+export class NoAccountForEmail extends Error {
+  constructor() {
+    super('no_account');
+    this.name = 'NoAccountForEmail';
+  }
+}
+
+/**
+ * Sends an 8-digit code to change the password. Checks first that the email has an account (`email_has_account`,
+ * limited per network address); if that check cannot be made, sends anyway, as before.
+ */
 export async function requestPasswordReset(email: string) {
-  const { error } = await client().auth.resetPasswordForEmail(normalizeEmail(email));
+  const normalizado = normalizeEmail(email);
+  const conta = await client().rpc('email_has_account', { p_email: normalizado });
+  if (!conta.error && conta.data === false) throw new NoAccountForEmail();
+  const { error } = await client().auth.resetPasswordForEmail(normalizado);
   if (error) throw error;
 }
 
