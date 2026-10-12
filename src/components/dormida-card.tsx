@@ -1,7 +1,7 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { fetchMyGroups } from '@/features/groups/api';
@@ -23,7 +23,7 @@ import {
   type TrustSigns,
 } from '@/features/stays/api';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarData } from '@/lib/datas';
+import { formatarDiaMes } from '@/lib/datas';
 import {
   datasDaEstadia,
   ESCALOES_POR_PESSOA,
@@ -41,7 +41,6 @@ import { usePlanosJogos } from '@/state/planos-jogos';
 import type { Jogo, Venue } from '@/mocks/tipos';
 import { VoosCard } from '@/components/voos-card';
 import { rotuloDeOutroGrupo } from '@/features/groups/partilha';
-import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Card } from '@/ui/card';
@@ -134,11 +133,11 @@ function PessoasDaCasa({
 
   return (
     <>
-      {dentro.map((pessoa) => (
-        <ThemedText key={pessoa.profileId} type="small" themeColor="textSecondary">
-          {`${pessoa.isMine ? 'Tu' : pessoa.displayName} está dentro · ${sinais(pessoa)}`}
+      {dentro.length > 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {`Dentro: ${dentro.map((pessoa) => (pessoa.isMine ? 'tu' : pessoa.displayName)).join(', ')}`}
         </ThemedText>
-      ))}
+      ) : null}
       {casa.isMine
         ? pedidos.map((pedido) => (
             <View key={pedido.profileId} style={styles.pedido}>
@@ -212,13 +211,8 @@ function CasaProposta({
       ) : null}
 
       <ThemedText type="small" themeColor="textSecondary">
-        {`${formatarCentimos(casa.totalCents)} a casa toda · ${plural(casa.nights, 'noite', 'noites')} · ${plural(1 + casa.taken, 'pessoa dentro', 'pessoas dentro')}`}
+        {`${formatarCentimos(casa.totalCents)} no total · ${plural(casa.nights, 'noite', 'noites')}`}
       </ThemedText>
-      {!reservada && livres > 0 ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {`Com a casa cheia fica ${formatarCentimos(casa.shareFullCents)} a cada um.`}
-        </ThemedText>
-      ) : null}
 
       <View style={styles.etiquetas}>
         {reservada ? (
@@ -230,40 +224,18 @@ function CasaProposta({
             tone={livres > 0 ? 'positivo' : 'neutro'}
           />
         )}
-        {casa.commitment === 'certo' ? (
-          <Etiqueta icon={icons.selecionado} label="Reserva de qualquer maneira" tone="info" />
-        ) : (
-          <Etiqueta icon={icons.aviso} label="Só reserva se encher" tone="aviso" />
-        )}
-        {casa.visibility === 'grupo' ? (
-          <Etiqueta
-            icon={icons.perfil}
-            label={
-              !casa.groupName
-                ? 'Só para um grupo'
-                : deOutroGrupo
-                  ? rotuloDeOutroGrupo('casa', casa.groupName)
-                  : `Só do grupo ${casa.groupName}`
-            }
-            tone="info"
-          />
+        {deOutroGrupo && casa.groupName ? (
+          <Etiqueta icon={icons.perfil} label={rotuloDeOutroGrupo('casa', casa.groupName)} tone="info" />
         ) : null}
       </View>
 
       {casa.note ? <ThemedText>{casa.note}</ThemedText> : null}
 
       {site && casa.listingUrl ? (
-        <>
-          <LinkTexto
-            label={`Ver esta casa no ${site.nome}`}
-            onPress={() =>
-              casa.listingUrl && void Linking.openURL(casa.listingUrl).catch(() => undefined)
-            }
-          />
-          <ThemedText type="small" themeColor="textMuted">
-            {`Abre ${site.dominio}. Visto por ${casa.isMine ? 'ti' : casa.displayName}${casa.listingSeenOn ? ` a ${formatarData(new Date(casa.listingSeenOn))}` : ''}. Confirma no ${site.nome}: pode já não estar disponível.`}
-          </ThemedText>
-        </>
+        <LinkTexto
+          label={`Ver no ${site.nome}`}
+          onPress={() => casa.listingUrl && void Linking.openURL(casa.listingUrl).catch(() => undefined)}
+        />
       ) : null}
 
       <PessoasDaCasa casa={casa} aTratar={aTratar} onResponder={onResponder} />
@@ -274,14 +246,26 @@ function CasaProposta({
             label={reservada ? 'Voltar a juntar gente' : 'Já reservei a casa'}
             onPress={() => onReservar(!reservada)}
           />
-          {casa.groupId ? (
-            <LinkTexto
-              label={casa.visibility === 'grupo' ? 'Abrir a toda a gente' : 'Fechar ao grupo'}
-              onPress={() => onAbrir(casa.visibility === 'grupo')}
-            />
-          ) : null}
-          <LinkTexto label="Mudar" onPress={onMudar} />
-          <LinkTexto perigo label="Apagar" onPress={onApagar} />
+          {/* The rest, less used, behind one button. */}
+          <LinkTexto
+            neutro
+            label="Mais opções"
+            onPress={() =>
+              Alert.alert('A tua casa', undefined, [
+                { text: 'Mudar', onPress: onMudar },
+                ...(casa.groupId
+                  ? [
+                      {
+                        text: casa.visibility === 'grupo' ? 'Abrir a toda a gente' : 'Fechar ao grupo',
+                        onPress: () => onAbrir(casa.visibility === 'grupo'),
+                      },
+                    ]
+                  : []),
+                { text: 'Apagar', style: 'destructive' as const, onPress: onApagar },
+                { text: 'Cancelar', style: 'cancel' as const },
+              ])
+            }
+          />
         </View>
       ) : casa.myStatus === 'aceite' ? (
         <>
@@ -471,7 +455,7 @@ export function DormidaCard({
           Procurar casa
         </ThemedText>
         <ThemedText themeColor="textSecondary">
-          {`Em ${estadio.cidade}: entrada a ${formatarData(new Date(estadia.checkin))}, saída a ${formatarData(new Date(estadia.checkout))}.`}
+          {`${estadio.cidade} · ${formatarDiaMes(new Date(estadia.checkin))} a ${formatarDiaMes(new Date(estadia.checkout))}`}
         </ThemedText>
 
         <ThemedText style={styles.rotulo}>Quantas noites</ThemedText>
@@ -521,9 +505,6 @@ export function DormidaCard({
                 />
               ))}
             </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              Pela dormida toda.
-            </ThemedText>
             <View style={styles.pesquisas}>
               {pesquisas.map((pesquisa) => (
                 <Pressable
@@ -547,18 +528,12 @@ export function DormidaCard({
                       {rotuloDoTotal(pesquisa.totalMinCentimos, pesquisa.totalMaxCentimos)}
                     </ThemedText>
                   </View>
-                  <ThemedText type="smallBold" style={{ color: theme.accentInk }}>
-                    Airbnb
-                  </ThemedText>
                   <Icon name={icons.seguinte} size={16} color={theme.accentInk} />
                 </Pressable>
               ))}
             </View>
           </>
         )}
-        <ThemedText type="small" themeColor="textMuted">
-          Abre o Airbnb já com a cidade, as datas e o preço.
-        </ThemedText>
       </Card>
 
       {/* Voos, para jogos do outro lado do mar ou da fronteira: as mesmas datas da casa. */}
@@ -599,11 +574,10 @@ export function DormidaCard({
         />
       ))}
 
-      <Aviso
-        tone="aviso"
-        title="Dividir casa é entre vocês"
-        message="A app não reserva nem trata de dinheiro. Paga pelo Airbnb e não transfiras nada antes de veres a reserva confirmada."
-      />
+      {/* Short, but always there: the app never handles the money. */}
+      <ThemedText type="small" themeColor="textMuted" style={styles.nota}>
+        A app não trata de dinheiro: paga pelo Airbnb e só transfere com a reserva confirmada.
+      </ThemedText>
 
       {/* Propor uma casa: cartão próprio, para não ser mais uma secção de uma parede. */}
       <Card style={styles.card}>
@@ -861,5 +835,9 @@ const styles = StyleSheet.create({
   },
   premido: {
     opacity: 0.8,
+  },
+  nota: {
+    textAlign: 'center',
+    paddingHorizontal: Spacing.two,
   },
 });

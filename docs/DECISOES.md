@@ -15,8 +15,8 @@ Registo das decisões estruturais, com data e razão. A mais recente fica em cim
   uploads 150 por dia por pessoa (nas políticas do Storage); «mencionou-te» no máximo 5 por hora da mesma pessoa à
   mesma pessoa; tabelas de limites limpas todas as noites. Emails do Supabase: subir para 100 por hora (Brevo, 300 por
   dia).
-- **Ranking:** os totais de toda a gente ficam em `ranking_cache`, atualizada de 5 em 5 minutos; a linha de quem
-  abre é sempre ao vivo.
+- **Ranking:** os totais de toda a gente ficam em `ranking_cache`. A linha de cada pessoa é refeita no momento em que
+  ganha pontos (triggers nas 7 tabelas que dão pontos); a atualização de 5 em 5 minutos fica como rede de segurança.
 - **Desempenho:** saiu o carregamento falso das fichas do jogo e do tasco; «Vou», resposta a planos, pedidos de
   amizade e de boleia mudam logo no ecrã (e voltam atrás se o servidor recusar); o catálogo de jogos é paginado (todos
   os jogos, para o histórico) e uma falha na meteorologia ou nos pontos de encontro já não deita fora o resto; os

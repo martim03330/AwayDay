@@ -4,7 +4,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import { useMunicipalities, useMyHome } from '@/features/profile/hooks/useMyProfile';
 import type { Municipality } from '@/features/profile/types';
-import { formatarData } from '@/lib/datas';
+import { formatarDiaMes } from '@/lib/datas';
 import type { Estadia } from '@/lib/dormida';
 import { useUserId } from '@/lib/session';
 import { AEROPORTOS, aeroportoMaisPerto, linkGoogleFlights, precisaDeVoo } from '@/lib/voos';
@@ -45,7 +45,7 @@ export function VoosCard({ estadio, estadia }: { estadio: Venue; estadia: Estadi
         Procurar voos
       </ThemedText>
       <ThemedText themeColor="textSecondary">
-        {`Para ${estadio.cidade}: ida a ${formatarData(new Date(estadia.checkin))}, volta a ${formatarData(new Date(estadia.checkout))}, as mesmas datas da dormida.`}
+        {`${estadio.cidade} · ida ${formatarDiaMes(new Date(estadia.checkin))}, volta ${formatarDiaMes(new Date(estadia.checkout))}`}
       </ThemedText>
 
       <ThemedText style={styles.rotulo}>De onde partes</ThemedText>
@@ -66,9 +66,6 @@ export function VoosCard({ estadio, estadia }: { estadio: Venue; estadia: Estadi
         icon={icons.aviao}
         onPress={() => void Linking.openURL(link).catch(() => undefined)}
       />
-      <ThemedText type="small" themeColor="textSecondary">
-        Os preços estão no Google Flights, onde podes ordenar pelo mais barato. A AwayDay não vende viagens.
-      </ThemedText>
     </Card>
   );
 }

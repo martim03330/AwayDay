@@ -937,33 +937,26 @@ export default function BoleiaScreen() {
           accessibilityLabel={`Custo total ${formatarCentimos(boleia.totalCents)}. Toca para ${verCusto ? 'esconder' : 'ver'} as contas.`}
           leading={<IconCircle name={icons.preco} tone="yellow" />}
           title={`Total ${formatarCentimos(boleia.totalCents)}`}
-          subtitle="Combustível e portagens, a dividir por todos"
+          subtitle="A dividir por todos"
           trailing={<Seta aberta={verCusto} />}
           separador={depoisDoCusto || verCusto}
         />
         {verCusto ? (
           <View style={[styles.contas, linhaSeparada(!depoisDoCusto)]}>
-            <LinhaValor
-              rotulo={`Combustível${boleia.roundTrip ? ' (ida e volta)' : ''}`}
-              valor={formatarCentimos(boleia.fuelCents)}
-            />
-            <LinhaValor
-              rotulo={`Portagens${boleia.tollM > 0 ? ` · ${formatarDistancia(boleia.tollM)} por sentido` : ''}`}
-              valor={formatarCentimos(boleia.tollCents)}
-            />
+            {/* Only what each one pays; the detail of how it adds up stays in two short lines. */}
+            <LinhaValor rotulo="Combustível" valor={formatarCentimos(boleia.fuelCents)} />
+            {boleia.tollCents > 0 ? (
+              <LinhaValor rotulo="Portagens" valor={formatarCentimos(boleia.tollCents)} />
+            ) : null}
             <LinhaValor
               rotulo={`Cada um agora (${plural(1 + boleia.seatsTaken, 'pessoa', 'pessoas')})`}
               valor={formatarCentimos(boleia.shareNowCents)}
               destaque
             />
             <LinhaValor
-              rotulo={`Com a boleia cheia (${plural(1 + boleia.seatsOffered, 'pessoa', 'pessoas')})`}
+              rotulo={`Com a boleia cheia (${1 + boleia.seatsOffered})`}
               valor={formatarCentimos(boleia.shareFullCents)}
             />
-            <ThemedText type="small" themeColor="textMuted">
-              Portagens estimadas com os preços de 2026 (classe 1). O combustível usa o consumo e o
-              preço que o condutor indicou. O condutor também paga a sua parte.
-            </ThemedText>
           </View>
         ) : null}
         {cancelada ? null : (
