@@ -123,8 +123,10 @@ export const PRIVACIDADE: DocumentoLegal = {
           'Expo, Apple e Google: entrega das notificações no teu telemóvel.',
           'Apple Maps (iPhone) e Google Maps (Android): desenho do mapa dentro da app.',
           'Anthropic: escrita das dicas e da retrospetiva (Estados Unidos).',
+          'Cloudflare (Turnstile): confirma que quem cria conta, entra ou recupera a password é uma pessoa e não um programa automático. Recebe sinais técnicos do telemóvel e da ligação, não o teu nome nem o teu email (Estados Unidos).',
           'OpenStreetMap (Nominatim e serviços de percursos) e Photon, da komoot (quando o Nominatim falha): pesquisa de moradas e cálculo de percursos. Enviamos o que pesquisas, não quem és.'
         ),
+        p('Se ligares o bloqueio com Face ID, Touch ID ou o código do telemóvel, a verificação é feita pelo teu telemóvel: a app só fica a saber se foi aceite, nunca recebe a tua cara nem a tua impressão digital.'),
         p('O calendário dos jogos vem da football-data.org, e a previsão do tempo para os estádios do IPMA e do MET Norway (instituto de meteorologia norueguês). Estes serviços não recebem dados teus: o nosso servidor só lhes pede os jogos e a previsão para o sítio de cada estádio. Não partilhamos dados com clubes, ligas, anunciantes nem corretores de dados.'),
       ],
     },
@@ -132,7 +134,7 @@ export const PRIVACIDADE: DocumentoLegal = {
       titulo: 'Dados fora da União Europeia',
       blocos: [
         p(
-          'Alguns fornecedores (Anthropic, Expo) estão nos Estados Unidos. Nesses casos, a transferência faz-se com as garantias previstas no RGPD, como as cláusulas contratuais-tipo da Comissão Europeia ou o Quadro de Privacidade de Dados UE-EUA.'
+          'Alguns fornecedores (Anthropic, Cloudflare, Expo) estão nos Estados Unidos. Nesses casos, a transferência faz-se com as garantias previstas no RGPD, como as cláusulas contratuais-tipo da Comissão Europeia ou o Quadro de Privacidade de Dados UE-EUA.'
         ),
       ],
     },
