@@ -6,7 +6,12 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useClubSupporterCounts } from '@/features/profile/hooks/useMyProfile';
 import { textoAdeptosNaApp } from '@/lib/clubes';
-import { clubesParaEscolher, nomesDivisao } from '@/mocks/clubes';
+import {
+  clubesParaEscolher,
+  DIVISOES_COM_JOGOS,
+  nomesDivisao,
+  TEXTO_SEM_JOGOS,
+} from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -33,6 +38,11 @@ export default function EscolherClubeScreen() {
             accessibilityRole="header">
             {nomesDivisao[grupo.divisao]}
           </ThemedText>
+          {DIVISOES_COM_JOGOS.includes(grupo.divisao) ? null : (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.divisao}>
+              {TEXTO_SEM_JOGOS}
+            </ThemedText>
+          )}
           {grupo.clubes.map((clube) => (
             <OpcaoClube
               key={clube.id}

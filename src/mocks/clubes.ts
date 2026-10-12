@@ -12,11 +12,19 @@ export const nomesDivisao: Record<Divisao, string> = {
   3: 'Liga 3',
 };
 
-/**
- * First version of the app: only Liga Portugal has fixtures, so only its clubs can be picked (as your club or your
- * clube da terra). Liga 2 and Liga 3 clubs stay in the catalogue for a later version.
- */
-export const DIVISOES_NA_ESCOLHA: readonly Divisao[] = [1];
+/** Every Portuguese division can be picked as your club, even before its fixtures are in the app. */
+export const DIVISOES_NA_ESCOLHA: readonly Divisao[] = [1, 2, 3];
+
+/** Only Liga Portugal has fixtures for now (sync-fixtures). Liga 2 and Liga 3 come in a later version. */
+export const DIVISOES_COM_JOGOS: readonly Divisao[] = [1];
+
+/** Whether the app already has this club's fixtures. */
+export function temJogosNaApp(clube: Pick<Clube, 'divisao'>) {
+  return clube.divisao !== null && DIVISOES_COM_JOGOS.includes(clube.divisao);
+}
+
+/** Shown wherever a club without fixtures can be picked or is someone's club. */
+export const TEXTO_SEM_JOGOS = 'Os jogos da Liga 2 e da Liga 3 ainda não estão disponíveis. Chegam em breve.';
 
 /**
  * The clube da terra makes most sense with Liga 2 and Liga 3 clubs, which have no fixtures in the first version: it

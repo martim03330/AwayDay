@@ -9,7 +9,13 @@ import { useClubSupporterCounts } from '@/features/profile/hooks/useMyProfile';
 import { textoAdeptosNaApp } from '@/lib/clubes';
 import { passoSeguinte, posicaoNaIntroducao } from '@/lib/introducao';
 import { useSession } from '@/lib/session';
-import { clubesParaEscolher, nomesDivisao, obterClube } from '@/mocks/clubes';
+import {
+  clubesParaEscolher,
+  DIVISOES_COM_JOGOS,
+  nomesDivisao,
+  obterClube,
+  TEXTO_SEM_JOGOS,
+} from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { LinkTexto } from '@/ui/link-texto';
@@ -59,6 +65,11 @@ export default function OnboardingClubeScreen() {
             accessibilityRole="header">
             {nomesDivisao[grupo.divisao]}
           </ThemedText>
+          {DIVISOES_COM_JOGOS.includes(grupo.divisao) ? null : (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.divisao}>
+              {TEXTO_SEM_JOGOS}
+            </ThemedText>
+          )}
           {grupo.clubes.map((clube) => (
             <OpcaoClube
               key={clube.id}

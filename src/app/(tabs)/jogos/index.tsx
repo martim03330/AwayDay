@@ -30,11 +30,17 @@ import {
   type FiltroCompeticao,
 } from '@/lib/jogos';
 import { useUserId } from '@/lib/session';
-import { MOSTRAR_CLUBE_DA_TERRA, obterClube } from '@/mocks/clubes';
+import {
+  MOSTRAR_CLUBE_DA_TERRA,
+  obterClube,
+  TEXTO_SEM_JOGOS,
+  temJogosNaApp,
+} from '@/mocks/clubes';
 import { jogos } from '@/mocks/jogos';
 import type { Clube, Jogo } from '@/mocks/tipos';
 import { useAICoach } from '@/state/ai-coach';
 import { useAppState } from '@/state/app-state';
+import { Aviso } from '@/ui/aviso';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
@@ -194,7 +200,9 @@ export default function JogosScreen() {
     .filter((clube): clube is Clube => clube !== undefined);
   // Without a club there is nothing to filter by: every game shows, never someone else's club by default.
   const semClube = idsMeusClubes.length === 0;
-  const verTodos = verConcorrencia || semClube;
+  // Liga 2 and Liga 3 clubs have no fixtures in the app yet: say so and show every game instead of an empty list.
+  const clubesSemJogos = meusClubes.length > 0 && !meusClubes.some(temJogosNaApp);
+  const verTodos = verConcorrencia || semClube || clubesSemJogos;
   const filtrados = jogos.filter(
     (jogo) =>
       ficaNaListaDeJogos(jogo, agora, foste(jogo.id)) &&
@@ -287,7 +295,7 @@ export default function JogosScreen() {
             label="Escolhe o teu clube para veres primeiro os jogos dele"
             onPress={() => router.push('/perfil/clube')}
           />
-        ) : verConcorrencia ? null : (
+        ) : verConcorrencia || clubesSemJogos ? null : (
           <EspreitarConcorrencia onPress={() => setVerConcorrencia(true)} />
         )}
       </>
@@ -336,7 +344,7 @@ export default function JogosScreen() {
               />
             ))}
           </ScrollView>
-          {verConcorrencia && !semClube ? (
+          {verConcorrencia && !semClube && !clubesSemJogos ? (
             <View style={styles.filtrosClube}>
               <Chip
                 label="Voltar aos meus clubes"
@@ -358,6 +366,13 @@ export default function JogosScreen() {
           <SessoesAbertas />
           <ConvitesDeBoleia />
           <AlertasBoleias boleiasComSessao={boleiasComSessao} />
+          {clubesSemJogos ? (
+            <Aviso
+              title={meusClubes.length === 1 ? 'Ainda sem jogos do teu clube' : 'Ainda sem jogos dos teus clubes'}
+              message={`${TEXTO_SEM_JOGOS} Até lá, vês aqui os jogos da Liga Portugal Betclic.`}
+              icon={icons.semJogos}
+            />
+          ) : null}
           {renderConteudo()}
         </View>
       </View>
