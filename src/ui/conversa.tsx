@@ -231,6 +231,11 @@ export function BolhaDeConversa({
             </Pressable>
           ) : null}
           <View style={[styles.coluna, minha ? styles.colunaDireita : styles.colunaEsquerda]}>
+            {/* A plain view around the bubble, holding its top margin: it is what gets measured for the menu. */}
+            <View
+              ref={bolhaRef}
+              collapsable={false}
+              style={[styles.medida, !mostrarQuem && styles.seguida]}>
             <PressableAnimado
               onPressIn={() => {
                 if (onLongPress && !reduzirMovimento) {
@@ -255,7 +260,7 @@ export function BolhaDeConversa({
                       bolhaRef.current?.measureInWindow((x, y, largura, altura) =>
                         abrir(largura > 0 ? { x, y, largura, altura } : null)
                       );
-                      setTimeout(() => abrir(null), 100);
+                      setTimeout(() => abrir(null), 250);
                       if (!reduzirMovimento) {
                         escala.set(
                           withSequence(
@@ -267,8 +272,6 @@ export function BolhaDeConversa({
                     }
                   : undefined
               }
-              ref={bolhaRef}
-              collapsable={false}
               delayLongPress={300}
               accessibilityHint={
                 onLongPress ? 'Toca sem largar para reagir, responder e mais opções.' : undefined
@@ -278,7 +281,7 @@ export function BolhaDeConversa({
                 minha
                   ? { backgroundColor: theme.accent, borderBottomRightRadius: 6 }
                   : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
-                !mostrarQuem && styles.seguida,
+                styles.semMargem,
                 pendente && styles.pendente,
                 mencionaMe && !minha && { borderLeftWidth: 3, borderLeftColor: theme.highlight },
                 escalaDaBolha,
@@ -319,6 +322,7 @@ export function BolhaDeConversa({
                     : formatarHora(new Date(criadaEm))}
               </ThemedText>
             </PressableAnimado>
+            </View>
             {reacoes.length > 0 ? (
               <ReacoesDaMensagem reacoes={reacoes} onReagir={onReagir} minha={minha} />
             ) : null}
@@ -660,6 +664,14 @@ const styles = StyleSheet.create({
   },
   coluna: {
     flexShrink: 1,
+  },
+  medida: {
+    flexShrink: 1,
+    maxWidth: '100%',
+    marginTop: Spacing.one,
+  },
+  semMargem: {
+    marginTop: 0,
   },
   colunaEsquerda: {
     alignItems: 'flex-start',
