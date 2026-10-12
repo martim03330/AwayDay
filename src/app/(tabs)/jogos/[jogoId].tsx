@@ -12,7 +12,6 @@ import { CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme'
 import { GoingButton } from '@/features/activity/components/GoingButton';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useNow } from '@/hooks/use-now';
-import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
@@ -32,7 +31,6 @@ import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons, type IconName } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
-import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
@@ -86,7 +84,6 @@ export default function JogoScreen() {
   const theme = useTheme();
   const agora = useNow();
   const { jogoId } = useLocalSearchParams<{ jogoId: string }>();
-  const { loading } = useSimulatedLoading(`jogo-${jogoId}`);
   const { avaliacaoDoJogo, medicoesBarulho, clubeDaTerraId } = useAppState();
 
   const { vou } = usePlanosJogos();
@@ -95,16 +92,6 @@ export default function JogoScreen() {
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
 
-  if (loading) {
-    return (
-      <Screen>
-        <SkeletonCard lines={3} />
-        <SkeletonCard lines={4} />
-        <SkeletonCard lines={2} />
-        <SkeletonCard lines={3} />
-      </Screen>
-    );
-  }
 
   if (!jogo || !casa || !fora || !estadio) {
     return (

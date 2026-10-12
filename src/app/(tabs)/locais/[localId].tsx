@@ -16,7 +16,6 @@ import { WcMaisProximo } from '@/components/wc-mais-proximo';
 import { EstouAqui } from '@/features/groups/components/EstouAqui';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useNow } from '@/hooks/use-now';
-import { useSimulatedLoading } from '@/hooks/use-simulated-loading';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia, formatarDiaEHora } from '@/lib/datas';
 import { abrirDirecoes } from '@/lib/direcoes';
@@ -42,7 +41,6 @@ import { Icon, icons, type IconName } from '@/ui/icon';
 import { Medidor } from '@/ui/medidor';
 import { SectionHeader } from '@/ui/section-header';
 import { SeletorNota } from '@/ui/seletor-nota';
-import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
@@ -147,7 +145,6 @@ export default function LocalScreen() {
   const agora = useNow();
   const { localId } = useLocalSearchParams<{ localId: string }>();
   // Keyed by stadium: swiping to the next tasco near the same stadium does not show the skeleton again.
-  const { loading } = useSimulatedLoading(`local-${obterLocal(localId)?.estadioId ?? localId}`);
   const {
     fezCheckIn,
     alternarCheckIn,
@@ -171,16 +168,6 @@ export default function LocalScreen() {
   const local = obterLocal(localId);
   const estadio = local ? obterEstadio(local.estadioId) : undefined;
 
-  if (loading) {
-    return (
-      <Pagina cabecalho={<CabecalhoTasco />}>
-        <SkeletonCard lines={3} />
-        <SkeletonCard lines={1} />
-        <SkeletonCard lines={2} />
-        <SkeletonCard lines={3} />
-      </Pagina>
-    );
-  }
 
   if (!local || !estadio) {
     return (

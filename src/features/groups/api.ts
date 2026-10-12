@@ -24,6 +24,7 @@ export type GroupRefusal =
   | 'bad_background'
   | 'place_not_found'
   | 'not_yours'
+  | 'group_full'
   | 'unknown';
 
 export class GroupRefused extends Error {
@@ -52,6 +53,7 @@ const RECUSAS: GroupRefusal[] = [
   'bad_background',
   'place_not_found',
   'not_yours',
+  'group_full',
 ];
 
 function refusal(error: { message: string; code?: string }) {

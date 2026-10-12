@@ -246,13 +246,22 @@ select pg_temp.expect('a removed member cannot send',
   pg_temp.refusal('select public.send_group_message(''c0000006-0000-4000-8000-0000000000a1'', ''Ainda ca estou'')'), 'not_member');
 select pg_temp.expect('a removed member cannot listen', public.can_use_group_topic('group:c0000006-0000-4000-8000-0000000000a1'), false);
 
--- 10. 300 messages a day.
+-- 10. At most 30 messages a minute and 2 000 a day.
 reset role;
 insert into public.rate_limit_hit (profile_id, bucket)
-select 'ad000006-0000-4000-8000-0000000000b1', 'group-message' from generate_series(1, 300);
+select 'ad000006-0000-4000-8000-0000000000b1', 'group-message-minute' from generate_series(1, 30);
 set local role authenticated;
 select pg_temp.as_user('ad000006-0000-4000-8000-0000000000b1');
-select pg_temp.expect('301st message of the day refused',
+select pg_temp.expect('31st message in a minute refused',
+  pg_temp.refusal('select public.send_group_message(''c0000006-0000-4000-8000-0000000000a1'', ''Mais uma'')'), 'rate_limited');
+reset role;
+delete from public.rate_limit_hit
+where profile_id = 'ad000006-0000-4000-8000-0000000000b1' and bucket = 'group-message-minute';
+insert into public.rate_limit_hit (profile_id, bucket)
+select 'ad000006-0000-4000-8000-0000000000b1', 'group-message' from generate_series(1, 2000);
+set local role authenticated;
+select pg_temp.as_user('ad000006-0000-4000-8000-0000000000b1');
+select pg_temp.expect('2 001st message of the day refused',
   pg_temp.refusal('select public.send_group_message(''c0000006-0000-4000-8000-0000000000a1'', ''Mais uma'')'), 'rate_limited');
 
 reset role;

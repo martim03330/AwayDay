@@ -147,9 +147,22 @@ function mencionados(body: Readonly<Record<string, unknown>>, naConversa: readon
  * A chat message as notifications: whoever was mentioned gets «X mencionou-te» (even with that chat turned off), the
  * others the usual one.
  */
-function comMencoes(normal: Aviso, body: Readonly<Record<string, unknown>>, autor: string, nome: string, onde: string) {
+async function comMencoes(
+  admin: SupabaseClient,
+  normal: Aviso,
+  body: Readonly<Record<string, unknown>>,
+  autor: string,
+  nome: string,
+  onde: string
+) {
   const mencao = mencionados(body, normal.recipients, autor);
   if (mencao.pessoas.length === 0) return [normal];
+  // At most 5 an hour from the same person to the same person go through as «mencionou-te» (they reach even who
+  // muted the chat); past that, the mention is just a message like the others.
+  const vagas = await admin.rpc('mention_slots', { p_sender: autor, p_recipients: mencao.pessoas });
+  const passam = Array.isArray(vagas.data) ? vagas.data.filter((id): id is string => typeof id === 'string') : [];
+  if (passam.length === 0) return [normal];
+  mencao.pessoas = passam;
   const ja = new Set(mencao.pessoas);
   return [
     {
@@ -265,7 +278,7 @@ async function construir(
       body: resumir(mensagem),
       data: { type: 'conversa', rideId, fixtureId: carro.fixtureId ?? '' },
     };
-    return comMencoes(normal, body, autor, nome, 'Conversa do carro');
+    return comMencoes(admin, normal, body, autor, nome, 'Conversa do carro');
   }
 
   if (kind === 'group_message') {
@@ -310,7 +323,7 @@ async function construir(
       data: { type: 'grupo', groupId },
     };
     // Only people's own text messages carry mentions.
-    return local || plano || aviso ? normal : comMencoes(normal, body, autor, nome, nomeDoGrupo);
+    return local || plano || aviso ? normal : comMencoes(admin, normal, body, autor, nome, nomeDoGrupo);
   }
 
   if (kind === 'ride_invite') {

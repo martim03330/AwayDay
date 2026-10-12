@@ -260,6 +260,28 @@ select pg_temp.expect('6th group of the day refused', pg_temp.refusal('select pu
 select pg_temp.expect('21st join of the day refused (stops guessing codes)',
   pg_temp.refusal('select public.join_group_with_code(''zzzzzzzzzz'')'), 'rate_limited');
 
+-- 10. At most 100 members in a group, whatever the way in.
+reset role;
+insert into auth.users (id, email, raw_user_meta_data, aud, role)
+select ('ad0000ff-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid, 'cheio-' || n || '@test.invalid',
+  '{"display_name":"Adepto Cheio"}', 'authenticated', 'authenticated'
+from generate_series(1, 100) as n;
+insert into public.fan_group (id, name, invite_code)
+values ('c00000ff-0000-4000-8000-0000000000c1', 'Grupo Cheio', 'cheiocheio');
+insert into public.fan_group_member (group_id, profile_id)
+select 'c00000ff-0000-4000-8000-0000000000c1'::uuid, u.id
+from auth.users as u
+where u.email like 'cheio-%@test.invalid'
+order by u.email
+limit 100;
+select pg_temp.expect('the group now has 100 members',
+  (select count(*)::integer from public.fan_group_member where group_id = 'c00000ff-0000-4000-8000-0000000000c1'), 100);
+select pg_temp.expect('the 101st cannot come in',
+  pg_temp.refusal(format(
+    'insert into public.fan_group_member (group_id, profile_id) select %L::uuid, u.id from auth.users as u '
+    'where u.email like ''%%@test.invalid'' and not public.is_group_member(%L::uuid, u.id) limit 1',
+    'c00000ff-0000-4000-8000-0000000000c1', 'c00000ff-0000-4000-8000-0000000000c1')), 'group_full');
+
 reset role;
 select count(*) as checks_passed from expect_log;
 

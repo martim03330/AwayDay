@@ -21,6 +21,7 @@ export type FriendRefusal =
   | 'ride_full'
   | 'ride_closed'
   | 'rate_limited'
+  | 'group_full'
   | 'unknown';
 
 export class FriendRefused extends Error {
@@ -46,6 +47,7 @@ const RECUSAS: FriendRefusal[] = [
   'ride_full',
   'ride_closed',
   'rate_limited',
+  'group_full',
 ];
 
 function refusal(error: { message: string }) {

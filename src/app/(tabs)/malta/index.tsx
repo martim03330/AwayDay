@@ -4,7 +4,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabInset, CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { acceptGroupInvite, declineGroupInvite } from '@/features/friends/api';
+import { acceptGroupInvite, declineGroupInvite, FriendRefused } from '@/features/friends/api';
 import { useMyGroupInvites, useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import type { GroupInboxItem } from '@/features/groups/api';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
@@ -82,8 +82,12 @@ export default function MaltaScreen() {
       await acao();
       void refrescarAmigos();
       void refrescarGrupos();
-    } catch {
-      setErro('Não deu para responder ao convite. Tenta outra vez.');
+    } catch (problema) {
+      setErro(
+        problema instanceof FriendRefused && problema.reason === 'group_full'
+          ? 'Esse grupo já tem 100 pessoas, o máximo.'
+          : 'Não deu para responder ao convite. Tenta outra vez.'
+      );
     }
   }
 

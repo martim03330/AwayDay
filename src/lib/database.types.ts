@@ -4665,6 +4665,10 @@ export type Database = {
         Args: { p_booked: boolean; p_plan_id: string }
         Returns: undefined
       }
+      mention_slots: {
+        Args: { p_recipients: string[]; p_sender: string }
+        Returns: string[]
+      }
       moderate_place_photo: {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
@@ -5549,6 +5553,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      take_upload_slot: { Args: never; Returns: boolean }
       trip_balances: {
         Args: { p_session_id: string }
         Returns: {

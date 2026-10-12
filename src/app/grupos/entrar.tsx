@@ -88,10 +88,13 @@ export default function EntrarNoGrupoScreen() {
       void queryClient.invalidateQueries({ queryKey: ['groups'] });
       router.replace({ pathname: '/grupos/[grupoId]', params: { grupoId: id } });
     } catch (problema) {
+      const razao = problema instanceof GroupRefused ? problema.reason : null;
       setErro(
-        problema instanceof GroupRefused && problema.reason === 'group_not_found'
+        razao === 'group_not_found'
           ? 'Este convite já não serve. Pede à malta um link novo.'
-          : 'Não deu para entrar no grupo. Tenta outra vez daqui a pouco.'
+          : razao === 'group_full'
+            ? 'Este grupo já tem 100 pessoas, o máximo. Fala com quem te convidou.'
+            : 'Não deu para entrar no grupo. Tenta outra vez daqui a pouco.'
       );
     } finally {
       setAEntrar(false);

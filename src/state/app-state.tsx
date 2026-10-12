@@ -165,6 +165,11 @@ type AppState = {
   /** Só para o deep link de demo: entra nas tabs sem mexer nas escolhas. */
   saltarOnboarding: () => void;
   reverIntroducao: () => void;
+  /**
+   * After signing out: forgets what came from the account (clubs, notification choices, accounts already asked to
+   * merge) and goes back to the start, so the next account on this phone starts clean. Device settings stay.
+   */
+  esquecerConta: () => void;
   /** `null` enquanto a pessoa não escolher um clube: nunca há clube por omissão. */
   clubeFavoritoId: string | null;
   escolherClube: (clubeId: string) => void;
@@ -1019,6 +1024,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: true })),
     reverIntroducao: () =>
       mudarPreferencias((atuais) => ({ ...atuais, onboardingConcluido: false })),
+    esquecerConta: () =>
+      mudarPreferencias((atuais) => ({
+        ...atuais,
+        onboardingConcluido: false,
+        introducaoVista: false,
+        clubeFavoritoId: null,
+        clubeDaTerraId: null,
+        notificacoes: {},
+        contasPerguntadas: [],
+      })),
     clubeFavoritoId: preferencias.clubeFavoritoId,
     escolherClube: (clubeId) =>
       mudarPreferencias((atuais) => ({ ...atuais, clubeFavoritoId: clubeId })),

@@ -35,7 +35,7 @@ export function SincronizarConta() {
     escolherClube,
     confirmarClubeDaTerra,
     saltarOnboarding,
-    reverIntroducao,
+    esquecerConta,
     modoDemo,
   } = useAppState();
   const reconciliacao = useRef<Reconciliacao | null>(null);
@@ -52,8 +52,10 @@ export function SincronizarConta() {
   // has a club skips the steps (below); one without a club goes through them. Demo mode is the exception. Runs once:
   // after it, the introduction is no longer marked as done.
   useEffect(() => {
-    if (sessao.status === 'signed-out' && onboardingConcluido && !modoDemo && supabase) reverIntroducao();
-  }, [sessao.status, onboardingConcluido, modoDemo, reverIntroducao]);
+    // What came from the previous account goes too: otherwise its club would be saved into the next account.
+    const daConta = onboardingConcluido || clubeFavoritoId !== null || clubeDaTerraId !== null;
+    if (sessao.status === 'signed-out' && daConta && !modoDemo && supabase) esquecerConta();
+  }, [sessao.status, onboardingConcluido, clubeFavoritoId, clubeDaTerraId, modoDemo, esquecerConta]);
 
   useEffect(() => {
     const dados = perfil.data;
