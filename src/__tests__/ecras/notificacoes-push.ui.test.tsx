@@ -33,10 +33,12 @@ jest.mock('expo-notifications', () => ({
 const mockEnable = jest.fn();
 const mockRegister = jest.fn();
 let mockPedirAoEntrar = false;
+let mockPermissao = 'granted';
 jest.mock('@/lib/push', () => ({
   enablePushOnThisDevice: () => mockEnable(),
   registerThisDevice: () => mockRegister(),
   takePushAskOnSignIn: () => Promise.resolve(mockPedirAoEntrar),
+  pushPermission: () => Promise.resolve(mockPermissao),
 }));
 jest.mock('@/features/feedback/report', () => ({ reportErrorOnce: jest.fn() }));
 jest.mock('@/features/profile/hooks/useMyProfile', () => ({
@@ -62,6 +64,7 @@ beforeEach(() => {
   mockOuvinte = null;
   mockNavegacaoPronta = true;
   mockPedirAoEntrar = false;
+  mockPermissao = 'granted';
 });
 
 describe('Cold start', () => {
@@ -103,7 +106,16 @@ describe('Signing in', () => {
     expect(mockRegister).not.toHaveBeenCalled();
   });
 
-  it('otherwise only registers the phone, without asking', async () => {
+  it('asks a phone that was never asked (otherwise iOS does not list the app under Notifications)', async () => {
+    mockPermissao = 'undetermined';
+    definirUtilizador(UTILIZADORES.comConta);
+    render(<NotificacoesPush />);
+    await waitFor(() => expect(mockEnable).toHaveBeenCalledTimes(1));
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+
+  it('a phone that already answered is only registered, without asking', async () => {
+    mockPermissao = 'denied';
     definirUtilizador(UTILIZADORES.comConta);
     render(<NotificacoesPush />);
     await waitFor(() => expect(mockRegister).toHaveBeenCalledTimes(1));

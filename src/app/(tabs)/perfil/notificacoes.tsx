@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AppState, Linking, StyleSheet, Switch, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { saveNotificationPreference } from '@/features/profile/api';
@@ -10,8 +10,9 @@ import {
 } from '@/features/profile/hooks/useNotificationPreferences';
 import type { NotificationKind } from '@/features/profile/types';
 import { useTheme } from '@/hooks/use-theme';
-import { enablePushOnThisDevice, type PushPermission } from '@/lib/push';
+import { enablePushOnThisDevice, pushPermission, type PushPermission } from '@/lib/push';
 import { useUserId } from '@/lib/session';
+import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
@@ -203,11 +204,59 @@ function AvisosDaMalta() {
   );
 }
 
+/**
+ * Whether this phone gets notifications at all, read again when coming back from the phone's settings. Never asked:
+ * a button asks. Refused: only the phone's settings can turn them on, so the button opens them.
+ */
+function EsteTelemovel() {
+  const theme = useTheme();
+  const [permissao, setPermissao] = useState<PushPermission | null>(null);
+
+  useEffect(() => {
+    const ler = () => void pushPermission().then(setPermissao).catch(() => setPermissao('unavailable'));
+    ler();
+    const subscricao = AppState.addEventListener('change', (estado) => {
+      if (estado === 'active') ler();
+    });
+    return () => subscricao.remove();
+  }, []);
+
+  if (permissao === null || permissao === 'unavailable') return null;
+  if (permissao === 'granted') {
+    return (
+      <ThemedText style={styles.descricao} themeColor="textSecondary">
+        Notificações ligadas neste telemóvel.
+      </ThemedText>
+    );
+  }
+  return (
+    <Card style={{ borderColor: theme.warning }}>
+      <ThemedText style={styles.tituloLinha}>
+        {permissao === 'denied' ? 'Notificações desligadas no telemóvel' : 'Notificações por ligar'}
+      </ThemedText>
+      <ThemedText style={styles.descricao} themeColor="textSecondary">
+        {permissao === 'denied'
+          ? 'Liga-as nas definições do telemóvel para saberes das mensagens, das boleias e da malta.'
+          : 'Para saberes das mensagens, das boleias e da malta mesmo com a app fechada.'}
+      </ThemedText>
+      <Button
+        label={permissao === 'denied' ? 'Abrir definições' : 'Ativar notificações'}
+        onPress={() =>
+          permissao === 'denied'
+            ? void Linking.openSettings()
+            : void enablePushOnThisDevice().then(setPermissao).catch(() => undefined)
+        }
+      />
+    </Card>
+  );
+}
+
 export default function NotificacoesScreen() {
   const userId = useUserId();
 
   return (
     <Screen>
+      {userId ? <EsteTelemovel /> : null}
       <MensagensDaConta />
       <AvisosDaMalta />
       {userId ? null : (

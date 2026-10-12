@@ -4,7 +4,12 @@ import { useEffect, useRef } from 'react';
 
 import { reportErrorOnce } from '@/features/feedback/report';
 import { useMyProfile } from '@/features/profile/hooks/useMyProfile';
-import { enablePushOnThisDevice, registerThisDevice, takePushAskOnSignIn } from '@/lib/push';
+import {
+  enablePushOnThisDevice,
+  pushPermission,
+  registerThisDevice,
+  takePushAskOnSignIn,
+} from '@/lib/push';
 import { useUserId } from '@/lib/session';
 import { obterJogo } from '@/mocks/jogos';
 import { useAppState } from '@/state/app-state';
@@ -65,9 +70,8 @@ export function abrirNotificacao(router: Router, resposta: Notifications.Notific
 
 /**
  * Liga as notificações push à conta. Não desenha nada.
- * - Com sessão, regista este telemóvel (sem pedir permissão: isso só acontece quando a pessoa liga os avisos na
- *   introdução, liga as sugestões, marca «vou» ou oferece e pede boleias). Quem ligou os avisos na introdução sem
- *   conta vê o pedido de permissão aqui, na primeira vez que entra.
+ * - Com sessão, regista este telemóvel. Se o telemóvel nunca foi perguntado, pede a permissão aqui, uma vez (sem
+ *   isso o iOS nem mostra a AwayDay nas definições de Notificações).
  * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem a lista de jogos, onde está a dica do treinador. O
  *   aviso da retrospetiva abre a retrospetiva.
  * - Uma mensagem de um grupo abre a conversa do grupo; um convite para um grupo abre a Malta.
@@ -92,9 +96,13 @@ export function NotificacoesPush() {
     }
     if (!perfilCarregado || registadoPara.current === userId) return;
     registadoPara.current = userId;
+    // A phone that was never asked (the person said «Agora não», or signed in to an account they already had) is
+    // asked now, once: otherwise iOS does not even list AwayDay under Notifications in Settings. A phone that already
+    // answered is only registered: iOS never asks twice.
     const registar = async () => {
       const pedir = await takePushAskOnSignIn().catch(() => false);
-      if (pedir) await enablePushOnThisDevice();
+      const nuncaPerguntado = (await pushPermission().catch(() => 'unavailable')) === 'undetermined';
+      if (pedir || nuncaPerguntado) await enablePushOnThisDevice();
       else await registerThisDevice();
     };
     registar().catch((erro: unknown) => {
