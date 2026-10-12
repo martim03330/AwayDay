@@ -12,12 +12,11 @@ import { CartaoNivel } from '@/features/ranks/components/CartaoNivel';
 import { TabelaRanking } from '@/features/ranks/components/TabelaRanking';
 import {
   rankingKey,
-  useAttendance,
   useLeaderboard,
   useMyMissions,
   useMyRanking,
 } from '@/features/ranks/hooks/useRanking';
-import { segundaFeiraDe, tituloDoNivel } from '@/features/ranks/labels';
+import { segundaFeiraDe } from '@/features/ranks/labels';
 import { seasonLabel } from '@/features/recap/stats';
 import { useTheme } from '@/hooks/use-theme';
 import { BUILD_DE_CAPTURAS } from '@/lib/capturas';
@@ -30,8 +29,7 @@ import { useAppState } from '@/state/app-state';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
-import { Icon, IconCircle, icons } from '@/ui/icon';
-import { LinhaGrupo } from '@/ui/linha-grupo';
+import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
@@ -62,24 +60,19 @@ export default function RankingScreen() {
   const ranking = useMyRanking(conta);
   const missoes = useMyMissions(conta);
   const topo = useLeaderboard(conta, 'geral', 'epoca');
-  const { season: afluencia } = useAttendance(conta);
 
   const eu = ranking.data;
   const estaSemana = segundaFeiraDe(chaveDoDia(new Date()));
   const semanais = (missoes.data ?? []).filter((missao) => missao.kind === 'weekly');
   const desafios = semanais.filter((missao) => missao.weekStart === estaSemana);
-  const proximos = semanais.filter((missao) => missao.weekStart !== null && missao.weekStart > estaSemana);
   const feitos = desafios.filter((missao) => missao.completedAt !== null).length;
-  const conquistasLista = (missoes.data ?? []).filter((missao) => missao.kind === 'achievement');
-  const conquistasFeitas = conquistasLista.filter((missao) => missao.completedAt !== null).length;
-  const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
   const linhasTopo = (topo.data ?? [])
     .filter((linha) => linha.position <= TOPO || linha.isMe)
     .map((linha) => ({
       chave: `${linha.position}-${linha.displayName}`,
       posicao: linha.position,
       nome: linha.displayName,
-      detalhe: `Nível ${linha.level} · ${tituloDoNivel(linha.level)}`,
+      detalhe: `Nível ${linha.level}`,
       valor: `${formatarNumero(linha.xp)} pts`,
       sou: linha.isMe,
     }));
@@ -173,12 +166,10 @@ export default function RankingScreen() {
                     </ThemedText>
                   )}
                 </Card>
-                {proximos.length > 0 ? (
-                  <LinkTexto
-                    label="Ver os desafios da próxima semana"
-                    onPress={() => router.push('/ranking/missoes')}
-                  />
-                ) : null}
+                <LinkTexto
+                  label="Ver todos os desafios"
+                  onPress={() => router.push('/ranking/missoes')}
+                />
               </View>
 
               {eu.seasonId ? (
@@ -199,37 +190,9 @@ export default function RankingScreen() {
                   linhas={linhasTopo}
                   vazio="Ainda ninguém somou pontos esta época. Carimba o estádio no próximo jogo."
                 />
+                <LinkTexto label="Ver as tabelas" onPress={() => router.push('/ranking/tabelas')} />
               </View>
 
-              <Card style={styles.lista}>
-                <LinhaGrupo
-                  separador
-                  onPress={() => router.push('/ranking/tabelas')}
-                  leading={<IconCircle name={icons.ranking} tone="yellow" />}
-                  title="Tabelas"
-                  subtitle="Amigos, o teu clube, estádios e tascos"
-                  trailing={chevron}
-                />
-                <LinhaGrupo
-                  separador
-                  onPress={() => router.push('/ranking/missoes')}
-                  leading={<IconCircle name={icons.missao} />}
-                  title="Missões e distintivos"
-                  subtitle={`${conquistasFeitas} de ${conquistasLista.length} conquistas feitas`}
-                  trailing={chevron}
-                />
-                <LinhaGrupo
-                  onPress={() => router.push('/ranking/estadios')}
-                  leading={<IconCircle name={icons.estadio} tone="sky" />}
-                  title="Quem vai à bola"
-                  subtitle={
-                    afluencia.data
-                      ? `${formatarNumero(afluencia.data.people)} adeptos nos estádios esta época`
-                      : 'Os estádios e clubes com mais adeptos'
-                  }
-                  trailing={chevron}
-                />
-              </Card>
             </>
           )}
         </View>

@@ -2,6 +2,16 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Toda a gente no ranking por omissão; Ranking mais simples
+
+- **Aparecer no ranking:** passa a estar ligado por omissão para todos (`show_in_rankings default true`, contas
+  existentes incluídas). Os testers não apareciam nas tabelas porque quase ninguém tinha ligado a opção. Desliga-se em
+  Definições → Privacidade; a política de privacidade passa a falar em interesse legítimo com direito de oposição.
+- **Página do Ranking:** sai a lista do fundo (Tabelas, Missões e distintivos, Quem vai à bola), que repetia o que
+  está em cima. Chega-se às missões por «Ver todos os desafios» e às tabelas pela divisão ou por «Ver as tabelas».
+- **Tabelas:** «Quem vai à bola» deixa de ser um ecrã à parte e passa a ser o separador «Adeptos». Cada linha mostra
+  só o nome, o nível e o número; sem título do nível, divisão nem clube, e sem os textos explicativos por cima.
+
 ## 2026-10-12 — «Fui a este jogo» só com o carimbo do estádio
 
 - **Erro corrigido:** marcar «Vou» (ou entrar num plano) e depois avaliar o jogo contava como ter ido: o jogo

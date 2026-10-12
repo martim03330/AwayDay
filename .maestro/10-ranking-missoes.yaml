@@ -1,4 +1,4 @@
-# Jornada 10 — com conta: o Ranking (desafios, divisão, tabela), as tabelas, as missões e «Quem vai à bola».
+# Jornada 10 — com conta: o Ranking (desafios, divisão, tabela), as tabelas (com os adeptos) e as missões.
 appId: host.exp.Exponent
 name: 10 Ranking e missões
 tags: [com-conta, ranking]
@@ -22,9 +22,9 @@ tags: [com-conta, ranking]
 
 # Missões
 - scrollUntilVisible:
-    element: "Missões e distintivos.*"
+    element: "Ver todos os desafios"
     direction: DOWN
-- tapOn: "Missões e distintivos.*"
+- tapOn: "Ver todos os desafios"
 - extendedWaitUntil:
     visible: "Desafios da semana"
     timeout: 15000
@@ -42,23 +42,15 @@ tags: [com-conta, ranking]
 - tapOn: "Esconder"
 - runFlow: comum/voltar.yaml
 
-# Tabelas
+# Tabelas (with «Adeptos», which used to be «Quem vai à bola»)
 - scrollUntilVisible:
-    element: "Tabelas.*"
+    element: "Ver as tabelas"
     direction: DOWN
-- tapOn: "Tabelas.*"
+- tapOn: "Ver as tabelas"
 - waitForAnimationToEnd
 - assertNotVisible: "As tabelas precisam de conta"
-- assertVisible:
-    id: "BackButton"
-- runFlow: comum/voltar.yaml
-
-# Quem vai à bola
-- scrollUntilVisible:
-    element: "Quem vai à bola.*"
-    direction: DOWN
-- tapOn: "Quem vai à bola.*"
-- waitForAnimationToEnd
+- tapOn: "Adeptos"
+- assertVisible: "Estádios com mais adeptos"
 - assertVisible:
     id: "BackButton"
 - runFlow: comum/voltar.yaml

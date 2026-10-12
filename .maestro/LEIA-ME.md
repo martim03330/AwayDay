@@ -50,7 +50,7 @@ Capturas e registos de cada corrida: `maestro test --test-output-dir <pasta> .ma
 | 07-perfil-editar | conta | nome, distrito → concelho, como vai à bola; fica guardado |
 | 08-malta-criar-grupo | conta | criar grupo (nome obrigatório), escrever na conversa, grupo na lista |
 | 09-combinar-jogo | conta | convidar o grupo para um jogo; segundo convite → aviso «Calma, que este jogo já está convocado» |
-| 10-ranking-missoes | conta | Ranking, missões, tabelas, «Quem vai à bola» |
+| 10-ranking-missoes | conta | Ranking, missões, tabelas (com «Adeptos») |
 | 11-definicoes-com-conta | conta | partilha do tasco (desligada por omissão), bloqueados, notificações |
 | 12-apagar-conta-sem-confirmar | conta | o ecrã de apagar conta, sem password não apaga, fechar mantém a sessão |
 | 13-terminar-sessao | conta | terminar sessão: a app volta às boas-vindas, só com «Criar conta» e «Já tenho conta» |

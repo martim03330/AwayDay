@@ -20,9 +20,6 @@ export default function RankingLayout() {
       <Stack.Screen name="missoes">
         <Stack.Screen.Title>Missões</Stack.Screen.Title>
       </Stack.Screen>
-      <Stack.Screen name="estadios">
-        <Stack.Screen.Title>Quem vai à bola</Stack.Screen.Title>
-      </Stack.Screen>
     </Stack>
   );
 }

@@ -6,27 +6,29 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import { rankingsKey, useVerifiedPlacesRanking } from '@/features/presence/hooks/usePresence';
 import { type LinhaTabela, TabelaRanking } from '@/features/ranks/components/TabelaRanking';
-import { rankingKey, useLeaderboard } from '@/features/ranks/hooks/useRanking';
-import { NOMES_DIVISAO, tituloDoNivel } from '@/features/ranks/labels';
+import { rankingKey, useAttendance, useLeaderboard } from '@/features/ranks/hooks/useRanking';
 import type { LeaderboardPeriod, LeaderboardScope } from '@/features/ranks/types';
 import { fetchStadiumRanking } from '@/features/stamps/api';
 import { formatarNumero, plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
+import { obterEstadio } from '@/mocks/estadios';
 import { useAppState } from '@/state/app-state';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
+import { SectionHeader } from '@/ui/section-header';
 import { Segmentado } from '@/ui/segmentado';
 import { ThemedText } from '@/ui/themed-text';
 
-type Tabela = 'pontos' | 'estadios' | 'tascos';
+type Tabela = 'pontos' | 'estadios' | 'tascos' | 'adeptos';
 
 const TABELAS = [
   { valor: 'pontos' as const, label: 'Pontos' },
   { valor: 'estadios' as const, label: 'Estádios' },
   { valor: 'tascos' as const, label: 'Tascos' },
+  { valor: 'adeptos' as const, label: 'Adeptos' },
 ];
 
 const AMBITOS: readonly { valor: LeaderboardScope; label: string }[] = [
@@ -43,19 +45,21 @@ const PERIODOS = [
 
 const VAZIO: Record<LeaderboardScope, string> = {
   geral: 'Ainda ninguém somou pontos. Carimba o estádio no próximo jogo e és o primeiro.',
-  amigos:
-    'Nenhum amigo teu aparece aqui. Só entra quem escolheu aparecer nas tabelas e já somou pontos.',
-  clube: 'Ainda ninguém do teu clube aparece aqui. Escolhe o teu clube no perfil, se ainda não o fizeste.',
+  amigos: 'Nenhum amigo teu somou pontos ainda.',
+  clube: 'Ainda ninguém do teu clube somou pontos.',
   divisao: 'Ainda ninguém da tua divisão somou pontos esta época.',
 };
+
+/** Aggregates only show from 5 different people, like every other number in the app. */
+const AINDA_POUCOS = 'Aparece a partir de 5 adeptos diferentes.';
 
 function eAmbito(valor: string | undefined): valor is LeaderboardScope {
   return AMBITOS.some((ambito) => ambito.valor === valor);
 }
 
 /**
- * As tabelas: pontos (com quem te comparas e desde quando), estádios carimbados e tascos verificados. Só aparece
- * quem escolheu aparecer, e tu, sempre, para saberes onde estás.
+ * The tables: points (against whom and since when), stamped stadiums, verified tascos, and «Adeptos» (which stadiums
+ * and clubs bring the most fans; totals only, from 5 people). Rows are kept short: name, level and the number.
  */
 export default function TabelasScreen() {
   const params = useLocalSearchParams<{ ambito?: string }>();
@@ -75,6 +79,7 @@ export default function TabelasScreen() {
     meta: { persist: false },
   });
   const tascos = useVerifiedPlacesRanking(conta);
+  const adeptos = useAttendance(conta);
 
   if (!conta) {
     return (
@@ -88,29 +93,20 @@ export default function TabelasScreen() {
     );
   }
 
-  const linhasPontos: LinhaTabela[] = (pontos.data ?? []).map((linha) => {
-    const clube = linha.clubId ? obterClube(linha.clubId)?.nomeCurto : undefined;
-    return {
-      chave: `${linha.position}-${linha.displayName}`,
-      posicao: linha.position,
-      nome: linha.displayName,
-      detalhe: [
-        `Nível ${linha.level} · ${tituloDoNivel(linha.level)}`,
-        ambito === 'divisao' ? null : NOMES_DIVISAO[linha.division],
-        clube,
-      ]
-        .filter(Boolean)
-        .join(' · '),
-      valor: `${formatarNumero(linha.xp)} pts`,
-      sou: linha.isMe,
-    };
-  });
+  const linhasPontos: LinhaTabela[] = (pontos.data ?? []).map((linha) => ({
+    chave: `${linha.position}-${linha.displayName}`,
+    posicao: linha.position,
+    nome: linha.displayName,
+    detalhe: `Nível ${linha.level}`,
+    valor: `${formatarNumero(linha.xp)} pts`,
+    sou: linha.isMe,
+  }));
 
   const linhasEstadios: LinhaTabela[] = (estadios.data ?? []).map((linha, indice) => ({
     chave: linha.profileId,
     posicao: indice + 1,
     nome: linha.displayName,
-    detalhe: plural(linha.visits, 'jogo carimbado', 'jogos carimbados'),
+    detalhe: plural(linha.visits, 'jogo', 'jogos'),
     valor: plural(linha.stadiums, 'estádio', 'estádios'),
     sou: linha.isMe,
   }));
@@ -122,6 +118,27 @@ export default function TabelasScreen() {
     detalhe: linha.clubId ? (obterClube(linha.clubId)?.nomeCurto ?? '') : '',
     valor: plural(linha.value, 'tasco', 'tascos'),
     sou: linha.isMe,
+  }));
+
+  const linhasEstadiosCheios: LinhaTabela[] = (adeptos.venues.data ?? []).map((linha, indice) => {
+    const estadio = obterEstadio(linha.venueId);
+    return {
+      chave: linha.venueId,
+      posicao: indice + 1,
+      nome: estadio?.nome ?? linha.venueId,
+      detalhe: estadio?.cidade ?? '',
+      valor: plural(linha.people, 'adepto', 'adeptos'),
+      sou: false,
+    };
+  });
+
+  const linhasClubesFora: LinhaTabela[] = (adeptos.clubs.data ?? []).map((linha, indice) => ({
+    chave: linha.clubId,
+    posicao: indice + 1,
+    nome: obterClube(linha.clubId)?.nome ?? linha.clubId,
+    detalhe: plural(linha.visits, 'jogo fora', 'jogos fora'),
+    valor: plural(linha.people, 'adepto', 'adeptos'),
+    sou: false,
   }));
 
   function refrescar() {
@@ -148,11 +165,7 @@ export default function TabelasScreen() {
               />
             ))}
           </ScrollView>
-          {ambito === 'divisao' ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              A divisão joga-se em cada época: no fim, os de cima sobem e os de baixo descem.
-            </ThemedText>
-          ) : (
+          {ambito === 'divisao' ? null : (
             <Segmentado opcoes={PERIODOS} valor={periodo} onChange={setPeriodo} />
           )}
           <TabelaRanking linhas={linhasPontos} vazio={VAZIO[ambito]} />
@@ -160,26 +173,33 @@ export default function TabelasScreen() {
       ) : null}
 
       {tabela === 'estadios' ? (
-        <>
-          <ThemedText type="small" themeColor="textSecondary">
-            Estádios diferentes carimbados no local, em dia de jogo. Marcar à mão não conta.
-          </ThemedText>
-          <TabelaRanking
-            linhas={linhasEstadios}
-            vazio="Ainda ninguém carimbou estádios. Em dia de jogo, no estádio, a app confirma que lá estás."
-          />
-        </>
+        <TabelaRanking
+          linhas={linhasEstadios}
+          vazio="Ainda ninguém carimbou estádios. Em dia de jogo, carimba no estádio."
+        />
       ) : null}
 
       {tabela === 'tascos' ? (
+        <TabelaRanking
+          linhas={linhasTascos}
+          vazio="Ainda ninguém tem tascos verificados. Faz check-in no tasco em dia de jogo."
+        />
+      ) : null}
+
+      {tabela === 'adeptos' ? (
         <>
-          <ThemedText type="small" themeColor="textSecondary">
-            Tascos diferentes com check-in feito lá, pela app.
-          </ThemedText>
-          <TabelaRanking
-            linhas={linhasTascos}
-            vazio="Ainda ninguém tem tascos verificados. Faz check-in no tasco em dia de jogo."
-          />
+          {adeptos.season.data ? (
+            <View style={styles.resumo}>
+              <ThemedText type="score" style={styles.numero}>
+                {formatarNumero(adeptos.season.data.people)}
+              </ThemedText>
+              <ThemedText themeColor="textSecondary">adeptos nos estádios esta época</ThemedText>
+            </View>
+          ) : null}
+          <SectionHeader title="Estádios com mais adeptos" />
+          <TabelaRanking linhas={linhasEstadiosCheios} vazio={`Nenhum estádio ainda. ${AINDA_POUCOS}`} />
+          <SectionHeader title="Quem leva mais gente fora" />
+          <TabelaRanking linhas={linhasClubesFora} vazio={`Nenhum clube ainda. ${AINDA_POUCOS}`} />
         </>
       ) : null}
 
@@ -194,5 +214,12 @@ const styles = StyleSheet.create({
   },
   espaco: {
     height: Spacing.two,
+  },
+  resumo: {
+    gap: Spacing.half,
+  },
+  numero: {
+    fontSize: 40,
+    lineHeight: 44,
   },
 });
