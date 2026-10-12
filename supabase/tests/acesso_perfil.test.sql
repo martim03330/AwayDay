@@ -302,10 +302,12 @@ select pg_temp.expect('the count says nothing about who',
 -- 8. The email is never exposed: no client-visible column or function result carries it.
 reset role;
 select pg_temp.expect('no public table or view column named like email is readable by clients',
-  (select count(*)::integer from information_schema.columns as c
-   where c.table_schema = 'public' and c.column_name ilike '%email%'
-     and (has_column_privilege('anon', format('public.%I', c.table_name), c.column_name, 'SELECT')
-       or has_column_privilege('authenticated', format('public.%I', c.table_name), c.column_name, 'SELECT'))), 0);
+  (select count(*)::integer from pg_attribute as a
+   join pg_class as c on c.oid = a.attrelid
+   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v', 'm', 'f')
+     and a.attnum > 0 and not a.attisdropped and a.attname ilike '%email%'
+     and (has_column_privilege('anon', c.oid, a.attname, 'SELECT')
+       or has_column_privilege('authenticated', c.oid, a.attname, 'SELECT'))), 0);
 select pg_temp.expect('no client-callable function returns an email',
   (select string_agg(p.proname, ',') from pg_proc as p
    where p.pronamespace = 'public'::regnamespace
