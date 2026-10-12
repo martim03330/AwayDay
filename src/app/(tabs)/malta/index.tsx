@@ -216,7 +216,7 @@ function CartaoDoGrupo({ grupo, onPress }: { grupo: GroupInboxItem; onPress: () 
       <CaraDoGrupo nome={grupo.name} url={grupo.photoUrl} size={44} />
       <View style={styles.meio}>
         <View style={styles.linha}>
-          <ThemedText type="subtitle" numberOfLines={1} style={styles.flex}>
+          <ThemedText numberOfLines={1} style={[styles.flex, styles.nome]}>
             {grupo.name}
           </ThemedText>
           {grupo.last ? (
@@ -299,6 +299,11 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  nome: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: 700,
   },
   porLer: {
     minWidth: 22,
