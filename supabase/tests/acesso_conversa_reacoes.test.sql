@@ -249,6 +249,10 @@ select pg_temp.expect('a group mate sees the public profile, with the club',
   (select (p.display_name, p.supporter_club_id is not null, p.stadiums_stamped)::text
    from public.public_profile('ad000012-0000-4000-8000-0000000000b1') as p),
   ('Reacoes Membro', true, 0)::text);
+-- A stranger who does not show in the ranking (people in the ranking have their profile open to everyone).
+reset role;
+update public.profile set show_in_rankings = false where id = 'ad000012-0000-4000-8000-0000000000b1';
+set local role authenticated;
 select pg_temp.as_user('ad000012-0000-4000-8000-0000000000e1');
 select pg_temp.expect('a stranger does not',
   (select count(*)::integer from public.public_profile('ad000012-0000-4000-8000-0000000000b1')), 0);

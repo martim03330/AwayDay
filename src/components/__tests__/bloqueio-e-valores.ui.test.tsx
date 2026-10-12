@@ -44,12 +44,14 @@ describe('BloqueioDaApp', () => {
 
   it('opens once the phone confirms the owner', async () => {
     render(<BloqueioDaApp />);
-    await waitFor(() => expect(mockAuthenticate).toHaveBeenCalledTimes(1));
+    // Generous waits: CI machines are slower than a laptop.
+    const espera = { timeout: 5000 };
+    await waitFor(() => expect(mockAuthenticate).toHaveBeenCalledTimes(1), espera);
     // The automatic request must finish first: a tap while it runs is ignored (as on the phone).
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeEnabled(), espera);
     mockAuthenticate.mockResolvedValue({ success: true });
     fireEvent.press(screen.getByRole('button', { name: 'Desbloquear' }));
-    await waitFor(() => expect(screen.queryByTestId('bloqueio-da-app')).toBeNull());
+    await waitFor(() => expect(screen.queryByTestId('bloqueio-da-app')).toBeNull(), espera);
     expect(mockAuthenticate).toHaveBeenCalledTimes(2);
   });
 
