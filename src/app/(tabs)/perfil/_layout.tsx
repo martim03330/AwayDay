@@ -32,6 +32,9 @@ export default function PerfilLayout() {
       <Stack.Screen name="fotos-por-aprovar">
         <Stack.Screen.Title>Fotos por aprovar</Stack.Screen.Title>
       </Stack.Screen>
+      <Stack.Screen name="administracao">
+        <Stack.Screen.Title>Administração</Stack.Screen.Title>
+      </Stack.Screen>
       <Stack.Screen name="denuncias">
         <Stack.Screen.Title>Denúncias por rever</Stack.Screen.Title>
       </Stack.Screen>

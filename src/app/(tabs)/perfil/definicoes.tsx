@@ -12,7 +12,6 @@ import {
   useUpdateRankingVisibility,
   useUpdateShareCheckins,
 } from '@/features/profile/hooks/useMyProfile';
-import { SegundoFatorAdmin } from '@/features/profile/components/SegundoFatorAdmin';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
 import { useAppState, type EstadoPermissao } from '@/state/app-state';
@@ -30,11 +29,11 @@ function textoPermissaoDemo(estado: EstadoPermissao) {
   return 'Ainda não decidiste';
 }
 
-/** As três hipóteses de aspeto, por esta ordem: o telemóvel manda, a não ser que se diga o contrário. */
+/** The three appearance options; until one is picked, the app follows the phone. */
 const TEMAS = [
-  { valor: 'sistema' as const, rotulo: 'Como o telemóvel' },
   { valor: 'claro' as const, rotulo: 'Claro' },
   { valor: 'escuro' as const, rotulo: 'Escuro' },
+  { valor: 'sistema' as const, rotulo: 'Como o telemóvel' },
 ];
 
 export default function DefinicoesScreen() {
@@ -155,9 +154,6 @@ export default function DefinicoesScreen() {
 
       <SectionHeader title="Aspeto" />
       <Card style={styles.aspeto}>
-        <ThemedText themeColor="textSecondary">
-          O escuro segue o telemóvel, a não ser que escolhas um dos dois.
-        </ThemedText>
         <View style={styles.temas}>
           {TEMAS.map((opcao) => (
             <Chip
@@ -255,51 +251,6 @@ export default function DefinicoesScreen() {
         />
       </Card>
 
-      {perfil.data?.isAdmin ? (
-        <>
-          <SectionHeader title="Administração" />
-          <SegundoFatorAdmin>
-          <Card style={styles.grupo}>
-            <LinhaGrupo
-              separador
-              onPress={() => router.push('/perfil/pontos-de-encontro')}
-              accessibilityLabel="Pontos de encontro por confirmar. Toca para abrir."
-              leading={<Icon name={icons.pontoEncontro} size={20} color={theme.accentInk} />}
-              title="Pontos de encontro por confirmar"
-              subtitle="Encontrados nas notícias dos clubes"
-              trailing={chevron}
-            />
-            <LinhaGrupo
-              separador
-              onPress={() => router.push('/perfil/fotos-por-aprovar')}
-              accessibilityLabel="Fotos de tascos por aprovar. Toca para abrir."
-              leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}
-              title="Fotos de tascos por aprovar"
-              subtitle="Enviadas pelos adeptos"
-              trailing={chevron}
-            />
-            <LinhaGrupo
-              separador
-              onPress={() => router.push('/perfil/denuncias')}
-              accessibilityLabel="Denúncias por rever. Toca para abrir."
-              leading={<Icon name={icons.aviso} size={20} color={theme.accentInk} />}
-              title="Denúncias por rever"
-              subtitle="Mensagens, pessoas e grupos denunciados"
-              trailing={chevron}
-            />
-            <LinhaGrupo
-              onPress={() => router.push('/perfil/feedback')}
-              accessibilityLabel="Erros e ideias recebidos. Toca para abrir."
-              leading={<Icon name={icons.lista} size={20} color={theme.accentInk} />}
-              title="Erros e ideias recebidos"
-              subtitle="O que a malta reportou em Ajudar a melhorar"
-              trailing={chevron}
-            />
-          </Card>
-          </SegundoFatorAdmin>
-        </>
-      ) : null}
-
       {demo === '1' || modoDemo ? (
         <>
           <SectionHeader title="Modo demo" />
@@ -330,7 +281,12 @@ export default function DefinicoesScreen() {
       ) : null}
 
       {versao ? (
-        <ThemedText type="small" themeColor="textMuted" style={styles.versao}>
+        <ThemedText
+          type="small"
+          themeColor="textMuted"
+          style={styles.versao}
+          // Admin tools are hidden from everyone: a long press on the version opens them, and only for admins.
+          onLongPress={perfil.data?.isAdmin ? () => router.push('/perfil/administracao') : undefined}>
           {versao}
         </ThemedText>
       ) : null}

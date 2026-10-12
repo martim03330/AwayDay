@@ -2,6 +2,14 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Administração fora das Definições
+
+- As ferramentas de administração (pontos de encontro, fotos, denúncias, feedback) saem das Definições para um ecrã
+  próprio, `perfil/administracao`, que se abre com um toque longo na versão da app, no fundo das Definições, e só
+  para contas com `is_admin`. Continua a pedir o código da app de autenticação, e cada ferramenta continua a
+  verificar no servidor. Razão: um utilizador normal não deve ver nada disto, nem saber que existe.
+- **Aspeto:** só as três opções (Claro, Escuro, Como o telemóvel), sem texto por cima; o texto confundiu um tester.
+
 ## 2026-10-12 — Toda a gente no ranking por omissão; Ranking mais simples
 
 - **Aparecer no ranking:** passa a estar ligado por omissão para todos (`show_in_rankings default true`, contas
