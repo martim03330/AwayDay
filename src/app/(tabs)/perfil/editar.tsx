@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { EscolherConcelho } from '@/components/escolher-concelho';
@@ -17,6 +17,7 @@ import {
   useMyProfile,
   useSaveMyHome,
 } from '@/features/profile/hooks/useMyProfile';
+import { isNameAllowed } from '@/features/auth/api';
 import { useEscolherFotoPerfil } from '@/hooks/use-escolher-foto-perfil';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
@@ -31,6 +32,7 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
+import { Aviso } from '@/ui/aviso';
 
 function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof ProfileRefused)) return 'Não deu para guardar. Tenta outra vez.';
@@ -64,6 +66,23 @@ export default function EditarPerfilScreen() {
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [guardado, setGuardado] = useState<string | null>(null);
+  // The server refuses swear words and slurs. While typing, it is asked a moment after the last key, so the warning
+  // shows right under the field and the button stays off, instead of an error at the bottom after saving.
+  const [nomeRecusado, setNomeRecusado] = useState<string | null>(null);
+  useEffect(() => {
+    const escrito = (nome ?? '').trim();
+    if (escrito.length < 2 || escrito === perfil.data?.displayName) return;
+    let ativo = true;
+    const temporizador = setTimeout(() => {
+      void isNameAllowed(escrito).then((permitido) => {
+        if (ativo) setNomeRecusado(permitido ? null : escrito);
+      });
+    }, 450);
+    return () => {
+      ativo = false;
+      clearTimeout(temporizador);
+    };
+  }, [nome, perfil.data?.displayName]);
 
   if (!userId) {
     return (
@@ -80,6 +99,7 @@ export default function EditarPerfilScreen() {
 
   const dados = perfil.data ?? null;
   const nomeAtual = nome ?? dados?.displayName ?? '';
+  const nomeProibido = nomeRecusado !== null && nomeRecusado === nomeAtual.trim();
 
   async function tratar(acao: () => Promise<void>, feito: string) {
     setErro(null);
@@ -110,7 +130,8 @@ export default function EditarPerfilScreen() {
       <SectionHeader title="A tua foto" />
       <Card style={styles.cartao}>
         <View style={styles.foto}>
-          <Avatar nome={nomeAtual || 'Adepto'} url={dados?.avatarUrl} size={96} />
+          {/* The saved name, never the one being typed: a refused name never shows up, not even in the initials. */}
+          <Avatar nome={dados?.displayName || 'Adepto'} url={dados?.avatarUrl} size={96} />
         </View>
         <ThemedText type="small" themeColor="textSecondary">
           A foto é vista por quem tem conta na app — nas boleias, nos grupos e nas contas das
@@ -160,11 +181,33 @@ export default function EditarPerfilScreen() {
           textContentType="nickname"
           returnKeyType="done"
           ajuda="É este o nome que aparece nas boleias, nos grupos e nas contas."
+          erro={nomeProibido ? 'Este nome não é permitido.' : null}
         />
+        {nomeProibido ? (
+          <Aviso
+            tone="erro"
+            title="Não podes usar esse nome"
+            message="Não aceitamos palavrões nem insultos. Escolhe outro nome."
+          />
+        ) : null}
         <Button
           label="Guardar o nome"
-          disabled={aTratar || nomeAtual.trim().length < 2 || nomeAtual === dados?.displayName}
-          onPress={() => void tratar(() => setDisplayName(nomeAtual), 'Nome guardado.')}
+          disabled={
+            aTratar || nomeProibido || nomeAtual.trim().length < 2 || nomeAtual === dados?.displayName
+          }
+          onPress={() =>
+            void tratar(async () => {
+              try {
+                await setDisplayName(nomeAtual);
+              } catch (problema) {
+                // Refused by the server after all: say it here, by the field.
+                if (problema instanceof ProfileRefused && problema.reason === 'bad_name') {
+                  setNomeRecusado(nomeAtual.trim());
+                }
+                throw problema;
+              }
+            }, 'Nome guardado.')
+          }
         />
       </Card>
 
