@@ -1,15 +1,8 @@
-# If the app is on the welcome screen or any intro step (with or without account), finishes the intro the short
-# way: «Faço isto depois» on every step and «Agora não» to the notices.
+# If the app is on the welcome screen or any intro step, gets to the tabs the short way: signs in with the E2E account
+# (there is no way in without an account), then «Faço isto depois» on every step and «Agora não» to the notices.
 appId: host.exp.Exponent
 ---
-- runFlow:
-    when:
-      visible: "Vamos à bola\\?"
-    commands:
-      - tapOn: "Espreitar sem conta"
-      - extendedWaitUntil:
-          visible: "Faço isto depois"
-          timeout: 10000
+- runFlow: entrar-boas-vindas.yaml
 - repeat:
     times: 6
     while:

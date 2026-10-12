@@ -1,0 +1,14 @@
+# Jornada 1 — boas-vindas: a app usa-se sempre com conta. Só há «Criar conta» e «Já tenho conta», mais os documentos
+# legais; não há forma de entrar sem conta.
+appId: host.exp.Exponent
+name: 01 Boas-vindas só com conta
+tags: [sem-sessao]
+---
+- runFlow: comum/boas-vindas.yaml
+- assertVisible: "Vamos à bola\\?"
+- assertVisible: "Criar conta"
+- assertVisible: "Já tenho conta"
+- assertVisible: "Termos"
+- assertVisible: "Privacidade"
+- assertNotVisible: "Espreitar sem conta"
+- assertNotVisible: "Tab Bar"

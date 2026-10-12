@@ -1,7 +1,7 @@
 # Jornada 3b — as páginas legais a partir de Definições → Sobre o AwayDay, e um documento que não existe.
 appId: host.exp.Exponent
 name: 03b Páginas legais nas Definições
-tags: [sem-conta, legal]
+tags: [com-conta, legal]
 ---
 - runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
 - runFlow: comum/concluir-introducao.yaml

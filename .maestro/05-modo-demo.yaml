@@ -2,7 +2,7 @@
 # a etiqueta «Modo demo · dados de exemplo» fica sempre à vista. No fim desliga-o.
 appId: host.exp.Exponent
 name: 05 Modo demo
-tags: [sem-conta, demo]
+tags: [com-conta, demo]
 ---
 - runFlow: { file: comum/abrir.yaml, env: { ROTA: /perfil } }
 - runFlow: comum/concluir-introducao.yaml

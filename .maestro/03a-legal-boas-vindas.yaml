@@ -2,7 +2,7 @@
 # Toca no centro de cada link, como um dedo. Tem de abrir o documento da app (e não o Safari).
 appId: host.exp.Exponent
 name: 03a Páginas legais nas boas-vindas
-tags: [sem-conta, legal]
+tags: [legal]
 ---
 - runFlow: comum/boas-vindas.yaml
 

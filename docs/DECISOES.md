@@ -2,6 +2,20 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — A app usa-se sempre com conta
+
+- **Decisão do Martim:** deixa de haver «Espreitar sem conta». As boas-vindas só oferecem «Criar conta» e «Já tenho
+  conta», e as tabs só abrem com sessão (`NavegacaoRaiz` em `src/app/_layout.tsx`).
+- Terminar sessão ou apagar a conta volta às boas-vindas, e a introdução deixa de estar marcada como feita. Ao entrar
+  de novo, uma conta com clube salta direto para as tabs; uma sem clube passa pelos passos do perfil.
+- Exceções: o **modo demo** (capturas para as lojas) e as builds **sem Supabase** (desenvolvimento) continuam a abrir
+  sem conta.
+- Enquanto a sessão guardada carrega ao abrir a app, quem já fez a introdução vê as tabs, para as boas-vindas não
+  piscarem.
+- Ficam no código os ecrãs «precisas de conta» e o modo «telemovel» (dados só no telemóvel). Já não se chega lá, e
+  tirá-los é uma limpeza à parte.
+- Maestro: saíram os percursos sem conta (01 e 02); os comuns entram com a conta de testes.
+
 ## 2026-10-12 — «Esqueceste a password?» diz logo se o email não tem conta
 
 - Antes de enviar o código, a app pergunta ao servidor se o email tem conta (`email_has_account`). Se não tiver,

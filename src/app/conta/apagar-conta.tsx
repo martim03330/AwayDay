@@ -30,7 +30,7 @@ export default function ApagarContaScreen() {
       {
         onSuccess: () => {
           fecharConta();
-          Alert.alert('Conta apagada', 'Até à próxima. A app continua a funcionar sem conta.');
+          Alert.alert('Conta apagada', 'Até à próxima.');
         },
       }
     );

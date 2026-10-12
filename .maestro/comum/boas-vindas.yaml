@@ -1,13 +1,11 @@
-# Known starting point for a person without account: signed out, demo off, on the welcome screen.
+# Known starting point for a person without a session: signed out, demo off, on the welcome screen.
 appId: host.exp.Exponent
 ---
 - runFlow: fechar-modais.yaml
-- runFlow: { file: abrir.yaml, env: { ROTA: /perfil } }
-- runFlow: concluir-introducao.yaml
-- runFlow: sair-do-modo-demo.yaml
+# Demo mode lets the tabs open without a session: turn it off first.
+- runFlow:
+    when:
+      notVisible: "Vamos à bola\\?"
+    commands:
+      - runFlow: sair-do-modo-demo.yaml
 - runFlow: terminar-sessao.yaml
-- runFlow: { file: abrir.yaml, env: { ROTA: /perfil/definicoes } }
-- tapOn: "Rever a introdução"
-- extendedWaitUntil:
-    visible: "Vamos à bola\\?"
-    timeout: 15000

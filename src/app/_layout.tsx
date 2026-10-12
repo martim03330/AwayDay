@@ -44,6 +44,8 @@ import { RelogioProvider } from '@/state/relogio';
 import { NotificacoesPush } from '@/state/notificacoes-push';
 import { SincronizarConta } from '@/state/sincronizar-conta';
 import { SonsProvider } from '@/state/sons';
+import { useSession } from '@/lib/session';
+import { supabase } from '@/lib/supabase';
 
 // Keep the splash screen up until the fonts are ready, so text never flashes in the system font.
 SplashScreen.preventAutoHideAsync();
@@ -84,16 +86,25 @@ function TemaDaNavegacao({ children }: { children: ReactNode }) {
   );
 }
 
-/** Onboarding enquanto não estiver concluído; depois, as tabs. */
+/**
+ * A introdução enquanto não estiver concluída; depois, as tabs. A app usa-se sempre com conta: sem sessão (nunca
+ * entrou, terminou sessão ou apagou a conta) volta às boas-vindas. Exceções: o modo demo (capturas para as lojas) e
+ * as builds sem Supabase. Enquanto a sessão guardada carrega, quem já fez a introdução vê as tabs, para as
+ * boas-vindas não piscarem.
+ */
 function NavegacaoRaiz() {
-  const { onboardingConcluido } = useAppState();
+  const { onboardingConcluido, modoDemo } = useAppState();
+  const sessao = useSession();
+  const precisaDeConta = supabase !== null && !modoDemo;
+  const comConta = sessao.status !== 'signed-out';
+  const dentro = onboardingConcluido && (!precisaDeConta || comConta);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!onboardingConcluido}>
+      <Stack.Protected guard={!dentro}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>
-      <Stack.Protected guard={onboardingConcluido}>
+      <Stack.Protected guard={dentro}>
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
       {/* Entrar e criar conta: abre por cima da introdução ou das tabs. */}

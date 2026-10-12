@@ -1,7 +1,7 @@
 # Jornada 4 — criar conta e entrar, só a validação: nunca chega a submeter um pedido ao servidor.
 appId: host.exp.Exponent
 name: 04 Validação de criar conta e entrar
-tags: [sem-conta, conta]
+tags: [conta]
 ---
 - runFlow: comum/boas-vindas.yaml
 - tapOn: "Criar conta"

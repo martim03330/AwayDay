@@ -1,16 +1,16 @@
-# Signs out if there is a session. Expects the intro to be done.
+# Signs out if there is a session, and waits for the welcome screen (without a session the app only shows it).
 appId: host.exp.Exponent
 ---
-- runFlow: { file: abrir.yaml, env: { ROTA: /perfil } }
-- scrollUntilVisible:
-    element: "Terminar sessão|Guarda o teu progresso"
-    direction: DOWN
-    timeout: 15000
 - runFlow:
     when:
-      visible: "Terminar sessão"
+      notVisible: "Vamos à bola\\?"
     commands:
-      - tapOn: "Terminar sessão"
-      - extendedWaitUntil:
-          visible: "Guarda o teu progresso"
+      - runFlow: { file: abrir.yaml, env: { ROTA: /perfil } }
+      - scrollUntilVisible:
+          element: "Terminar sessão"
+          direction: DOWN
           timeout: 15000
+      - tapOn: "Terminar sessão"
+- extendedWaitUntil:
+    visible: "Vamos à bola\\?"
+    timeout: 15000

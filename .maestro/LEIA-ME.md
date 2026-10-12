@@ -32,19 +32,19 @@ npm run test:e2e
 `.maestro/env` não vai para o git. Se não existir, cria-o com
 `MAESTRO_E2E_EMAIL=e2e@teste.awayday.invalid` e `MAESTRO_E2E_PASSWORD=<uma password com letras e números>`.
 
-Um percurso só: `maestro test .maestro/05-modo-demo.yaml`. Só os sem conta: `maestro test --include-tags sem-conta .maestro`.
+Um percurso só: `maestro test .maestro/05-modo-demo.yaml`. Só os sem sessão: `maestro test --include-tags sem-sessao .maestro`.
+Desde 2026-10-12 a app usa-se sempre com conta: quase todos os percursos entram com a conta de testes.
 Capturas e registos de cada corrida: `maestro test --test-output-dir <pasta> .maestro`.
 
 ## Os percursos
 
 | Ficheiro | Quem | O que verifica |
 | --- | --- | --- |
-| 01-primeira-abertura | sem conta | boas-vindas → «Espreitar sem conta» → clube → avisos («Agora não» e «Ligar avisos») → tabs |
-| 02-navegar-sem-conta | sem conta | todas as tabs, filtros, o jogo, boleias e «Combinar» a pedir conta, estádio sem meteorologia inventada, chegar, mapa |
-| 03a-legal-boas-vindas | sem conta | «Termos» e «Privacidade» das boas-vindas abrem os documentos |
-| 03b-legal-definicoes | sem conta | Definições → Sobre o AwayDay: privacidade, termos, sobre e contactos; documento inexistente |
-| 04-formularios-conta | sem conta | criar conta e entrar: erros de cada campo, consentimento, mostrar password, sem submeter |
-| 05-modo-demo | sem conta | cinco toques no perfil, etiqueta «Modo demo · dados de exemplo» em todas as tabs, hora simulada |
+| 01-boas-vindas-so-com-conta | sem sessão | as boas-vindas só oferecem «Criar conta» e «Já tenho conta» (não há «Espreitar sem conta») |
+| 03a-legal-boas-vindas | sem sessão | «Termos» e «Privacidade» das boas-vindas abrem os documentos |
+| 03b-legal-definicoes | conta | Definições → Sobre o AwayDay: privacidade, termos, sobre e contactos; documento inexistente |
+| 04-formularios-conta | sem sessão | criar conta e entrar: erros de cada campo, consentimento, mostrar password, sem submeter |
+| 05-modo-demo | conta | cinco toques no perfil, etiqueta «Modo demo · dados de exemplo» em todas as tabs, hora simulada |
 | 06a-entrar-boas-vindas | conta | password errada, depois a certa: o modal fecha e seguem os passos do perfil |
 | 06b-introducao-com-conta | conta | os cinco passos da introdução com conta e o perfil com sessão |
 | 07-perfil-editar | conta | nome, distrito → concelho, como vai à bola; fica guardado |
@@ -53,7 +53,7 @@ Capturas e registos de cada corrida: `maestro test --test-output-dir <pasta> .ma
 | 10-ranking-missoes | conta | Ranking, missões, tabelas, «Quem vai à bola» |
 | 11-definicoes-com-conta | conta | partilha do tasco (desligada por omissão), bloqueados, notificações |
 | 12-apagar-conta-sem-confirmar | conta | o ecrã de apagar conta, sem password não apaga, fechar mantém a sessão |
-| 13-terminar-sessao | conta | terminar sessão; Malta e Ranking voltam a pedir conta |
+| 13-terminar-sessao | conta | terminar sessão: a app volta às boas-vindas, só com «Criar conta» e «Já tenho conta» |
 
 Notas:
 - O estado do Expo Go (introdução vista, clube, modo demo) não se limpa a partir do Maestro: cada percurso parte de um

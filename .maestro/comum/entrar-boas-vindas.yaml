@@ -1,0 +1,29 @@
+# From the welcome screen, signs in with the E2E account (the app is only used with an account). Does nothing if the
+# welcome screen is not showing. Needs MAESTRO_E2E_EMAIL and MAESTRO_E2E_PASSWORD (see .maestro/LEIA-ME.md).
+appId: host.exp.Exponent
+---
+- runFlow:
+    when:
+      visible: "Vamos à bola\\?"
+    commands:
+      - tapOn: "Já tenho conta"
+      - extendedWaitUntil:
+          visible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+          timeout: 10000
+      - tapOn: "Email.*"
+      - inputText: ${MAESTRO_E2E_EMAIL}
+      - tapOn: "Password.*"
+      - inputText: ${MAESTRO_E2E_PASSWORD}
+      - tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+      - tapOn:
+          text: "Entrar"
+          below: "Password.*"
+      - extendedWaitUntil:
+          notVisible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
+          timeout: 20000
+      - runFlow: dispensar-guardar-password.yaml
+      - runFlow:
+          when:
+            visible: "Juntar à tua conta\\?"
+          commands:
+            - tapOn: "Agora não"

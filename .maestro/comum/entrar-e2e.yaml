@@ -1,53 +1,11 @@
-# Signs in again with the E2E account (e2e@teste.awayday.invalid), demo off, intro done.
+# Signs in again with the E2E account (e2e@teste.awayday.invalid), demo off, intro done, on the Perfil tab.
 # Needs MAESTRO_E2E_EMAIL and MAESTRO_E2E_PASSWORD in the environment (see .maestro/LEIA-ME.md).
 appId: host.exp.Exponent
 ---
-- runFlow: fechar-modais.yaml
-- runFlow: { file: abrir.yaml, env: { ROTA: /perfil } }
-- runFlow: concluir-introducao.yaml
-- runFlow: sair-do-modo-demo.yaml
-- runFlow: { file: abrir.yaml, env: { ROTA: /perfil } }
-- scrollUntilVisible:
-    element: "Terminar sessão|Guarda o teu progresso"
-    direction: DOWN
-    timeout: 15000
 # Always start a fresh session: a session kept from before the account was recreated is no longer valid on the
 # server, and another account may be signed in.
-- runFlow:
-    when:
-      visible: "Terminar sessão"
-    commands:
-      - tapOn: "Terminar sessão"
-      - extendedWaitUntil:
-          visible: "Guarda o teu progresso"
-          timeout: 15000
-- runFlow:
-    when:
-      visible: "Guarda o teu progresso"
-    commands:
-      - tapOn:
-          text: "Entrar"
-          below: "Guarda o teu progresso"
-      - extendedWaitUntil:
-          visible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
-          timeout: 10000
-      - tapOn: "Email.*"
-      - inputText: ${MAESTRO_E2E_EMAIL}
-      - tapOn: "Password.*"
-      - inputText: ${MAESTRO_E2E_PASSWORD}
-      - tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
-      - tapOn:
-          text: "Entrar"
-          below: "Password.*"
-      - extendedWaitUntil:
-          notVisible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
-          timeout: 20000
-      - runFlow: dispensar-guardar-password.yaml
-      - runFlow:
-          when:
-            visible: "Juntar à tua conta\\?"
-          commands:
-            - tapOn: "Agora não"
+- runFlow: boas-vindas.yaml
+- runFlow: concluir-introducao.yaml
 - runFlow: { file: abrir.yaml, env: { ROTA: /perfil } }
 - scrollUntilVisible:
     element: "e2e@teste\\.awayday\\.invalid"

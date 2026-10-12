@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { fixtureCatalogQuery } from '@/features/fixtures/hooks/useFixtureCatalog';
 import { useMyProfile, useSaveProfileClub } from '@/features/profile/hooks/useMyProfile';
 import { useSession, useUserId } from '@/lib/session';
+import { supabase } from '@/lib/supabase';
 import { useAppState } from '@/state/app-state';
 
 type Reconciliacao = {
@@ -34,6 +35,8 @@ export function SincronizarConta() {
     escolherClube,
     confirmarClubeDaTerra,
     saltarOnboarding,
+    reverIntroducao,
+    modoDemo,
   } = useAppState();
   const reconciliacao = useRef<Reconciliacao | null>(null);
 
@@ -44,6 +47,13 @@ export function SincronizarConta() {
       predicate: (query) => query.queryKey[0] !== fixtureCatalogQuery.queryKey[0],
     });
   }, [sessao.status, queryClient]);
+
+  // The app is only used with an account: without one it goes back to the start. Signing in again to an account that
+  // has a club skips the steps (below); one without a club goes through them. Demo mode is the exception. Runs once:
+  // after it, the introduction is no longer marked as done.
+  useEffect(() => {
+    if (sessao.status === 'signed-out' && onboardingConcluido && !modoDemo && supabase) reverIntroducao();
+  }, [sessao.status, onboardingConcluido, modoDemo, reverIntroducao]);
 
   useEffect(() => {
     const dados = perfil.data;

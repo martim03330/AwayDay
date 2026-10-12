@@ -6,24 +6,27 @@ import { FundoEstadio } from '@/components/fundo-estadio';
 import { Colors, Spacing } from '@/constants/theme';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
+import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { ThemedText } from '@/ui/themed-text';
 
 /**
  * Boas-vindas: a primeira coisa que se vê. Criar conta ou entrar leva aos passos do perfil (foto, clube, de onde
- * partes, como vais); espreitar sem conta vai direto ao clube e aos avisos.
+ * partes, como vais). Não há forma de usar a app sem conta.
  */
 export default function BoasVindasScreen() {
   const router = useRouter();
   const sessao = useSession();
+  const { onboardingConcluido } = useAppState();
   const contasDisponiveis = supabase !== null;
 
   // Back from signing in or creating an account (the modal closed): carry on with the profile steps. Only while this
-  // screen is in front, so nothing moves underneath the modal.
+  // screen is in front, so nothing moves underneath the modal. Someone who already did the introduction (they signed
+  // out and are back) goes straight to the tabs: the root navigation takes care of that.
   useFocusEffect(
     useCallback(() => {
-      if (sessao.status === 'signed-in') router.replace('/onboarding/foto');
-    }, [sessao.status, router])
+      if (sessao.status === 'signed-in' && !onboardingConcluido) router.replace('/onboarding/foto');
+    }, [sessao.status, onboardingConcluido, router])
   );
 
   return (
@@ -59,15 +62,16 @@ export default function BoasVindasScreen() {
             </View>
           </View>
         ) : null}
-        <Pressable
-          onPress={() => router.push('/onboarding/clube')}
-          accessibilityRole="button"
-          hitSlop={8}
-          style={({ pressed }) => [styles.explorar, pressed && styles.premido]}>
-          <ThemedText style={styles.explorarTexto}>
-            {contasDisponiveis ? 'Espreitar sem conta' : 'Começar'}
-          </ThemedText>
-        </Pressable>
+        {/* The app is used with an account. Only a build without Supabase (development) starts without one. */}
+        {contasDisponiveis ? null : (
+          <Pressable
+            onPress={() => router.push('/onboarding/clube')}
+            accessibilityRole="button"
+            hitSlop={8}
+            style={({ pressed }) => [styles.explorar, pressed && styles.premido]}>
+            <ThemedText style={styles.explorarTexto}>Começar</ThemedText>
+          </Pressable>
+        )}
         <View style={styles.legal}>
           <ThemedText
             style={styles.legalTexto}
