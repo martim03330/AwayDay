@@ -715,12 +715,13 @@ export default function OferecerBoleiaScreen() {
               {saidaManual !== null ? (
                 <LinkTexto label="Usar a sugerida" onPress={() => setSaidaManual(null)} />
               ) : null}
-              <LinkTexto
-                neutro
-                label={verPorque ? 'Esconder' : 'Porquê?'}
-                onPress={() => setVerPorque((atual) => !atual)}
-              />
             </View>
+            <Expansor
+              icon={icons.horario}
+              titulo="Porquê esta hora?"
+              aberto={verPorque}
+              onPress={() => setVerPorque((atual) => !atual)}
+            />
             {verPorque ? (
               <ThemedText type="small" themeColor="textMuted">
                 {cotacao
