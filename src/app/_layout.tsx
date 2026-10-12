@@ -122,7 +122,7 @@ function NavegacaoRaiz() {
 
 /**
  * Hides the splash screen once the app can draw real screens: fonts settled (a failed font falls back to the system
- * font) and the catalogue restored, which may wait a few seconds for fresh data.
+ * font) and the catalogues restored: the saved copies right away, or, on a first open, fresh data after a short wait.
  */
 function EsconderSplash() {
   useEffect(() => {

@@ -45,12 +45,18 @@ Deno.serve(async (request) => {
   }
   if (!body) return json(400, { error: 'bad_request' });
 
-  const allowed = await admin.rpc('take_rate_limit', {
-    p_profile_id: caller.user.id,
-    p_bucket: RATE_LIMIT.bucket,
-    p_limit: RATE_LIMIT.limit,
-    p_window: RATE_LIMIT.window,
-  });
+  // The limit and the place do not depend on each other: both at once (the place is only read for a check-in).
+  const [allowed, place] = await Promise.all([
+    admin.rpc('take_rate_limit', {
+      p_profile_id: caller.user.id,
+      p_bucket: RATE_LIMIT.bucket,
+      p_limit: RATE_LIMIT.limit,
+      p_window: RATE_LIMIT.window,
+    }),
+    body.action === 'check-out'
+      ? Promise.resolve(null)
+      : admin.from('place').select('id, latitude, longitude, confirmation').eq('id', body.placeId).maybeSingle(),
+  ]);
   if (allowed.error) return json(500, { error: 'rate_limit_failed' });
   if (allowed.data !== true) return json(429, { error: 'rate_limited' });
 
@@ -63,12 +69,7 @@ Deno.serve(async (request) => {
     return json(200, { status: 'checked-out', ended: ended.data === true });
   }
 
-  const place = await admin
-    .from('place')
-    .select('id, latitude, longitude, confirmation')
-    .eq('id', body.placeId)
-    .maybeSingle();
-  if (place.error) return json(500, { error: 'place_failed' });
+  if (!place || place.error) return json(500, { error: 'place_failed' });
   const row = asRecord(place.data);
   if (
     !row ||

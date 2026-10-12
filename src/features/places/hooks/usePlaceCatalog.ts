@@ -3,26 +3,30 @@ import { useEffect } from 'react';
 
 import { fetchPlaceCatalogRows } from '@/features/places/api';
 import { applyPlaceCatalogRows, hasAppliedRealPlaces } from '@/features/places/store';
-import { freshOrSaved } from '@/lib/query-client';
+import type { PlaceCatalogRows } from '@/features/places/types';
+import { savedOrFresh, separatelySavedQuery } from '@/lib/query-client';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 export const placeCatalogQuery = queryOptions({
   queryKey: ['places', 'catalog'],
-  queryFn: fetchPlaceCatalogRows,
+  queryFn: () => fetchPlaceCatalogRows(),
   staleTime: FIVE_MINUTES_MS,
+  // Too big for the shared cache blob: saved in its own entry (below).
+  meta: { persist: false },
 });
 
+const savedPlaceCatalog = separatelySavedQuery<PlaceCatalogRows>(placeCatalogQuery.queryKey, 'awayday-place-catalog');
+
 /**
- * Applies the places at launch, before screens render: the saved copy if recent, otherwise fresh data (waiting a
- * few seconds at most). Call once the query cache is restored.
+ * Applies the places at launch, before screens render. A saved copy is applied right away (the sync hook then
+ * revalidates it in the background); with no copy at all, it waits briefly for the server, and otherwise the app opens
+ * with its bundled data. Call once the query cache is restored.
  */
 export async function restorePlaceCatalog(queryClient: QueryClient) {
-  const rows = await freshOrSaved(
-    queryClient,
-    placeCatalogQuery.queryKey,
-    () => queryClient.fetchQuery(placeCatalogQuery),
-    FIVE_MINUTES_MS
+  await savedPlaceCatalog.restore(queryClient);
+  const rows = await savedOrFresh(queryClient, placeCatalogQuery.queryKey, () =>
+    queryClient.fetchQuery(placeCatalogQuery)
   );
   if (rows) applyPlaceCatalogRows(rows);
 }

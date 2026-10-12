@@ -321,11 +321,28 @@ Deno.serve(async (request) => {
     return json(400, { error: 'bad_request' });
   }
 
-  const fixture = await admin
-    .from('fixture')
-    .select('id, kickoff_at, venue:venue_id (latitude, longitude)')
-    .eq('id', fixtureId)
-    .maybeSingle();
+  // The four checks do not depend on each other: all at once (one round trip instead of four).
+  const [fixture, existing, seat, rates] = await Promise.all([
+    admin.from('fixture').select('id, kickoff_at, venue_id, venue:venue_id (latitude, longitude)').eq('id', fixtureId).maybeSingle(),
+    // One open ride per driver per game (also enforced by a unique index).
+    admin
+      .from('ride')
+      .select('id')
+      .eq('fixture_id', fixtureId)
+      .eq('driver_id', caller.user.id)
+      .eq('status', 'open')
+      .limit(1),
+    // One car per game: someone with a seat (or a pending request) in another ride of this game goes in that one.
+    admin
+      .from('ride_passenger')
+      .select('ride_id, ride!inner(fixture_id, status)')
+      .eq('profile_id', caller.user.id)
+      .in('status', ['requested', 'accepted'])
+      .eq('ride.fixture_id', fixtureId)
+      .eq('ride.status', 'open')
+      .limit(1),
+    tollRates(admin),
+  ]);
   const venue = asRecord(fixture.data?.venue);
   const stadium = toPoint({ latitude: venue?.latitude, longitude: venue?.longitude });
   if (fixture.error || !fixture.data || !stadium) return json(404, { error: 'fixture_not_found' });
@@ -333,31 +350,13 @@ Deno.serve(async (request) => {
   if (!(kickoff > Date.now())) return json(422, { error: 'fixture_started' });
   if (straightLineM(origin, stadium) > MAX_STRAIGHT_LINE_M) return json(422, { error: 'too_far' });
 
-  // One open ride per driver per game (also enforced by a unique index).
-  const existing = await admin
-    .from('ride')
-    .select('id')
-    .eq('fixture_id', fixtureId)
-    .eq('driver_id', caller.user.id)
-    .eq('status', 'open')
-    .limit(1);
   if (existing.error) return json(500, { error: 'lookup_failed' });
   if (existing.data.length > 0) {
     return json(409, { error: 'already_offering', id: existing.data[0].id });
   }
-  // One car per game: someone with a seat (or a pending request) in another ride of this game goes in that one.
-  const seat = await admin
-    .from('ride_passenger')
-    .select('ride_id, ride!inner(fixture_id, status)')
-    .eq('profile_id', caller.user.id)
-    .in('status', ['requested', 'accepted'])
-    .eq('ride.fixture_id', fixtureId)
-    .eq('ride.status', 'open')
-    .limit(1);
   if (seat.error) return json(500, { error: 'lookup_failed' });
   if (seat.data.length > 0) return json(409, { error: 'already_going' });
 
-  const rates = await tollRates(admin);
   if (!rates) return json(500, { error: 'toll_rates_failed' });
 
   /** The cost of a route, or `null` when it cannot be worked out (say, a toll road with no rate, not even "default"). */
@@ -456,31 +455,18 @@ Deno.serve(async (request) => {
     return json(422, { error: 'bad_departure' });
   }
 
-  // Suspended for no-shows or late cancellations.
-  const ban = await admin.rpc('ride_ban_until', { p_profile_id: caller.user.id });
+  // Suspended for no-shows or late cancellations; and the car park, when chosen, must be one we know near this
+  // game's stadium. Both at once.
+  const [ban, spot] = await Promise.all([
+    admin.rpc('ride_ban_until', { p_profile_id: caller.user.id }),
+    parkingSpotId
+      ? admin.from('parking_spot').select('id, venue_id').eq('id', parkingSpotId).maybeSingle()
+      : Promise.resolve(null),
+  ]);
   if (ban.error) return json(500, { error: 'ban_check_failed' });
   if (ban.data) return json(403, { error: 'suspended', until: ban.data });
-
-  // The car park, when chosen, must be one we know near this game's stadium.
-  if (parkingSpotId) {
-    const spot = await admin
-      .from('parking_spot')
-      .select('id, venue_id')
-      .eq('id', parkingSpotId)
-      .maybeSingle();
-    const venueId = await admin
-      .from('fixture')
-      .select('venue_id')
-      .eq('id', fixtureId)
-      .maybeSingle();
-    if (
-      spot.error ||
-      venueId.error ||
-      !spot.data ||
-      spot.data.venue_id !== venueId.data?.venue_id
-    ) {
-      return json(400, { error: 'bad_parking' });
-    }
+  if (spot && (spot.error || !spot.data || spot.data.venue_id !== fixture.data.venue_id)) {
+    return json(400, { error: 'bad_parking' });
   }
 
   const limited = await takeLimit(admin, caller.user.id, CREATE_LIMIT);
@@ -488,14 +474,13 @@ Deno.serve(async (request) => {
   if (limited === 'limited') return json(429, { error: 'rate_limited' });
 
   const useTolls = OPTIONS.find((candidate) => candidate.option === option)?.useTolls ?? 1;
-  const found = await route(admin, origin, stadium, useTolls);
+  // Para onde a boleia volta: o concelho de onde saiu. É o que deixa a app mostrar «quem volta para Viseu» no fim
+  // do jogo. Se não se souber, a boleia entra na mesma sem destino — é só uma etiqueta. Pedido ao mesmo tempo que
+  // o caminho.
+  const [found, originCity] = await Promise.all([route(admin, origin, stadium, useTolls), reverseCity(admin, origin)]);
   if (!found) return json(404, { error: 'no_route' });
   const cost = costOf(found);
   if (!cost) return json(500, { error: 'cost_failed' });
-
-  // Para onde a boleia volta: o concelho de onde saiu. É o que deixa a app mostrar «quem volta para Viseu» no fim
-  // do jogo. Se não se souber, a boleia entra na mesma sem destino — é só uma etiqueta.
-  const originCity = await reverseCity(admin, origin);
 
   const inserted = await admin
     .from('ride')

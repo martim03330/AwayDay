@@ -1,4 +1,4 @@
-import { skipToken, useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Alert, Pressable, Share, StyleSheet, Switch, View } from 'react-native';
@@ -32,6 +32,8 @@ import {
   type RideSummary,
 } from '@/features/rides/api';
 import {
+  rideBoardKey,
+  ridePeopleKey,
   useRefreshRides,
   useRideBoard,
   useRidePeople,
@@ -251,6 +253,7 @@ export default function BoleiaScreen() {
   });
   const { garantirVou } = usePlanosJogos();
   const atualizar = useRefreshRides();
+  const queryClient = useQueryClient();
   const [aTratar, setATratar] = useState(false);
   const [compromisso, setCompromisso] = useState(false);
   const [formImprevisto, setFormImprevisto] = useState(false);
@@ -270,6 +273,36 @@ export default function BoleiaScreen() {
       return false;
     } finally {
       setATratar(false);
+    }
+  }
+
+  /**
+   * Asking for a seat is optimistic: the ride shows the request right away and goes back if the server refuses. Asking
+   * for a seat is going to the game, so the ticket opens at the same time. Only this game's board and this car's people
+   * are refreshed, without waiting for them.
+   */
+  async function pedirLugar(idDaBoleia: string, idDoJogo: string) {
+    setATratar(true);
+    const chave = rideBoardKey(jogoId ?? null);
+    await queryClient.cancelQueries({ queryKey: chave });
+    const antes = queryClient.getQueryData<RideSummary[]>(chave);
+    queryClient.setQueryData<RideSummary[]>(chave, (lista) =>
+      lista?.map((candidata) =>
+        candidata.id === idDaBoleia ? { ...candidata, myStatus: 'requested' } : candidata
+      )
+    );
+    try {
+      // One after the other: a refused request must not leave the game marked «Vou». The screen already shows the
+      // request, so the wait is not seen.
+      await requestSeat(idDaBoleia);
+      await garantirVou(idDoJogo).catch(() => undefined);
+    } catch (erro) {
+      queryClient.setQueryData(chave, antes);
+      Alert.alert('Não foi possível', mensagemRecusa(erro));
+    } finally {
+      setATratar(false);
+      void queryClient.invalidateQueries({ queryKey: chave });
+      void queryClient.invalidateQueries({ queryKey: ridePeopleKey(idDaBoleia) });
     }
   }
 
@@ -1011,11 +1044,7 @@ export default function BoleiaScreen() {
           setCompromisso(false);
           // The passenger must hear the driver's answer the moment it comes.
           void ativarNotificacoesDeBoleias().catch(() => undefined);
-          void executar(async () => {
-            await requestSeat(boleia.id);
-            // Pedir lugar é ir ao jogo: o bilhete abre-se sozinho.
-            await garantirVou(jogo.id).catch(() => undefined);
-          });
+          void pedirLugar(boleia.id, jogo.id);
         }}
       />
       <ImprevistoBoleia

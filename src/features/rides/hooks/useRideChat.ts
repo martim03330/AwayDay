@@ -11,6 +11,7 @@ import {
   type RideMessage,
 } from '@/features/rides/chat';
 import { comAMinhaReacao, idLocal, lembrarChave, type Emoji } from '@/lib/conversa';
+import { intervaloDaConversa, marcarCanal } from '@/lib/canais-ao-vivo';
 import { supabase } from '@/lib/supabase';
 
 const CHAT_KEY = 'ride-chat';
@@ -24,7 +25,8 @@ export function useRideMessages(rideId: string | null, enabled: boolean) {
     queryKey: rideMessagesKey(rideId),
     queryFn: rideId && enabled ? () => fetchRideMessages(rideId) : skipToken,
     staleTime: 5 * 1000,
-    refetchInterval: 15 * 1000,
+    // Every 15 s only while the car's channel is down; with it connected, changes already come through it.
+    refetchInterval: () => intervaloDaConversa(`ride:${rideId}`, 15 * 1000),
     meta: { persist: false },
   });
 }
@@ -78,13 +80,18 @@ export function useRideChannel(rideId: string | null, enabled: boolean) {
           void queryClient.invalidateQueries({ queryKey: rideMessagesKey(rideId) });
           void queryClient.invalidateQueries({ queryKey: myRideChatsKey() });
         })
-        .subscribe();
+        .subscribe((estado) => {
+          marcarCanal(`ride:${rideId}`, estado === 'SUBSCRIBED');
+          // Connected (again): catch up with what came while it was not.
+          if (estado === 'SUBSCRIBED') void queryClient.invalidateQueries({ queryKey: rideMessagesKey(rideId) });
+        });
     }
 
     entrar().catch(() => undefined);
 
     return () => {
       ativo = false;
+      marcarCanal(`ride:${rideId}`, false);
       if (canal) void cliente.removeChannel(canal);
     };
   }, [rideId, enabled, queryClient]);

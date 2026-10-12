@@ -1,10 +1,15 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { acceptFriendRequest, sendFriendRequest } from '@/features/friends/api';
-import { useFriendshipStates, useRefreshFriends } from '@/features/friends/hooks/useFriends';
+import { acceptFriendRequest, sendFriendRequest, type EstadoAmizade } from '@/features/friends/api';
+import {
+  friendStatesKey,
+  useFriendshipStates,
+  useRefreshFriends,
+} from '@/features/friends/hooks/useFriends';
 import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { usePublicProfile } from '@/features/profile/hooks/useMyProfile';
 import { plural } from '@/lib/formatos';
@@ -39,6 +44,7 @@ export default function PerfilPublicoScreen() {
   const userId = useUserId();
   const estados = useFriendshipStates(pessoaId ? [pessoaId] : [], userId !== null);
   const refrescarAmigos = useRefreshFriends();
+  const queryClient = useQueryClient();
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const amizade = pessoaId ? estados.data?.[pessoaId] : undefined;
@@ -49,11 +55,26 @@ export default function PerfilPublicoScreen() {
     if (!pessoaId) return;
     setErro(null);
     setATratar(true);
+    // Optimistic: every cached friendship state for this person changes now, and goes back if the server refuses.
+    const filtro = { queryKey: friendStatesKey([]).slice(0, 2) };
+    await queryClient.cancelQueries(filtro);
+    const anteriores = queryClient.getQueriesData<Record<string, EstadoAmizade>>(filtro);
+    const mudarEstado = (estado: EstadoAmizade) =>
+      queryClient.setQueriesData<Record<string, EstadoAmizade>>(filtro, (estados) =>
+        estados && pessoaId in estados ? { ...estados, [pessoaId]: estado } : estados
+      );
     try {
-      if (amizade === 'pedido_recebido') await acceptFriendRequest(pessoaId);
-      else await sendFriendRequest(pessoaId);
-      await refrescarAmigos();
+      if (amizade === 'pedido_recebido') {
+        mudarEstado('amigos');
+        await acceptFriendRequest(pessoaId);
+      } else {
+        mudarEstado('pedido_enviado');
+        // If that person had already asked, you are friends right away.
+        if ((await sendFriendRequest(pessoaId)) === 'amigos') mudarEstado('amigos');
+      }
+      void refrescarAmigos();
     } catch {
+      for (const [chave, dados] of anteriores) queryClient.setQueryData(chave, dados);
       setErro('Não deu para enviar o pedido. Tenta outra vez.');
     } finally {
       setATratar(false);

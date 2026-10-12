@@ -5054,6 +5054,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      push_tokens_for: {
+        Args: { p_from: string; p_kind: string; p_recipients: string[] }
+        Returns: string[]
+      }
       ranking_activity: {
         Args: { p_profile_id?: string }
         Returns: {

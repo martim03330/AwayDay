@@ -1,3 +1,4 @@
+import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -9,6 +10,7 @@ import {
   type FixturePlan,
   type PlanAnswer,
 } from '@/features/groups/plans';
+import { plansKey } from '@/features/groups/hooks/useGroups';
 import { conviteDoCartao, origemDoPlano } from '@/features/groups/partilha';
 import { useRealNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -112,6 +114,7 @@ export function CartaoDoPlano({
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const [aResponder, setAResponder] = useState<PlanAnswer | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // From kick-off the plan is a record: no answer buttons (the server refuses them too).
   const agora = useRealNow(60 * 1000);
@@ -120,14 +123,44 @@ export function CartaoDoPlano({
   const convite = conviteDoCartao(quemConvidou, plano, grupoAtualId);
   const origem = origemDoPlano(plano, grupoAtualId);
 
+  /**
+   * Optimistic: the answer and the counts change now in every cached list of plans (the chat cards and the group's
+   * plans). Returns what was there before, to put back if the server refuses.
+   */
+  async function mostrarResposta(nova: PlanAnswer | null) {
+    const filtro = {
+      queryKey: plansKey(),
+      predicate: (query: { queryKey: QueryKey }) =>
+        query.queryKey[2] === 'by-id' || query.queryKey[2] === 'group',
+    };
+    await queryClient.cancelQueries(filtro);
+    const anteriores = queryClient.getQueriesData<FixturePlan[]>(filtro);
+    queryClient.setQueriesData<FixturePlan[]>(filtro, (lista) =>
+      lista?.map((p) =>
+        p.id === plano.id
+          ? {
+              ...p,
+              myAnswer: nova,
+              going: Math.max(0, p.going + (nova === 'vou' ? 1 : 0) - (p.myAnswer === 'vou' ? 1 : 0)),
+              maybe: Math.max(0, p.maybe + (nova === 'talvez' ? 1 : 0) - (p.myAnswer === 'talvez' ? 1 : 0)),
+            }
+          : p
+      )
+    );
+    return anteriores;
+  }
+
   async function responder(resposta: PlanAnswer) {
     setErro(null);
     setAResponder(resposta);
+    // Tocar outra vez na mesma resposta tira-a.
+    const nova = plano.myAnswer === resposta ? null : resposta;
+    const anteriores = await mostrarResposta(nova);
     try {
-      // Tocar outra vez na mesma resposta tira-a.
-      await answerPlan(plano.id, plano.myAnswer === resposta ? null : resposta);
+      await answerPlan(plano.id, nova);
       onRespondido?.();
     } catch (problema) {
+      for (const [chave, dados] of anteriores) queryClient.setQueryData(chave, dados);
       setErro(
         problema instanceof PlanRefused && problema.reason === 'plan_closed'
           ? 'O plano já fechou.'

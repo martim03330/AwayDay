@@ -72,44 +72,6 @@ async function gameOf(admin: SupabaseClient, fixtureId: string | null) {
   return casa && fora ? `${casa} x ${fora}` : 'o jogo';
 }
 
-/** Os telemóveis de quem quer receber este tipo de aviso. Quem o desligou fica de fora. */
-async function tokensOf(
-  admin: SupabaseClient,
-  profileIds: readonly string[],
-  preferencia: Preferencia | null
-) {
-  const pessoas = [...new Set(profileIds)].filter(Boolean);
-  if (pessoas.length === 0) return [];
-
-  const desligou = preferencia
-    ? await admin
-        .from('notification_preference')
-        .select('profile_id')
-        .eq('kind', preferencia)
-        .eq('enabled', false)
-        .in('profile_id', pessoas)
-    : { data: [] };
-  const fora = new Set((desligou.data ?? []).map((row) => String(row.profile_id)));
-
-  const querem = pessoas.filter((pessoa) => !fora.has(pessoa));
-  if (querem.length === 0) return [];
-
-  const { data } = await admin.from('device_token').select('token').in('profile_id', querem);
-  return (data ?? []).map((row) => String(row.token));
-}
-
-/** Leaves out whoever blocked the person who caused the notification. */
-async function withoutBlockers(admin: SupabaseClient, recipients: string[], from?: string) {
-  if (!from) return recipients;
-  const { data } = await admin
-    .from('user_block')
-    .select('blocker_id')
-    .eq('blocked_id', from)
-    .in('blocker_id', recipients);
-  const bloquearam = new Set((data ?? []).map((row) => String(row.blocker_id)));
-  return recipients.filter((pessoa) => !bloquearam.has(pessoa));
-}
-
 /** Quem vai no carro: o condutor e quem foi aceite. */
 async function ridePeople(admin: SupabaseClient, rideId: string) {
   const [boleia, passageiros] = await Promise.all([
@@ -268,8 +230,7 @@ async function construir(
     const mensagem = texto(body.body);
     if (!rideId || !autor || !mensagem) return null;
 
-    const carro = await ridePeople(admin, rideId);
-    const nome = await nameOf(admin, autor);
+    const [carro, nome] = await Promise.all([ridePeople(admin, rideId), nameOf(admin, autor)]);
     const normal: Aviso = {
       recipients: carro.people.filter((pessoa) => pessoa !== autor),
       from: autor,
@@ -287,11 +248,11 @@ async function construir(
     const mensagem = texto(body.body);
     if (!groupId || !autor || !mensagem) return null;
 
-    const [grupo, membros] = await Promise.all([
+    const [grupo, membros, nome] = await Promise.all([
       admin.from('fan_group').select('name').eq('id', groupId).maybeSingle(),
       admin.from('fan_group_member').select('profile_id').eq('group_id', groupId),
+      nameOf(admin, autor),
     ]);
-    const nome = await nameOf(admin, autor);
     const nomeDoGrupo = texto(grupo.data?.name) ?? 'Grupo';
     const local = body.message_kind === 'local';
     const plano = body.message_kind === 'plano';
@@ -487,15 +448,19 @@ Deno.serve(async (request) => {
   );
   if (avisos.length === 0) return json(200, { sent: 0 });
 
-  const messages: PushMessage[] = [];
-  for (const aviso of avisos) {
-    const recipients = await withoutBlockers(admin, aviso.recipients, aviso.from);
-    if (recipients.length === 0) continue;
-    const tokens = await tokensOf(admin, recipients, aviso.preferencia);
-    messages.push(
-      ...tokens.map((token) => ({ to: token, title: aviso.title, body: aviso.body, data: aviso.data }))
-    );
-  }
+  // One query per notice (blocks, preferences and phones together), and the notices of one event at once.
+  const porAviso = await Promise.all(
+    avisos.map(async (aviso) => {
+      const { data } = await admin.rpc('push_tokens_for', {
+        p_recipients: [...new Set(aviso.recipients)],
+        p_from: aviso.from ?? null,
+        p_kind: aviso.preferencia,
+      });
+      const tokens = Array.isArray(data) ? data.filter((token): token is string => typeof token === 'string') : [];
+      return tokens.map((token) => ({ to: token, title: aviso.title, body: aviso.body, data: aviso.data }));
+    })
+  );
+  const messages: PushMessage[] = porAviso.flat();
   if (messages.length === 0) return json(200, { sent: 0 });
 
   const outcome = await sendExpoPush(messages);

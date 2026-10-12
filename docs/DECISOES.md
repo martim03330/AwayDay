@@ -2,6 +2,28 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Terminar sessão, limites, vizinho barulhento e desempenho
+
+- **Terminar sessão:** as preferências que vêm da conta (clubes, escolhas de avisos, contas já perguntadas) são
+  esquecidas ao sair, senão o clube de uma conta era gravado na seguinte. Ao sair apagam-se também as notificações
+  entregues e o número no ícone, as fotos em cache, os canais em tempo real e o convite pendente. O telemóvel deixa de
+  receber avisos da conta mesmo saindo sem rede (`forget_device_token`, que não precisa de sessão; se falhar,
+  repete-se no arranque seguinte). Há «Terminar sessão em todos os dispositivos», e mudar a password termina as outras
+  sessões.
+- **Limites:** grupos até 100 pessoas (trigger em `fan_group_member`, cobre todas as entradas); chat de grupo 2 000
+  por dia e 30 por minuto; edições 60 por hora; convites 30 por dia e 3 por dia da mesma pessoa à mesma pessoa;
+  uploads 150 por dia por pessoa (nas políticas do Storage); «mencionou-te» no máximo 5 por hora da mesma pessoa à
+  mesma pessoa; tabelas de limites limpas todas as noites. Emails do Supabase: subir para 100 por hora (Brevo, 300 por
+  dia).
+- **Ranking:** os totais de toda a gente ficam em `ranking_cache`, atualizada de 5 em 5 minutos; a linha de quem
+  abre é sempre ao vivo.
+- **Desempenho:** saiu o carregamento falso das fichas do jogo e do tasco; «Vou», resposta a planos, pedidos de
+  amizade e de boleia mudam logo no ecrã (e voltam atrás se o servidor recusar); o catálogo de jogos é paginado (todos
+  os jogos, para o histórico) e uma falha na meteorologia ou nos pontos de encontro já não deita fora o resto; os
+  catálogos têm entradas próprias no telemóvel e a app abre logo com a cópia guardada; os chats com o canal em tempo
+  real ligado só recarregam de 5 em 5 minutos; edge functions com pedidos em paralelo (boleias, check-in,
+  notificações, que passaram de 3 consultas por aviso para 1).
+
 ## 2026-10-13 — Segurança, segunda volta (pontos baixos da revisão)
 
 - **Dependências:** atualizações de correção do SDK 57 e `supabase-js` 2.117.3 na app. As edge functions ficam no

@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 
 import { CartaoDoPlano } from '@/features/groups/components/CartaoDoPlano';
 import type { FixturePlan } from '@/features/groups/plans';
@@ -23,15 +25,20 @@ const PLANO: FixturePlan = {
   stay: null,
 };
 
+// The card answers optimistically through the query cache.
+function comCache(elemento: ReactNode) {
+  return <QueryClientProvider client={new QueryClient()}>{elemento}</QueryClientProvider>;
+}
+
 describe('CartaoDoPlano, for a plan sent to another group', () => {
   it('in the group that received it, says which group it comes from', () => {
-    render(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="primos" onAbrir={() => undefined} />);
+    render(comCache(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="primos" onAbrir={() => undefined} />));
     expect(screen.getByText('Ana · Malta do café convida')).toBeTruthy();
     expect(screen.getByText('Convite da malta do «Malta do café»')).toBeTruthy();
   });
 
   it('in its own group, stays as it was', () => {
-    render(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="malta" onAbrir={() => undefined} />);
+    render(comCache(<CartaoDoPlano plano={PLANO} quemConvidou="Ana" grupoAtualId="malta" onAbrir={() => undefined} />));
     expect(screen.getByText('Ana convida')).toBeTruthy();
     expect(screen.queryByText(/Convite da malta/)).toBeNull();
   });

@@ -153,9 +153,25 @@ export function PlanosJogosProvider({ children }: { children: ReactNode }) {
     const ir = !(jogoId in planos);
     if (fonte === 'conta') {
       if (!userId) return !ir;
+      // Optimistic: the ticket flips now; on error it flips back.
+      const chave = myPlansKey(userId);
+      await queryClient.cancelQueries({ queryKey: chave });
+      const antes = queryClient.getQueryData<Record<string, string | null>>(chave);
+      queryClient.setQueryData<Record<string, string | null>>(chave, (atuais) => {
+        const proximos = { ...atuais };
+        if (ir) proximos[jogoId] = proximos[jogoId] ?? null;
+        else delete proximos[jogoId];
+        return proximos;
+      });
       try {
         await setGoing(userId, jogoId, ir);
       } catch {
+        queryClient.setQueryData<Record<string, string | null>>(chave, (atuais) => {
+          const repostos = { ...atuais };
+          if (ir) delete repostos[jogoId];
+          else repostos[jogoId] = antes?.[jogoId] ?? null;
+          return repostos;
+        });
         Alert.alert('Não deu para guardar', 'Tenta outra vez daqui a nada.');
         return !ir;
       } finally {

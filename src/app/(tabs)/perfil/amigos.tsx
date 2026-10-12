@@ -1,3 +1,4 @@
+import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View, Pressable } from 'react-native';
@@ -8,9 +9,14 @@ import {
   acceptFriendRequest,
   FriendRefused,
   removeFriend,
+  type EstadoAmizade,
   type Friend,
+  type FriendRequest,
 } from '@/features/friends/api';
 import {
+  friendRequestsKey,
+  friendsKey,
+  friendStatesKey,
   useMyFriendRequests,
   useMyFriends,
   useRefreshFriends,
@@ -65,6 +71,7 @@ export default function AmigosScreen() {
   const amigos = useMyFriends(userId !== null);
   const pedidos = useMyFriendRequests(userId !== null);
   const moderacao = useModeracao();
+  const queryClient = useQueryClient();
 
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -92,6 +99,45 @@ export default function AmigosScreen() {
       setErro(mensagemDeRecusa(problema));
     } finally {
       setATratar(false);
+    }
+  }
+
+  /**
+   * Accepting is optimistic: the request leaves the list, the person joins the friends and every cached friendship
+   * state says "amigos" right away; all of it goes back if the server refuses.
+   */
+  async function aceitar(pedido: FriendRequest) {
+    const filtros: { queryKey: QueryKey }[] = [
+      { queryKey: friendStatesKey([]).slice(0, 2) },
+      { queryKey: friendRequestsKey() },
+      { queryKey: friendsKey() },
+    ];
+    await Promise.all(filtros.map((filtro) => queryClient.cancelQueries(filtro)));
+    const anteriores = filtros.flatMap((filtro) => queryClient.getQueriesData(filtro));
+    queryClient.setQueriesData<Record<string, EstadoAmizade>>(filtros[0], (estados) =>
+      estados && pedido.profileId in estados ? { ...estados, [pedido.profileId]: 'amigos' } : estados
+    );
+    queryClient.setQueryData<FriendRequest[]>(friendRequestsKey(), (atuais) =>
+      atuais?.filter((outro) => outro.profileId !== pedido.profileId)
+    );
+    queryClient.setQueryData<Friend[]>(friendsKey(), (atuais) =>
+      atuais && !atuais.some((amigo) => amigo.profileId === pedido.profileId)
+        ? [
+            ...atuais,
+            {
+              profileId: pedido.profileId,
+              displayName: pedido.displayName,
+              friendsSince: new Date().toISOString(),
+              tripsTogether: pedido.tripsTogether,
+            },
+          ]
+        : atuais
+    );
+    try {
+      await acceptFriendRequest(pedido.profileId);
+    } catch (problema) {
+      for (const [chave, dados] of anteriores) queryClient.setQueryData(chave, dados);
+      throw problema;
     }
   }
 
@@ -146,7 +192,7 @@ export default function AmigosScreen() {
                 label="Aceitar"
                 icon={icons.selecionado}
                 disabled={aTratar}
-                onPress={() => void tratar(() => acceptFriendRequest(pedido.profileId))}
+                onPress={() => void tratar(() => aceitar(pedido))}
               />
               <LinkTexto
                 neutro

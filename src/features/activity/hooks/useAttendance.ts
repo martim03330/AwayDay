@@ -1,6 +1,7 @@
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchAttendance, fetchMyAttendance, setGoing } from '@/features/activity/api';
+import type { AttendanceStatus } from '@/features/activity/types';
 
 const ATTENDANCE_KEY = 'attendance';
 
@@ -29,7 +30,20 @@ export function useSetGoing(userId: string | null, fixtureId: string) {
       if (!userId) throw new Error('Not signed in.');
       return setGoing(userId, fixtureId, going);
     },
+    // Optimistic: this fixture's status changes now and goes back if the server refuses.
+    onMutate: async (going) => {
+      const key = [ATTENDANCE_KEY, userId, fixtureId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<AttendanceStatus | null>(key);
+      queryClient.setQueryData<AttendanceStatus | null>(key, (current) =>
+        going ? (current ?? 'going') : current === 'going' ? null : current
+      );
+      return { key, previous };
+    },
+    onError: (_error, _going, context) => {
+      if (context) queryClient.setQueryData(context.key, context.previous ?? null);
+    },
     // The prefix covers this fixture and the full list.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [ATTENDANCE_KEY, userId] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: [ATTENDANCE_KEY, userId] }),
   });
 }

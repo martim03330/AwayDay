@@ -23,6 +23,7 @@ import {
 } from '@/features/groups/plans';
 import { fetchGroupHistory } from '@/features/groups/history';
 import { comAMinhaReacao, idLocal, lembrarChave, type Emoji } from '@/lib/conversa';
+import { intervaloDaConversa, marcarCanal } from '@/lib/canais-ao-vivo';
 import { supabase } from '@/lib/supabase';
 
 // Os ecrãs antigos dos grupos já invalidavam ['groups']: as chaves daqui continuam debaixo desse prefixo.
@@ -63,7 +64,8 @@ export function useGroupMessages(groupId: string | null) {
     queryKey: groupMessagesKey(groupId),
     queryFn: groupId ? () => fetchGroupMessages(groupId) : skipToken,
     staleTime: 5 * 1000,
-    refetchInterval: 30 * 1000,
+    // Every 30 s only while the group's channel is down; with it connected, changes already come through it.
+    refetchInterval: () => intervaloDaConversa(`group:${groupId}`, 30 * 1000),
     meta: { persist: false },
   });
 }
@@ -222,7 +224,11 @@ export function useGroupChannel(groupId: string | null, userId: string | null) {
           void queryClient.invalidateQueries({ queryKey: plansKey() });
         })
         .subscribe((estado) => {
-          if (estado === 'SUBSCRIBED') void novo.track({ at: new Date().toISOString() });
+          marcarCanal(`group:${groupId}`, estado === 'SUBSCRIBED');
+          if (estado !== 'SUBSCRIBED') return;
+          void novo.track({ at: new Date().toISOString() });
+          // Connected (again): catch up with what came while it was not.
+          void queryClient.invalidateQueries({ queryKey: groupMessagesKey(groupId) });
         });
     }
 
@@ -232,6 +238,7 @@ export function useGroupChannel(groupId: string | null, userId: string | null) {
     return () => {
       ativo = false;
       setOnline([]);
+      marcarCanal(`group:${groupId}`, false);
       if (canal) void cliente.removeChannel(canal);
     };
   }, [groupId, userId, queryClient]);
