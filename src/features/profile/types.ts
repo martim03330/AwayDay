@@ -76,3 +76,17 @@ export type MyHome = {
   municipalityId: string | null;
   usualTransport: UsualTransport | null;
 };
+
+/** Someone's public profile, opened from a chat. Only public things: never a location. */
+export type PublicProfile = {
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  homeCity: string | null;
+  memberSince: string;
+  ridesCompleted: number;
+  ridesFaults: number;
+  supporterClubId: string | null;
+  stadiumsStamped: number;
+  isMe: boolean;
+};

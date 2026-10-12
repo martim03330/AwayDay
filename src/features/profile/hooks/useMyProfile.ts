@@ -6,6 +6,7 @@ import {
   fetchMyHome,
   fetchMyProfile,
   fetchProfileCards,
+  fetchPublicProfile,
   saveMyHome,
   saveProfileClub,
   setShareCheckinsWithGroups,
@@ -35,6 +36,15 @@ export function useProfileCards(profileIds: string[]) {
   return useQuery({
     queryKey: [PROFILE_KEY, 'cards', chave],
     queryFn: profileIds.length > 0 ? () => fetchProfileCards(profileIds) : skipToken,
+    staleTime: FIVE_MINUTES_MS,
+    meta: { persist: false },
+  });
+}
+
+export function usePublicProfile(profileId: string | null) {
+  return useQuery({
+    queryKey: [PROFILE_KEY, 'public', profileId],
+    queryFn: profileId ? () => fetchPublicProfile(profileId) : skipToken,
     staleTime: FIVE_MINUTES_MS,
     meta: { persist: false },
   });

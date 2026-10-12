@@ -1,6 +1,8 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { fetchMyRideChats, fetchRideMessages } from '@/features/rides/chat';
+import { supabase } from '@/lib/supabase';
 
 const CHAT_KEY = 'ride-chat';
 
@@ -32,4 +34,49 @@ export function useMyRideChats(signedIn: boolean) {
 export function useRefreshRideChat() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: [CHAT_KEY] });
+}
+
+/**
+ * The car's private channel while its chat is open: a message sent, edited, deleted or reacted to refreshes it at
+ * once. Only whoever is in the car gets in (the rule lives in the server, `can_use_ride_topic`). Without the channel
+ * the chat still works, refreshing every 15 seconds.
+ */
+export function useRideChannel(rideId: string | null, enabled: boolean) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const cliente = supabase;
+    if (!cliente || !rideId || !enabled) return;
+
+    let ativo = true;
+    let canal: ReturnType<typeof cliente.channel> | null = null;
+    const topico = `realtime:ride:${rideId}`;
+
+    async function entrar() {
+      if (!cliente || !rideId) return;
+      // A channel for the same car still closing would come back already joined, and could not take listeners.
+      for (const antigo of cliente.getChannels().filter((c) => c.topic === topico)) {
+        await cliente.removeChannel(antigo);
+      }
+      if (!ativo || cliente.getChannels().some((c) => c.topic === topico)) return;
+      await cliente.realtime.setAuth();
+      if (!ativo) return;
+
+      const novo = cliente.channel(`ride:${rideId}`, { config: { private: true } });
+      canal = novo;
+      novo
+        .on('broadcast', { event: 'messages' }, () => {
+          void queryClient.invalidateQueries({ queryKey: rideMessagesKey(rideId) });
+          void queryClient.invalidateQueries({ queryKey: myRideChatsKey() });
+        })
+        .subscribe();
+    }
+
+    entrar().catch(() => undefined);
+
+    return () => {
+      ativo = false;
+      if (canal) void cliente.removeChannel(canal);
+    };
+  }, [rideId, enabled, queryClient]);
 }

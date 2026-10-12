@@ -1,5 +1,6 @@
 import { fotoParaEnviar } from '@/lib/foto-para-enviar';
 import { supabase } from '@/lib/supabase';
+import { lerCitacao, lerReacoes, type Citacao, type Emoji, type Reacao } from '@/lib/conversa';
 
 // Grupos: a malta que anda junta de jogo para jogo. Entra-se por convite (um link com um código) e não há pedidos
 // nem aprovações — quem tem o link entra. Lá dentro, o grupo é uma conversa (separador «Malta»), com uma foto e um
@@ -420,6 +421,10 @@ export type GroupMessage = {
   /** Podes apagá-la: escreveste-a, ou criaste o grupo. */
   canRemove: boolean;
   createdAt: string;
+  editedAt: string | null;
+  /** A mensagem a que esta responde. */
+  replyTo: Citacao | null;
+  reactions: Reacao[];
 };
 
 /** As mensagens, da mais recente para a mais antiga (a conversa desenha-se de baixo para cima). */
@@ -440,16 +445,43 @@ export async function fetchGroupMessages(groupId: string): Promise<GroupMessage[
     mine: row.mine === true,
     canRemove: row.can_remove === true,
     createdAt: row.created_at ?? '',
+    editedAt: row.edited_at,
+    replyTo: lerCitacao(row.reply_to_id, row.reply_display_name, row.reply_body),
+    reactions: lerReacoes(row.reactions),
   }));
 }
 
-export async function sendGroupMessage(groupId: string, body: string): Promise<string> {
+export async function sendGroupMessage(
+  groupId: string,
+  body: string,
+  replyTo: string | null = null
+): Promise<string> {
   const { data, error } = await client().rpc('send_group_message', {
     p_group_id: groupId,
     p_body: body.trim(),
+    ...(replyTo ? { p_reply_to: replyTo } : {}),
   });
   if (error) throw refusal(error);
   return data;
+}
+
+/** Muda o texto de uma mensagem tua (até 15 minutos depois de a enviares). */
+export async function editGroupMessage(messageId: string, body: string) {
+  const { error } = await client().rpc('edit_group_message', {
+    p_message_id: messageId,
+    p_body: body.trim(),
+  });
+  if (error) throw refusal(error);
+}
+
+/** A tua reação a uma mensagem; `null` tira-a. */
+export async function reactGroupMessage(messageId: string, emoji: Emoji | null) {
+  const { error } = await client().rpc('react_group_message', {
+    p_message_id: messageId,
+    // Sem emoji, o servidor tira a reação.
+    ...(emoji ? { p_emoji: emoji } : {}),
+  });
+  if (error) throw refusal(error);
 }
 
 /** «Estou aqui»: diz ao grupo em que tasco estás. Vai só o nome do tasco, nunca a localização. */

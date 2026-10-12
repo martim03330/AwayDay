@@ -5001,11 +5001,11 @@ export type Database = {
         }[]
       }
       react_group_message: {
-        Args: { p_emoji: string; p_message_id: string }
+        Args: { p_emoji?: string; p_message_id: string }
         Returns: undefined
       }
       react_ride_message: {
-        Args: { p_emoji: string; p_message_id: string }
+        Args: { p_emoji?: string; p_message_id: string }
         Returns: undefined
       }
       record_noise_measurement: {

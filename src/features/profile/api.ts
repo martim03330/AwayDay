@@ -1,6 +1,7 @@
 import type {
   ClubRelation,
   ProfileCard,
+  PublicProfile,
   MessagePreferences,
   Municipality,
   MyHome,
@@ -270,6 +271,27 @@ export async function fetchProfileCards(profileIds: string[]): Promise<ProfileCa
     ridesFaults: row.rides_faults ?? 0,
     isMe: row.is_me === true,
   }));
+}
+
+/** O perfil público de alguém, aberto numa conversa. `null` se não o podes ver (não partilham grupo, boleia…). */
+export async function fetchPublicProfile(profileId: string): Promise<PublicProfile | null> {
+  const { data, error } = await client().rpc('public_profile', { p_profile_id: profileId });
+  if (error) throw error;
+  const row = data[0];
+  if (!row) return null;
+  const links = await linkDaFoto([row.avatar_path]);
+  return {
+    profileId: row.profile_id,
+    displayName: row.display_name ?? 'Um adepto',
+    avatarUrl: row.avatar_path ? (links[row.avatar_path] ?? null) : null,
+    homeCity: row.home_city,
+    memberSince: row.member_since ?? '',
+    ridesCompleted: row.rides_completed ?? 0,
+    ridesFaults: row.rides_faults ?? 0,
+    supporterClubId: row.supporter_club_id,
+    stadiumsStamped: row.stadiums_stamped ?? 0,
+    isMe: row.is_me === true,
+  };
 }
 
 /** Denunciar a foto de alguém. Quem administra depois tira-a. */

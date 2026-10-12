@@ -1,3 +1,4 @@
+import { lerCitacao, lerReacoes, type Citacao, type Emoji, type Reacao } from '@/lib/conversa';
 import { supabase } from '@/lib/supabase';
 
 // A conversa do carro: o condutor e quem já foi aceite. Quem só pediu lugar não entra — o pedido já leva um recado
@@ -49,6 +50,10 @@ export type RideMessage = {
   /** Podes apagá-la: escreveste-a, ou és o condutor. */
   canRemove: boolean;
   createdAt: string;
+  editedAt: string | null;
+  /** A mensagem a que esta responde. */
+  replyTo: Citacao | null;
+  reactions: Reacao[];
 };
 
 /** As mensagens, da mais antiga para a mais recente — como se lê uma conversa. */
@@ -64,17 +69,43 @@ export async function fetchRideMessages(rideId: string): Promise<RideMessage[]> 
       mine: row.mine === true,
       canRemove: row.can_remove === true,
       createdAt: row.created_at ?? '',
+      editedAt: row.edited_at,
+      replyTo: lerCitacao(row.reply_to_id, row.reply_display_name, row.reply_body),
+      reactions: lerReacoes(row.reactions),
     }))
     .reverse();
 }
 
-export async function sendRideMessage(rideId: string, body: string): Promise<string> {
+export async function sendRideMessage(
+  rideId: string,
+  body: string,
+  replyTo: string | null = null
+): Promise<string> {
   const { data, error } = await client().rpc('send_ride_message', {
     p_ride_id: rideId,
     p_body: body.trim(),
+    ...(replyTo ? { p_reply_to: replyTo } : {}),
   });
   if (error) throw refusal(error);
   return data;
+}
+
+/** Muda o texto de uma mensagem tua (até 15 minutos depois de a enviares). */
+export async function editRideMessage(messageId: string, body: string) {
+  const { error } = await client().rpc('edit_ride_message', {
+    p_message_id: messageId,
+    p_body: body.trim(),
+  });
+  if (error) throw refusal(error);
+}
+
+/** A tua reação a uma mensagem; `null` tira-a. */
+export async function reactRideMessage(messageId: string, emoji: Emoji | null) {
+  const { error } = await client().rpc('react_ride_message', {
+    p_message_id: messageId,
+    ...(emoji ? { p_emoji: emoji } : {}),
+  });
+  if (error) throw refusal(error);
 }
 
 export async function removeRideMessage(messageId: string) {
