@@ -31,10 +31,13 @@ gh secret set BACKUP_PASSPHRASE
 3. Num projeto Supabase novo (ou o mesmo, depois de limpo), com o cliente `psql` 17:
 
 ```
+grep -vE '^ALTER ROLE .* SET "?(log_[a-z_]+|session_preload_libraries)"? ' copia/roles.sql > copia/roles-restauro.sql
 psql "<endereço da base de dados de destino>" --single-transaction -v ON_ERROR_STOP=1 \
-  --file copia/roles.sql --file copia/schema.sql \
+  --file copia/roles-restauro.sql --file copia/schema.sql \
   --command 'SET session_replication_role = replica' --file copia/data.sql
 ```
+
+   A primeira linha tira as definições de papéis que só o superutilizador pode mudar (um Supabase novo já as tem).
 
 4. Volta a publicar as Edge Functions (`supabase functions deploy`) e os segredos delas, que não vão na cópia.
 
