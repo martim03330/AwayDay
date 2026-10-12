@@ -33,6 +33,6 @@ jobs:
         with:
           version: 2.117.0
       - name: Supabase local com as migrações e a seed
-        run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+        run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor
       - name: Testes de SQL
         run: SQL_ALVO=--local sh scripts/testes/sql.sh
