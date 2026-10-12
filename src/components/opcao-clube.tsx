@@ -65,7 +65,7 @@ export function OpcaoClube({ clube, detalhe, selecionado, onPress }: OpcaoClubeP
       <View style={styles.moldura}>
         <Cachecol clube={clube} />
         <View style={styles.conteudo}>
-          <Escudo clube={clube} size={36} />
+          <Escudo clube={clube} size={30} />
           <View style={styles.flex}>
             <ThemedText type="section" style={styles.nome} numberOfLines={1}>
               {clube.nomeCurto}
@@ -100,7 +100,13 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderCurve: 'continuous',
   },
+  // Behind the row, not beside it: the stripe is drawn tall and the row clips it. As a sibling it made every row as
+  // tall as the drawing (testers saw huge cards).
   cachecol: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
     width: SCARF_WIDTH,
     overflow: 'hidden',
   },
@@ -110,7 +116,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingLeft: SCARF_WIDTH + 12,
+    paddingRight: 14,
   },
   pressed: {
     opacity: 0.7,
@@ -120,8 +127,8 @@ const styles = StyleSheet.create({
     gap: Spacing.half,
   },
   nome: {
-    fontSize: 22,
-    lineHeight: 25,
+    fontSize: 18,
+    lineHeight: 22,
   },
   detalhe: {
     fontSize: 13,

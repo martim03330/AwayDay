@@ -1,28 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
 import { OnboardingPasso } from '@/components/onboarding-passo';
-import { OpcaoClube } from '@/components/opcao-clube';
-import { Spacing } from '@/constants/theme';
-import { useClubSupporterCounts } from '@/features/profile/hooks/useMyProfile';
-import { textoAdeptosNaApp } from '@/lib/clubes';
+import { ListaDeClubes } from '@/components/lista-de-clubes';
 import { passoSeguinte, posicaoNaIntroducao } from '@/lib/introducao';
 import { useSession } from '@/lib/session';
-import {
-  clubesParaEscolher,
-  DIVISOES_COM_JOGOS,
-  nomesDivisao,
-  obterClube,
-  TEXTO_SEM_JOGOS,
-} from '@/mocks/clubes';
+import { obterClube } from '@/mocks/clubes';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { LinkTexto } from '@/ui/link-texto';
-import { ThemedText } from '@/ui/themed-text';
 
 export default function OnboardingClubeScreen() {
-  const adeptos = useClubSupporterCounts();
   const router = useRouter();
   const { clubeFavoritoId, escolherClube } = useAppState();
   // Na primeira vez nada vem escolhido; ao rever a introdução, mostra a escolha atual.
@@ -56,42 +44,8 @@ export default function OnboardingClubeScreen() {
           <LinkTexto neutro label="Faço isto depois" onPress={seguir} />
         </>
       }>
-      {clubesParaEscolher().map((grupo) => (
-        <View key={grupo.divisao} style={styles.grupo}>
-          <ThemedText
-            type="eyebrow"
-            themeColor="textSecondary"
-            style={styles.divisao}
-            accessibilityRole="header">
-            {nomesDivisao[grupo.divisao]}
-          </ThemedText>
-          {DIVISOES_COM_JOGOS.includes(grupo.divisao) ? null : (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.divisao}>
-              {TEXTO_SEM_JOGOS}
-            </ThemedText>
-          )}
-          {grupo.clubes.map((clube) => (
-            <OpcaoClube
-              key={clube.id}
-              clube={clube}
-              detalhe={textoAdeptosNaApp(adeptos.data?.[clube.id])}
-              selecionado={clube.id === selecionadoId}
-              onPress={() => setSelecionadoId(clube.id)}
-            />
-          ))}
-        </View>
-      ))}
+      <ListaDeClubes selecionadoId={selecionadoId} onEscolher={setSelecionadoId} />
     </OnboardingPasso>
   );
 }
 
-const styles = StyleSheet.create({
-  grupo: {
-    gap: Spacing.two,
-    marginBottom: Spacing.three,
-  },
-  divisao: {
-    paddingHorizontal: 6,
-    paddingBottom: Spacing.one,
-  },
-});
