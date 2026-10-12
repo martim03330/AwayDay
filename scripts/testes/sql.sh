@@ -1,12 +1,15 @@
 #!/bin/sh
-# Corre todos os testes de SQL (supabase/tests/*.test.sql) contra a base de dados ligada.
+# Corre todos os testes de SQL (supabase/tests/*.test.sql) contra a base de dados ligada (produção) ou, com
+# SQL_ALVO=--local, contra o Supabase local (o CI cria um do zero, com as migrações e a seed).
 # Cada ficheiro corre numa transação que é sempre desfeita: nada fica na base de dados.
 # Sai com erro se algum teste falhar.
 #   npm run test:sql
+#   SQL_ALVO=--local npm run test:sql
 cd "$(dirname "$0")/../.."
+alvo="${SQL_ALVO:---linked}"
 falhou=0
 for ficheiro in supabase/tests/*.test.sql; do
-  saida=$(supabase db query --linked -f "$ficheiro" 2>&1)
+  saida=$(supabase db query "$alvo" -f "$ficheiro" 2>&1)
   passou=$(printf '%s' "$saida" | grep -oE '"checks_passed": [0-9]+' | grep -oE '[0-9]+')
   if [ -n "$passou" ]; then
     printf 'ok    %-40s %s verificações\n' "$(basename "$ficheiro")" "$passou"

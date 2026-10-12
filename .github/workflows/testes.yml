@@ -1,5 +1,6 @@
-# Runs every check that needs no database on each push: types, lint, logic tests and screen tests. The SQL tests stay
-# local (npm run test:sql), because they run against the production project. GitHub emails the owner when it fails.
+# Runs on each push: types, lint, logic tests and screen tests (check), and the SQL tests (sql) against a Supabase
+# created from scratch inside the runner, with the migrations and the seed: never against production.
+# GitHub emails the owner when it fails.
 name: Testes
 
 on:
@@ -22,3 +23,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - name: Supabase local com as migrações e a seed
+        run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+      - name: Testes de SQL
+        run: SQL_ALVO=--local sh scripts/testes/sql.sh
