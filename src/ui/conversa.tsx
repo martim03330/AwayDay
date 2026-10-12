@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -13,6 +13,14 @@ import { fontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Citacao, Emoji, Reacao } from '@/lib/conversa';
 import { formatarHora } from '@/lib/datas';
+import {
+  inserirMencao,
+  mencaoAEscrever,
+  partesComMencoes,
+  sugestoesDeMencao,
+  TODOS,
+  type Mencionavel,
+} from '@/lib/mencoes';
 import { vibrarLeve } from '@/lib/vibrar';
 import { Avatar } from '@/ui/avatar';
 import { Icon, icons } from '@/ui/icon';
@@ -82,6 +90,10 @@ type BolhaProps = {
   editada?: boolean;
   /** Still on its way to the server: shows at once, a little faded, with «a enviar…» instead of the time. */
   pendente?: boolean;
+  /** The names in this chat: «@Nome» (and «@todos») in the text are drawn in bold. */
+  nomesMencionaveis?: readonly string[];
+  /** It mentions you (by name or with @todos): the bubble gets a mark on the side. */
+  mencionaMe?: boolean;
   reacoes?: readonly Reacao[];
   /** Tocar numa reação: põe ou tira a tua com esse emoji. */
   onReagir?: (emoji: Emoji) => void;
@@ -107,6 +119,8 @@ export function BolhaDeConversa({
   citacao,
   editada = false,
   pendente = false,
+  nomesMencionaveis = [],
+  mencionaMe = false,
   reacoes = [],
   onReagir,
   onResponder,
@@ -183,6 +197,7 @@ export function BolhaDeConversa({
                   : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
                 !mostrarQuem && styles.seguida,
                 pendente && styles.pendente,
+                mencionaMe && !minha && { borderLeftWidth: 3, borderLeftColor: theme.highlight },
               ]}>
               {!minha && mostrarQuem ? (
                 <Pressable onPress={onAbrirPessoa} disabled={!onAbrirPessoa} hitSlop={6}>
@@ -192,7 +207,19 @@ export function BolhaDeConversa({
                 </Pressable>
               ) : null}
               {citacao ? <CitacaoNaBolha citacao={citacao} minha={minha} /> : null}
-              <ThemedText style={{ color: corDoTexto }}>{texto}</ThemedText>
+              <ThemedText style={{ color: corDoTexto }}>
+                {partesComMencoes(texto, nomesMencionaveis).map((parte, indice) =>
+                  parte.mencao ? (
+                    <ThemedText
+                      key={indice}
+                      style={[styles.mencao, { color: minha ? theme.accentText : theme.accentInk }]}>
+                      {parte.texto}
+                    </ThemedText>
+                  ) : (
+                    parte.texto
+                  )
+                )}
+              </ThemedText>
               <ThemedText
                 type="small"
                 style={[styles.hora, { color: minha ? theme.accentText : theme.textMuted }]}>
@@ -287,6 +314,8 @@ type CaixaDeEscritaProps = {
   accessibilityLabel: string;
   /** A responder a uma mensagem, ou a editar uma tua: aparece por cima da caixa, com um × para desistir. */
   contexto?: { titulo: string; texto: string; onCancelar: () => void } | null;
+  /** Quem se pode mencionar: ao escrever «@» aparece a lista (com @todos primeiro). */
+  mencionaveis?: readonly Mencionavel[];
 };
 
 /** A caixa de escrever e o botão de enviar, no fundo da conversa. */
@@ -298,6 +327,7 @@ export function CaixaDeEscrita({
   placeholder,
   accessibilityLabel,
   contexto,
+  mencionaveis,
 }: CaixaDeEscritaProps) {
   const theme = useTheme();
   const vazio = valor.trim().length === 0;
@@ -311,6 +341,9 @@ export function CaixaDeEscrita({
 
   return (
     <View style={styles.escreverTudo}>
+      {mencionaveis ? (
+        <SugestoesDeMencao valor={valor} pessoas={mencionaveis} onEscolher={onChange} />
+      ) : null}
       {contexto ? (
         <View style={[styles.contexto, { borderLeftColor: theme.accent, backgroundColor: theme.background }]}>
           <View style={styles.contextoTexto}>
@@ -364,7 +397,90 @@ export function CaixaDeEscrita({
   );
 }
 
+/** While a «@...» is being typed: who it can be, @todos first. Tapping one writes the full name. */
+function SugestoesDeMencao({
+  valor,
+  pessoas,
+  onEscolher,
+}: {
+  valor: string;
+  pessoas: readonly Mencionavel[];
+  onEscolher: (texto: string) => void;
+}) {
+  const theme = useTheme();
+  const consulta = mencaoAEscrever(valor);
+  if (consulta === null) return null;
+  const sugestoes = sugestoesDeMencao(consulta, pessoas);
+  if (!sugestoes.todos && sugestoes.pessoas.length === 0) return null;
+
+  const linha = (chave: string, nome: string, detalhe: string | null, cara: ReactNode) => (
+    <Pressable
+      key={chave}
+      onPress={() => onEscolher(inserirMencao(valor, nome))}
+      accessibilityRole="button"
+      accessibilityLabel={`Mencionar ${nome}`}
+      style={({ pressed }) => [styles.sugestao, pressed && { backgroundColor: theme.backgroundSelected }]}>
+      {cara}
+      <ThemedText type="smallBold" numberOfLines={1} style={styles.flex}>
+        {`@${nome}`}
+      </ThemedText>
+      {detalhe ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {detalhe}
+        </ThemedText>
+      ) : null}
+    </Pressable>
+  );
+
+  return (
+    <View
+      style={[styles.sugestoes, { backgroundColor: theme.background, borderColor: theme.border }]}
+      accessibilityRole="menu">
+      {sugestoes.todos
+        ? linha(
+            TODOS,
+            TODOS,
+            'toda a gente',
+            <View style={[styles.caraTodos, { backgroundColor: theme.accent }]}>
+              <Icon name={icons.malta} size={16} color={theme.accentText} />
+            </View>
+          )
+        : null}
+      {sugestoes.pessoas.map((pessoa) =>
+        linha(pessoa.profileId, pessoa.nome, null, <Avatar nome={pessoa.nome} url={pessoa.fotoUrl} size={28} />)
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  mencao: {
+    fontWeight: 700,
+  },
+  sugestoes: {
+    borderWidth: 1,
+    borderRadius: Radius.card,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    paddingVertical: Spacing.one,
+  },
+  sugestao: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  caraTodos: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flex: {
+    flex: 1,
+  },
   aviso: {
     alignSelf: 'center',
     flexDirection: 'row',

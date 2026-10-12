@@ -352,6 +352,41 @@ describe('Conversa', () => {
     expect(onReagir).toHaveBeenCalledWith('👍');
   });
 
+  it('mentions show apart, and a message that mentions you is marked', () => {
+    render(
+      <BolhaDeConversa
+        {...base}
+        minha={false}
+        texto="@Ana vens? @todos"
+        nomesMencionaveis={['Ana']}
+        mencionaMe
+      />
+    );
+    expect(screen.getByText('@Ana')).toBeOnTheScreen();
+    expect(screen.getByText('@todos')).toBeOnTheScreen();
+  });
+
+  it('typing @ offers @todos and the people; choosing one writes the name', () => {
+    const onChange = jest.fn();
+    render(
+      <CaixaDeEscrita
+        valor="olá @an"
+        onChange={onChange}
+        onEnviar={jest.fn()}
+        aEnviar={false}
+        placeholder="Escreve"
+        accessibilityLabel="Mensagem"
+        mencionaveis={[
+          { profileId: 'a', nome: 'Ana' },
+          { profileId: 'b', nome: 'Rui' },
+        ]}
+      />
+    );
+    expect(screen.queryByLabelText('Mencionar Rui')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Mencionar Ana'));
+    expect(onChange).toHaveBeenCalledWith('olá @Ana ');
+  });
+
   it('a quote of a message that is gone says it is unavailable', () => {
     render(<BolhaDeConversa {...base} minha citacao={{ id: 'm1', displayName: 'Zé', body: null }} />);
     expect(screen.getByText('Mensagem indisponível')).toBeOnTheScreen();

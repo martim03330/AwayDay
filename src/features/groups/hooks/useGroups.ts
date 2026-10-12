@@ -261,7 +261,11 @@ export function useGroupChatActions(groupId: string | null, eu: { profileId: str
     void queryClient.invalidateQueries({ queryKey: groupInboxKey() });
   }
 
-  async function enviar(texto: string, resposta: GroupMessage | null) {
+  async function enviar(
+    texto: string,
+    resposta: GroupMessage | null,
+    mencoes: { ids: string[]; todos: boolean } = { ids: [], todos: false }
+  ) {
     if (!groupId || !eu) return;
     const local: GroupMessage = {
       id: idLocal(Date.now()),
@@ -279,12 +283,13 @@ export function useGroupChatActions(groupId: string | null, eu: { profileId: str
         ? { id: resposta.id, displayName: resposta.displayName, body: resposta.body }
         : null,
       reactions: [],
+      mentionsMe: false,
     };
     aCaminho.current += 1;
     // Newest first: the list is drawn from the bottom up.
     await mudarLista((lista) => [local, ...lista]);
     try {
-      const id = await sendGroupMessage(groupId, texto, resposta?.id ?? null);
+      const id = await sendGroupMessage(groupId, texto, resposta?.id ?? null, mencoes);
       queryClient.setQueryData<GroupMessage[]>(chave, (lista) =>
         (lista ?? []).map((mensagem) =>
           mensagem.id === local.id ? { ...mensagem, id, canRemove: true } : mensagem

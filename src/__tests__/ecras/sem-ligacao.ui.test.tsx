@@ -43,6 +43,7 @@ jest.mock('@/features/groups/hooks/useGroups', () => ({
   usePlans: () => mockVazio,
   usePlanConflicts: () => mockVazio,
   useGroupFixturePlans: () => mockVazio,
+  useGroupMembers: () => mockVazio,
   useGroupChatActions: () => ({ enviar: jest.fn(), reagir: jest.fn(), editar: jest.fn(), apagar: jest.fn() }),
   plansKey: () => ['plans'],
 }));

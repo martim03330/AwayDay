@@ -425,6 +425,8 @@ export type GroupMessage = {
   /** A mensagem a que esta responde. */
   replyTo: Citacao | null;
   reactions: Reacao[];
+  /** Menciona-te: pelo nome, ou com @todos. */
+  mentionsMe: boolean;
 };
 
 /** As mensagens, da mais recente para a mais antiga (a conversa desenha-se de baixo para cima). */
@@ -448,18 +450,22 @@ export async function fetchGroupMessages(groupId: string): Promise<GroupMessage[
     editedAt: row.edited_at,
     replyTo: lerCitacao(row.reply_to_id, row.reply_display_name, row.reply_body),
     reactions: lerReacoes(row.reactions),
+    mentionsMe: row.mentions_me === true,
   }));
 }
 
 export async function sendGroupMessage(
   groupId: string,
   body: string,
-  replyTo: string | null = null
+  replyTo: string | null = null,
+  mentions: { ids: string[]; todos: boolean } = { ids: [], todos: false }
 ): Promise<string> {
   const { data, error } = await client().rpc('send_group_message', {
     p_group_id: groupId,
     p_body: body.trim(),
     ...(replyTo ? { p_reply_to: replyTo } : {}),
+    ...(mentions.ids.length > 0 ? { p_mentions: mentions.ids } : {}),
+    ...(mentions.todos ? { p_mention_all: true } : {}),
   });
   if (error) throw refusal(error);
   return data;

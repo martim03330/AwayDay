@@ -110,7 +110,11 @@ export function useRideChatActions(rideId: string | null, eu: { profileId: strin
     void queryClient.invalidateQueries({ queryKey: myRideChatsKey() });
   }
 
-  async function enviar(texto: string, resposta: RideMessage | null) {
+  async function enviar(
+    texto: string,
+    resposta: RideMessage | null,
+    mencoes: { ids: string[]; todos: boolean } = { ids: [], todos: false }
+  ) {
     if (!rideId || !eu) return;
     const local: RideMessage = {
       id: idLocal(Date.now()),
@@ -125,12 +129,13 @@ export function useRideChatActions(rideId: string | null, eu: { profileId: strin
         ? { id: resposta.id, displayName: resposta.displayName, body: resposta.body }
         : null,
       reactions: [],
+      mentionsMe: false,
     };
     aCaminho.current += 1;
     // Oldest first: the new one goes at the end.
     await mudarLista((lista) => [...lista, local]);
     try {
-      const id = await sendRideMessage(rideId, texto, resposta?.id ?? null);
+      const id = await sendRideMessage(rideId, texto, resposta?.id ?? null, mencoes);
       queryClient.setQueryData<RideMessage[]>(chave, (lista) =>
         (lista ?? []).map((mensagem) =>
           mensagem.id === local.id ? { ...mensagem, id, canRemove: true } : mensagem

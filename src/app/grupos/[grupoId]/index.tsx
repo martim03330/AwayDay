@@ -28,6 +28,7 @@ import {
   useGroupChatActions,
   useGroupFixturePlans,
   useGroupFromInbox,
+  useGroupMembers,
   useGroupMessages,
   usePlanConflicts,
   usePlans,
@@ -38,6 +39,7 @@ import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { useTheme } from '@/hooks/use-theme';
 import { aindaDaParaEditar, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia, formatarHora } from '@/lib/datas';
+import { mencoesNoTexto, type Mencionavel } from '@/lib/mencoes';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { AvisoDeConversa, BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa } from '@/ui/conversa';
@@ -96,6 +98,7 @@ export default function ConversaDoGrupoScreen() {
   );
   const planos = usePlans(idsDosPlanos);
   const planosDoGrupo = useGroupFixturePlans(grupo ? grupo.id : null);
+  const membros = useGroupMembers(grupo ? grupo.id : null);
   const conflitos = usePlanConflicts(idsDosPlanos);
   const queryClient = useQueryClient();
   const refrescar = useRefreshGroups();
@@ -177,6 +180,11 @@ export default function ConversaDoGrupoScreen() {
   const escuro = fundoEscuro(grupo.fundo);
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
+  // Who can be mentioned (everyone but you), and every name in the group so mentions show in bold.
+  const mencionaveis: Mencionavel[] = (membros.data ?? [])
+    .filter((membro) => !membro.isMine)
+    .map((membro) => ({ profileId: membro.profileId, nome: membro.displayName, fotoUrl: fotoDe(membro.profileId) }));
+  const nomesDoGrupo = (membros.data ?? []).map((membro) => membro.displayName);
 
   // Shows at once (see useGroupChatActions). If the server refuses, the text and the reply come back to the box.
   async function enviar() {
@@ -190,7 +198,7 @@ export default function ConversaDoGrupoScreen() {
     setAEditar(null);
     try {
       if (edicao) await acoes.editar(edicao, escrito);
-      else await acoes.enviar(escrito, resposta);
+      else await acoes.enviar(escrito, resposta, mencoesNoTexto(escrito, mencionaveis));
     } catch (problema) {
       setTexto(escrito);
       setAResponder(resposta);
@@ -426,6 +434,8 @@ export default function ConversaDoGrupoScreen() {
                       editada={item.editedAt !== null}
                       reacoes={item.reactions}
                       pendente={eLocal(item.id)}
+                      nomesMencionaveis={nomesDoGrupo}
+                      mencionaMe={item.mentionsMe}
                       onReagir={eLocal(item.id) ? undefined : (emoji) => reagir(item, emoji)}
                       onResponder={eLocal(item.id) ? undefined : () => responder(item)}
                       onAbrirPessoa={() => abrirPessoa(item.profileId)}
@@ -488,6 +498,7 @@ export default function ConversaDoGrupoScreen() {
             aEnviar={false}
             placeholder="Escreve à malta…"
             accessibilityLabel="Escrever ao grupo"
+            mencionaveis={mencionaveis}
             contexto={
               aEditar
                 ? { titulo: 'A editar a mensagem', texto: aEditar.body, onCancelar: cancelarContexto }

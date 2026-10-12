@@ -54,6 +54,8 @@ export type RideMessage = {
   /** A mensagem a que esta responde. */
   replyTo: Citacao | null;
   reactions: Reacao[];
+  /** Menciona-te: pelo nome, ou com @todos. */
+  mentionsMe: boolean;
 };
 
 /** As mensagens, da mais antiga para a mais recente — como se lê uma conversa. */
@@ -72,6 +74,7 @@ export async function fetchRideMessages(rideId: string): Promise<RideMessage[]> 
       editedAt: row.edited_at,
       replyTo: lerCitacao(row.reply_to_id, row.reply_display_name, row.reply_body),
       reactions: lerReacoes(row.reactions),
+    mentionsMe: row.mentions_me === true,
     }))
     .reverse();
 }
@@ -79,12 +82,15 @@ export async function fetchRideMessages(rideId: string): Promise<RideMessage[]> 
 export async function sendRideMessage(
   rideId: string,
   body: string,
-  replyTo: string | null = null
+  replyTo: string | null = null,
+  mentions: { ids: string[]; todos: boolean } = { ids: [], todos: false }
 ): Promise<string> {
   const { data, error } = await client().rpc('send_ride_message', {
     p_ride_id: rideId,
     p_body: body.trim(),
     ...(replyTo ? { p_reply_to: replyTo } : {}),
+    ...(mentions.ids.length > 0 ? { p_mentions: mentions.ids } : {}),
+    ...(mentions.todos ? { p_mention_all: true } : {}),
   });
   if (error) throw refusal(error);
   return data;

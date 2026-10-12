@@ -2,6 +2,17 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Menções no chat: @Nome e @todos
+
+- Escrever «@» na conversa do grupo ou do carro abre a lista de quem lá está, com **@todos** primeiro. Tocar num nome
+  escreve «@Nome». Na bolha, as menções ficam a negrito e uma mensagem que te menciona leva uma marca amarela.
+- A app tira as menções do texto pelos nomes de quem está na conversa (`src/lib/mencoes.ts`) e manda os ids. O servidor
+  só guarda pessoas que estão mesmo na conversa e nunca o autor (`group_message.mentions`, `mentions_all`).
+- **Notificações (decisão do Martim):** quem é mencionado recebe «X mencionou-te», e com @todos todos recebem «X
+  mencionou todos», **mesmo com essa conversa silenciada** nas definições, como no WhatsApp. Quem bloqueou o autor
+  continua a não receber nada. Para não se abusar disso, cada pessoa só pode usar **@todos 10 vezes por dia**.
+- Editar uma mensagem não muda quem foi mencionado (nem volta a notificar).
+
 ## 2026-10-12 — Chat como no WhatsApp: responder, reagir, editar, perfis, plano fixado e aviso de mensagem
 
 Pedido dos testers. Vale para a conversa do grupo e para a do carro (`src/ui/conversa.tsx` é a mesma para as duas).

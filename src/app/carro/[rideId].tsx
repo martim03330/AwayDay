@@ -8,7 +8,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useModeracao } from '@/features/moderation/components/Moderacao';
 import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { ChatRefused, markRideMessagesRead, type RideMessage } from '@/features/rides/chat';
-import { useRideBoard } from '@/features/rides/hooks/useRides';
+import { useRideBoard, useRidePeople } from '@/features/rides/hooks/useRides';
 import {
   useRefreshRideChat,
   useRideChannel,
@@ -19,6 +19,7 @@ import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { aindaDaParaEditar, eLocal, minhaReacao, proximaReacao, type Emoji } from '@/lib/conversa';
 import { chaveDoDia, formatarDia } from '@/lib/datas';
+import { mencoesNoTexto, type Mencionavel } from '@/lib/mencoes';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
@@ -62,6 +63,7 @@ export default function ConversaDoCarroScreen() {
   const souDoCarro = boleia?.isMine === true || boleia?.myStatus === 'accepted';
   const mensagens = useRideMessages(rideId ?? null, souDoCarro);
   useRideChannel(rideId ?? null, souDoCarro);
+  const pessoasDoCarro = useRidePeople(rideId ?? null, souDoCarro);
   const acoes = useRideChatActions(rideId ?? null, userId ? { profileId: userId, nome: 'Tu' } : null);
   const cartoes = useProfileCards([
     ...new Set((mensagens.data ?? []).map((mensagem) => mensagem.profileId)),
@@ -108,6 +110,14 @@ export default function ConversaDoCarroScreen() {
   const lista = [...(mensagens.data ?? [])].reverse();
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
+  // The car: the driver and whoever has a seat. Everyone but you can be mentioned.
+  const noCarro = (pessoasDoCarro.data ?? []).filter(
+    (pessoa) => pessoa.status === 'driver' || pessoa.status === 'accepted'
+  );
+  const mencionaveis: Mencionavel[] = noCarro
+    .filter((pessoa) => pessoa.profileId !== userId)
+    .map((pessoa) => ({ profileId: pessoa.profileId, nome: pessoa.name, fotoUrl: fotoDe(pessoa.profileId) }));
+  const nomesDoCarro = noCarro.map((pessoa) => pessoa.name);
 
   // Shows at once (see useRideChatActions). If the server refuses, the text and the reply come back to the box.
   async function enviar() {
@@ -121,7 +131,7 @@ export default function ConversaDoCarroScreen() {
     setAEditar(null);
     try {
       if (edicao) await acoes.editar(edicao, escrito);
-      else await acoes.enviar(escrito, resposta);
+      else await acoes.enviar(escrito, resposta, mencoesNoTexto(escrito, mencionaveis));
     } catch (problema) {
       setTexto(escrito);
       setAResponder(resposta);
@@ -274,6 +284,8 @@ export default function ConversaDoCarroScreen() {
                     editada={item.editedAt !== null}
                     reacoes={item.reactions}
                     pendente={eLocal(item.id)}
+                    nomesMencionaveis={nomesDoCarro}
+                    mencionaMe={item.mentionsMe}
                     onReagir={eLocal(item.id) ? undefined : (emoji) => reagir(item, emoji)}
                     onResponder={fechada || eLocal(item.id) ? undefined : () => responder(item)}
                     onAbrirPessoa={() => abrirPessoa(item.profileId)}
@@ -319,6 +331,7 @@ export default function ConversaDoCarroScreen() {
               aEnviar={false}
               placeholder="Escreve ao carro…"
               accessibilityLabel="Escrever ao carro"
+              mencionaveis={mencionaveis}
               contexto={
                 aEditar
                   ? { titulo: 'A editar a mensagem', texto: aEditar.body, onCancelar: cancelarContexto }
