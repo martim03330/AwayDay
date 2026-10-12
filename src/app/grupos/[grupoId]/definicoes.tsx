@@ -214,19 +214,43 @@ export default function DefinicoesDoGrupoScreen() {
         </Pressable>
         {aMudarNome ? (
           <View style={styles.novoNome}>
-            <Campo
-              label="Nome do grupo"
-              value={nome}
-              onChangeText={setNome}
-              placeholder={grupo.name}
-              maxLength={60}
-              autoFocus
-              onSubmitEditing={guardarNome}
-            />
-            <View style={styles.botoesNome}>
-              <LinkTexto neutro label="Deixa estar" onPress={() => setAMudarNome(false)} />
-              <LinkTexto label="Guardar" disabled={aTratar} onPress={guardarNome} />
+            <View style={styles.flex}>
+              <Campo
+                label="Nome do grupo"
+                value={nome}
+                onChangeText={setNome}
+                placeholder={grupo.name}
+                maxLength={60}
+                autoFocus
+                onSubmitEditing={guardarNome}
+              />
             </View>
+            {/* Round ✕ and ✓ next to the field, instead of two text buttons under it. */}
+            <Pressable
+              onPress={() => setAMudarNome(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancelar"
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.botaoNome,
+                { backgroundColor: theme.backgroundSelected },
+                pressed && styles.premido,
+              ]}>
+              <Icon name={icons.fechar} size={18} color={theme.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={guardarNome}
+              disabled={aTratar}
+              accessibilityRole="button"
+              accessibilityLabel="Guardar o nome"
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.botaoNome,
+                { backgroundColor: theme.accent, opacity: aTratar ? 0.5 : 1 },
+                pressed && styles.premido,
+              ]}>
+              <Icon name={icons.selecionado} size={18} color={theme.accentText} />
+            </Pressable>
           </View>
         ) : (
           <>
@@ -393,6 +417,7 @@ export default function DefinicoesDoGrupoScreen() {
 
       <View style={styles.sair}>
         <LinkTexto perigo label="Sair do grupo" onPress={sair} />
+        <View style={[styles.separador, { backgroundColor: theme.border }]} />
         <LinkTexto
           neutro
           label="Denunciar o grupo"
@@ -408,6 +433,9 @@ export default function DefinicoesDoGrupoScreen() {
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   topo: {
     alignItems: 'center',
     gap: Spacing.two,
@@ -451,12 +479,24 @@ const styles = StyleSheet.create({
   },
   novoNome: {
     alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: Spacing.two,
   },
-  botoesNome: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: Spacing.four,
+  botaoNome: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premido: {
+    opacity: 0.7,
+  },
+  separador: {
+    width: 56,
+    height: StyleSheet.hairlineWidth * 2,
+    borderRadius: 1,
   },
   sair: {
     alignItems: 'center',

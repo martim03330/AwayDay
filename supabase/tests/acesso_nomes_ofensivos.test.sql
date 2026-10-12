@@ -59,6 +59,7 @@ select pg_temp.expect('with repeated letters', public.is_offensive_name('merdaaa
 select pg_temp.expect('with dots between the letters', public.is_offensive_name('f.i.l.h.o d.a p.u.t.a'), true);
 select pg_temp.expect('written together', public.is_offensive_name('FilhoDaPuta99'), true);
 select pg_temp.expect('in English', public.is_offensive_name('Fuck you'), true);
+select pg_temp.expect('a word testers used', public.is_offensive_name('Pirocudos'), true);
 
 select pg_temp.expect('a normal name', public.is_offensive_name('Martim Henriques'), false);
 select pg_temp.expect('Barcelona is not «cona»', public.is_offensive_name('Barcelona'), false);
