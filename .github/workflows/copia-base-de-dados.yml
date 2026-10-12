@@ -7,7 +7,8 @@
 #    Supabase documents for a new project, and checks every counted table came back with the same number of rows.
 #    If anything fails, the run fails and GitHub emails the owner.
 #
-# Secrets: SUPABASE_DB_URL (Session pooler connection string, with the database password) and BACKUP_PASSPHRASE.
+# Secrets: SUPABASE_DB_URL (Session pooler connection string, with the database password) and BACKUP_PASSPHRASE;
+# SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (public) to read production's Auth and Storage versions for the test.
 # To restore for real: download the artifact, `gpg -d copia.tar.gz.gpg | tar xz`, then the psql line of step 3
 # against the target database (see docs/COPIAS.md).
 name: Copia da base de dados
@@ -27,6 +28,8 @@ jobs:
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -73,6 +76,13 @@ jobs:
           # this project's migrations or seed: the dump brings the schema itself, as when restoring into a new project.
           mkdir vazio && cd vazio && supabase init --force >/dev/null
           sed -i 's/^major_version = .*/major_version = 17/' supabase/config.toml
+          # Same Auth and Storage versions as production, or the copy names tables an older local version lacks.
+          mkdir -p supabase/.temp
+          curl -fsS "$SUPABASE_URL/auth/v1/health" -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            | jq -r .version > supabase/.temp/gotrue-version
+          echo "v$(curl -fsS "$SUPABASE_URL/storage/v1/version" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")" \
+            > supabase/.temp/storage-version
+          echo "Auth $(cat supabase/.temp/gotrue-version), Storage $(cat supabase/.temp/storage-version)"
           supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
           LOCAL_DB_URL=$(supabase status -o env | sed -n 's/^DB_URL="\(.*\)"$/\1/p')
           echo "LOCAL_DB_URL=$LOCAL_DB_URL" >> "$GITHUB_ENV"
