@@ -1,15 +1,10 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { EtiquetaFacilidade, LegendaFacilidade } from '@/components/facilidade-parque';
-import { Spacing } from '@/constants/theme';
-import {
-  fetchStadiumParking,
-  type ParkingKind,
-  type ParkingSource,
-  type ParkingSpot,
-} from '@/features/parking/api';
+import { corFacilidade } from '@/components/facilidade-parque';
+import { Radius, Spacing } from '@/constants/theme';
+import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
 import { useTheme } from '@/hooks/use-theme';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { formatarHora } from '@/lib/datas';
@@ -17,36 +12,18 @@ import {
   facilidadeEstacionamento,
   minutosAPe,
   minutosExtraDoParque,
+  ROTULO_FACILIDADE,
 } from '@/lib/facilidade-estacionamento';
 import { chegadaRecomendada } from '@/lib/hora-saida';
 import { plural } from '@/lib/formatos';
 import { useAppState } from '@/state/app-state';
+import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
-import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, icons } from '@/ui/icon';
-import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-const TIPOS: Record<ParkingKind, string> = {
-  parque_oficial: 'Parque do estádio',
-  parque_publico: 'Parque público',
-  parque_gratuito: 'Gratuito',
-  rua: 'Na rua',
-  park_and_ride: 'Parque e transporte',
-};
-
-/** "placegar.com", so a source reads at a glance. */
-function dominio(url: string) {
-  return (
-    url
-      .replace(/^https:\/\//, '')
-      .split('/')[0]
-      ?.replace(/^www\./, '') ?? url
-  );
-}
 
 const ORDEM_FACILIDADE = { facil: 0, media: 1, desconhecida: 2, dificil: 3 };
 
@@ -68,35 +45,139 @@ export function parqueRecomendado(parques: readonly ParkingSpot[], jogoGrande = 
   );
 }
 
-function Fontes({ fontes }: { fontes: ParkingSource[] }) {
+/** «Enche cedo», «Fechado em dias de jogo»… and its colour: the one thing that decides a car park. */
+function estadoDoParque(parque: ParkingSpot, jogoGrande: boolean) {
+  if (parque.openOnMatchdays === false) return { texto: 'Fechado em dias de jogo', nivel: 'dificil' as const };
+  const { nivel } = facilidadeEstacionamento(parque, { jogoGrande });
+  return { texto: ROTULO_FACILIDADE[nivel], nivel };
+}
+
+/** The «P» tile, as on road signs. */
+function LetraP({ grande = false }: { grande?: boolean }) {
+  const theme = useTheme();
+  const lado = grande ? 40 : 32;
+  return (
+    <View style={[styles.letraP, { width: lado, height: lado, backgroundColor: theme.info }]}>
+      <ThemedText style={[styles.letraPTexto, { color: theme.backgroundElement, fontSize: grande ? 20 : 16 }]}>
+        P
+      </ThemedText>
+    </View>
+  );
+}
+
+/** A coloured dot and the state, then the walk: «● Enche cedo · 4 min a pé». */
+function LinhaEstado({ parque, jogoGrande }: { parque: ParkingSpot; jogoGrande: boolean }) {
+  const theme = useTheme();
+  const estado = estadoDoParque(parque, jogoGrande);
+  const minutos = minutosAPe(parque.distanceM);
+  return (
+    <View style={styles.estado}>
+      <View style={[styles.bola, { backgroundColor: corFacilidade(theme, estado.nivel) }]} />
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.flex}>
+        {[estado.texto, minutos !== null ? `${minutos} min a pé` : null].filter(Boolean).join(' · ')}
+      </ThemedText>
+    </View>
+  );
+}
+
+/** The recommended car park, on its own: name, state, by when to be there, and the way there. */
+function Recomendado({
+  parque,
+  jogoGrande,
+  inicio,
+}: {
+  parque: ParkingSpot;
+  jogoGrande: boolean;
+  inicio: string | null;
+}) {
+  const theme = useTheme();
+  const minutos = minutosAPe(parque.distanceM);
+  const chegada = inicio
+    ? chegadaRecomendada({
+        inicio,
+        minutosAPeDoParque: minutos,
+        minutosExtraDoParque: minutosExtraDoParque(parque, { jogoGrande }),
+        jogoGrande,
+      })
+    : null;
+
+  return (
+    <View style={styles.recomendado}>
+      <ThemedText type="eyebrow" themeColor="accentInk">
+        Recomendado
+      </ThemedText>
+      <View style={styles.linha}>
+        <LetraP grande />
+        <View style={styles.flex}>
+          <ThemedText style={styles.nomeDestaque}>{parque.name}</ThemedText>
+          <LinhaEstado parque={parque} jogoGrande={jogoGrande} />
+        </View>
+      </View>
+      {chegada ? (
+        <View style={[styles.chegada, { backgroundColor: theme.successBackground }]}>
+          <Icon name={icons.horario} size={18} color={theme.accentInk} />
+          <ThemedText style={[styles.chegadaTexto, { color: theme.accentInk }]}>
+            {`Chega até às ${formatarHora(chegada)}`}
+          </ThemedText>
+        </View>
+      ) : null}
+      {parque.location ? (
+        <Button
+          label="Como chegar de carro"
+          variant="secondary"
+          icon={icons.rota}
+          onPress={() => parque.location && abrirDirecoes(parque.location, 'carro')}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/** Another car park: one tidy line, with a round button for the way there. */
+function OutroParque({
+  parque,
+  jogoGrande,
+  separador,
+}: {
+  parque: ParkingSpot;
+  jogoGrande: boolean;
+  separador: boolean;
+}) {
   const theme = useTheme();
   return (
-    <View style={styles.fontes}>
-      {fontes.map((fonte) => (
+    <View
+      style={[
+        styles.linha,
+        styles.outro,
+        separador && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+      ]}>
+      <LetraP />
+      <View style={styles.flex}>
+        <ThemedText style={styles.nome} numberOfLines={2}>
+          {parque.name}
+        </ThemedText>
+        <LinhaEstado parque={parque} jogoGrande={jogoGrande} />
+      </View>
+      {parque.location ? (
         <Pressable
-          key={fonte.url}
-          onPress={() => void Linking.openURL(fonte.url).catch(() => undefined)}
-          accessibilityRole="link"
-          accessibilityLabel={`Fonte: ${fonte.title}. Abre no navegador.`}>
-          <ThemedText type="small" style={{ color: theme.accentInk }} numberOfLines={1}>
-            {`${dominio(fonte.url)} · ${fonte.title}`}
-          </ThemedText>
+          onPress={() => parque.location && abrirDirecoes(parque.location, 'carro')}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Como chegar de carro a ${parque.name}`}
+          style={({ pressed }) => [
+            styles.caminho,
+            { backgroundColor: theme.successBackground },
+            pressed && styles.pressed,
+          ]}>
+          <Icon name={icons.rota} size={18} color={theme.accentInk} />
         </Pressable>
-      ))}
+      ) : null}
     </View>
   );
 }
 
 /** A line that opens to show more: keeps the section short until someone wants the detail. */
-function Abrir({
-  rotulo,
-  aberto,
-  onPress,
-}: {
-  rotulo: string;
-  aberto: boolean;
-  onPress: () => void;
-}) {
+function Abrir({ rotulo, aberto, onPress }: { rotulo: string; aberto: boolean; onPress: () => void }) {
   const theme = useTheme();
   return (
     <Pressable
@@ -111,126 +192,11 @@ function Abrir({
   );
 }
 
-function Parque({
-  parque,
-  destaque,
-  jogoGrande,
-  inicio,
-}: {
-  parque: ParkingSpot;
-  destaque: boolean;
-  jogoGrande: boolean;
-  /** Kick-off, when the game is known: then the car park also says by when to be there. */
-  inicio: string | null;
-}) {
-  const theme = useTheme();
-  const minutos = minutosAPe(parque.distanceM);
-  const chegada =
-    inicio && parque.openOnMatchdays !== false
-      ? chegadaRecomendada({
-          inicio,
-          minutosAPeDoParque: minutos,
-          minutosExtraDoParque: minutosExtraDoParque(parque, { jogoGrande }),
-          jogoGrande,
-        })
-      : null;
-
-  // Only what decides it: how far, whether it fills, and by when to be there. The why and the sources are once, at
-  // the end of the card (testers found every car park repeating them too much).
-  return (
-    <View style={styles.parque}>
-      <View style={styles.topo}>
-        <View style={[styles.letraP, { backgroundColor: theme.info }]}>
-          <ThemedText style={[styles.letraPTexto, { color: theme.backgroundElement }]}>P</ThemedText>
-        </View>
-        <View style={styles.flex}>
-          <ThemedText style={destaque ? styles.nomeDestaque : styles.nome}>{parque.name}</ThemedText>
-          {minutos !== null ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              {`${minutos} min a pé`}
-            </ThemedText>
-          ) : null}
-        </View>
-      </View>
-      <View style={styles.etiquetas}>
-        {parque.openOnMatchdays === false ? (
-          <Etiqueta icon={icons.fechar} label="Fechado em dias de jogo" tone="negativo" />
-        ) : (
-          <EtiquetaFacilidade parque={parque} jogoGrande={jogoGrande} />
-        )}
-        {chegada ? <Etiqueta icon={icons.horario} label={`Chega até às ${formatarHora(chegada)}`} tone="neutro" /> : null}
-      </View>
-      {parque.location ? (
-        <LinkTexto
-          label="Como chegar de carro"
-          onPress={() => parque.location && abrirDirecoes(parque.location, 'carro')}
-        />
-      ) : null}
-    </View>
-  );
-}
-
-/** The first sentence of a warning: the part that matters at a glance. The rest is under «Porquê e fontes». */
-function primeiraFrase(texto: string) {
-  const fim = texto.search(/[.!?](\s|$)/);
-  return fim === -1 ? texto : texto.slice(0, fim + 1);
-}
-
-/** Why each car park got its colour, the full warnings and every source: once, at the end. */
-function PorqueEFontes({
-  parques,
-  avisos,
-  jogoGrande,
-}: {
-  parques: readonly ParkingSpot[];
-  avisos: readonly { text: string; sources: ParkingSource[] }[];
-  jogoGrande: boolean;
-}) {
-  return (
-    <View style={styles.detalhes}>
-      <LegendaFacilidade />
-      <ThemedText type="small" themeColor="textMuted">
-        Uma estimativa pela distância, pelo tamanho e pelos avisos: ninguém publica lugares livres em tempo real.
-        Confirma no local.
-      </ThemedText>
-      {parques.map((parque) => {
-        const { motivo } = facilidadeEstacionamento(parque, { jogoGrande });
-        return (
-          <View key={parque.id} style={styles.porque}>
-            <ThemedText type="smallBold">{parque.name}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {[
-                TIPOS[parque.kind],
-                parque.capacity !== null ? `${parque.capacity} lugares` : null,
-                motivo,
-                parque.priceNote,
-                parque.note,
-                parque.location === null ? 'Sem sítio exato no mapa: só temos a morada.' : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </ThemedText>
-            <Fontes fontes={parque.sources} />
-          </View>
-        );
-      })}
-      {avisos.map((aviso) => (
-        <View key={aviso.text} style={styles.porque}>
-          <ThemedText type="smallBold">Aviso</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {aviso.text}
-          </ThemedText>
-          <Fontes fontes={aviso.sources} />
-        </View>
-      ))}
-    </View>
-  );
-}
-
 /**
- * Where to leave the car on match day, kept short: the recommended car park first, the match-day warnings in one
- * sentence each, the other car parks behind a tap, and the why and the sources once at the end. Not live occupancy:
- * nobody publishes it free. Draws its own section title, so the title never sits over an empty section.
+ * Where to leave the car on match day: the recommended car park on its own, then the match-day warnings and the other
+ * car parks each behind a tap. Every car park says only what decides it (whether it fills, and how far it is on foot).
+ * An estimate, not live occupancy: nobody publishes it free. Draws its own section title, so the title never sits over
+ * an empty section.
  */
 export function EstacionamentoEstadio({
   estadioId,
@@ -243,8 +209,8 @@ export function EstacionamentoEstadio({
 }) {
   const theme = useTheme();
   const { modoDemo } = useAppState();
+  const [avisosAbertos, setAvisosAbertos] = useState(false);
   const [todosAbertos, setTodosAbertos] = useState(false);
-  const [porqueAberto, setPorqueAberto] = useState(false);
   const dados = useQuery({
     queryKey: ['parking', estadioId],
     queryFn: modoDemo ? skipToken : () => fetchStadiumParking(estadioId),
@@ -271,36 +237,44 @@ export function EstacionamentoEstadio({
   }
 
   const recomendado = parqueRecomendado(info.spots, jogoGrande);
-  const outros = info.spots.filter((parque) => parque.id !== recomendado?.id);
+  // Open ones first, nearest first; the ones closed on match days at the end.
+  const outros = info.spots
+    .filter((parque) => parque.id !== recomendado?.id)
+    .sort(
+      (a, b) =>
+        Number(a.openOnMatchdays === false) - Number(b.openOnMatchdays === false) ||
+        (a.distanceM ?? Number.MAX_SAFE_INTEGER) - (b.distanceM ?? Number.MAX_SAFE_INTEGER)
+    );
 
   return (
     <>
       {titulo}
       <Card style={styles.card}>
         {recomendado ? (
-          <>
-            <ThemedText type="eyebrow" themeColor="accentInk">
-              Recomendado
-            </ThemedText>
-            <Parque parque={recomendado} destaque jogoGrande={jogoGrande} inicio={inicio} />
-          </>
+          <Recomendado parque={recomendado} jogoGrande={jogoGrande} inicio={inicio} />
         ) : (
           <ThemedText themeColor="textSecondary">
-            Nenhum parque com fonte abre em dias de jogo. Vê os avisos antes de ir de carro.
+            Nenhum parque conhecido abre em dias de jogo. Vê os avisos antes de ir de carro.
           </ThemedText>
         )}
 
-        {/* The warnings stay in sight, but short: the first sentence of each. The rest is under «Porquê e fontes». */}
         {info.warnings.length > 0 ? (
           <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
-            {info.warnings.map((aviso) => (
-              <View key={aviso.text} style={styles.aviso}>
-                <Icon name={icons.aviso} size={16} color={theme.warning} />
-                <ThemedText type="small" style={styles.flex}>
-                  {primeiraFrase(aviso.text)}
-                </ThemedText>
-              </View>
-            ))}
+            <Abrir
+              rotulo={`${plural(info.warnings.length, 'aviso', 'avisos')} para dia de jogo`}
+              aberto={avisosAbertos}
+              onPress={() => setAvisosAbertos((atual) => !atual)}
+            />
+            {avisosAbertos
+              ? info.warnings.map((aviso) => (
+                  <View key={aviso.text} style={[styles.aviso, { backgroundColor: theme.warningBackground }]}>
+                    <Icon name={icons.aviso} size={16} color={theme.warningText} />
+                    <ThemedText type="small" style={[styles.flex, { color: theme.warningText }]}>
+                      {aviso.text}
+                    </ThemedText>
+                  </View>
+                ))
+              : null}
           </View>
         ) : null}
 
@@ -311,30 +285,24 @@ export function EstacionamentoEstadio({
               aberto={todosAbertos}
               onPress={() => setTodosAbertos((atual) => !atual)}
             />
-            {todosAbertos
-              ? outros.map((parque) => (
-                  <Parque
+            {todosAbertos ? (
+              <View>
+                {outros.map((parque, indice) => (
+                  <OutroParque
                     key={parque.id}
                     parque={parque}
-                    destaque={false}
                     jogoGrande={jogoGrande}
-                    inicio={inicio}
+                    separador={indice < outros.length - 1}
                   />
-                ))
-              : null}
+                ))}
+              </View>
+            ) : null}
           </View>
         ) : null}
 
-        <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
-          <Abrir
-            rotulo="Porquê e fontes"
-            aberto={porqueAberto}
-            onPress={() => setPorqueAberto((atual) => !atual)}
-          />
-          {porqueAberto ? (
-            <PorqueEFontes parques={info.spots} avisos={info.warnings} jogoGrande={jogoGrande} />
-          ) : null}
-        </View>
+        <ThemedText type="small" themeColor="textMuted">
+          Estimativa, não lugares em tempo real. Confirma no local.
+        </ThemedText>
       </Card>
     </>
   );
@@ -342,35 +310,30 @@ export function EstacionamentoEstadio({
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
-  parque: {
-    gap: Spacing.two,
+  flex: {
+    flex: 1,
   },
-  etiquetas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
+  recomendado: {
+    gap: Spacing.twoAndHalf,
   },
-  topo: {
+  linha: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.twoAndHalf,
+  },
+  outro: {
+    paddingVertical: Spacing.twoAndHalf,
   },
   letraP: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
   letraPTexto: {
     fontWeight: 900,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  flex: {
-    flex: 1,
+    lineHeight: 22,
   },
   nome: {
     fontSize: 15,
@@ -378,15 +341,44 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   nomeDestaque: {
-    fontSize: 17,
-    lineHeight: 22,
+    fontSize: 18,
+    lineHeight: 23,
     fontWeight: 800,
   },
-  acoes: {
+  estado: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: 6,
+    marginTop: 2,
+  },
+  bola: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  chegada: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.field,
+    borderCurve: 'continuous',
+  },
+  chegadaTexto: {
+    fontWeight: 700,
+  },
+  caminho: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bloco: {
+    gap: Spacing.two,
+    paddingTop: Spacing.three,
+    borderTopWidth: 1,
   },
   abrir: {
     flexDirection: 'row',
@@ -397,24 +389,13 @@ const styles = StyleSheet.create({
   abrirTexto: {
     fontWeight: 700,
   },
-  bloco: {
-    gap: Spacing.twoAndHalf,
-    paddingTop: Spacing.threeAndHalf,
-    borderTopWidth: 1,
-  },
   aviso: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.two,
-  },
-  porque: {
-    gap: 2,
-  },
-  fontes: {
-    gap: 2,
-  },
-  detalhes: {
-    gap: Spacing.twoAndHalf,
+    padding: Spacing.twoAndHalf,
+    borderRadius: Radius.field,
+    borderCurve: 'continuous',
   },
   pressed: {
     opacity: 0.7,
