@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -12,15 +12,20 @@ type SegmentadoProps<T extends string> = {
   opcoes: readonly Opcao<T>[];
   valor: T;
   onChange: (valor: T) => void;
+  /**
+   * Many options with longer labels (price ranges): each keeps its full width and the bar scrolls sideways, instead
+   * of squeezing every label into an equal slice.
+   */
+  deslizante?: boolean;
 };
 
 /** Duas ou três vistas do mesmo ecrã, lado a lado («Lista | Acertar contas»). */
-export function Segmentado<T extends string>({ opcoes, valor, onChange }: SegmentadoProps<T>) {
+export function Segmentado<T extends string>({ opcoes, valor, onChange, deslizante = false }: SegmentadoProps<T>) {
   const theme = useTheme();
-  return (
+  const barra = (
     <View
       accessibilityRole="tablist"
-      style={[styles.caixa, { backgroundColor: theme.backgroundSelected }]}>
+      style={[styles.caixa, { backgroundColor: theme.backgroundSelected }, deslizante && styles.caixaDeslizante]}>
       {opcoes.map((opcao) => {
         const ativo = opcao.valor === valor;
         return (
@@ -35,6 +40,7 @@ export function Segmentado<T extends string>({ opcoes, valor, onChange }: Segmen
             accessibilityState={{ selected: ativo }}
             style={[
               styles.opcao,
+              deslizante && styles.opcaoDeslizante,
               ativo && [styles.ativa, { backgroundColor: theme.backgroundElement }],
             ]}>
             <ThemedText
@@ -47,6 +53,13 @@ export function Segmentado<T extends string>({ opcoes, valor, onChange }: Segmen
         );
       })}
     </View>
+  );
+
+  if (!deslizante) return barra;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      {barra}
+    </ScrollView>
   );
 }
 
@@ -64,6 +77,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.pill,
+  },
+  caixaDeslizante: {
+    alignSelf: 'flex-start',
+  },
+  opcaoDeslizante: {
+    flex: 0,
+    minWidth: 92,
+    paddingHorizontal: Spacing.three,
   },
   ativa: {
     boxShadow: '0 1px 3px rgba(19, 36, 27, 0.12)',

@@ -58,12 +58,13 @@ import { useFormatarDinheiro } from '@/ui/valor';
 const NOITES = [1, 2, 3];
 const PESSOAS_PESQUISA = [1, 2, 3, 4, 5, 6, 7, 8];
 
-/** For the budget bar, where five options share one line: "≤50", "50–100", "200+" (the € is in the title). */
-function rotuloCurtoDoEscalao(escalao: Escalao) {
-  const euros = (centimos: number) => String(Math.round(centimos / 100));
-  if (escalao.minCentimos === 0 && escalao.maxCentimos !== null) return `≤${euros(escalao.maxCentimos)}`;
-  if (escalao.maxCentimos === null) return `${euros(escalao.minCentimos)}+`;
-  return `${euros(escalao.minCentimos)}–${euros(escalao.maxCentimos)}`;
+/** "até 50 €", "50–100 €", "mais de 200 €". */
+function rotuloDoEscalao(escalao: Escalao) {
+  if (escalao.minCentimos === 0 && escalao.maxCentimos !== null) {
+    return `até ${formatarCentimosCurto(escalao.maxCentimos)}`;
+  }
+  if (escalao.maxCentimos === null) return `mais de ${formatarCentimosCurto(escalao.minCentimos)}`;
+  return `${formatarCentimosCurto(escalao.minCentimos).replace(/\s*€$/, '')}–${formatarCentimosCurto(escalao.maxCentimos)}`;
 }
 
 /** O que a casa toda pode custar: "até 400 € ao todo", "200–400 € ao todo", "mais de 400 € ao todo". */
@@ -496,16 +497,17 @@ export function DormidaCard({
               <View style={styles.linhaTitulo}>
                 <ThemedText style={styles.rotulo}>Quanto pagas, só tu</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  € por pessoa
+                  por pessoa
                 </ThemedText>
               </View>
               <Segmentado
                 opcoes={ESCALOES_POR_PESSOA.map((opcao, indice) => ({
                   valor: String(indice),
-                  label: rotuloCurtoDoEscalao(opcao),
+                  label: rotuloDoEscalao(opcao),
                 }))}
                 valor={String(escalao)}
                 onChange={(escolha) => setEscalao(Number(escolha))}
+                deslizante
               />
             </View>
             <View style={styles.pesquisas}>
@@ -684,7 +686,7 @@ export function DormidaCard({
                   ))}
                 </ScrollView>
                 {grupoId ? (
-                  <View style={styles.linhaSwitch}>
+                  <View style={[styles.linhaSwitch, styles.depoisDosGrupos]}>
                     <View style={styles.flex}>
                       <ThemedText>Só o grupo vê, por agora</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
@@ -794,6 +796,9 @@ const styles = StyleSheet.create({
   },
   seccao: {
     gap: Spacing.two,
+  },
+  depoisDosGrupos: {
+    marginTop: Spacing.three,
   },
   linhaTitulo: {
     flexDirection: 'row',
