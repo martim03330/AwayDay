@@ -59,6 +59,7 @@ function iniciais(nome: string) {
 export default function PerfilScreen() {
   const { ref: paginaRef, onScroll, scrollEventThrottle, botao: voltarAoTopo } = useVoltarAoTopo({
     reporNoTopo: true,
+    inicioAoVoltar: true,
   });
   useBarraDeEstadoClara();
   const router = useRouter();

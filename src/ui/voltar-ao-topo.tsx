@@ -25,7 +25,14 @@ const MOSTRAR_DEPOIS_DE = 1100;
  * Give `ref`, `onScroll` and `scrollEventThrottle` to the page's ScrollView and render `botao` next to it, inside a
  * container that fills the screen.
  */
-export function useVoltarAoTopo({ reporNoTopo = false }: { reporNoTopo?: boolean } = {}) {
+export function useVoltarAoTopo({
+  reporNoTopo = false,
+  inicioAoVoltar = false,
+}: {
+  reporNoTopo?: boolean;
+  /** Back in front (from another page or tab), the page starts again from its top instead of where it was left. */
+  inicioAoVoltar?: boolean;
+} = {}) {
   const ref = useRef<ScrollView>(null);
   const posicao = useRef(0);
   const [visivel, setVisivel] = useState(false);
@@ -41,11 +48,12 @@ export function useVoltarAoTopo({ reporNoTopo = false }: { reporNoTopo?: boolean
   // (`contentInsetAdjustmentBehavior="never"`): under a native header the top is a negative offset.
   useFocusEffect(
     useCallback(() => {
-      if (!reporNoTopo) return;
-      const y = Math.max(posicao.current, 0);
+      if (!reporNoTopo && !inicioAoVoltar) return;
+      const y = inicioAoVoltar ? 0 : Math.max(posicao.current, 0);
       ref.current?.scrollTo({ y, animated: false });
       posicao.current = y;
-    }, [reporNoTopo])
+      if (inicioAoVoltar) setVisivel(false);
+    }, [reporNoTopo, inicioAoVoltar])
   );
 
   const botao = visivel ? (
