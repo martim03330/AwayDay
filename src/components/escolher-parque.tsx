@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { corFacilidade, LegendaFacilidade } from '@/components/facilidade-parque';
+import { corFacilidade } from '@/components/facilidade-parque';
 import { Radius, Spacing } from '@/constants/theme';
 import type { ParkingSpot } from '@/features/parking/api';
 import { useTheme } from '@/hooks/use-theme';
@@ -9,14 +9,15 @@ import {
   facilidadeEstacionamento,
   minutosAPe,
   minutosExtraDoParque,
+  ROTULO_FACILIDADE,
 } from '@/lib/facilidade-estacionamento';
 import { chegadaRecomendada } from '@/lib/hora-saida';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
 // Where the driver says they will leave the car. Every car park within 3 km is here, the ones further out included:
-// on match day those are often the ones still with space. The colour is an estimate (distance, size, known closures),
-// never live occupancy — nobody publishes that for free — and the text under the list says so.
+// on match day those are often the ones still with space. The colour and its words («Costuma haver lugar», «Enche
+// cedo») are an estimate (distance, size, known closures), never live occupancy — nobody publishes that for free.
 
 function Opcao({
   nome,
@@ -97,7 +98,7 @@ export function EscolherParque({
   return (
     <>
       <ThemedText type="small" themeColor="textSecondary">
-        Quem vai contigo vê onde fica o carro. A cor é a nossa estimativa de haver lugar.
+        Quem vai contigo vê onde fica o carro.
       </ThemedText>
       <View style={styles.lista}>
         <Opcao
@@ -108,7 +109,7 @@ export function EscolherParque({
           onPress={() => onEscolher(null)}
         />
         {parques.map((parque) => {
-          const { nivel, motivo } = facilidadeEstacionamento(parque, { jogoGrande });
+          const { nivel } = facilidadeEstacionamento(parque, { jogoGrande });
           const minutos = minutosAPe(parque.distanceM);
           const chegada = chegadaRecomendada({
             inicio,
@@ -120,15 +121,12 @@ export function EscolherParque({
             <Opcao
               key={parque.id}
               nome={parque.name}
-              detalhe={[minutos !== null ? `${minutos} min a pé do estádio` : null, motivo]
+              // Just what decides it: how far, and whether it fills (testers found the reasons too much here).
+              detalhe={[minutos !== null ? `${minutos} min a pé` : null, ROTULO_FACILIDADE[nivel]]
                 .filter(Boolean)
                 .join(' · ')}
               // Only on the chosen one: the list stays one line per car park.
-              nota={
-                escolhido === parque.id
-                  ? `Chega até às ${formatarHora(chegada)}: apanhas lugar e ainda vais ao tasco`
-                  : undefined
-              }
+              nota={escolhido === parque.id ? `Chega até às ${formatarHora(chegada)}` : undefined}
               cor={corFacilidade(theme, nivel)}
               escolhido={escolhido === parque.id}
               onPress={() => onEscolher(parque.id)}
@@ -136,7 +134,6 @@ export function EscolherParque({
           );
         })}
       </View>
-      <LegendaFacilidade />
     </>
   );
 }

@@ -19,7 +19,7 @@ import {
   minutosExtraDoParque,
 } from '@/lib/facilidade-estacionamento';
 import { chegadaRecomendada } from '@/lib/hora-saida';
-import { formatarDistancia, plural } from '@/lib/formatos';
+import { plural } from '@/lib/formatos';
 import { useAppState } from '@/state/app-state';
 import { Card } from '@/ui/card';
 import { Etiqueta } from '@/ui/etiqueta';
@@ -124,9 +124,7 @@ function Parque({
   inicio: string | null;
 }) {
   const theme = useTheme();
-  const [detalhesAbertos, setDetalhesAbertos] = useState(false);
   const minutos = minutosAPe(parque.distanceM);
-  const { motivo } = facilidadeEstacionamento(parque, { jogoGrande });
   const chegada =
     inicio && parque.openOnMatchdays !== false
       ? chegadaRecomendada({
@@ -137,6 +135,8 @@ function Parque({
         })
       : null;
 
+  // Only what decides it: how far, whether it fills, and by when to be there. The why and the sources are once, at
+  // the end of the card (testers found every car park repeating them too much).
   return (
     <View style={styles.parque}>
       <View style={styles.topo}>
@@ -144,76 +144,93 @@ function Parque({
           <ThemedText style={[styles.letraPTexto, { color: theme.backgroundElement }]}>P</ThemedText>
         </View>
         <View style={styles.flex}>
-          <ThemedText style={destaque ? styles.nomeDestaque : styles.nome}>
-            {parque.name}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {[
-              TIPOS[parque.kind],
-              minutos !== null ? `${minutos} min a pé do estádio` : null,
-              parque.capacity !== null ? `${parque.capacity} lugares` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </ThemedText>
+          <ThemedText style={destaque ? styles.nomeDestaque : styles.nome}>{parque.name}</ThemedText>
+          {minutos !== null ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {`${minutos} min a pé`}
+            </ThemedText>
+          ) : null}
         </View>
       </View>
       <View style={styles.etiquetas}>
-        <EtiquetaFacilidade parque={parque} jogoGrande={jogoGrande} />
         {parque.openOnMatchdays === false ? (
           <Etiqueta icon={icons.fechar} label="Fechado em dias de jogo" tone="negativo" />
-        ) : null}
+        ) : (
+          <EtiquetaFacilidade parque={parque} jogoGrande={jogoGrande} />
+        )}
+        {chegada ? <Etiqueta icon={icons.horario} label={`Chega até às ${formatarHora(chegada)}`} tone="neutro" /> : null}
       </View>
-      {chegada ? (
-        <ThemedText style={{ color: theme.accentInk }}>
-          {`Chega por volta das ${formatarHora(chegada)}: apanhas lugar e ainda vais ao tasco.`}
-        </ThemedText>
-      ) : null}
-      {parque.priceNote ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {parque.priceNote}
-        </ThemedText>
-      ) : null}
-      <View style={styles.acoes}>
-        {parque.location ? (
-          <LinkTexto
-            label="Como chegar de carro"
-            onPress={() => parque.location && abrirDirecoes(parque.location, 'carro')}
-          />
-        ) : null}
-        <Abrir
-          rotulo={detalhesAbertos ? 'Esconder' : 'Porquê e fontes'}
-          aberto={detalhesAbertos}
-          onPress={() => setDetalhesAbertos((atual) => !atual)}
+      {parque.location ? (
+        <LinkTexto
+          label="Como chegar de carro"
+          onPress={() => parque.location && abrirDirecoes(parque.location, 'carro')}
         />
-      </View>
-      {detalhesAbertos ? (
-        <View style={styles.detalhes}>
-          <ThemedText type="small" themeColor="textSecondary">
-            {[
-              parque.openOnMatchdays === true ? 'Aberto em dias de jogo.' : null,
-              motivo,
-              parque.location === null ? 'Sem sítio exato no mapa: só temos a morada.' : null,
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          </ThemedText>
-          {parque.note ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              {parque.note}
-            </ThemedText>
-          ) : null}
-          <Fontes fontes={parque.sources} />
-        </View>
       ) : null}
     </View>
   );
 }
 
+/** The first sentence of a warning: the part that matters at a glance. The rest is under «Porquê e fontes». */
+function primeiraFrase(texto: string) {
+  const fim = texto.search(/[.!?](\s|$)/);
+  return fim === -1 ? texto : texto.slice(0, fim + 1);
+}
+
+/** Why each car park got its colour, the full warnings and every source: once, at the end. */
+function PorqueEFontes({
+  parques,
+  avisos,
+  jogoGrande,
+}: {
+  parques: readonly ParkingSpot[];
+  avisos: readonly { text: string; sources: ParkingSource[] }[];
+  jogoGrande: boolean;
+}) {
+  return (
+    <View style={styles.detalhes}>
+      <LegendaFacilidade />
+      <ThemedText type="small" themeColor="textMuted">
+        Uma estimativa pela distância, pelo tamanho e pelos avisos: ninguém publica lugares livres em tempo real.
+        Confirma no local.
+      </ThemedText>
+      {parques.map((parque) => {
+        const { motivo } = facilidadeEstacionamento(parque, { jogoGrande });
+        return (
+          <View key={parque.id} style={styles.porque}>
+            <ThemedText type="smallBold">{parque.name}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {[
+                TIPOS[parque.kind],
+                parque.capacity !== null ? `${parque.capacity} lugares` : null,
+                motivo,
+                parque.priceNote,
+                parque.note,
+                parque.location === null ? 'Sem sítio exato no mapa: só temos a morada.' : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </ThemedText>
+            <Fontes fontes={parque.sources} />
+          </View>
+        );
+      })}
+      {avisos.map((aviso) => (
+        <View key={aviso.text} style={styles.porque}>
+          <ThemedText type="smallBold">Aviso</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {aviso.text}
+          </ThemedText>
+          <Fontes fontes={aviso.sources} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /**
- * Where to leave the car on match day, kept short: the recommended car park first, then the match-day warnings and the
- * other car parks behind a tap. Why, and the sources, are one tap away on every item. Not live occupancy: nobody
- * publishes it free. Draws its own section title, so the title never sits over an empty section.
+ * Where to leave the car on match day, kept short: the recommended car park first, the match-day warnings in one
+ * sentence each, the other car parks behind a tap, and the why and the sources once at the end. Not live occupancy:
+ * nobody publishes it free. Draws its own section title, so the title never sits over an empty section.
  */
 export function EstacionamentoEstadio({
   estadioId,
@@ -226,9 +243,8 @@ export function EstacionamentoEstadio({
 }) {
   const theme = useTheme();
   const { modoDemo } = useAppState();
-  const [avisosAbertos, setAvisosAbertos] = useState(false);
   const [todosAbertos, setTodosAbertos] = useState(false);
-  const [coresAbertas, setCoresAbertas] = useState(false);
+  const [porqueAberto, setPorqueAberto] = useState(false);
   const dados = useQuery({
     queryKey: ['parking', estadioId],
     queryFn: modoDemo ? skipToken : () => fetchStadiumParking(estadioId),
@@ -274,23 +290,17 @@ export function EstacionamentoEstadio({
           </ThemedText>
         )}
 
+        {/* The warnings stay in sight, but short: the first sentence of each. The rest is under «Porquê e fontes». */}
         {info.warnings.length > 0 ? (
           <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
-            <Abrir
-              rotulo={`${plural(info.warnings.length, 'aviso', 'avisos')} para dia de jogo`}
-              aberto={avisosAbertos}
-              onPress={() => setAvisosAbertos((atual) => !atual)}
-            />
-            {avisosAbertos
-              ? info.warnings.map((aviso) => (
-                  <View
-                    key={aviso.text}
-                    style={[styles.aviso, { backgroundColor: theme.warningBackground }]}>
-                    <ThemedText style={{ color: theme.warningText }}>{aviso.text}</ThemedText>
-                    <Fontes fontes={aviso.sources} />
-                  </View>
-                ))
-              : null}
+            {info.warnings.map((aviso) => (
+              <View key={aviso.text} style={styles.aviso}>
+                <Icon name={icons.aviso} size={16} color={theme.warning} />
+                <ThemedText type="small" style={styles.flex}>
+                  {primeiraFrase(aviso.text)}
+                </ThemedText>
+              </View>
+            ))}
           </View>
         ) : null}
 
@@ -317,17 +327,12 @@ export function EstacionamentoEstadio({
 
         <View style={[styles.bloco, { borderTopColor: theme.backgroundSelected }]}>
           <Abrir
-            rotulo="O que querem dizer as cores"
-            aberto={coresAbertas}
-            onPress={() => setCoresAbertas((atual) => !atual)}
+            rotulo="Porquê e fontes"
+            aberto={porqueAberto}
+            onPress={() => setPorqueAberto((atual) => !atual)}
           />
-          {coresAbertas ? (
-            <>
-              <LegendaFacilidade />
-              <ThemedText type="small" themeColor="textMuted">
-                {`Uma estimativa pela distância, pelo tamanho e pelos avisos: ninguém publica lugares livres em tempo real. Pesquisado em sites de clubes, câmaras, polícia e operadores, mais parques públicos do OpenStreetMap${recomendado?.distanceM != null ? ` · recomendado a ${formatarDistancia(recomendado.distanceM)} em linha reta` : ''}. Confirma no local.`}
-              </ThemedText>
-            </>
+          {porqueAberto ? (
+            <PorqueEFontes parques={info.spots} avisos={info.warnings} jogoGrande={jogoGrande} />
           ) : null}
         </View>
       </Card>
@@ -398,16 +403,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   aviso: {
-    gap: 4,
-    padding: 10,
-    borderRadius: 12,
-    borderCurve: 'continuous',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+  },
+  porque: {
+    gap: 2,
   },
   fontes: {
     gap: 2,
   },
   detalhes: {
-    gap: Spacing.one,
+    gap: Spacing.twoAndHalf,
   },
   pressed: {
     opacity: 0.7,
