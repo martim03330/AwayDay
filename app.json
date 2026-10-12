@@ -96,6 +96,12 @@
         "projectId": "a1b5fdb5-078f-4853-a26c-bc565cec0160"
       }
     },
-    "owner": "martim03330"
+    "owner": "martim03330",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a1b5fdb5-078f-4853-a26c-bc565cec0160"
+    }
   }
 }

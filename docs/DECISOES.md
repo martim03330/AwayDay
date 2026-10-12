@@ -2,6 +2,19 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Atualizações sem compilar (EAS Update) e vibração (expo-haptics)
+
+- **Porquê:** cada correção dos testers obrigava a uma build nova no TestFlight (30 a 60 minutos). Com o
+  `expo-updates`, as mudanças só de JavaScript, estilos e imagens chegam com `eas update`. Os testers recebem-nas ao
+  fechar e reabrir a app (às vezes são precisas duas aberturas: uma descarrega, a seguinte aplica).
+- **Canais:** as builds `production` (TestFlight e lojas) ouvem o canal `production`; as `preview` ouvem `preview`.
+- **Compatibilidade:** `runtimeVersion` segue a versão da app (`policy: appVersion`, hoje 1.0.0). Uma atualização só
+  chega a builds com a mesma versão. **Sempre que entrar código nativo novo (uma biblioteca nativa, um plugin, mudanças
+  no `app.json`), sobe-se a `version` e faz-se uma build nova**, senão uma atualização pode chegar a uma build que não
+  tem o código nativo de que precisa.
+- **expo-haptics:** entra já nesta build para as reações e o deslizar para responder do chat, para que essas mudanças
+  possam depois chegar por atualização.
+
 ## 2026-10-12 — Sem clube por omissão; voltar atrás sempre visível
 
 - **Clube:** deixou de haver clube por omissão (era o Benfica). Quem salta a escolha na introdução fica sem clube
