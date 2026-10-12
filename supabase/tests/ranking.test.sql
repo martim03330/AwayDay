@@ -160,6 +160,10 @@ select pg_temp.expect('C is hidden from the table',
 select pg_temp.expect('A first, B second',
   (select string_agg(display_name, ',' order by rank_position) from public.ranking_leaderboard('geral', 'epoca', 100)
    where display_name like 'Teste _'), 'Teste A,Teste B');
+-- Everyone visible is in the table, with or without points (20261012220000_leaderboard_shows_zero_points.sql).
+select pg_temp.expect('everyone visible is in the table, even with 0 points',
+  (select count(*)::integer from public.ranking_leaderboard('geral', 'epoca', 100)),
+  (select least(count(*), 100)::integer from public.profile where show_in_rankings));
 select pg_temp.expect('club table only has my club',
   (select count(*)::integer from public.ranking_leaderboard('clube', 'epoca', 100) where display_name = 'Teste B'), 0);
 select pg_temp.expect('no friends yet: only me',

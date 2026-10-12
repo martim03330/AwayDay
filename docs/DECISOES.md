@@ -2,6 +2,13 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Tabela de pontos com toda a gente, mesmo com 0 pontos
+
+- A tabela de pontos (`ranking_leaderboard`) mostra toda a gente que aparece no ranking, também quem ainda tem 0
+  pontos; os empates ficam por ordem alfabética. Razão: sem carimbos, a tabela ficava vazia e parecia avariada.
+  Vale para os testers e para os utilizadores reais.
+- As subidas e descidas de divisão continuam a contar só quem somou pontos na época.
+
 ## 2026-10-12 — Administração fora das Definições
 
 - As ferramentas de administração (pontos de encontro, fotos, denúncias, feedback) saem das Definições para um ecrã
