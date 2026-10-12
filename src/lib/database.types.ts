@@ -4590,6 +4590,7 @@ export type Database = {
         Args: { p_group_id: string; p_profile_id: string }
         Returns: boolean
       }
+      is_offensive_name: { Args: { p_name: string }; Returns: boolean }
       is_trip_member: {
         Args: { p_profile_id: string; p_session_id: string }
         Returns: boolean
@@ -4616,6 +4617,7 @@ export type Database = {
         Args: { p_approve: boolean; p_photo_id: string }
         Returns: undefined
       }
+      moderation_text: { Args: { p_text: string }; Returns: string }
       my_approved_place_photo_count: { Args: never; Returns: number }
       my_blocked_people: {
         Args: never
@@ -4844,6 +4846,7 @@ export type Database = {
           total_cents: number
         }[]
       }
+      name_allowed: { Args: { p_name: string }; Returns: boolean }
       nearest_municipality_name: {
         Args: { p_latitude: number; p_longitude: number }
         Returns: string

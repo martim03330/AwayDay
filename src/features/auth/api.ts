@@ -60,6 +60,15 @@ export async function signIn({ email, password }: SignInInput) {
   if (error) throw error;
 }
 
+/**
+ * Whether a name can be used (the server refuses swear words and slurs). Asked before signing up, so the form can say
+ * «escolhe outro nome» instead of failing. If the server cannot be reached, says yes: sign-up then decides.
+ */
+export async function isNameAllowed(name: string) {
+  const { data, error } = await client().rpc('name_allowed', { p_name: name.trim() });
+  return error ? true : data;
+}
+
 /** Signs out on this phone only; other devices stay signed in. */
 export async function signOut() {
   // While still signed in: stop sending this account's notifications to this phone.

@@ -46,7 +46,7 @@ function mensagemDeRecusa(erro: unknown) {
     case 'not_member':
       return 'Já não estás neste grupo.';
     case 'bad_name':
-      return 'O nome do grupo tem de ter entre 2 e 60 letras.';
+      return 'Escolhe outro nome (entre 2 e 60 letras, sem palavrões).';
     case 'own_membership':
       return 'Para saíres do grupo usa «Sair do grupo».';
     default:

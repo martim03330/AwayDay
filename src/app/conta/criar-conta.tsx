@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
 
 import { ConsentimentoTermos } from '@/components/consentimento-termos';
+import { isNameAllowed } from '@/features/auth/api';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useSignUp } from '@/features/auth/hooks/useAuthActions';
@@ -34,9 +35,14 @@ export default function CriarContaScreen() {
   const [aceitou, setAceitou] = useState(false);
   /** Email que já tem conta: em vez de pedir um código que nunca chega, propõe entrar. */
   const [emailComConta, setEmailComConta] = useState<string | null>(null);
+  /** The name the server refused (a swear word or a slur), until it is changed. */
+  const [nomeRecusado, setNomeRecusado] = useState<string | null>(null);
+  const [aVerificarNome, setAVerificarNome] = useState(false);
 
   const erros = {
-    nome: tentou ? displayNameError(nome) : null,
+    nome: tentou
+      ? (displayNameError(nome) ?? (nomeRecusado === nome ? 'Escolhe outro nome: este não pode ser.' : null))
+      : null,
     email: tentou ? emailError(email) : null,
     password: tentou ? passwordError(password) : null,
     termos: tentou && !aceitou ? 'Para criar conta tens de aceitar os termos e a política de privacidade.' : null,
@@ -52,15 +58,22 @@ export default function CriarContaScreen() {
     setEmailComConta(null);
   }
 
-  function submeter() {
+  async function submeter() {
     setTentou(true);
     if (
       displayNameError(nome) ||
       emailError(email) ||
       passwordError(password) ||
       !aceitou ||
-      criar.isPending
+      criar.isPending ||
+      aVerificarNome
     ) {
+      return;
+    }
+    setAVerificarNome(true);
+    const permitido = await isNameAllowed(nome).finally(() => setAVerificarNome(false));
+    if (!permitido) {
+      setNomeRecusado(nome);
       return;
     }
     const emailNormalizado = normalizeEmail(email);
@@ -141,13 +154,13 @@ export default function CriarContaScreen() {
         autoComplete="new-password"
         textContentType="newPassword"
         returnKeyType="go"
-        onSubmitEditing={submeter}
+        onSubmitEditing={() => void submeter()}
       />
       <ConsentimentoTermos aceite={aceitou} onMudar={setAceitou} erro={erros.termos} />
       <Button
-        label={criar.isPending ? 'A criar conta…' : 'Criar conta'}
-        onPress={submeter}
-        disabled={criar.isPending}
+        label={criar.isPending || aVerificarNome ? 'A criar conta…' : 'Criar conta'}
+        onPress={() => void submeter()}
+        disabled={criar.isPending || aVerificarNome}
       />
       <ThemedText type="small" themeColor="textSecondary">
         Os outros adeptos só veem o teu nome, a foto e o clube que apoias.

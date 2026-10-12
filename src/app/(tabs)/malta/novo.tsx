@@ -17,7 +17,7 @@ function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof GroupRefused)) return 'Não deu para criar o grupo. Tenta outra vez.';
   switch (erro.reason) {
     case 'bad_name':
-      return 'O nome do grupo tem de ter entre 2 e 60 letras.';
+      return 'Escolhe outro nome (entre 2 e 60 letras, sem palavrões).';
     case 'rate_limited':
       return 'Já criaste grupos que cheguem por hoje.';
     case 'not_signed_in':

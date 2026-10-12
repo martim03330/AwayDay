@@ -2,6 +2,21 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Sem nomes ofensivos
+
+- Nomes de pessoas, de grupos e de viagens passam por uma lista de palavrões e insultos (português, algum brasileiro
+  e inglês), **no servidor**, com um trigger em cada tabela (`refuse_offensive_name`): recusa com `bad_name` por
+  qualquer caminho. A criação de conta pergunta antes (`name_allowed`, aberta a quem ainda não tem conta) para dizer
+  «Escolhe outro nome» em vez de falhar.
+- O nome é normalizado antes de comparar: sem acentos, algarismos e símbolos lidos como letras («c4br40»), letras
+  repetidas juntas («merdaaa»), plurais. As palavras curtas só contam inteiras («Barcelona» não é «cona»); algumas
+  longas contam também escritas juntas ou com pontos («f.i.l.h.o d.a p.u.t.a»).
+- Ficaram de fora de propósito, por falsos positivos: «caralho» escrito junto (a caralhota de Almeirim), «niger» (um
+  país), «dick» (um nome próprio).
+- Nomes já gravados ficam até serem mudados. A 2026-10-12 havia um perfil apanhado pela lista; muda-se à mão ou por
+  denúncia.
+- É uma lista, não moderação a sério: apanha o óbvio. O resto continua a ir pelas denúncias.
+
 ## 2026-10-12 — Menções no chat: @Nome e @todos
 
 - Escrever «@» na conversa do grupo ou do carro abre a lista de quem lá está, com **@todos** primeiro. Tocar num nome

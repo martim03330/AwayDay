@@ -36,7 +36,7 @@ function mensagemDeRecusa(erro: unknown) {
   if (!(erro instanceof ProfileRefused)) return 'Não deu para guardar. Tenta outra vez.';
   switch (erro.reason) {
     case 'bad_name':
-      return 'O nome tem de ter entre 2 e 40 letras.';
+      return 'Escolhe outro nome (entre 2 e 40 letras, sem palavrões).';
     case 'rate_limited':
       return 'Já mudaste o nome vezes que chegue esta semana.';
     default:
