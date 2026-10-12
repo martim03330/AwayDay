@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { Fragment, useRef, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -43,11 +43,16 @@ export function AuthForm({ intro, title, hero, error, notice, children }: AuthFo
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.conteudo}>
         {hero ? (
-          <View style={[styles.hero, { backgroundColor: theme.accent }]}>
-            <Icon name={hero.icon} size={42} strokeWidth={1.8} color={theme.accentText} />
+          // The tag sits outside the tile: inside it, a longer tag («8 algarismos») was cut at the tile's edge.
+          <View style={styles.heroLugar}>
+            <View style={[styles.hero, { backgroundColor: theme.accent }]}>
+              <Icon name={hero.icon} size={42} strokeWidth={1.8} color={theme.accentText} />
+            </View>
             {hero.tag ? (
               <View style={[styles.heroTag, { backgroundColor: theme.highlight }]}>
-                <ThemedText style={[styles.heroTagTexto, { color: theme.highlightText }]}>{hero.tag}</ThemedText>
+                <ThemedText numberOfLines={1} style={[styles.heroTagTexto, { color: theme.highlightText }]}>
+                  {hero.tag}
+                </ThemedText>
               </View>
             ) : null}
           </View>
@@ -154,10 +159,12 @@ export function CampoCodigo({
             const algarismo = algarismos[indice];
             const ativa = focado && indice === algarismos.length;
             return (
-              <View key={indice} style={styles.grupoCaixa}>
+              <Fragment key={indice}>
+                {/* The dash is its own item, so every box keeps the same width. */}
                 {indice === metade ? (
                   <View style={[styles.traco, { backgroundColor: theme.borderStrong }]} />
                 ) : null}
+                <View style={styles.grupoCaixa}>
                 <View
                   style={[
                     styles.caixaDigito,
@@ -180,7 +187,8 @@ export function CampoCodigo({
                     <View style={[styles.cursor, { backgroundColor: theme.accent }]} />
                   ) : null}
                 </View>
-              </View>
+                </View>
+              </Fragment>
             );
           })}
         </View>
@@ -238,10 +246,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     transform: [{ rotate: '-6deg' }],
   },
+  heroLugar: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+  },
   heroTag: {
     position: 'absolute',
-    top: -8,
-    right: -10,
+    top: 0,
+    left: 58,
     height: 26,
     justifyContent: 'center',
     paddingHorizontal: Spacing.two,

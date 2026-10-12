@@ -264,7 +264,7 @@ export default function PerfilScreen() {
               <Card style={styles.grupo}>
                 <LinhaGrupo
                   onPress={() => router.push('/perfil/editar')}
-                  accessibilityLabel="O teu perfil: foto, nome e de onde partes. Toca para abrir."
+                  accessibilityLabel="Editar o teu nome, a foto e de onde partes."
                   leading={
                     <Azulejo
                       icon={icons.camara}
@@ -272,7 +272,7 @@ export default function PerfilScreen() {
                       tinta={theme.highlightText}
                     />
                   }
-                  title="Foto, nome e de onde partes"
+                  title="Editar nome e foto"
                   subtitle={
                     perfilDaConta.data?.avatarUrl
                       ? 'A tua cara nas boleias e nos grupos'
