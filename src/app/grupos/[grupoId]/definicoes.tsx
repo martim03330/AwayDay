@@ -414,6 +414,15 @@ export default function DefinicoesDoGrupoScreen() {
           </ThemedText>
         </Pressable>
       </ScrollView>
+      <ThemedText type="small" themeColor="textMuted" style={styles.centrado}>
+        A foto e o fundo só são vistos por quem está no grupo.
+      </ThemedText>
+
+      {/* Dashed line between the chat look and the leave/report actions. iOS only draws a dashed border on all four
+          sides, so the box is clipped to its top edge. */}
+      <View style={styles.tracejado} accessible={false}>
+        <View style={[styles.tracejadoLinha, { borderColor: theme.border }]} />
+      </View>
 
       <View style={styles.sair}>
         <LinkTexto perigo label="Sair do grupo" onPress={sair} />
@@ -425,9 +434,6 @@ export default function DefinicoesDoGrupoScreen() {
         />
       </View>
       {moderacao.elemento}
-      <ThemedText type="small" themeColor="textMuted" style={styles.centrado}>
-        A foto e o fundo só são vistos por quem está no grupo.
-      </ThemedText>
     </Screen>
   );
 }
@@ -492,6 +498,17 @@ const styles = StyleSheet.create({
   },
   premido: {
     opacity: 0.7,
+  },
+  tracejado: {
+    height: 1.5,
+    overflow: 'hidden',
+    marginVertical: Spacing.two,
+  },
+  tracejadoLinha: {
+    height: 6,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 1,
   },
   separador: {
     width: 56,
