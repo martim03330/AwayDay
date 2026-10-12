@@ -67,3 +67,14 @@ export function ficaNaListaDeJogos(jogo: Pick<Jogo, 'inicio'>, agora: number, fo
   if (!foste) return false;
   return agora < dataEmLisboaAPartirDe(fimDoJogo(jogo), 2, '00:00').getTime();
 }
+
+/**
+ * The stage, short enough for one line on a game card: «Fase de liga · Jornada 3» and «Jornada 3» become
+ * «3.ª jornada»; other stages («Oitavos de final») keep their last part.
+ */
+export function faseCurta(fase: string) {
+  const jornada = /jornada\s+(\d+)/i.exec(fase);
+  if (jornada) return `${jornada[1]}.ª jornada`;
+  const partes = fase.split(' · ');
+  return partes[partes.length - 1] ?? fase;
+}

@@ -14,7 +14,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { formatarNota } from '@/lib/formatos';
-import { eCompeticaoEuropeia, fimDoJogo, notaMedia, type EstadoJogo } from '@/lib/jogos';
+import { eCompeticaoEuropeia, faseCurta, fimDoJogo, notaMedia, type EstadoJogo } from '@/lib/jogos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { nomesCompeticao } from '@/mocks/jogos';
@@ -157,7 +157,7 @@ export function JogoCard({ jogo, estado, avaliacao, onPress }: JogoCardProps) {
           type="eyebrow"
           themeColor={eCompeticaoEuropeia(jogo.competicao) ? 'info' : 'textSecondary'}
           numberOfLines={1}>
-          {nomesCompeticao[jogo.competicao]} · {jogo.fase}
+          {nomesCompeticao[jogo.competicao]} · {faseCurta(jogo.fase)}
         </ThemedText>
 
         <View style={styles.equipas}>

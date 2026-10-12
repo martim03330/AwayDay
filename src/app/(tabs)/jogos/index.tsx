@@ -19,7 +19,7 @@ import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { chaveDoDia, formatarDia } from '@/lib/datas';
+import { chaveDoDia, formatarDiaComSemana } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import {
   clubesDoUtilizador,
@@ -84,7 +84,7 @@ function agruparPorDia(lista: Jogo[]) {
     if (ultimo?.chave === chave) {
       ultimo.jogos.push(jogo);
     } else {
-      grupos.push({ chave, titulo: formatarDia(inicio), jogos: [jogo] });
+      grupos.push({ chave, titulo: formatarDiaComSemana(inicio), jogos: [jogo] });
     }
   }
   return grupos;
