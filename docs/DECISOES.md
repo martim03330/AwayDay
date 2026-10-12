@@ -15,9 +15,16 @@ Pedido dos testers: limpar o que estava «amontoado».
   «Porquê e fontes» no fim. Nas boleias, cada parque é uma linha («11 min a pé · Pode ser difícil»).
 - **Perfil em menu** (referência: Betclic): da parte de baixo, só linhas com ícone, título e um número quando ajuda;
   o resto abre na própria página. Tascos visitados ganharam página.
-- **Apresentação** (`src/app/apresentacao.tsx`): cinco passos, um por separador, uma vez a seguir à introdução
-  (`apresentacaoVista`), e outra vez em Definições → Ver a apresentação. Nunca em modo demo nem nas capturas. Os
-  textos são para o Martim corrigir.
+- **Apresentação com caixinhas** (`src/components/apresentacao-guiada.tsx`): por cima dos separadores reais, o ecrã
+  escurece, o separador explicado fica iluminado e uma caixa com seta diz o que lá está. Uma vez a seguir à introdução
+  (`apresentacaoVista`) e outra vez em Definições → Ver a apresentação. Nunca em modo demo nem nas capturas. A posição
+  dos separadores é estimada (a barra nativa não diz onde está): flutuante no iOS 26, a toda a largura antes e no
+  Android. Os textos são para o Martim corrigir.
+- **Estacionamento redesenhado:** o recomendado em destaque (hora de chegada e «Como chegar de carro»), os outros numa
+  lista com bolinha de cor e um botão redondo para o caminho, avisos atrás de um toque. Saíram as fontes e a legenda
+  das cores: cada parque diz o estado por palavras.
+- **Perfis em toda a app:** tocar numa pessoa abre o perfil (`useAbrirPerfil`), e no perfil dá para pedir amizade a
+  quem se cruzou contigo.
 
 ## 2026-10-12 — Navegação: listas sempre por baixo, barras de cor fixa
 

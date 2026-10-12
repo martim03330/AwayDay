@@ -107,8 +107,6 @@ function NavegacaoRaiz() {
       </Stack.Protected>
       <Stack.Protected guard={dentro}>
         <Stack.Screen name="(tabs)" />
-        {/* The short tour of the tabs, once after the introduction. */}
-        <Stack.Screen name="apresentacao" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>
       {/* Entrar e criar conta: abre por cima da introdução ou das tabs. */}
       <Stack.Screen name="conta" options={{ presentation: 'modal' }} />

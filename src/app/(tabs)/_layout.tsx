@@ -1,9 +1,8 @@
-import { useRouter } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ApresentacaoGuiada } from '@/components/apresentacao-guiada';
 import { Colors as colors } from '@/constants/theme';
 import { BUILD_DE_CAPTURAS } from '@/lib/capturas';
 import { useAppState } from '@/state/app-state';
@@ -27,13 +26,10 @@ function EtiquetaDemo() {
 }
 
 export default function TabsLayout() {
-  const { modoDemo, apresentacaoVista } = useAppState();
-  const router = useRouter();
-
-  // The first time in (right after the introduction), the short tour of the tabs. Never in demo mode or screenshots.
-  useEffect(() => {
-    if (!apresentacaoVista && !modoDemo && !BUILD_DE_CAPTURAS) router.push('/apresentacao');
-  }, [apresentacaoVista, modoDemo, router]);
+  const { modoDemo, apresentacaoVista, marcarApresentacaoVista } = useAppState();
+  // The first time in (right after the introduction), the tour of the tabs on top of them. Never in demo mode or
+  // screenshots.
+  const mostrarApresentacao = !apresentacaoVista && !modoDemo && !BUILD_DE_CAPTURAS;
   return (
     <View style={styles.flex}>
       {/* The bar keeps its colour at the end of a page too (iOS makes it transparent there by default, which
@@ -79,6 +75,7 @@ export default function TabsLayout() {
         </NativeTabs.Trigger>
       </NativeTabs>
       {modoDemo && !BUILD_DE_CAPTURAS ? <EtiquetaDemo /> : null}
+      {mostrarApresentacao ? <ApresentacaoGuiada onFim={marcarApresentacaoVista} /> : null}
     </View>
   );
 }

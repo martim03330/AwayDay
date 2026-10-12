@@ -27,6 +27,6 @@ appId: host.exp.Exponent
 # The short tour of the tabs shows once after the introduction: skip it.
 - runFlow:
     when:
-      visible: "Saltar"
+      visible: "Saltar a apresentação"
     commands:
-      - tapOn: "Saltar"
+      - tapOn: "Saltar a apresentação"

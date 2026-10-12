@@ -118,7 +118,7 @@ export default function DefinicoesScreen() {
           separador
         />
         <LinhaGrupo
-          // Marking it unseen is enough: the tabs open it (see their layout).
+          // Marking it unseen is enough: the tabs show it on top (see their layout).
           onPress={reverApresentacao}
           accessibilityLabel="Ver a apresentação da app"
           leading={<Icon name={icons.introducao} size={20} color={theme.accentInk} />}
