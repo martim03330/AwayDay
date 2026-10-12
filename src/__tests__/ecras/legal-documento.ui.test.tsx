@@ -8,6 +8,8 @@ let mockParams: { documento?: string } = {};
 const mockTitulos: string[] = [];
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
+  useFocusEffect: jest.fn(),
+  useSegments: () => [],
   Stack: {
     Screen: ({ options }: { options?: { title?: string } }) => {
       if (options?.title) mockTitulos.push(options.title);

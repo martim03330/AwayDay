@@ -13,6 +13,8 @@ jest.mock('@/lib/session', () => jest.requireActual('../../../jest/sessao').mock
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({ grupoId: 'g1' }),
+  useFocusEffect: jest.fn(),
+  useSegments: () => [],
   Stack: { Screen: () => null },
 }));
 jest.mock('expo-router/react-navigation', () => ({ useHeaderHeight: () => 0 }));

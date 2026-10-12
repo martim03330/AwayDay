@@ -10,7 +10,11 @@ import { definirUtilizador, UTILIZADORES } from '../../../jest/sessao';
 jest.mock('@/lib/session', () => jest.requireActual('../../../jest/sessao').mockSessao);
 
 const mockBack = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ back: mockBack, push: jest.fn() }) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: mockBack, push: jest.fn() }),
+  useFocusEffect: jest.fn(),
+  useSegments: () => [],
+}));
 jest.mock('expo-image', () => {
   const { View } = jest.requireActual('react-native');
   return { Image: View };
