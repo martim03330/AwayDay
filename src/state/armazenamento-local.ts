@@ -16,6 +16,8 @@ export type EstadoPermissaoGuardado = 'aceite' | 'recusada' | null;
 export type PreferenciasLocais = {
   onboardingConcluido: boolean;
   introducaoVista: boolean;
+  /** The short tour of the tabs, shown once after the introduction. */
+  apresentacaoVista: boolean;
   permissoes: { localizacao: EstadoPermissaoGuardado; notificacoes: EstadoPermissaoGuardado };
   clubeFavoritoId: string | null;
   clubeDaTerraId: string | null;
@@ -45,6 +47,7 @@ export type AtividadeLocal = {
 export const PREFERENCIAS_INICIAIS: PreferenciasLocais = {
   onboardingConcluido: false,
   introducaoVista: false,
+  apresentacaoVista: false,
   permissoes: { localizacao: null, notificacoes: null },
   clubeFavoritoId: null,
   clubeDaTerraId: null,
@@ -178,6 +181,7 @@ export async function lerPreferencias(): Promise<PreferenciasLocais> {
   return {
     onboardingConcluido: booleano(valor.onboardingConcluido, false),
     introducaoVista: booleano(valor.introducaoVista, false),
+    apresentacaoVista: booleano(valor.apresentacaoVista, false),
     permissoes: {
       localizacao: permissao(permissoes.localizacao),
       notificacoes: permissao(permissoes.notificacoes),

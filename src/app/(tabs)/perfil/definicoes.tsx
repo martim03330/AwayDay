@@ -41,6 +41,7 @@ export default function DefinicoesScreen() {
     alternarSons,
     permissoes,
     reverIntroducao,
+    reverApresentacao,
     modoDemo,
     alternarModoDemo,
     tema,
@@ -113,6 +114,16 @@ export default function DefinicoesScreen() {
           leading={<Icon name={icons.recomecar} size={20} color={theme.accentInk} />}
           title="Rever a introdução"
           subtitle="As boas-vindas e os passos do início, outra vez."
+          trailing={chevron}
+          separador
+        />
+        <LinhaGrupo
+          // Marking it unseen is enough: the tabs open it (see their layout).
+          onPress={reverApresentacao}
+          accessibilityLabel="Ver a apresentação da app"
+          leading={<Icon name={icons.introducao} size={20} color={theme.accentInk} />}
+          title="Ver a apresentação"
+          subtitle="O que há em cada separador, em cinco passos."
           trailing={chevron}
         />
       </Card>

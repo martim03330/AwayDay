@@ -24,3 +24,9 @@ appId: host.exp.Exponent
       visible: "Juntar à tua conta\\?"
     commands:
       - tapOn: "Agora não"
+# The short tour of the tabs shows once after the introduction: skip it.
+- runFlow:
+    when:
+      visible: "Saltar"
+    commands:
+      - tapOn: "Saltar"

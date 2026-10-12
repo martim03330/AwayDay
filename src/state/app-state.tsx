@@ -153,6 +153,11 @@ type AppState = {
   onboardingConcluido: boolean;
   /** Já passou pelo onboarding pelo menos uma vez (ao rever, as escolhas vêm preenchidas). */
   introducaoVista: boolean;
+  /** Já viu a apresentação dos separadores (aparece uma vez, a seguir à introdução). */
+  apresentacaoVista: boolean;
+  marcarApresentacaoVista: () => void;
+  /** Volta a mostrar a apresentação (Definições). */
+  reverApresentacao: () => void;
   permissoes: Permissoes;
   concluirOnboarding: (permissoes: Permissoes) => void;
   /** Guarda as permissões sem acabar a introdução: ainda falta o passo da conta. */
@@ -1002,6 +1007,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     alternarModoDemo,
     onboardingConcluido: preferencias.onboardingConcluido,
     introducaoVista: preferencias.introducaoVista,
+    apresentacaoVista: preferencias.apresentacaoVista,
+    marcarApresentacaoVista: () =>
+      mudarPreferencias((atuais) => ({ ...atuais, apresentacaoVista: true })),
+    reverApresentacao: () =>
+      mudarPreferencias((atuais) => ({ ...atuais, apresentacaoVista: false })),
     permissoes: preferencias.permissoes,
     concluirOnboarding,
     guardarPermissoes: (permissoes) => mudarPreferencias((atuais) => ({ ...atuais, permissoes })),

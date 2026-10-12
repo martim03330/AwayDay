@@ -1,4 +1,6 @@
+import { useRouter } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,7 +27,13 @@ function EtiquetaDemo() {
 }
 
 export default function TabsLayout() {
-  const { modoDemo } = useAppState();
+  const { modoDemo, apresentacaoVista } = useAppState();
+  const router = useRouter();
+
+  // The first time in (right after the introduction), the short tour of the tabs. Never in demo mode or screenshots.
+  useEffect(() => {
+    if (!apresentacaoVista && !modoDemo && !BUILD_DE_CAPTURAS) router.push('/apresentacao');
+  }, [apresentacaoVista, modoDemo, router]);
   return (
     <View style={styles.flex}>
       {/* The bar keeps its colour at the end of a page too (iOS makes it transparent there by default, which

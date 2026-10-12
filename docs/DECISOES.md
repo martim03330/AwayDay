@@ -2,6 +2,23 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-12 — Menos informação nos ecrãs e apresentação da app
+
+Pedido dos testers: limpar o que estava «amontoado».
+
+- **Boleias:** lugares como «2/4 livres» (lista e ficha). A lista deixa de mostrar o historial do condutor (fica na
+  ficha) e a ficha deixa de mostrar o «cheia: X €» junto ao preço (está na conta mais abaixo).
+- **Linha de detalhes** (`src/ui/linha-detalhes.tsx`): o «·» fica no fim da parte anterior, para nenhuma linha começar
+  com um ponto solto, e há mais espaço entre partes.
+- **Estacionamento:** cada parque só com o tempo a pé, se costuma encher e a hora de chegada. Os avisos ficam à vista
+  só com a primeira frase. As razões de cada parque, os avisos completos e as fontes ficam juntos, uma vez, em
+  «Porquê e fontes» no fim. Nas boleias, cada parque é uma linha («11 min a pé · Pode ser difícil»).
+- **Perfil em menu** (referência: Betclic): da parte de baixo, só linhas com ícone, título e um número quando ajuda;
+  o resto abre na própria página. Tascos visitados ganharam página.
+- **Apresentação** (`src/app/apresentacao.tsx`): cinco passos, um por separador, uma vez a seguir à introdução
+  (`apresentacaoVista`), e outra vez em Definições → Ver a apresentação. Nunca em modo demo nem nas capturas. Os
+  textos são para o Martim corrigir.
+
 ## 2026-10-12 — Navegação: listas sempre por baixo, barras de cor fixa
 
 - **Cada stack das tabs começa na sua lista** (`unstable_settings = { anchor: 'index' }`). Um link (por exemplo, uma
