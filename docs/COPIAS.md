@@ -32,12 +32,14 @@ gh secret set BACKUP_PASSPHRASE
 
 ```
 grep -vE '(^|[ "])(log_[a-z_]+|session_preload_libraries)([" ]|=|$)' copia/roles.sql > copia/roles-restauro.sql
+awk 'pend { if ($0 == "\\.") { pend=""; next } print pend; pend="" } /^COPY .* FROM stdin;$/ { pend=$0; next } { print }' copia/data.sql > copia/data-restauro.sql
 psql "<endereço da base de dados de destino>" --single-transaction -v ON_ERROR_STOP=1 \
   --file copia/roles-restauro.sql --file copia/schema.sql \
-  --command 'SET session_replication_role = replica' --file copia/data.sql
+  --command 'SET session_replication_role = replica' --file copia/data-restauro.sql
 ```
 
-   A primeira linha tira as definições de papéis que só o superutilizador pode mudar (um Supabase novo já as tem).
+   As duas primeiras linhas tiram as definições de papéis que só o superutilizador pode mudar (um Supabase novo já
+   as tem) e as tabelas vazias (não há nada a copiar, e algumas tabelas internas do Storage não aceitam escrita).
 
 4. Volta a publicar as Edge Functions (`supabase functions deploy`) e os segredos delas, que não vão na cópia.
 

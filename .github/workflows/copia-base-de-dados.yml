@@ -92,9 +92,12 @@ jobs:
           FORA='(^|[ "])(log_[a-z_]+|session_preload_libraries)([" ]|=|$)'
           echo "Linhas deixadas de fora no teste:"; grep -nE "$FORA" copia/roles.sql | cut -c1-160 || true
           grep -vE "$FORA" copia/roles.sql > copia/roles-restauro.sql
+          # Empty tables are left out of the data (nothing to copy), which also skips internal Storage tables the
+          # postgres user cannot write to.
+          awk 'pend { if ($0 == "\\.") { pend=""; next } print pend; pend="" } /^COPY .* FROM stdin;$/ { pend=$0; next } { print }' copia/data.sql > copia/data-restauro.sql
           psql "$LOCAL_DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction \
             --file copia/roles-restauro.sql --file copia/schema.sql \
-            --command 'SET session_replication_role = replica' --file copia/data.sql
+            --command 'SET session_replication_role = replica' --file copia/data-restauro.sql
 
       - name: Confirmar que voltou tudo
         run: |
