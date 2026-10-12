@@ -639,20 +639,13 @@ export default function BoleiaScreen() {
         <View style={[styles.factos, { borderColor: theme.backgroundSelected }]}>
           <Facto rotulo="Saída" valor={formatarHora(partida)} />
           <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
-          <Facto
-            rotulo="Por pessoa"
-            valor={formatarCentimos(boleia.shareNowCents)}
-            nota={
-              boleia.shareFullCents < boleia.shareNowCents
-                ? `cheia: ${formatarCentimos(boleia.shareFullCents)}`
-                : undefined
-            }
-          />
+          {/* Only the price now: how it drops as the car fills is in the cost breakdown further down. */}
+          <Facto rotulo="Por pessoa" valor={formatarCentimos(boleia.shareNowCents)} />
           <View style={[styles.divisoria, { backgroundColor: theme.backgroundSelected }]} />
           <Facto
             rotulo="Lugares"
-            valor={livres > 0 ? String(livres) : 'Cheia'}
-            nota={livres > 0 ? `livres de ${boleia.seatsOffered}` : undefined}
+            valor={livres > 0 ? `${livres}/${boleia.seatsOffered}` : 'Cheia'}
+            nota={livres > 0 ? 'livres' : undefined}
           />
         </View>
         {boleia.note ? (

@@ -55,7 +55,7 @@ function LinhaBoleia({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Boleia de ${boleia.driverName} a partir de ${boleia.originName}, ${plural(livres, 'lugar livre', 'lugares livres')}, ${formatarCentimos(boleia.shareNowCents)} por pessoa agora`}
+      accessibilityLabel={`Boleia de ${boleia.driverName} a partir de ${boleia.originName}, ${plural(livres, 'lugar livre', 'lugares livres')} de ${boleia.seatsOffered}, ${formatarCentimos(boleia.shareNowCents)} por pessoa agora`}
       style={({ pressed }) => [
         styles.linha,
         separador && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
@@ -66,15 +66,11 @@ function LinhaBoleia({
           <ThemedText style={styles.origem} numberOfLines={1}>
             {boleia.originName}
           </ThemedText>
+          {/* Who and when. The driver's record (rides, faults) is in the ride's page, not in the list. */}
           <LinhaDetalhes
             partes={[
               boleia.isMine ? 'A tua boleia' : boleia.driverName,
               `sai ${formatarDiaEHora(new Date(boleia.departureAt), agora).toLowerCase()}`,
-              boleia.isMine
-                ? null
-                : boleia.driverCompleted === 0 && boleia.driverFaults === 0
-                  ? 'primeira boleia'
-                  : `${plural(boleia.driverCompleted, 'boleia', 'boleias')} · ${plural(boleia.driverFaults, 'falta', 'faltas')}`,
             ]}
           />
         </View>
@@ -103,7 +99,7 @@ function LinhaBoleia({
         ) : (
           <Etiqueta
             icon={icons.perfil}
-            label={livres > 0 ? plural(livres, 'lugar livre', 'lugares livres') : 'Cheia'}
+            label={livres > 0 ? `${livres}/${boleia.seatsOffered} livres` : 'Cheia'}
             tone={livres > 0 ? 'positivo' : 'neutro'}
           />
         )}
