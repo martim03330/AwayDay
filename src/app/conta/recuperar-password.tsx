@@ -36,7 +36,7 @@ export default function RecuperarPasswordScreen() {
 
   return (
     <AuthForm
-      intro="Diz-nos o teu email e enviamos um código para escolheres uma password nova."
+      intro="Diz-nos o teu email e enviamos um código para escolheres uma palavra-passe nova."
       error={pedir.error && !semConta ? authErrorMessage(pedir.error) : null}>
       <Campo
         label="Email"

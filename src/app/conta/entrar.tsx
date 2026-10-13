@@ -24,7 +24,7 @@ export default function EntrarScreen() {
   const [tentou, setTentou] = useState(false);
 
   const erroEmail = tentou ? emailError(email) : null;
-  const erroPassword = tentou && !password ? 'Falta a password.' : null;
+  const erroPassword = tentou && !password ? 'Falta a palavra-passe.' : null;
   // Conta por confirmar não é um erro para mostrar aqui: segue para o ecrã do código.
   const erroPedido =
     entrar.error && authErrorCode(entrar.error) !== 'email_not_confirmed'
@@ -63,7 +63,7 @@ export default function EntrarScreen() {
       />
       <Campo
         ref={campoPassword}
-        label="Password"
+        label="Palavra-passe"
         value={password}
         onChangeText={setPassword}
         erro={erroPassword}
@@ -80,7 +80,7 @@ export default function EntrarScreen() {
         disabled={entrar.isPending || entrar.isSuccess}
       />
       <LinkTexto
-        label="Esqueceste a password?"
+        label="Esqueceste a palavra-passe?"
         onPress={() =>
           router.push({ pathname: '/conta/recuperar-password', params: { email: normalizeEmail(email) } })
         }

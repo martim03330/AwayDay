@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
@@ -13,6 +13,9 @@ import { icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 
+/** Same as the project's minimum time between emails (Supabase Auth, `smtp_max_frequency`). */
+const ESPERA_ENTRE_CODIGOS_MS = 60 * 1000;
+
 export default function ConfirmarEmailScreen() {
   const { email = '' } = useLocalSearchParams<{ email?: string }>();
   const verificar = useVerifySignUpCode();
@@ -20,6 +23,26 @@ export default function ConfirmarEmailScreen() {
   const fecharConta = useCloseAccountFlow();
   const [codigo, setCodigo] = useState('');
   const [tentou, setTentou] = useState(false);
+  // Supabase sends at most one code a minute per email: the button says how long is left instead of failing.
+  const [podeReenviarEm, setPodeReenviarEm] = useState(() => Date.now() + ESPERA_ENTRE_CODIGOS_MS);
+  const [agora, setAgora] = useState(() => Date.now());
+  const faltam = Math.max(0, Math.ceil((podeReenviarEm - agora) / 1000));
+
+  useEffect(() => {
+    if (faltam === 0) return;
+    const relogio = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(relogio);
+  }, [faltam]);
+
+  function pedirOutro() {
+    if (faltam > 0 || reenviar.isPending) return;
+    reenviar.mutate(email, {
+      onSettled: () => {
+        setPodeReenviarEm(Date.now() + ESPERA_ENTRE_CODIGOS_MS);
+        setAgora(Date.now());
+      },
+    });
+  }
 
   const erroPedido = verificar.error ?? reenviar.error;
   const aConfirmar = verificar.isPending || verificar.isSuccess;
@@ -72,19 +95,26 @@ export default function ConfirmarEmailScreen() {
         onSubmitEditing={() => submeter()}
         onCompleto={submeter}
       />
+      {/* Right under the code, where the keyboard never hides it. */}
+      <LinkTexto
+        label={
+          reenviar.isPending
+            ? 'A enviar…'
+            : faltam > 0
+              ? `Não chegou? Reenviar código em ${faltam} s`
+              : 'Não chegou? Reenviar código'
+        }
+        onPress={pedirOutro}
+        disabled={reenviar.isPending || faltam > 0}
+      />
       <Button
         label={aConfirmar ? 'A confirmar…' : 'Confirmar'}
         onPress={() => submeter()}
         disabled={aConfirmar}
       />
       <View style={styles.rodape}>
-        <LinkTexto
-          label={reenviar.isPending ? 'A enviar…' : 'Não chegou? Reenviar código'}
-          onPress={() => reenviar.mutate(email)}
-          disabled={reenviar.isPending}
-        />
         <ThemedText themeColor="textMuted" style={styles.nota}>
-          Se já tinhas conta com este email, não chega código nenhum: entra com a tua password.
+          Se já tinhas conta com este email, não chega código nenhum: entra com a tua palavra-passe.
         </ThemedText>
       </View>
     </AuthForm>

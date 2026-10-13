@@ -12,12 +12,12 @@ appId: host.exp.Exponent
           timeout: 10000
       - tapOn: "Email.*"
       - inputText: ${MAESTRO_E2E_EMAIL}
-      - tapOn: "Password.*"
+      - tapOn: "Palavra-passe.*"
       - inputText: ${MAESTRO_E2E_PASSWORD}
       - tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
       - tapOn:
           text: "Entrar"
-          below: "Password.*"
+          below: "Palavra-passe.*"
       - extendedWaitUntil:
           notVisible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
           timeout: 20000

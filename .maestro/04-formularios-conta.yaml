@@ -26,7 +26,7 @@ tags: [conta]
     element: "Como te chamamos\\. Erro: Diz-nos como te chamamos\\."
     direction: UP
 - assertVisible: "Email\\. Erro: Falta o email\\."
-- assertVisible: "Password\\. Erro: Falta a password\\."
+- assertVisible: "Password\\. Erro: Falta a palavra-passe\\."
 - assertVisible: "Para criar conta tens de aceitar os termos e a política de privacidade\\."
 
 # Valores maus
@@ -39,13 +39,13 @@ tags: [conta]
 - tapOn: "Com conta, os teus clubes e o teu passaporte ficam guardados\\."
 - assertVisible: "Como te chamamos\\. Erro: O nome precisa de pelo menos 2 letras\\."
 - assertVisible: "Email\\. Erro: Este email não parece bem escrito\\."
-- assertVisible: "Password\\. Erro: Falta a password\\."
+- assertVisible: "Password\\. Erro: Falta a palavra-passe\\."
 
 # Mostrar e esconder a password
-- tapOn: "Mostrar password"
-- assertVisible: "Esconder password"
-- tapOn: "Esconder password"
-- assertVisible: "Mostrar password"
+- tapOn: "Mostrar palavra-passe"
+- assertVisible: "Esconder palavra-passe"
+- tapOn: "Esconder palavra-passe"
+- assertVisible: "Mostrar palavra-passe"
 
 # Aceitar os termos tira o erro do consentimento (o email continua mau: nada é enviado)
 # (Toca no quadrado: no meio da frase está o link da política de privacidade.)
@@ -87,14 +87,14 @@ tags: [conta]
     timeout: 10000
 - tapOn:
     text: "Entrar"
-    below: "Password.*"
+    below: "Palavra-passe.*"
 - assertVisible: "Email\\. Erro: Falta o email\\."
-- assertVisible: "Password\\. Erro: Falta a password\\."
+- assertVisible: "Password\\. Erro: Falta a palavra-passe\\."
 - tapOn: "Email.*"
 - inputText: "malta@"
 - tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
 - assertVisible: "Email\\. Erro: Este email não parece bem escrito\\."
-- assertVisible: "Esqueceste a password\\?"
+- assertVisible: "Esqueceste a palavra-passe\\?"
 - assertVisible: "Ainda não tens conta\\? Cria uma"
 - tapOn: "Ainda não tens conta\\? Cria uma"
 - extendedWaitUntil:

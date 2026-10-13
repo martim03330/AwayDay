@@ -65,8 +65,8 @@ export default function ContaLayout() {
           }}
         />
         <Stack.Screen name="confirmar-email" options={{ title: 'Confirmar email' }} />
-        <Stack.Screen name="recuperar-password" options={{ title: 'Recuperar password' }} />
-        <Stack.Screen name="nova-password" options={{ title: 'Nova password' }} />
+        <Stack.Screen name="recuperar-password" options={{ title: 'Recuperar palavra-passe' }} />
+        <Stack.Screen name="nova-password" options={{ title: 'Nova palavra-passe' }} />
         <Stack.Screen
           name="apagar-conta"
           options={{

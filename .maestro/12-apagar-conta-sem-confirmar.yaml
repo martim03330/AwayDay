@@ -9,13 +9,13 @@ tags: [com-conta, conta]
 - extendedWaitUntil:
     visible: "Apagamos a conta, o nome, os clubes e o histórico guardados\\. Não dá para desfazer\\..*"
     timeout: 10000
-- assertVisible: "Password.*"
+- assertVisible: "Palavra-passe.*"
 - assertVisible: "Fechar"
 # Sem password não apaga
 - tapOn:
     text: "Apagar conta"
-    below: "Password.*"
-- assertVisible: "Password\\. Erro: Falta a password\\."
+    below: "Palavra-passe.*"
+- assertVisible: "Password\\. Erro: Falta a palavra-passe\\."
 - assertNotVisible: "A apagar a conta…"
 - assertNotVisible: "Conta apagada"
 # Fechar sem confirmar: a sessão continua

@@ -11,14 +11,14 @@ tags: [com-conta]
     timeout: 10000
 - tapOn: "Email.*"
 - inputText: ${MAESTRO_E2E_EMAIL}
-- tapOn: "Password.*"
+- tapOn: "Palavra-passe.*"
 - inputText: "PasswordErrada123"
 - tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
 - tapOn:
     text: "Entrar"
-    below: "Password.*"
+    below: "Palavra-passe.*"
 - extendedWaitUntil:
-    visible: "Email ou password errados\\."
+    visible: "Email ou palavra-passe errados\\."
     timeout: 15000
 - tapOn: "Fechar"
 - runFlow: comum/dispensar-guardar-password.yaml
@@ -26,12 +26,12 @@ tags: [com-conta]
 - tapOn: "Já tenho conta"
 - tapOn: "Email.*"
 - inputText: ${MAESTRO_E2E_EMAIL}
-- tapOn: "Password.*"
+- tapOn: "Palavra-passe.*"
 - inputText: ${MAESTRO_E2E_PASSWORD}
 - tapOn: "Entra para os teus clubes e o teu passaporte virem contigo\\."
 - tapOn:
     text: "Entrar"
-    below: "Password.*"
+    below: "Palavra-passe.*"
 - extendedWaitUntil:
     notVisible: "Entra para os teus clubes e o teu passaporte virem contigo\\."
     timeout: 20000

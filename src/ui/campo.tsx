@@ -86,7 +86,7 @@ export function Campo({ label, erro, ajuda, secureTextEntry, ref, ...input }: Ca
             onPress={() => setVisivel((atual) => !atual)}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel={visivel ? 'Esconder password' : 'Mostrar password'}
+            accessibilityLabel={visivel ? 'Esconder palavra-passe' : 'Mostrar palavra-passe'}
             style={({ pressed }) => [styles.alternar, pressed && styles.pressed]}>
             <ThemedText style={styles.alternarTexto} themeColor="textSecondary">
               {visivel ? 'Esconder' : 'Mostrar'}

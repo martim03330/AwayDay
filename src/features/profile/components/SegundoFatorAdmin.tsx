@@ -96,7 +96,7 @@ export function SegundoFatorAdmin({ children }: { children: ReactNode }) {
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {porAtivar
-              ? 'As ferramentas de administração pedem um código de uma app de autenticação. Assim, uma password roubada não chega.'
+              ? 'As ferramentas de administração pedem um código de uma app de autenticação. Assim, uma palavra-passe roubada não chega.'
               : 'Escreve o código da tua app de autenticação para abrir as ferramentas de administração.'}
           </ThemedText>
         </View>

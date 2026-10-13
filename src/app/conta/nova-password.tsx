@@ -29,7 +29,7 @@ export default function NovaPasswordScreen() {
       {
         onSuccess: () => {
           fecharConta();
-          Alert.alert('Password mudada', 'Já estás dentro, com a password nova.');
+          Alert.alert('Palavra-passe mudada', 'Já estás dentro, com a palavra-passe nova.');
         },
       }
     );
@@ -44,7 +44,7 @@ export default function NovaPasswordScreen() {
           <ThemedText themeColor="text" style={styles.email}>
             {email}
           </ThemedText>
-          {' e escolhe a password nova.'}
+          {' e escolhe a palavra-passe nova.'}
         </>
       }
       error={mudar.error ? authErrorMessage(mudar.error) : null}>
@@ -58,7 +58,7 @@ export default function NovaPasswordScreen() {
         returnKeyType="next"
       />
       <Campo
-        label="Password nova"
+        label="Palavra-passe nova"
         value={password}
         onChangeText={setPassword}
         erro={tentou ? passwordError(password) : null}
@@ -72,7 +72,7 @@ export default function NovaPasswordScreen() {
         onSubmitEditing={submeter}
       />
       <Button
-        label={aGuardar ? 'A guardar…' : 'Guardar password'}
+        label={aGuardar ? 'A guardar…' : 'Guardar palavra-passe'}
         onPress={submeter}
         disabled={aGuardar}
       />

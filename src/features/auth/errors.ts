@@ -7,12 +7,12 @@ const NETWORK = 'Sem ligação. Verifica a internet e tenta outra vez.';
 // A Map, not an object: codes like "toString" must not match inherited properties.
 const MESSAGES: ReadonlyMap<string, string> = new Map([
   ...Object.entries({
-    invalid_credentials: 'Email ou password errados.',
+    invalid_credentials: 'Email ou palavra-passe errados.',
     email_not_confirmed: 'Ainda falta confirmar o teu email.',
     user_already_exists: 'Já existe uma conta com este email. Experimenta entrar.',
     email_exists: 'Já existe uma conta com este email. Experimenta entrar.',
-    weak_password: 'Essa password é fácil de adivinhar. Usa pelo menos 8 caracteres, com letras e números.',
-    same_password: 'A nova password tem de ser diferente da antiga.',
+    weak_password: 'Essa palavra-passe é fácil de adivinhar. Usa pelo menos 8 caracteres, com letras e números.',
+    same_password: 'A nova palavra-passe tem de ser diferente da antiga.',
     otp_expired: 'O código expirou ou não está certo. Pede um novo.',
     over_email_send_rate_limit: 'Enviámos um email há pouco. Espera um minuto antes de pedir outro.',
     over_request_rate_limit: 'Demasiadas tentativas seguidas. Espera um bocadinho.',

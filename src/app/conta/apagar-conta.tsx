@@ -19,7 +19,7 @@ export default function ApagarContaScreen() {
   const erroPedido = !apagar.error
     ? null
     : authErrorCode(apagar.error) === 'invalid_credentials'
-      ? 'A password não está certa.'
+      ? 'A palavra-passe não está certa.'
       : authErrorMessage(apagar.error);
 
   function submeter() {
@@ -38,13 +38,13 @@ export default function ApagarContaScreen() {
 
   return (
     <AuthForm
-      intro="Apagamos a conta, o nome, os clubes e o histórico guardados. Não dá para desfazer. Para confirmar, escreve a tua password."
+      intro="Apagamos a conta, o nome, os clubes e o histórico guardados. Não dá para desfazer. Para confirmar, escreve a tua palavra-passe."
       error={erroPedido}>
       <Campo
-        label="Password"
+        label="Palavra-passe"
         value={password}
         onChangeText={setPassword}
-        erro={tentou && !password ? 'Falta a password.' : null}
+        erro={tentou && !password ? 'Falta a palavra-passe.' : null}
         secureTextEntry
         autoCapitalize="none"
         autoComplete="current-password"

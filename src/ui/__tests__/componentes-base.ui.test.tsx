@@ -138,12 +138,12 @@ describe('Campo', () => {
   });
 
   it('a password starts hidden, and the toggle shows and hides it', () => {
-    render(<Campo label="Password" value="segredo" onChangeText={jest.fn()} secureTextEntry />);
-    expect(screen.getByLabelText('Password')).toHaveProp('secureTextEntry', true);
-    fireEvent.press(screen.getByRole('button', { name: 'Mostrar password' }));
-    expect(screen.getByLabelText('Password')).toHaveProp('secureTextEntry', false);
-    fireEvent.press(screen.getByRole('button', { name: 'Esconder password' }));
-    expect(screen.getByLabelText('Password')).toHaveProp('secureTextEntry', true);
+    render(<Campo label="Palavra-passe" value="segredo" onChangeText={jest.fn()} secureTextEntry />);
+    expect(screen.getByLabelText('Palavra-passe')).toHaveProp('secureTextEntry', true);
+    fireEvent.press(screen.getByRole('button', { name: 'Mostrar palavra-passe' }));
+    expect(screen.getByLabelText('Palavra-passe')).toHaveProp('secureTextEntry', false);
+    fireEvent.press(screen.getByRole('button', { name: 'Esconder palavra-passe' }));
+    expect(screen.getByLabelText('Palavra-passe')).toHaveProp('secureTextEntry', true);
   });
 
   it('with «next» on the keyboard, keeps the keyboard open and calls onSubmitEditing', () => {

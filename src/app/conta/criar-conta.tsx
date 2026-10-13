@@ -50,7 +50,7 @@ export default function CriarContaScreen() {
   const erroPedido = criar.error
     ? authErrorMessage(criar.error)
     : emailComConta
-      ? 'Já existe uma conta com este email. Entra ou recupera a password.'
+      ? 'Já existe uma conta com este email. Entra ou recupera a palavra-passe.'
       : null;
 
   function mudarEmail(texto: string) {
@@ -107,7 +107,7 @@ export default function CriarContaScreen() {
             }
           />
           <LinkTexto
-            label="Esqueceste a password? Recupera-a"
+            label="Esqueceste a palavra-passe? Recupera-a"
             onPress={() =>
               router.push({ pathname: '/conta/recuperar-password', params: { email: emailComConta } })
             }
@@ -143,7 +143,7 @@ export default function CriarContaScreen() {
       />
       <Campo
         ref={campoPassword}
-        label="Password"
+        label="Palavra-passe"
         value={password}
         onChangeText={setPassword}
         erro={erros.password}

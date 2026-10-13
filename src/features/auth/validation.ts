@@ -28,16 +28,16 @@ export function emailError(email: string): string | null {
 }
 
 export function passwordError(password: string): string | null {
-  if (!password) return 'Falta a password.';
+  if (!password) return 'Falta a palavra-passe.';
   if (password.length < PASSWORD_MIN_LENGTH) {
-    return `A password precisa de pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+    return `A palavra-passe precisa de pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
   }
   if (password.length > PASSWORD_MAX_LENGTH) {
-    return `A password pode ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.`;
+    return `A palavra-passe pode ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.`;
   }
   // Supabase's "letters_digits" rule only counts a to z (without accents) as letters.
   if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-    return 'A password precisa de letras e números.';
+    return 'A palavra-passe precisa de letras e números.';
   }
   return null;
 }
