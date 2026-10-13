@@ -1,6 +1,6 @@
 {
   "fill" : {
-    "solid" : "srgb:0.09412,0.48627,0.26667,1.00000"
+    "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
   },
   "groups" : [
     {
@@ -22,13 +22,13 @@
     {
       "layers" : [
         {
-          "image-name" : "relvado.png",
-          "name" : "relvado"
+          "image-name" : "pessoas.png",
+          "name" : "pessoas"
         }
       ],
       "shadow" : {
-        "kind" : "none",
-        "opacity" : 0.5
+        "kind" : "neutral",
+        "opacity" : 0.35
       },
       "translucency" : {
         "enabled" : false,

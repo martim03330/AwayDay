@@ -2,6 +2,17 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Ícone novo: três adeptos e uma bola
+
+- Escolhido pelo Martim a partir de uma proposta de um tester: três pessoas em verde-escuro sobre branco, com uma bola
+  clássica à frente, separada por um anel branco. Substitui o ícone do relvado.
+- Um só desenho em SVG (`assets/icone/awayday.svg`) e um script que gera tudo: `node scripts/gerar-icone.mjs`
+  (ícone 1024 sem transparência, camadas do ícone do iOS 26 em `assets/expo.icon`, ícone adaptativo e monocromático do
+  Android, splash e favicon). Mudar o ícone é mudar o script e voltar a correr, nunca editar os PNG à mão.
+- O fundo do ícone adaptativo do Android passa a branco (`app.json`). O ecrã de arranque continua verde, com o ícone
+  num quadrado branco ao centro.
+- O ícone só muda com um build novo; uma atualização OTA não o troca.
+
 ## 2026-10-13 — Entrar com Apple e Google
 
 - «Continuar com Apple» e «Continuar com Google» no topo de Entrar e Criar conta, com tokens nativos
