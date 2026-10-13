@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { fontFamily, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
 import type { Citacao, Emoji, Reacao } from '@/lib/conversa';
 import { formatarHora } from '@/lib/datas';
 import {
@@ -28,6 +28,26 @@ import { vibrarLeve } from '@/lib/vibrar';
 import { Avatar } from '@/ui/avatar';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
+
+/**
+ * The chat's colours. Testers found the other people's (white) bubbles hard to tell from the near-white page, so the
+ * chat sits on a slightly darker paper and their bubbles get a hairline edge and a soft shadow, like WhatsApp. In dark
+ * mode the bubbles are a step lighter than the page instead. The message menu uses the same, so its copy of a bubble
+ * sits exactly over the original.
+ */
+export function useCoresDaConversa() {
+  const theme = useTheme();
+  const escuro = useEstaEscuro();
+  return {
+    fundo: escuro ? theme.background : theme.backgroundSelected,
+    bolhaDosOutros: {
+      backgroundColor: escuro ? theme.backgroundSelected : theme.backgroundElement,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: escuro ? theme.borderStrong : theme.border,
+      boxShadow: escuro ? undefined : '0 1px 2px rgba(19, 36, 27, 0.10)',
+    },
+  };
+}
 
 // As peças de uma conversa, iguais em todo o lado: a do grupo e a do carro.
 
@@ -163,6 +183,7 @@ export function BolhaDeConversa({
   onLongPress,
 }: BolhaProps) {
   const theme = useTheme();
+  const cores = useCoresDaConversa();
   const reduzirMovimento = useReducedMotion();
   const deslocamento = useSharedValue(0);
   const passouOGatilho = useSharedValue(false);
@@ -280,7 +301,7 @@ export function BolhaDeConversa({
                 styles.bolha,
                 minha
                   ? { backgroundColor: theme.accent, borderBottomRightRadius: 6 }
-                  : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
+                  : [cores.bolhaDosOutros, { borderBottomLeftRadius: 6 }],
                 styles.semMargem,
                 pendente && styles.pendente,
                 mencionaMe && !minha && { borderLeftWidth: 3, borderLeftColor: theme.highlight },

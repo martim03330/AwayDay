@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { REACOES, type Citacao, type Emoji } from '@/lib/conversa';
-import type { PosicaoNoEcra } from '@/ui/conversa';
+import { type PosicaoNoEcra, useCoresDaConversa } from '@/ui/conversa';
 import { Icon, type IconName } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
 
@@ -107,6 +107,7 @@ export function MenuDaMensagem({
   onFechar,
 }: MenuDaMensagemProps) {
   const theme = useTheme();
+  const cores = useCoresDaConversa();
   const insets = useSafeAreaInsets();
   const ecra = useWindowDimensions();
   const lugar = posicao ? arrumar(posicao, ecra.width, ecra.height, insets, onReagir !== undefined, acoes.length) : null;
@@ -167,7 +168,7 @@ export function MenuDaMensagem({
                 styles.mensagem,
                 minha
                   ? { backgroundColor: theme.accent, borderBottomRightRadius: 6 }
-                  : { backgroundColor: theme.backgroundElement, borderBottomLeftRadius: 6 },
+                  : [cores.bolhaDosOutros, { borderBottomLeftRadius: 6 }],
                 lugar
                   ? [styles.solto, { top: lugar.mensagem, left: lugar.x, width: lugar.largura, maxHeight: lugar.altura }]
                   : [styles.mensagemLivre, minha ? styles.aDireita : styles.aEsquerda],

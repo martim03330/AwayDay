@@ -24,7 +24,13 @@ import { mencoesNoTexto, type Mencionavel } from '@/lib/mencoes';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
-import { BolhaDeConversa, CaixaDeEscrita, PastilhaDeConversa, type PosicaoNoEcra } from '@/ui/conversa';
+import {
+  BolhaDeConversa,
+  CaixaDeEscrita,
+  PastilhaDeConversa,
+  type PosicaoNoEcra,
+  useCoresDaConversa,
+} from '@/ui/conversa';
 import { EmptyState } from '@/ui/empty-state';
 import { Icon, icons } from '@/ui/icon';
 import { MenuDaMensagem, type AcaoDaMensagem } from '@/ui/menu-da-mensagem';
@@ -56,6 +62,7 @@ function mensagemDeRecusa(erro: unknown) {
 export default function ConversaDoCarroScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const cores = useCoresDaConversa();
   const insets = useSafeAreaInsets();
   const alturaDoCabecalho = useHeaderHeight();
   const userId = useUserId();
@@ -222,7 +229,7 @@ export default function ConversaDoCarroScreen() {
   }
 
   return (
-    <View style={[styles.tudo, { backgroundColor: theme.background }]}>
+    <View style={[styles.tudo, { backgroundColor: cores.fundo }]}>
       {moderacao.elemento}
       <MenuDaMensagem
         texto={menuDe?.mensagem.body ?? null}

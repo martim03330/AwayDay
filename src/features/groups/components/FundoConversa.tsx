@@ -4,6 +4,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Pattern, Rect, Stop } from 're
 
 import type { FundoConversa as Fundo, FundoPronto } from '@/features/groups/api';
 import { useTheme } from '@/hooks/use-theme';
+import { useCoresDaConversa } from '@/ui/conversa';
 
 /** O nome de cada fundo, como aparece na escolha. */
 export const NOMES_DOS_FUNDOS: Record<FundoPronto, string> = {
@@ -24,7 +25,7 @@ export function fundoEscuro(fundo: Fundo) {
  * um véu escuro pelo mesmo motivo.
  */
 export function FundoConversa({ fundo }: { fundo: Fundo }) {
-  const theme = useTheme();
+  const { fundo: papel } = useCoresDaConversa();
 
   if (fundo.kind === 'foto') {
     return (
@@ -45,7 +46,7 @@ export function FundoConversa({ fundo }: { fundo: Fundo }) {
 
   return (
     <View
-      style={[StyleSheet.absoluteFill, { backgroundColor: theme.background }]}
+      style={[StyleSheet.absoluteFill, { backgroundColor: papel }]}
       pointerEvents="none">
       <Svg width="100%" height="100%">
         <Desenho fundo={fundo.fundo} />
@@ -56,12 +57,12 @@ export function FundoConversa({ fundo }: { fundo: Fundo }) {
 
 /** Uma miniatura do fundo, para a escolha nas definições do grupo. */
 export function AmostraDeFundo({ fundo, size = 64 }: { fundo: FundoPronto; size?: number }) {
-  const theme = useTheme();
+  const { fundo: papel } = useCoresDaConversa();
   return (
     <View
       style={[
         styles.amostra,
-        { width: size, height: size * 1.4, backgroundColor: theme.background },
+        { width: size, height: size * 1.4, backgroundColor: papel },
       ]}>
       <Svg width="100%" height="100%">
         <Desenho fundo={fundo} />
