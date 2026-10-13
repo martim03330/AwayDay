@@ -9,7 +9,7 @@ export const unstable_settings = { anchor: 'index' };
 
 export default function RankingLayout() {
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       {/* O início desenha o próprio cabeçalho verde, como a Malta. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Ranking</Stack.Screen.Title>

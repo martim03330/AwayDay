@@ -9,7 +9,7 @@ export const unstable_settings = { anchor: 'index' };
 
 export default function MaltaLayout() {
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       {/* A lista desenha o próprio cabeçalho verde, como os Jogos. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Malta</Stack.Screen.Title>

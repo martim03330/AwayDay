@@ -113,7 +113,7 @@ function NavegacaoRaiz() {
   const dentro = onboardingConcluido && (!precisaDeConta || comConta);
 
   return (
-    <Stack screenOptions={{ headerShown: false, scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ headerShown: false, scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Protected guard={!dentro}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>

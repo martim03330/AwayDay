@@ -5,10 +5,8 @@ import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function SessaoLayout() {
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
-      <Stack.Screen
-        name="[sessaoId]/index"
-        options={{ headerLeft: () => <BotaoVoltar destino="/jogos" /> }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
+      <Stack.Screen name="[sessaoId]/index" options={{ headerLeft: () => <BotaoVoltar destino="/jogos" /> }}>
         <Stack.Screen.Title>A viagem</Stack.Screen.Title>
       </Stack.Screen>
       <Stack.Screen name="[sessaoId]/despesas">

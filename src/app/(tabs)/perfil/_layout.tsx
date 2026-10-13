@@ -9,7 +9,7 @@ export const unstable_settings = { anchor: 'index' };
 
 export default function PerfilLayout() {
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       {/* The profile draws its own green header. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title>Perfil</Stack.Screen.Title>

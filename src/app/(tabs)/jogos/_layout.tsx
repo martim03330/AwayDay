@@ -14,7 +14,7 @@ export default function JogosLayout() {
   const theme = useTheme();
 
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       {/* The list draws its own green pitch header. */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title large>Jogos</Stack.Screen.Title>

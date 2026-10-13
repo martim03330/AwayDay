@@ -9,7 +9,7 @@ export const unstable_settings = { anchor: 'index' };
 
 export default function LocaisLayout() {
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       {/* Both screens draw their own header (green pitch on the list, yellow card on the tasco). */}
       <Stack.Screen name="index" options={{ headerShown: false }}>
         <Stack.Screen.Title large>Locais</Stack.Screen.Title>

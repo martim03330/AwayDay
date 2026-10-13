@@ -5,7 +5,7 @@ import { SEM_EFEITOS_NAS_BORDAS } from '@/constants/navegacao';
 
 export default function GruposLayout() {
   return (
-    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS }}>
+    <Stack screenOptions={{ scrollEdgeEffects: SEM_EFEITOS_NAS_BORDAS, headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Screen name="entrar">
         <Stack.Screen.Title>Convite</Stack.Screen.Title>
       </Stack.Screen>
