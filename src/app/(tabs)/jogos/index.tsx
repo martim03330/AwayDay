@@ -6,7 +6,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setStatusBarStyle } from 'expo-status-bar';
 
-import { CalendarioMensal } from '@/components/calendario-mensal';
+import { CalendarioDeJogos } from '@/components/calendario-mensal';
 import { JogoCard } from '@/components/jogo-card';
 import { ConvitesDeBoleia } from '@/components/convites-de-boleia';
 import { SessoesAbertas } from '@/components/sessoes-abertas';
@@ -253,8 +253,8 @@ export default function JogosScreen() {
 
     return (
       <>
-        {/* The games are a month calendar (testers preferred it to a list of days): tap a day for its games. */}
-        <CalendarioMensal
+        {/* The days with games in a strip (the month grid is one tap away): the chosen day's games right under it. */}
+        <CalendarioDeJogos
           jogos={proximos}
           agora={agora}
           renderJogo={renderJogo}

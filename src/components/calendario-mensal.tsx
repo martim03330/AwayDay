@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,7 +25,7 @@ const NOMES_DOS_DIAS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sába
 /** Dots under a day; more games show as «+N». */
 const MAX_PONTOS = 3;
 
-type CalendarioMensalProps = {
+type CalendarioDeJogosProps = {
   /** The games to place, already filtered (competition, clubs) and sorted by kick-off. */
   jogos: readonly Jogo[];
   agora: number;
@@ -33,6 +33,122 @@ type CalendarioMensalProps = {
   /** The games the user said they are going to (or went to): green dots; every other game is red. */
   vou: (jogoId: string) => boolean;
 };
+
+type CalendarioMensalProps = Omit<CalendarioDeJogosProps, 'renderJogo'> & {
+  escolhido: string | null;
+  onEscolher: (chave: string) => void;
+};
+
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const DIAS_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+/**
+ * The games page's calendar: a strip with only the days that have games (a dot each, green when going), the chosen
+ * day's games under it, and the whole month a tap away. The month grid on its own took the whole first screen.
+ */
+export function CalendarioDeJogos({ jogos, agora, renderJogo, vou }: CalendarioDeJogosProps) {
+  const theme = useTheme();
+  const porDia = agruparPorChaveDoDia(jogos);
+  const dias = [...porDia.keys()];
+  const [escolhido, setEscolhido] = useState<string | null>(null);
+  const [verMes, setVerMes] = useState(false);
+  // The next day with games until the fan picks one (or when the picked one left the list, after a filter).
+  const dia = escolhido && porDia.has(escolhido) ? escolhido : (dias[0] ?? null);
+  const jogosDoDia = dia ? (porDia.get(dia) ?? []) : [];
+
+  return (
+    <View style={styles.bloco}>
+      <View style={styles.faixaComBotao}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="never"
+          style={styles.faixa}
+          contentContainerStyle={styles.faixaConteudo}>
+          {dias.map((chave) => {
+            const [ano, mes, numero] = chave.split('-').map(Number);
+            const semana = new Date(Date.UTC(ano, mes - 1, numero)).getUTCDay();
+            const doDia = porDia.get(chave) ?? [];
+            const ativo = chave === dia;
+            const vais = doDia.some((jogo) => vou(jogo.id));
+            return (
+              <Pressable
+                key={chave}
+                onPress={() => {
+                  if (!ativo) vibrarSelecao();
+                  setEscolhido(chave);
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: ativo }}
+                accessibilityLabel={`${DIAS_CURTOS[semana]} ${numero} de ${MESES_CURTOS[mes - 1]}, ${plural(doDia.length, 'jogo', 'jogos')}${vais ? ', vais' : ''}`}
+                style={({ pressed }) => [
+                  styles.chipDia,
+                  { backgroundColor: ativo ? theme.accent : theme.backgroundElement },
+                  pressed && styles.premido,
+                ]}>
+                <ThemedText style={[styles.chipSemana, { color: ativo ? theme.accentText : theme.textSecondary }]}>
+                  {DIAS_CURTOS[semana]}
+                </ThemedText>
+                <ThemedText style={[styles.chipNumero, { color: ativo ? theme.accentText : theme.text }]}>
+                  {numero}
+                </ThemedText>
+                <ThemedText style={[styles.chipMes, { color: ativo ? theme.accentText : theme.textMuted }]}>
+                  {MESES_CURTOS[mes - 1]}
+                </ThemedText>
+                <View
+                  style={[
+                    styles.ponto,
+                    { backgroundColor: vais ? theme.success : theme.danger },
+                    ativo && { borderWidth: 1, borderColor: theme.accentText },
+                  ]}
+                />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        <Pressable
+          onPress={() => setVerMes((aberto) => !aberto)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: verMes }}
+          accessibilityLabel={verMes ? 'Fechar o calendário do mês' : 'Ver o calendário do mês'}
+          style={({ pressed }) => [
+            styles.botaoCalendario,
+            { backgroundColor: verMes ? theme.accent : theme.backgroundElement },
+            pressed && styles.premido,
+          ]}>
+          <Icon name={verMes ? icons.fechar : icons.calendario} size={20} color={verMes ? theme.accentText : theme.text} />
+        </Pressable>
+      </View>
+
+      {verMes ? (
+        <CalendarioMensal
+          jogos={jogos}
+          agora={agora}
+          vou={vou}
+          escolhido={dia}
+          onEscolher={(chave) => {
+            setEscolhido(chave);
+            setVerMes(false);
+          }}
+        />
+      ) : null}
+
+      {dia && jogosDoDia.length > 0 ? (
+        <View style={styles.doDia}>
+          <View style={styles.cabecalhoDia} accessibilityRole="header">
+            <ThemedText type="section" style={styles.tituloDia} numberOfLines={1}>
+              {formatarDiaComSemana(new Date(jogosDoDia[0].inicio), agora)}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.totalDia}>
+              {plural(jogosDoDia.length, 'jogo', 'jogos')}
+            </ThemedText>
+          </View>
+          {jogosDoDia.map(renderJogo)}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 
 /** The first day of `mes` with games, if any. */
 function primeiroDiaComJogos(mes: MesDoCalendario, dias: ReadonlyMap<string, unknown>) {
@@ -42,10 +158,10 @@ function primeiroDiaComJogos(mes: MesDoCalendario, dias: ReadonlyMap<string, unk
 }
 
 /**
- * The whole calendar as a month grid (Monday to Sunday): a dot per game, green when the user is going, red otherwise.
- * Tapping a day shows its games under the grid.
+ * The month grid (Monday to Sunday), opened from the strip: a dot per game, green when the user is going, red
+ * otherwise. Picking a day hands it back to the strip.
  */
-export function CalendarioMensal({ jogos, agora, renderJogo, vou }: CalendarioMensalProps) {
+function CalendarioMensal({ jogos, agora, vou, escolhido, onEscolher }: CalendarioMensalProps) {
   const theme = useTheme();
   const porDia = agruparPorChaveDoDia(jogos);
   const hoje = chaveDoDia(new Date(agora));
@@ -54,10 +170,11 @@ export function CalendarioMensal({ jogos, agora, renderJogo, vou }: CalendarioMe
   const mesMaximo = ultimo ? mesEmLisboa(new Date(ultimo.inicio)) : mesDeHoje;
 
   const [mes, setMes] = useState<MesDoCalendario>(() =>
-    primeiroDiaComJogos(mesDeHoje, porDia) || !jogos[0] ? mesDeHoje : mesEmLisboa(new Date(jogos[0].inicio))
-  );
-  const [escolhido, setEscolhido] = useState<string | null>(() =>
-    porDia.has(hoje) ? hoje : (primeiroDiaComJogos(mes, porDia) ?? null)
+    escolhido
+      ? mesDaChave(escolhido)
+      : primeiroDiaComJogos(mesDeHoje, porDia) || !jogos[0]
+        ? mesDeHoje
+        : mesEmLisboa(new Date(jogos[0].inicio))
   );
 
   const podeRecuar = compararMeses(mes, mesDeHoje) > 0;
@@ -67,15 +184,10 @@ export function CalendarioMensal({ jogos, agora, renderJogo, vou }: CalendarioMe
     const novo = somarMeses(mes, quantos);
     vibrarSelecao();
     setMes(novo);
-    setEscolhido(primeiroDiaComJogos(novo, porDia) ?? null);
   }
 
-  // The chosen day may have left the list (a filter changed): show nothing rather than a stale day.
-  const jogosDoDia = escolhido && compararMeses(mesDaChave(escolhido), mes) === 0 ? (porDia.get(escolhido) ?? []) : [];
-
   return (
-    <View style={styles.bloco}>
-      <View style={[styles.cartao, { backgroundColor: theme.backgroundElement }]}>
+    <View style={[styles.cartao, { backgroundColor: theme.backgroundElement }]}>
         <View style={styles.topo}>
           <BotaoMes icone={icons.voltar} rotulo="Mês anterior" ativo={podeRecuar} onPress={() => mudarMes(-1)} />
           <ThemedText type="section" style={styles.titulo} accessibilityRole="header" accessibilityLiveRegion="polite">
@@ -106,7 +218,7 @@ export function CalendarioMensal({ jogos, agora, renderJogo, vou }: CalendarioMe
                   disabled={!temJogos}
                   onPress={() => {
                     if (!ativo) vibrarSelecao();
-                    setEscolhido(dia.chave);
+                    onEscolher(dia.chave);
                   }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: ativo, disabled: !temJogos }}
@@ -177,29 +289,6 @@ export function CalendarioMensal({ jogos, agora, renderJogo, vou }: CalendarioMe
             </ThemedText>
           </View>
         </View>
-      </View>
-
-      {jogosDoDia.length > 0 && escolhido ? (
-        <View style={styles.doDia}>
-          <View style={styles.cabecalhoDia} accessibilityRole="header">
-            <ThemedText type="section" style={styles.tituloDia} numberOfLines={1}>
-              {formatarDiaComSemana(new Date(jogosDoDia[0].inicio), agora)}
-            </ThemedText>
-            <ThemedText themeColor="textSecondary" style={styles.totalDia}>
-              {plural(jogosDoDia.length, 'jogo', 'jogos')}
-            </ThemedText>
-          </View>
-          {jogosDoDia.map(renderJogo)}
-        </View>
-      ) : (
-        <ThemedText themeColor="textSecondary" style={styles.semJogos}>
-          Sem jogos em{' '}
-          {tituloDoMes(mes)
-            .replace(/ de \d+$/, '')
-            .toLowerCase()}
-          .
-        </ThemedText>
-      )}
     </View>
   );
 }
@@ -237,6 +326,53 @@ function BotaoMes({
 const styles = StyleSheet.create({
   bloco: {
     gap: Spacing.three,
+  },
+  faixaComBotao: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: Spacing.two,
+  },
+  faixa: {
+    flex: 1,
+    marginLeft: -20,
+  },
+  faixaConteudo: {
+    gap: Spacing.two,
+    paddingLeft: 20,
+    paddingRight: Spacing.one,
+  },
+  chipDia: {
+    width: 58,
+    alignItems: 'center',
+    gap: 1,
+    paddingTop: 8,
+    paddingBottom: 9,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+  },
+  chipSemana: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: 700,
+  },
+  chipNumero: {
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: 800,
+    fontVariant: ['tabular-nums'],
+  },
+  chipMes: {
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: 600,
+    marginBottom: 4,
+  },
+  botaoCalendario: {
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    borderCurve: 'continuous',
   },
   cartao: {
     gap: Spacing.one,
