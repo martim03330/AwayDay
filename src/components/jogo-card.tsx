@@ -185,9 +185,12 @@ export function JogoCard({ jogo, estado, avaliacao, onPress }: JogoCardProps) {
         {renderCanhoto()}
       </View>
 
-      {/* The two punched holes of the perforation, painted in the screen background. */}
-      <View style={[styles.furo, styles.furoTopo, { backgroundColor: theme.background }]} />
-      <View style={[styles.furo, styles.furoBase, { backgroundColor: theme.background }]} />
+      {/* The two punched holes of the perforation, painted in the screen background. Clipped to the card: the half
+          outside sat on the card's shadow in light mode and read as a ball. */}
+      <View style={styles.furos} pointerEvents="none">
+        <View style={[styles.furo, styles.furoTopo, { backgroundColor: theme.background }]} />
+        <View style={[styles.furo, styles.furoBase, { backgroundColor: theme.background }]} />
+      </View>
     </Card>
   );
 }
@@ -271,6 +274,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: 800,
+  },
+  furos: {
+    ...StyleSheet.absoluteFill,
+    overflow: 'hidden',
+    borderRadius: Radius.card,
+    borderCurve: 'continuous',
   },
   furo: {
     position: 'absolute',

@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setStatusBarStyle } from 'expo-status-bar';
 
+import { CalendarioMensal } from '@/components/calendario-mensal';
 import { JogoCard } from '@/components/jogo-card';
 import { ConvitesDeBoleia } from '@/components/convites-de-boleia';
 import { SessoesAbertas } from '@/components/sessoes-abertas';
@@ -13,6 +14,7 @@ import { fixtureCatalogQuery } from '@/features/fixtures/hooks/useFixtureCatalog
 import { applyFixtureCatalogRows } from '@/features/fixtures/store';
 import { useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import { useMyOpenTripSessions } from '@/features/trips/hooks/useTrips';
+import { useMyAttendance } from '@/features/activity/hooks/useAttendance';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { ConviteTreinador } from '@/components/convite-treinador';
 import { CoachBanner } from '@/features/coach/components/CoachBanner';
@@ -167,6 +169,7 @@ export default function JogosScreen() {
   const { clubeFavoritoId, clubeDaTerraId, avaliacaoDoJogo } = useAppState();
   const userId = useUserId();
   const sessoesAbertas = useMyOpenTripSessions(userId !== null);
+  const presencas = useMyAttendance(userId);
   const boleiasComSessao = (sessoesAbertas.data ?? []).flatMap((sessao) =>
     sessao.ride ? [sessao.ride.id] : []
   );
@@ -234,7 +237,7 @@ export default function JogosScreen() {
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado')
     .reverse();
   const limite = verTodos ? PROXIMOS_DE_TODOS : PROXIMOS_DO_CLUBE;
-  const grupos = agruparPorDia(verCalendario ? proximos : proximos.slice(0, limite));
+  const grupos = agruparPorDia(proximos.slice(0, limite));
   const clubeFavorito = obterClube(clubeFavoritoId);
   // The earliest game the fan marked as going to (the catalogue is sorted by kick-off).
   const hoje = formatoHoje.format(new Date(agora));
@@ -288,12 +291,22 @@ export default function JogosScreen() {
 
     return (
       <>
-        {grupos.map((grupo) => (
-          <View key={grupo.chave} style={styles.grupo}>
-            <CabecalhoDia titulo={grupo.titulo} total={grupo.jogos.length} />
-            {grupo.jogos.map(renderJogo)}
-          </View>
-        ))}
+        {/* The whole calendar is a month grid (testers preferred it to a long list of days). */}
+        {verCalendario ? (
+          <CalendarioMensal
+            jogos={proximos}
+            agora={agora}
+            renderJogo={renderJogo}
+            vou={(jogoId) => presencas.data?.[jogoId] != null}
+          />
+        ) : (
+          grupos.map((grupo) => (
+            <View key={grupo.chave} style={styles.grupo}>
+              <CabecalhoDia titulo={grupo.titulo} total={grupo.jogos.length} />
+              {grupo.jogos.map(renderJogo)}
+            </View>
+          ))
+        )}
         {proximos.length > limite ? (
           <Expansor
             icon={icons.calendario}
