@@ -283,6 +283,22 @@ export type RidePerson = {
   faults: number;
 };
 
+/**
+ * Points along the road the driver picked (a quarter, half and three quarters of the way), to open that road in Maps.
+ * Empty for rides created before they were saved, or for a ride the caller cannot see.
+ */
+export async function fetchRideRouteVia(rideId: string): Promise<{ latitude: number; longitude: number }[]> {
+  const { data, error } = await client().rpc('ride_route_via', { p_ride_id: rideId });
+  if (error) throw error;
+  if (!Array.isArray(data)) return [];
+  return data.flatMap((point) => {
+    if (typeof point !== 'object' || point === null || Array.isArray(point)) return [];
+    const latitude = Reflect.get(point, 'latitude');
+    const longitude = Reflect.get(point, 'longitude');
+    return typeof latitude === 'number' && typeof longitude === 'number' ? [{ latitude, longitude }] : [];
+  });
+}
+
 /** Who is in a ride: everyone who asked, for the driver; the car's people, for an accepted passenger. */
 export async function fetchRidePeople(rideId: string): Promise<RidePerson[]> {
   const { data, error } = await client().rpc('ride_people', { p_ride_id: rideId });

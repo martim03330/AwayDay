@@ -5,8 +5,11 @@ import {
   motorwayOf,
   routeFromCache,
   routeFromValhalla,
+  decodePolyline6,
   motorwaysOfTrip,
+  pointsAlong,
   routesFromValhalla,
+  viaPointsOfTrip,
   tollSegmentsOf,
 } from '../../supabase/functions/_shared/route-parse';
 
@@ -87,6 +90,54 @@ describe('tollSegmentsOf', () => {
   });
 });
 
+describe('decodePolyline6', () => {
+  it('decodes the reference line of the polyline algorithm, at 6 decimal places', () => {
+    expect(decodePolyline6('_p~iF~ps|U_ulLnnqC_mqNvxq`@')).toEqual([
+      { latitude: 3.85, longitude: -12.02 },
+      { latitude: 4.07, longitude: -12.095 },
+      { latitude: 4.3252, longitude: -12.6453 },
+    ]);
+  });
+
+  it('stops at a malformed character instead of making points up', () => {
+    expect(decodePolyline6('')).toEqual([]);
+    expect(decodePolyline6('_p~iF~ps|U~')).toHaveLength(1);
+    expect(decodePolyline6('_p~iF~ps|U ')).toHaveLength(1);
+  });
+});
+
+describe('pointsAlong', () => {
+  // A straight road north: 0, 1 and 4 km (latitude degrees ≈ 111 km).
+  const reta = [
+    { latitude: 40, longitude: -8 },
+    { latitude: 40.009, longitude: -8 },
+    { latitude: 40.036, longitude: -8 },
+  ];
+
+  it('finds the points at each fraction of the length, between the line\'s own points', () => {
+    const [quarto, meio, tresQuartos] = pointsAlong(reta, [0.25, 0.5, 0.75]);
+    expect(quarto.latitude).toBeCloseTo(40.009, 4);
+    expect(meio.latitude).toBeCloseTo(40.018, 4);
+    expect(tresQuartos.latitude).toBeCloseTo(40.027, 4);
+    expect(meio.longitude).toBe(-8);
+  });
+
+  it('keeps the ends at 0 and 1, and has nothing for a line without length', () => {
+    expect(pointsAlong(reta, [0, 1])).toEqual([reta[0], reta[2]]);
+    expect(pointsAlong([reta[0]], [0.5])).toEqual([]);
+    expect(pointsAlong([reta[0], reta[0]], [0.5])).toEqual([]);
+  });
+});
+
+describe('viaPointsOfTrip', () => {
+  it('joins the legs\' lines and takes a quarter, half and three quarters of the way', () => {
+    const viagem = { legs: [{ shape: '_p~iF~ps|U_ulLnnqC' }, { shape: '_p~iF~ps|U' }] };
+    expect(viaPointsOfTrip(viagem)).toHaveLength(3);
+    expect(viaPointsOfTrip({ legs: [{}] })).toEqual([]);
+    expect(viaPointsOfTrip(null)).toEqual([]);
+  });
+});
+
 describe('motorwaysOfTrip', () => {
   it('names every motorway in driving order, free ones too, each once, without bits under 1 km', () => {
     const viagem = trip([
@@ -148,6 +199,7 @@ describe('routeFromValhalla', () => {
         { motorway: 'A1', tollM: 300 },
       ],
       motorways: ['A1'],
+      viaPoints: [],
     });
   });
 
@@ -168,6 +220,7 @@ describe('routeFromValhalla', () => {
       tollM: 0,
       tollSegments: [],
       motorways: [],
+      viaPoints: [],
     });
     expect(routeFromValhalla(trip(undefined, { length: 0.0001, time: 0.2 }))?.distanceM).toBe(1);
   });
@@ -189,9 +242,13 @@ describe('routeFromCache', () => {
       durationS: 4301,
       tollM: 10500,
       tollSegments: good.toll_segments,
-      // Rows cached before the motorways column: still a good route, just unnamed.
+      // Rows cached before the motorways and via_points columns: still a good route, just unnamed.
       motorways: [],
+      viaPoints: [],
     });
+    expect(routeFromCache({ ...good, via_points: [{ latitude: 39.5, longitude: -8.5 }, { latitude: 'x' }, { latitude: 99, longitude: 0 }] })?.viaPoints).toEqual([
+      { latitude: 39.5, longitude: -8.5 },
+    ]);
     expect(routeFromCache({ ...good, motorways: ['A13', 'A1'] })?.motorways).toEqual(['A13', 'A1']);
     expect(routeFromCache({ ...good, motorways: ['A13', 7, ''] })?.motorways).toEqual(['A13']);
     expect(routeFromCache({ ...good, toll_segments: [] })?.tollM).toBe(0);

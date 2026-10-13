@@ -2639,6 +2639,7 @@ export type Database = {
           parking_spot_id: string | null
           round_trip: boolean
           route_option: string
+          route_via: Json
           rules_accepted_at: string
           seats_offered: number
           settled_at: string | null
@@ -2670,6 +2671,7 @@ export type Database = {
           parking_spot_id?: string | null
           round_trip: boolean
           route_option: string
+          route_via?: Json
           rules_accepted_at?: string
           seats_offered: number
           settled_at?: string | null
@@ -2701,6 +2703,7 @@ export type Database = {
           parking_spot_id?: string | null
           round_trip?: boolean
           route_option?: string
+          route_via?: Json
           rules_accepted_at?: string
           seats_offered?: number
           settled_at?: string | null
@@ -3192,6 +3195,7 @@ export type Database = {
           key: string
           motorways: string[]
           toll_segments: Json
+          via_points: Json
         }
         Insert: {
           created_at?: string
@@ -3200,6 +3204,7 @@ export type Database = {
           key: string
           motorways?: string[]
           toll_segments?: Json
+          via_points?: Json
         }
         Update: {
           created_at?: string
@@ -3208,6 +3213,7 @@ export type Database = {
           key?: string
           motorways?: string[]
           toll_segments?: Json
+          via_points?: Json
         }
         Relationships: []
       }
@@ -5387,6 +5393,7 @@ export type Database = {
         Args: { p_profile_id: string; p_ride_id: string }
         Returns: string
       }
+      ride_route_via: { Args: { p_ride_id: string }; Returns: Json }
       ride_seats_full: { Args: { p_ride_id: string }; Returns: boolean }
       ride_session_id: { Args: { p_ride_id: string }; Returns: string }
       ride_share_cents: {

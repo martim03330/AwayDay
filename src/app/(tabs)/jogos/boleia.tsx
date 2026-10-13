@@ -1,7 +1,7 @@
 import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Alert, Pressable, Share, StyleSheet, Switch, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, Share, StyleSheet, Switch, View } from 'react-native';
 
 import { CompromissoBoleia } from '@/components/compromisso-boleia';
 import { GrupoDaBoleia } from '@/components/grupo-da-boleia';
@@ -37,13 +37,14 @@ import {
   useRefreshRides,
   useRideBoard,
   useRidePeople,
+  useRideRouteVia,
   useReturnPeople,
 } from '@/features/rides/hooks/useRides';
 import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarData, formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
-import { abrirDirecoes } from '@/lib/direcoes';
+import { abrirCaminho, abrirDirecoes, type AppDeMapas } from '@/lib/direcoes';
 import { formatarDistancia, plural } from '@/lib/formatos';
 import { faseDaBoleia, podeReportarImprevisto, prazosDaBoleia } from '@/lib/regras-boleia';
 import { podeResponderVolta } from '@/lib/regras-volta';
@@ -229,6 +230,7 @@ export default function BoleiaScreen() {
     ? boleia.isMine || boleia.myStatus === 'accepted' || boleia.myStatus === 'left_late'
     : false;
   const pessoas = useRidePeople(rideId ?? null, participante);
+  const caminho = useRideRouteVia(rideId ?? null);
   const amigos = useMyFriends(userId !== null);
   const cartoes = useProfileCards((pessoas.data ?? []).map((pessoa) => pessoa.profileId));
   const conversas = useMyRideChats(userId !== null);
@@ -640,6 +642,38 @@ export default function BoleiaScreen() {
   const linhaSeparada = (ultima: boolean) =>
     ultima ? null : { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected };
 
+  // «Ver o caminho»: the driver's road in a map app, from the start each one sees (the area, for who is not in the
+  // car) to the car park or the stadium, through points along the chosen road so the app does not pick its own.
+  const destinoDoCaminho = boleia.parking?.location ?? estadio?.coordenadas ?? null;
+  function verCaminho() {
+    if (!destinoDoCaminho || !boleia) return;
+    const origem = boleia.origin;
+    const destino = destinoDoCaminho;
+    const abrir = (app: AppDeMapas) => abrirCaminho(app, origem, destino, caminho.data ?? []);
+    const aviso = 'O Apple Maps e o Google Maps seguem o caminho do condutor. O Waze leva-te ao destino pelo caminho dele.';
+    if (Platform.OS === 'ios') {
+      const apps: AppDeMapas[] = ['apple', 'google', 'waze'];
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: 'Ver o caminho',
+          message: aviso,
+          options: ['Apple Maps', 'Google Maps', 'Waze', 'Cancelar'],
+          cancelButtonIndex: 3,
+        },
+        (indice) => {
+          const app = apps[indice];
+          if (app) abrir(app);
+        }
+      );
+      return;
+    }
+    Alert.alert('Ver o caminho', aviso, [
+      { text: 'Google Maps', onPress: () => abrir('google') },
+      { text: 'Waze', onPress: () => abrir('waze') },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  }
+
   const avisoRegiao = estadio ? avisoDeBoleiaPelaRegiao(estadio.regiao) : null;
 
   return (
@@ -931,9 +965,12 @@ export default function BoleiaScreen() {
           />
         ) : null}
         <LinhaGrupo
+          onPress={destinoDoCaminho ? verCaminho : undefined}
+          accessibilityLabel={`${OPCOES[boleia.routeOption]}, ${boleia.roundTrip ? 'ida e volta' : 'só ida'}. Toca para ver o caminho no mapa.`}
           leading={<IconCircle name={icons.rota} tone="neutral" />}
           title={`${OPCOES[boleia.routeOption]} · ${boleia.roundTrip ? 'ida e volta' : 'só ida'}`}
-          subtitle={`${formatarDistancia(boleia.distanceM)} · ${duracao(boleia.durationS)}`}
+          subtitle={`${formatarDistancia(boleia.distanceM)} · ${duracao(boleia.durationS)} · ver o caminho`}
+          trailing={destinoDoCaminho ? <Seta /> : undefined}
           separador
         />
         <LinhaGrupo

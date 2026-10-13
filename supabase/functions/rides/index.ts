@@ -45,7 +45,7 @@ const OPTIONS: readonly RouteOption[] = ['rapida', 'equilibrio', 'sem_portagens'
  */
 const TOLL_LEVELS = [1, 0.4, 0.3, 0] as const;
 /** The cache rows of these routes start with this, so rows from before the alternatives are not read as complete. */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 
 type Point = { latitude: number; longitude: number };
 
@@ -128,7 +128,7 @@ async function routesAt(admin: SupabaseClient, from: Point, to: Point, useTolls:
   const key = `${CACHE_VERSION}:${coord(from.latitude)},${coord(from.longitude)}>${coord(to.latitude)},${coord(to.longitude)}:${useTolls}`;
   const cached = await admin
     .from('route_cache')
-    .select('key, distance_m, duration_s, toll_segments, motorways')
+    .select('key, distance_m, duration_s, toll_segments, motorways, via_points')
     .in('key', [`${key}#0`, `${key}#1`])
     .gte('created_at', new Date(Date.now() - 30 * DAY_MS).toISOString());
   const rows = [...(cached.data ?? [])].sort((a, b) => String(a.key).localeCompare(String(b.key)));
@@ -149,6 +149,7 @@ async function routesAt(admin: SupabaseClient, from: Point, to: Point, useTolls:
         duration_s: one.durationS,
         toll_segments: one.tollSegments,
         motorways: one.motorways,
+        via_points: one.viaPoints,
         created_at: createdAt,
       }))
     );
@@ -524,6 +525,8 @@ Deno.serve(async (request) => {
       fuel_cents: cost.fuelCents,
       toll_cents: cost.tollCents,
       total_cents: cost.totalCents,
+      // Three points along the chosen road, so «ver o caminho» opens Maps on this road and not on its own pick.
+      route_via: found.viaPoints,
       note: note || null,
       parking_spot_id: parkingSpotId,
       accepts_return_requests: acceptsReturnRequests,

@@ -2,6 +2,18 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Ver o caminho da boleia no Mapas
+
+- Na boleia, a linha do percurso («Mais rápido · ida e volta») abre o caminho escolhido pelo condutor no Apple Maps,
+  Google Maps ou Waze (pedido do Martim). O Mapas escolhe sozinho o caminho entre dois pontos, por isso o link leva
+  também três pontos do caminho escolhido (a 1/4, 1/2 e 3/4), tirados do desenho da rota do Valhalla e guardados na
+  boleia ao criá-la (`ride.route_via`, migração `20261013233000_ride_route_waypoints`).
+- Apple Maps: links unificados (`maps.apple.com/directions?source=…&waypoint=…&destination=…&mode=driving`, iOS 18.4+).
+  Google Maps aceita `waypoints`. O Waze só aceita o destino: escolhe o caminho dele, e a escolha diz isso.
+- Privacidade: a partida do link é a que cada pessoa já vê (o ponto exato só para condutor e passageiros aceites); os
+  pontos intermédios ficam a dezenas de km. `ride_route_via` segue a mesma regra de visibilidade do `ride_board`.
+- As boleias criadas antes não têm pontos: abrem só da partida até ao parque ou ao estádio.
+
 ## 2026-10-13 — Boleias: caminhos mais baratos e portagens por autoestrada
 
 - Preço de portagem por autoestrada (classe 1, 2026), em vez de um valor nacional único (migração

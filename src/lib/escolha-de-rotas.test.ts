@@ -18,6 +18,7 @@ function rota(km: number, min: number, tollKm: number, cents: number, motorway =
       tollM: tollKm * 1000,
       tollSegments: tollKm > 0 ? [{ motorway, tollM: tollKm * 1000 }] : [],
       motorways: tollKm > 0 ? [motorway] : [],
+      viaPoints: [],
     },
     cost: { fuelCents: cents - Math.min(cents, tollKm * 7), tollCents: Math.min(cents, tollKm * 7), totalCents: cents },
   };

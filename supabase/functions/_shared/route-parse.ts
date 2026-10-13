@@ -11,7 +11,87 @@ export type Route = {
   tollSegments: TollSegment[];
   /** Every motorway taken, in driving order, free ones included, each once (bits under 1 km left out). */
   motorways: string[];
+  /** Points a quarter, half and three quarters of the way along, for opening this road in Maps. */
+  viaPoints: LatLng[];
 };
+
+export type LatLng = { latitude: number; longitude: number };
+
+/** Valhalla's encoded line (Google's polyline algorithm, 6 decimal places). Stops at the first malformed character. */
+export function decodePolyline6(encoded: string): LatLng[] {
+  const points: LatLng[] = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+  const next = () => {
+    let result = 0;
+    let shift = 0;
+    for (;;) {
+      if (index >= encoded.length) return null;
+      const byte = encoded.charCodeAt(index++) - 63;
+      if (byte < 0 || byte > 63) return null;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+      if (byte < 0x20) break;
+      if (shift > 30) return null;
+    }
+    return result & 1 ? ~(result >> 1) : result >> 1;
+  };
+  while (index < encoded.length) {
+    const dLat = next();
+    const dLng = next();
+    if (dLat === null || dLng === null) break;
+    lat += dLat;
+    lng += dLng;
+    points.push({ latitude: lat / 1e6, longitude: lng / 1e6 });
+  }
+  return points;
+}
+
+function metresBetween(a: LatLng, b: LatLng) {
+  const rad = (degrees: number) => (degrees * Math.PI) / 180;
+  const dLat = rad(b.latitude - a.latitude);
+  const dLng = rad(b.longitude - a.longitude);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.latitude)) * Math.cos(rad(b.latitude)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/**
+ * The points at these fractions of a line's length (0.5 = half way), to 5 decimal places (~1 m). Empty for a line
+ * too short to have a middle.
+ */
+export function pointsAlong(line: readonly LatLng[], fractions: readonly number[]): LatLng[] {
+  if (line.length < 2) return [];
+  const cumulative = [0];
+  for (let i = 1; i < line.length; i += 1) cumulative.push(cumulative[i - 1] + metresBetween(line[i - 1], line[i]));
+  const total = cumulative[cumulative.length - 1];
+  if (!(total > 0)) return [];
+  const round = (value: number) => Math.round(value * 1e5) / 1e5;
+  return fractions.map((fraction) => {
+    const target = total * Math.min(1, Math.max(0, fraction));
+    let i = 1;
+    while (i < cumulative.length - 1 && cumulative[i] < target) i += 1;
+    const span = cumulative[i] - cumulative[i - 1];
+    const t = span > 0 ? (target - cumulative[i - 1]) / span : 0;
+    return {
+      latitude: round(line[i - 1].latitude + (line[i].latitude - line[i - 1].latitude) * t),
+      longitude: round(line[i - 1].longitude + (line[i].longitude - line[i - 1].longitude) * t),
+    };
+  });
+}
+
+const VIA_FRACTIONS = [0.25, 0.5, 0.75] as const;
+
+/** The waypoints of a Valhalla trip: its legs' lines joined, then the points at a quarter, half and three quarters. */
+export function viaPointsOfTrip(trip: unknown): LatLng[] {
+  const legs = asRecord(trip)?.legs;
+  const line: LatLng[] = [];
+  for (const legValue of Array.isArray(legs) ? legs : []) {
+    const shape = asRecord(legValue)?.shape;
+    if (typeof shape === 'string') line.push(...decodePolyline6(shape));
+  }
+  return pointsAlong(line, VIA_FRACTIONS);
+}
 
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -113,6 +193,7 @@ function routeFromTrip(tripValue: unknown): Route | null {
     tollM: sumTollM(tollSegments),
     tollSegments,
     motorways: motorwaysOfTrip(trip),
+    viaPoints: viaPointsOfTrip(trip),
   };
 }
 
@@ -148,5 +229,19 @@ export function routeFromCache(row: unknown): Route | null {
   const motorways = Array.isArray(rawMotorways)
     ? rawMotorways.filter((name): name is string => typeof name === 'string' && name.length > 0)
     : [];
-  return { distanceM, durationS, tollM, tollSegments, motorways };
+  const rawVia = record?.via_points;
+  const viaPoints = Array.isArray(rawVia)
+    ? rawVia.flatMap((value) => {
+        const point = asRecord(value);
+        const latitude = point?.latitude;
+        const longitude = point?.longitude;
+        return typeof latitude === 'number' &&
+          typeof longitude === 'number' &&
+          Math.abs(latitude) <= 90 &&
+          Math.abs(longitude) <= 180
+          ? [{ latitude, longitude }]
+          : [];
+      })
+    : [];
+  return { distanceM, durationS, tollM, tollSegments, motorways, viaPoints };
 }

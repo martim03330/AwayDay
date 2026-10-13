@@ -5,6 +5,7 @@ import {
   fetchReturnPeople,
   fetchRideBoard,
   fetchRidePeople,
+  fetchRideRouteVia,
 } from '@/features/rides/api';
 
 const RIDES_KEY = 'rides';
@@ -25,6 +26,16 @@ export function useRideBoard(fixtureId: string | null, signedIn: boolean) {
     staleTime: STALE_MS,
     // Seats change while someone looks at the list: refresh now and then.
     refetchInterval: 60 * 1000,
+    meta: { persist: false },
+  });
+}
+
+/** The points of the road the driver picked; they never change once the ride exists. */
+export function useRideRouteVia(rideId: string | null) {
+  return useQuery({
+    queryKey: [RIDES_KEY, 'route-via', rideId] as const,
+    queryFn: rideId ? () => fetchRideRouteVia(rideId) : skipToken,
+    staleTime: Infinity,
     meta: { persist: false },
   });
 }

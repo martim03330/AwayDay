@@ -236,6 +236,35 @@ select pg_temp.expect('C cannot find out how many trips A and B made together',
 select pg_temp.expect('only one set_stay_plan is left',
   (select count(*)::integer from t_funcs where proname = 'set_stay_plan'), 1);
 
+-- The points along a ride's road («ver o caminho»): whoever sees the ride on the board, nobody else.
+reset role;
+select pg_temp.make_fixture('teste-rota-via', now() + interval '5 days');
+insert into public.fan_group (id, name, created_by, invite_code)
+values ('c9000000-0000-4000-8000-0000000000f1', 'Grupo Rota', 'e9000000-0000-4000-8000-000000000002', 'rotavia001');
+insert into public.fan_group_member (group_id, profile_id, role)
+values ('c9000000-0000-4000-8000-0000000000f1', 'e9000000-0000-4000-8000-000000000002', 'owner');
+insert into t_ids (key, id) values ('via-publica', gen_random_uuid()), ('via-grupo', gen_random_uuid());
+select pg_temp.make_ride(pg_temp.id('via-publica'), 'teste-rota-via', 'e9000000-0000-4000-8000-000000000001', 3, 1000, 500);
+select pg_temp.make_ride(pg_temp.id('via-grupo'), 'teste-rota-via', 'e9000000-0000-4000-8000-000000000002', 3, 1000, 500,
+  false, 'c9000000-0000-4000-8000-0000000000f1', 'grupo');
+update public.ride set route_via = '[{"latitude": 39.5, "longitude": -8.5}, {"latitude": 39.1, "longitude": -8.9}]'
+where id in (pg_temp.id('via-publica'), pg_temp.id('via-grupo'));
+select pg_temp.expect('a ride keeps at most five points',
+  split_part(pg_temp.refusal(format('update public.ride set route_via = %L where id = %L',
+    '[1,2,3,4,5,6]', pg_temp.id('via-publica'))), ' ', 1), 'new');
+set local role authenticated;
+select pg_temp.as_user('e9000000-0000-4000-8000-000000000003');
+select pg_temp.expect('anyone signed in sees the road of a public ride',
+  jsonb_array_length(public.ride_route_via(pg_temp.id('via-publica'))), 2);
+select pg_temp.expect('someone outside the group does not see the road of a group ride',
+  public.ride_route_via(pg_temp.id('via-grupo')) is null, true);
+select pg_temp.as_user('e9000000-0000-4000-8000-000000000002');
+select pg_temp.expect('the group sees it', jsonb_array_length(public.ride_route_via(pg_temp.id('via-grupo'))), 2);
+reset role;
+set local role anon;
+select pg_temp.expect('signed out, no road',
+  split_part(pg_temp.refusal(format('select public.ride_route_via(%L)', pg_temp.id('via-publica'))), ' ', 1), 'permission');
+
 reset role;
 select count(*) as checks_passed from expect_log;
 
