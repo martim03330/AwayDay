@@ -139,7 +139,9 @@ export default function PlanoScreen() {
   const souCondutor = plano.ride?.driverId === userId;
   const livres = lugaresLivres(plano);
   const vao = (pessoas.data ?? []).filter((pessoa) => pessoa.answer === 'vou');
-  const aPensar = (pessoas.data ?? []).filter((pessoa) => pessoa.answer === 'talvez');
+  const naoVao = (pessoas.data ?? []).filter((pessoa) => pessoa.answer === 'nao');
+  // Who has not answered yet is still thinking about it; after kick-off only who went matters.
+  const aPensar = congelado ? [] : (pessoas.data ?? []).filter((pessoa) => pessoa.answer === 'pensar');
   const outrosGrupos = (inbox.data ?? []).filter((grupo) => grupo.id !== plano.groupId);
   const partilhados = partilhas.data ?? [];
   const mandadoPara = partilhados.map((grupo) => grupo.groupId);
@@ -217,7 +219,7 @@ export default function PlanoScreen() {
   const fotoDe = (profileId: string) =>
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
 
-  const pessoasQueResponderam = [...vao, ...aPensar];
+  const pessoasQueResponderam = [...vao, ...(congelado ? [] : naoVao), ...aPensar];
   const podeAbrirAoPublico = aberto && souCondutor && plano.ride !== null && !plano.ride.publica;
   const podeGerirGrupos = aberto && souQuemConvidou;
   // Who invited sees every other group of theirs (sent or not); everyone else only the groups it was sent to.
@@ -256,8 +258,8 @@ export default function PlanoScreen() {
       {pessoasQueResponderam.length > 0 ? (
         <>
           <SectionHeader
-            title={congelado ? 'Quem foi' : 'Quem vai'}
-            trailing={vao.length > 0 ? String(vao.length) : undefined}
+            title={congelado ? 'Quem foi' : 'A malta'}
+            trailing={vao.length > 0 ? `${vao.length} ${vao.length === 1 ? 'vai' : 'vão'}` : undefined}
           />
           <Card style={styles.lista}>
             {pessoasQueResponderam.map((pessoa, indice) => (
@@ -274,7 +276,9 @@ export default function PlanoScreen() {
                     ? `Vai com ${pessoa.otherGroup}`
                     : pessoa.answer === 'vou'
                       ? 'Vai'
-                      : 'A pensar'
+                      : pessoa.answer === 'nao'
+                        ? 'Não vai'
+                        : 'A pensar'
                 }
                 trailing={
                   pessoa.answer === 'vou' && !pessoa.otherGroup ? (

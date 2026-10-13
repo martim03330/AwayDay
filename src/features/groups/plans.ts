@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
-// Os planos: alguém convida o grupo para um jogo, a malta responde «vou» ou «estou a pensar», e quem convidou
+// Os planos: alguém convida o grupo para um jogo, a malta responde «vou» ou «não vou» (quem ainda não respondeu está
+// «a pensar»), e quem convidou
 // combina a boleia e a dormida até o plano fechar — sozinho, quando o carro enche, ou à mão.
 
 function client() {
@@ -83,7 +84,7 @@ function refusal(error: { message: string; details?: string | null }) {
   return new PlanRefused(reason, planId);
 }
 
-export type PlanAnswer = 'vou' | 'talvez';
+export type PlanAnswer = 'vou' | 'nao';
 export type PlanStatus = 'aberto' | 'fechado';
 
 export type FixturePlan = {
@@ -101,7 +102,8 @@ export type FixturePlan = {
   /** Fechou sozinho porque o carro encheu. */
   closedByFullCar: boolean;
   going: number;
-  maybe: number;
+  /** Quantos disseram «não vou». */
+  notGoing: number;
   myAnswer: PlanAnswer | null;
   /** A quantos outros grupos foi mandado. */
   sharedGroups: number;
@@ -178,8 +180,9 @@ function toPlan(row: SummaryRow): FixturePlan {
     status: row.status === 'fechado' ? 'fechado' : 'aberto',
     closedByFullCar: row.closed_reason === 'carro_cheio',
     going: row.going ?? 0,
-    maybe: row.maybe ?? 0,
-    myAnswer: row.my_answer === 'vou' || row.my_answer === 'talvez' ? row.my_answer : null,
+    // The server's `maybe` column counts the «não vou» answers since there is no «talvez» any more.
+    notGoing: row.maybe ?? 0,
+    myAnswer: row.my_answer === 'vou' || row.my_answer === 'nao' ? row.my_answer : null,
     sharedGroups: row.shared_groups ?? 0,
     ride:
       row.ride_id && row.ride_driver_id && row.ride_departure_at
@@ -232,7 +235,8 @@ export async function fetchGroupFixturePlans(groupId: string): Promise<FixturePl
 export type PlanPerson = {
   profileId: string;
   displayName: string;
-  answer: PlanAnswer;
+  /** «pensar»: está num grupo do plano e ainda não respondeu. */
+  answer: PlanAnswer | 'pensar';
   isMe: boolean;
   /** Já vai a este jogo com outro grupo (plano fechado lá). */
   otherGroup: string | null;
@@ -244,7 +248,7 @@ export async function fetchPlanPeople(planId: string): Promise<PlanPerson[]> {
   return data.map((row) => ({
     profileId: row.profile_id,
     displayName: row.display_name ?? 'Um adepto',
-    answer: row.answer === 'talvez' ? ('talvez' as const) : ('vou' as const),
+    answer: row.answer === 'vou' || row.answer === 'nao' ? row.answer : ('pensar' as const),
     isMe: row.is_me === true,
     otherGroup: row.other_group,
   }));
@@ -301,7 +305,7 @@ export async function fetchPlanSharedGroups(planId: string): Promise<SharedGroup
   return data.map((row) => ({ groupId: row.group_id, groupName: row.group_name ?? 'Grupo' }));
 }
 
-/** «Vou», «Estou a pensar», ou `null` para tirar a resposta. */
+/** «Vou», «Não vou», ou `null` para tirar a resposta (volta a «a pensar»). */
 export async function answerPlan(planId: string, answer: PlanAnswer | null) {
   const { error } = await client().rpc('answer_fixture_plan', {
     p_plan_id: planId,

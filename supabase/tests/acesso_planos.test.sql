@@ -206,14 +206,17 @@ select pg_temp.expect('answers are not written directly',
   pg_temp.refusal(format('insert into public.fixture_plan_answer (plan_id, profile_id, answer) values (%L, %L, %L)',
     pg_temp.id('p1'), 'ad000007-0000-4000-8000-0000000000e1', 'vou')),
   'permission denied for table fixture_plan_answer');
-select pg_temp.expect('only vou or talvez', pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'sim')), 'bad_answer');
-select public.answer_fixture_plan(pg_temp.id('p1'), 'talvez');
-select pg_temp.expect('M is a maybe', (select going || ':' || maybe || ':' || my_answer from public.fixture_plan_summaries(array[pg_temp.id('p1')])), '1:1:talvez');
+select pg_temp.expect('only vou or nao', pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'sim')), 'bad_answer');
+select pg_temp.expect('talvez is no longer an answer', pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'talvez')), 'bad_answer');
+select pg_temp.expect('before answering, M is still thinking',
+  (select answer from public.fixture_plan_people(pg_temp.id('p1')) where is_me), 'pensar');
+select public.answer_fixture_plan(pg_temp.id('p1'), 'nao');
+select pg_temp.expect('M is not going', (select going || ':' || maybe || ':' || my_answer from public.fixture_plan_summaries(array[pg_temp.id('p1')])), '1:1:nao');
 select public.answer_fixture_plan(pg_temp.id('p1'), null);
 select pg_temp.expect('no answer removes it', (select maybe from public.fixture_plan_summaries(array[pg_temp.id('p1')])), 0);
 select public.answer_fixture_plan(pg_temp.id('p1'), 'vou');
 select pg_temp.expect('a member sees who goes',
-  (select string_agg(display_name || ':' || is_me, ',' order by display_name) from public.fixture_plan_people(pg_temp.id('p1'))),
+  (select string_agg(display_name || ':' || is_me, ',' order by display_name) from public.fixture_plan_people(pg_temp.id('p1')) where answer = 'vou'),
   'Plano Dono:false,Plano Membro:true');
 
 -- 5. Only the creator manages the plan; a driver or host may attach their own car or house.
@@ -278,7 +281,7 @@ select pg_temp.as_user('ad000007-0000-4000-8000-0000000000a1');
 select pg_temp.expect('a made-up status is refused', pg_temp.refusal(format('select public.set_fixture_plan_status(%L, %L)', pg_temp.id('p1'), 'feito')), 'bad_status');
 select public.set_fixture_plan_status(pg_temp.id('p1'), 'fechado');
 select pg_temp.expect('answers close with the plan',
-  pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'talvez')), 'plan_closed');
+  pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'nao')), 'plan_closed');
 select pg_temp.expect('a closed plan is not shared',
   pg_temp.refusal(format('select public.share_fixture_plan(%L, %L)', pg_temp.id('p1'), 'c0000007-0000-4000-8000-0000000000a2')), 'plan_closed');
 select pg_temp.as_user('ad000007-0000-4000-8000-0000000000b1');
@@ -314,7 +317,7 @@ select pg_temp.expect('a cancelled plan takes no ride',
 reset role;
 select pg_temp.expect('cancelling deletes the plan',
   (select count(*)::integer from public.fixture_plan where id = pg_temp.id('p1')), 0);
-select pg_temp.expect('everyone who said vou or talvez is out of it',
+select pg_temp.expect('everyone who answered is out of it',
   (select count(*)::integer from public.fixture_plan_answer where plan_id = pg_temp.id('p1')), 0);
 select pg_temp.expect('the invite leaves every group''s chat',
   (select count(*)::integer from public.group_message where plan_id = pg_temp.id('p1')), 0);
@@ -360,7 +363,7 @@ update public.fixture set kickoff_at = now() - interval '1 hour' where id = pg_t
 set local role authenticated;
 select pg_temp.as_user('ad000007-0000-4000-8000-0000000000e1');
 select pg_temp.expect('after kick-off nobody answers a plan',
-  pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('px'), 'talvez')), 'fixture_over');
+  pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('px'), 'nao')), 'fixture_over');
 select pg_temp.expect('after kick-off the plan cannot be closed or reopened',
   pg_temp.refusal(format('select public.set_fixture_plan_status(%L, %L)', pg_temp.id('px'), 'fechado')), 'fixture_over');
 select pg_temp.expect('after kick-off taking back one''s answer still works',

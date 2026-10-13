@@ -129,9 +129,9 @@ update public.fixture_plan set status = 'cancelado' where id = pg_temp.id('cance
 select pg_temp.make_plan('alheia', 'teste-cama-alheia', 'e9300000-0000-4000-8000-000000000006', 2, true);
 select pg_temp.make_plan('acabou', 'teste-cama-acabou', 'e9300000-0000-4000-8000-000000000001', 2, true);
 
--- A already said "talvez" to the plan: taking a bed turns it into "vou".
+-- A already said "nao" to the plan: taking a bed turns it into "vou".
 insert into public.fixture_plan_answer (plan_id, profile_id, answer)
-values (pg_temp.id('ok'), 'e9300000-0000-4000-8000-000000000002', 'talvez');
+values (pg_temp.id('ok'), 'e9300000-0000-4000-8000-000000000002', 'nao');
 
 -- B missed two rides as a passenger in the last months.
 insert into t_ids (key, id) values ('r1', gen_random_uuid()), ('r2', gen_random_uuid());

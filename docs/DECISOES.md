@@ -2,6 +2,15 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Respostas a um plano: «vou» ou «não vou»
+
+- Saiu o «estou a pensar» (`talvez`): as respostas são «vou» ou «não vou» (`nao`), e quem ainda não respondeu é que
+  está «a pensar» (migração `20261013210000_plan_answers_vou_or_nao`). Os «talvez» que havia voltaram a «sem resposta».
+- O ecrã do plano mostra a malta toda: quem vai, quem não vai e, como «a pensar», quem está num grupo do plano e ainda
+  não respondeu — só os membros dos grupos do plano de que a própria pessoa também faz parte.
+- A coluna `maybe` de `fixture_plan_summaries` passou a contar os «não vou» (na app: `notGoing`), para não reescrever
+  a assinatura da função. Oferecer boleia ou casa ao grupo passa a resposta a «vou», mesmo para quem tinha dito «não vou».
+
 ## 2026-10-13 — Desistir de um plano apaga-o
 
 - «Desistir do plano» apaga o plano em vez de o deixar como «cancelado» (migração

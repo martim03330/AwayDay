@@ -56,7 +56,7 @@ insert into public.fixture_plan_answer (plan_id, profile_id, answer) values
   ('a0000000-0000-4000-8000-000000000201', '027d9f21-4ebd-433a-8a4e-4cc035b0163e', 'vou'),
   ('a0000000-0000-4000-8000-000000000201', 'a0000000-0000-4000-8000-000000000001', 'vou'),
   ('a0000000-0000-4000-8000-000000000201', 'a0000000-0000-4000-8000-000000000002', 'vou'),
-  ('a0000000-0000-4000-8000-000000000201', 'a0000000-0000-4000-8000-000000000003', 'talvez');
+  ('a0000000-0000-4000-8000-000000000201', 'a0000000-0000-4000-8000-000000000003', 'nao');
 
 -- A boleia do Rui para Alvalade: sai amanhã às 17:30 (Lisboa) do Rossio. Liga-se sozinha ao plano.
 insert into public.ride (id, fixture_id, driver_id, origin_name, origin, departure_at, seats_offered, route_option, round_trip,
@@ -107,7 +107,7 @@ insert into public.fixture_plan_answer (plan_id, profile_id, answer) values
   ('a0000000-0000-4000-8000-000000000202', '027d9f21-4ebd-433a-8a4e-4cc035b0163e', 'vou'),
   ('a0000000-0000-4000-8000-000000000202', 'a0000000-0000-4000-8000-000000000001', 'vou'),
   ('a0000000-0000-4000-8000-000000000202', 'a0000000-0000-4000-8000-000000000003', 'vou'),
-  ('a0000000-0000-4000-8000-000000000202', 'a0000000-0000-4000-8000-000000000002', 'talvez');
+  ('a0000000-0000-4000-8000-000000000202', 'a0000000-0000-4000-8000-000000000002', 'nao');
 insert into public.ride (id, fixture_id, driver_id, origin_name, origin, departure_at, seats_offered, route_option, round_trip,
   distance_m, duration_s, toll_m, consumption_cl_per_100km, fuel_price_milli_per_litre, fuel_cents, toll_cents, total_cents,
   accepts_return_requests, group_id, visibility, origin_city)
@@ -123,7 +123,7 @@ values ('a0000000-0000-4000-8000-000000000203', 'a0000000-0000-4000-8000-0000000
 insert into public.fixture_plan_answer (plan_id, profile_id, answer) values
   ('a0000000-0000-4000-8000-000000000203', 'a0000000-0000-4000-8000-000000000002', 'vou'),
   ('a0000000-0000-4000-8000-000000000203', 'a0000000-0000-4000-8000-000000000001', 'vou'),
-  ('a0000000-0000-4000-8000-000000000203', 'a0000000-0000-4000-8000-000000000003', 'talvez');
+  ('a0000000-0000-4000-8000-000000000203', 'a0000000-0000-4000-8000-000000000003', 'nao');
 insert into public.stay_plan (id, fixture_id, profile_id, nights, commitment, spare_places, total_cents, note, group_id, visibility, created_at)
 values
   ('a0000000-0000-4000-8000-000000000601', 'lens-sporting-champions-2026-27', 'a0000000-0000-4000-8000-000000000002', 2, 'se_houver', 3, 36000,

@@ -18,7 +18,7 @@ const PLANO: FixturePlan = {
   status: 'aberto',
   closedByFullCar: false,
   going: 2,
-  maybe: 0,
+  notGoing: 0,
   myAnswer: null,
   sharedGroups: 1,
   ride: null,

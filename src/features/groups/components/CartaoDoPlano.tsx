@@ -44,11 +44,11 @@ export function nomeDoJogo(fixtureId: string, reserva = 'Jogo') {
   return `${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`;
 }
 
-/** "3 vão · 2 a pensar". */
-export function respostas(plano: Pick<FixturePlan, 'going' | 'maybe'>) {
+/** "3 vão · 1 não vai". */
+export function respostas(plano: Pick<FixturePlan, 'going' | 'notGoing'>) {
   const partes = [
     plano.going > 0 ? `${plano.going} ${plano.going === 1 ? 'vai' : 'vão'}` : null,
-    plano.maybe > 0 ? `${plano.maybe} a pensar` : null,
+    plano.notGoing > 0 ? `${plano.notGoing} não ${plano.notGoing === 1 ? 'vai' : 'vão'}` : null,
   ].filter(Boolean);
   return partes.length > 0 ? partes.join(' · ') : 'ainda ninguém respondeu';
 }
@@ -142,7 +142,7 @@ export function CartaoDoPlano({
               ...p,
               myAnswer: nova,
               going: Math.max(0, p.going + (nova === 'vou' ? 1 : 0) - (p.myAnswer === 'vou' ? 1 : 0)),
-              maybe: Math.max(0, p.maybe + (nova === 'talvez' ? 1 : 0) - (p.myAnswer === 'talvez' ? 1 : 0)),
+              notGoing: Math.max(0, p.notGoing + (nova === 'nao' ? 1 : 0) - (p.myAnswer === 'nao' ? 1 : 0)),
             }
           : p
       )
@@ -248,10 +248,10 @@ export function CartaoDoPlano({
             onPress={() => void responder('vou')}
           />
           <BotaoResposta
-            label="Estou a pensar"
-            escolhido={plano.myAnswer === 'talvez'}
-            aTratar={aResponder === 'talvez'}
-            onPress={() => void responder('talvez')}
+            label="Não vou"
+            escolhido={plano.myAnswer === 'nao'}
+            aTratar={aResponder === 'nao'}
+            onPress={() => void responder('nao')}
           />
         </View>
       ) : null}

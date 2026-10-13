@@ -38,7 +38,7 @@ insert into public.fixture_plan_answer (plan_id, profile_id, answer) values
   ('c0000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000002', 'vou'),
   ('c0000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000003', 'vou'),
   ('c0000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000004', 'vou'),
-  ('c0000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000005', 'talvez');
+  ('c0000000-0000-4000-8000-000000000201', 'c0000000-0000-4000-8000-000000000005', 'nao');
 
 -- Rui's car from Sete Rios (14:30 in Lisbon), group only: Tiago, Ana and Zé in, one seat left. Links itself to the plan.
 insert into public.ride (id, fixture_id, driver_id, origin_name, origin, departure_at, seats_offered, route_option, round_trip,
@@ -117,7 +117,7 @@ insert into public.fixture_plan_answer (plan_id, profile_id, answer) values
   ('c0000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000003', 'vou'),
   ('c0000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000001', 'vou'),
   ('c0000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000005', 'vou'),
-  ('c0000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000002', 'talvez');
+  ('c0000000-0000-4000-8000-000000000202', 'c0000000-0000-4000-8000-000000000002', 'nao');
 insert into public.stay_plan (id, fixture_id, profile_id, nights, commitment, spare_places, total_cents, note, group_id, visibility, created_at)
 values
   ('c0000000-0000-4000-8000-000000000601', 'lens-sporting-champions-2026-27', 'c0000000-0000-4000-8000-000000000003', 2, 'se_houver', 3, 36000,
