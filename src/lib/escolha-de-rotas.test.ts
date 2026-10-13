@@ -94,6 +94,12 @@ describe('chooseRoutes', () => {
     expect(escolha?.candidate).toBe(mistaB);
   });
 
+  it('no «sem portagens» when the fastest is already free (the A25 from Guarda)', () => {
+    const a25 = rota(170, 123, 160, 1952, 'A25');
+    a25.cost = { fuelCents: 1952, tollCents: 0, totalCents: 1952 };
+    expect(opcoes([a25, rota(160, 127, 0, 1810)])).toEqual(['rapida:1952']);
+  });
+
   it('a toll-free fastest route is the only option', () => {
     const cidade = rota(8, 15, 0, 120);
     expect(opcoes([cidade, rota(9, 17, 0, 130)])).toEqual(['rapida:120']);

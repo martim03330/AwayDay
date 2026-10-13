@@ -7,7 +7,8 @@
 //   the free A13 and the A23, then the A1 only from Torres Novas). Of those that save real money and do not take much
 //   longer, the one where the saving is worth most once each extra minute at the wheel is counted against it: by the
 //   A19 and national roads, 23 € cheaper but 30 min slower each way, loses to the A13, 14,50 € cheaper and 4 min slower;
-// - «sem_portagens»: the cheapest without any toll.
+// - «sem_portagens»: the cheapest without any toll, only when the fastest pays some (two toll-free options read as
+//   a mistake);
 // An option that is both slower and dearer than another one is left out: nobody would pick it.
 
 import type { TripCost } from './ride-cost.ts';
@@ -77,7 +78,7 @@ export function chooseRoutes(candidates: readonly Candidate[], ways: 1 | 2 = 1):
   if (equilibrio && !(semPortagens && dominated(equilibrio, semPortagens))) {
     choices.push({ option: 'equilibrio', candidate: equilibrio });
   }
-  if (semPortagens && !dominated(semPortagens, rapida)) {
+  if (semPortagens && rapida.cost.tollCents > 0 && !dominated(semPortagens, rapida)) {
     choices.push({ option: 'sem_portagens', candidate: semPortagens });
   }
   return choices;

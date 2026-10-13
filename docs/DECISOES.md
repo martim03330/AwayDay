@@ -33,6 +33,9 @@ Registo das decisões estruturais, com data e razão. A mais recente fica em cim
 - Cada rota guarda as autoestradas por onde passa, gratuitas incluídas (`route_cache.motorways`, migração
   `20261013230000_route_cache_motorways`), e a app mostra-as («pela A13 → A23 → A1»).
 - Ao criar a boleia, o servidor volta a escolher com as mesmas rotas da cache: o preço é o da opção que o condutor viu.
+- Verificado em 26 trajetos para estádios (2026-10-13): portagens da mais rápida entre −1 % e +7 % do oficial depois de
+  medir a A1 e a A2 em km do Valhalla (migração `20261013234000_toll_rates_router_km`). «Sem portagens» só aparece
+  quando a mais rápida paga portagens. Troços com portagem sem nome no mapa (4–38 km) ficam no valor nacional.
 - Razão: um tester notou que Coimbra → Lisboa fica mais barato com só uma parte em autoestrada, e a app só mostrava a A1
   ou nenhuma portagem.
 
