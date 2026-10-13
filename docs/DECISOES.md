@@ -2,6 +2,17 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Desistir de um plano apaga-o
+
+- «Desistir do plano» apaga o plano em vez de o deixar como «cancelado» (migração
+  `20261013200000_cancelled_plans_disappear`). Com ele vão, pelas ligações `on delete cascade` que já existiam: o convite
+  na conversa de todos os grupos a quem foi mandado, as respostas («vou», «talvez»: toda a gente sai do plano), os grupos
+  com quem foi partilhado e as casas propostas com os votos. O carro e a casa ficam (são do condutor e do dono), e a
+  sessão da viagem, se já existia, também (tem as despesas).
+- Razão: os testers viam o convite ficar na conversa e quem tinha dito «vou» continuar no plano.
+- Continua a não se poder desistir depois do apito. Os 2 planos já cancelados em produção foram apagados.
+- Na conversa, um convite cujo plano já não existe deixa de aparecer, mesmo antes de a conversa recarregar.
+
 ## 2026-10-13 — Ícone novo: três adeptos e uma bola
 
 - Escolhido pelo Martim a partir de uma proposta de um tester: três pessoas em verde-escuro sobre branco, com uma bola

@@ -298,13 +298,28 @@ select pg_temp.expect('S no longer sees the house', (select count(*)::integer fr
 
 -- 10. Cancelling.
 select pg_temp.as_user('ad000007-0000-4000-8000-0000000000a1');
+reset role;
+select pg_temp.expect('before cancelling, the plan has answers and an invite in the chat',
+  (select (count(*) > 0)::text from public.fixture_plan_answer where plan_id = pg_temp.id('p1')) || ':' ||
+  (select (count(*) > 0)::text from public.group_message where plan_id = pg_temp.id('p1')), 'true:true');
+set local role authenticated;
+select pg_temp.as_user('ad000007-0000-4000-8000-0000000000a1');
 select public.set_fixture_plan_status(pg_temp.id('p1'), 'cancelado');
-select pg_temp.expect('a cancelled plan cannot be reopened',
-  pg_temp.refusal(format('select public.set_fixture_plan_status(%L, %L)', pg_temp.id('p1'), 'aberto')), 'plan_closed');
+select pg_temp.expect('a cancelled plan cannot be touched again',
+  pg_temp.refusal(format('select public.set_fixture_plan_status(%L, %L)', pg_temp.id('p1'), 'aberto')), 'plan_not_found');
 select pg_temp.expect('a cancelled plan leaves the group''s list',
   (select count(*)::integer from public.group_fixture_plans('c0000007-0000-4000-8000-0000000000a1')), 0);
 select pg_temp.expect('a cancelled plan takes no ride',
-  pg_temp.refusal(format('select public.set_fixture_plan_ride(%L)', pg_temp.id('p1'))), 'plan_closed');
+  pg_temp.refusal(format('select public.set_fixture_plan_ride(%L)', pg_temp.id('p1'))), 'plan_not_found');
+reset role;
+select pg_temp.expect('cancelling deletes the plan',
+  (select count(*)::integer from public.fixture_plan where id = pg_temp.id('p1')), 0);
+select pg_temp.expect('everyone who said vou or talvez is out of it',
+  (select count(*)::integer from public.fixture_plan_answer where plan_id = pg_temp.id('p1')), 0);
+select pg_temp.expect('the invite leaves every group''s chat',
+  (select count(*)::integer from public.group_message where plan_id = pg_temp.id('p1')), 0);
+set local role authenticated;
+select pg_temp.as_user('ad000007-0000-4000-8000-0000000000a1');
 
 -- 11. 30 plans a day.
 reset role;

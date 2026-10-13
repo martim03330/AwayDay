@@ -420,6 +420,7 @@ export default function ConversaDoGrupoScreen() {
                     <MensagemPlano
                       mensagem={item}
                       plano={(planos.data ?? []).find((plano) => plano.id === item.planId) ?? null}
+                      planosCarregados={planos.isSuccess}
                       vaisComOutroGrupo={item.planId ? conflitos.data?.[item.planId] : undefined}
                       escuro={escuro}
                       grupoAtualId={grupo.id}
@@ -560,6 +561,7 @@ export default function ConversaDoGrupoScreen() {
 function MensagemPlano({
   mensagem,
   plano,
+  planosCarregados,
   vaisComOutroGrupo,
   escuro,
   grupoAtualId,
@@ -569,6 +571,8 @@ function MensagemPlano({
 }: {
   mensagem: GroupMessage;
   plano: FixturePlan | null;
+  /** The plans have loaded: a plan that is not there was given up on (deleted), and its invite goes too. */
+  planosCarregados: boolean;
   grupoAtualId: string;
   vaisComOutroGrupo?: string;
   escuro: boolean;
@@ -577,8 +581,10 @@ function MensagemPlano({
   onLongPress?: () => void;
 }) {
   const theme = useTheme();
+  // The plan was given up on: its invite is deleted with it, but the chat may still hold it until it refreshes.
+  if (!plano && planosCarregados) return null;
   if (!plano) {
-    // O plano foi cancelado (ou ainda está a carregar): fica só a linha.
+    // Ainda está a carregar: fica só a linha.
     return (
       <PastilhaDeConversa
         escuro={escuro}

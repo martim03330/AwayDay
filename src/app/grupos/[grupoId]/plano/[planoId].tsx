@@ -469,8 +469,8 @@ export default function PlanoScreen() {
             <ConfirmacaoInline
               perigo
               aTratar={aTratar}
-              mensagem="O convite deixa de valer para toda a gente do grupo e de quem o recebeu. Ninguém mais conta como «vou»."
-              cancelar="Continuar com o plano"
+              mensagem="Toda a gente sai do plano e o convite desaparece do grupo."
+              cancelar="Manter"
               confirmar="Desistir"
               onCancelar={() => {
                 LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
