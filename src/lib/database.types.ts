@@ -3190,6 +3190,7 @@ export type Database = {
           distance_m: number
           duration_s: number
           key: string
+          motorways: string[]
           toll_segments: Json
         }
         Insert: {
@@ -3197,6 +3198,7 @@ export type Database = {
           distance_m: number
           duration_s: number
           key: string
+          motorways?: string[]
           toll_segments?: Json
         }
         Update: {
@@ -3204,6 +3206,7 @@ export type Database = {
           distance_m?: number
           duration_s?: number
           key?: string
+          motorways?: string[]
           toll_segments?: Json
         }
         Relationships: []

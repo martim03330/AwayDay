@@ -18,7 +18,7 @@ import {
   type TollRate,
   type TripCost,
 } from '../_shared/ride-cost.ts';
-import { chooseRoutes, motorwaysOf, type Candidate, type RouteOption } from '../_shared/route-choice.ts';
+import { chooseRoutes, type Candidate, type RouteOption } from '../_shared/route-choice.ts';
 import { routeFromCache, routesFromValhalla, type Route } from '../_shared/route-parse.ts';
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
@@ -45,7 +45,7 @@ const OPTIONS: readonly RouteOption[] = ['rapida', 'equilibrio', 'sem_portagens'
  */
 const TOLL_LEVELS = [1, 0.4, 0.3, 0] as const;
 /** The cache rows of these routes start with this, so rows from before the alternatives are not read as complete. */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 
 type Point = { latitude: number; longitude: number };
 
@@ -128,7 +128,7 @@ async function routesAt(admin: SupabaseClient, from: Point, to: Point, useTolls:
   const key = `${CACHE_VERSION}:${coord(from.latitude)},${coord(from.longitude)}>${coord(to.latitude)},${coord(to.longitude)}:${useTolls}`;
   const cached = await admin
     .from('route_cache')
-    .select('key, distance_m, duration_s, toll_segments')
+    .select('key, distance_m, duration_s, toll_segments, motorways')
     .in('key', [`${key}#0`, `${key}#1`])
     .gte('created_at', new Date(Date.now() - 30 * DAY_MS).toISOString());
   const rows = [...(cached.data ?? [])].sort((a, b) => String(a.key).localeCompare(String(b.key)));
@@ -148,6 +148,7 @@ async function routesAt(admin: SupabaseClient, from: Point, to: Point, useTolls:
         distance_m: one.distanceM,
         duration_s: one.durationS,
         toll_segments: one.tollSegments,
+        motorways: one.motorways,
         created_at: createdAt,
       }))
     );
@@ -409,7 +410,7 @@ Deno.serve(async (request) => {
       if (!cost) return null;
       candidates.push({ route: found, cost });
     }
-    return chooseRoutes(candidates);
+    return chooseRoutes(candidates, roundTrip ? 2 : 1);
   };
 
   if (action === 'quote') {
@@ -421,8 +422,8 @@ Deno.serve(async (request) => {
     if (!choices) return json(500, { error: 'cost_failed' });
     const quotes = choices.map(({ option, candidate: { route: found, cost } }) => ({
       option,
-      // The motorways it takes, in order ("A13", "A1"), so the driver knows which way the cheaper one goes.
-      motorways: motorwaysOf(found.tollSegments),
+      // The motorways it takes, in order, free ones too ("A13", "A23", "A1"): which way the cheaper one goes.
+      motorways: found.motorways,
       distance_m: found.distanceM,
       duration_s: found.durationS,
       toll_m: found.tollM,

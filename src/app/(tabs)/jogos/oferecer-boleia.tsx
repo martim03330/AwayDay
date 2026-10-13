@@ -1006,7 +1006,7 @@ export default function OferecerBoleiaScreen() {
                         opcao.tollM === 0
                           ? 'sem portagens'
                           : opcao.motorways.length > 0
-                            ? `${opcao.motorways.join(' + ')}${opcao.option === 'equilibrio' ? ' e estradas sem portagem' : ''}`
+                            ? `pela ${opcao.motorways.join(' → ')}`
                             : `${formatarDistancia(opcao.tollM)} com portagem`
                       }`}
                     </ThemedText>

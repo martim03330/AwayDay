@@ -4,7 +4,14 @@
 
 import type { TollSegment } from './ride-cost.ts';
 
-export type Route = { distanceM: number; durationS: number; tollM: number; tollSegments: TollSegment[] };
+export type Route = {
+  distanceM: number;
+  durationS: number;
+  tollM: number;
+  tollSegments: TollSegment[];
+  /** Every motorway taken, in driving order, free ones included, each once (bits under 1 km left out). */
+  motorways: string[];
+};
 
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -48,6 +55,24 @@ export function tollSegmentsOf(trip: unknown): TollSegment[] {
   return segments;
 }
 
+/** The motorways of a Valhalla trip in driving order, tolled or not, each once when it adds up to 1 km or more. */
+export function motorwaysOfTrip(trip: unknown): string[] {
+  const metres = new Map<string, number>();
+  const legs = asRecord(trip)?.legs;
+  for (const legValue of Array.isArray(legs) ? legs : []) {
+    const maneuvers = asRecord(legValue)?.maneuvers;
+    for (const maneuverValue of Array.isArray(maneuvers) ? maneuvers : []) {
+      const maneuver = asRecord(maneuverValue);
+      const lengthKm = maneuver?.length;
+      if (typeof lengthKm !== 'number' || !Number.isFinite(lengthKm) || lengthKm < 0) continue;
+      const motorway = motorwayOf(maneuver?.street_names);
+      if (motorway === 'default') continue;
+      metres.set(motorway, (metres.get(motorway) ?? 0) + lengthKm * 1000);
+    }
+  }
+  return [...metres].filter(([, total]) => total >= 1000).map(([motorway]) => motorway);
+}
+
 function sumTollM(segments: readonly TollSegment[]) {
   return segments.reduce((total, segment) => total + segment.tollM, 0);
 }
@@ -87,6 +112,7 @@ function routeFromTrip(tripValue: unknown): Route | null {
     durationS: Math.max(Math.round(timeS), 1),
     tollM: sumTollM(tollSegments),
     tollSegments,
+    motorways: motorwaysOfTrip(trip),
   };
 }
 
@@ -117,5 +143,10 @@ export function routeFromCache(row: unknown): Route | null {
   }
   const tollM = sumTollM(tollSegments);
   if (!Number.isSafeInteger(tollM)) return null;
-  return { distanceM, durationS, tollM, tollSegments };
+  // Rows cached before this column existed have none: the route is still good, just unnamed.
+  const rawMotorways = record?.motorways;
+  const motorways = Array.isArray(rawMotorways)
+    ? rawMotorways.filter((name): name is string => typeof name === 'string' && name.length > 0)
+    : [];
+  return { distanceM, durationS, tollM, tollSegments, motorways };
 }

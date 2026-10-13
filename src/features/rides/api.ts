@@ -14,7 +14,7 @@ export type RouteOption = 'rapida' | 'equilibrio' | 'sem_portagens';
 
 export type RideQuote = {
   option: RouteOption;
-  /** The motorways it takes, in driving order ("A13", "A1"); empty without tolls. */
+  /** Every motorway it takes, in driving order, free ones included ("A13", "A23", "A1"). */
   motorways: string[];
   distanceM: number;
   durationS: number;

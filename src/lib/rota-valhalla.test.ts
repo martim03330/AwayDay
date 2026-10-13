@@ -5,6 +5,7 @@ import {
   motorwayOf,
   routeFromCache,
   routeFromValhalla,
+  motorwaysOfTrip,
   routesFromValhalla,
   tollSegmentsOf,
 } from '../../supabase/functions/_shared/route-parse';
@@ -86,6 +87,35 @@ describe('tollSegmentsOf', () => {
   });
 });
 
+describe('motorwaysOfTrip', () => {
+  it('names every motorway in driving order, free ones too, each once, without bits under 1 km', () => {
+    const viagem = trip([
+      {
+        maneuvers: [
+          { length: 6, street_names: ['IC 2'] },
+          { length: 0.4, street_names: ['A 13-1'] },
+          { length: 84, street_names: ['A 13'] },
+          { toll: true, length: 17, street_names: ['A 23'] },
+          { toll: true, length: 60, street_names: ['A 1'] },
+          { length: 2, street_names: ['A 13'] },
+          { toll: true, length: 42, street_names: ['A 1/IP 1'] },
+        ],
+      },
+    ]).trip;
+    expect(motorwaysOfTrip(viagem)).toEqual(['A13', 'A23', 'A1']);
+  });
+
+  it('adds the pieces of a motorway before leaving it out as too short', () => {
+    const viagem = trip([{ maneuvers: [{ length: 0.6, street_names: ['A 19'] }, { length: 0.6, street_names: ['A 19'] }] }]).trip;
+    expect(motorwaysOfTrip(viagem)).toEqual(['A19']);
+  });
+
+  it('nothing for a trip without motorways or without legs', () => {
+    expect(motorwaysOfTrip(trip([{ maneuvers: [{ length: 30, street_names: ['EN 1'] }] }]).trip)).toEqual([]);
+    expect(motorwaysOfTrip(null)).toEqual([]);
+  });
+});
+
 describe('routesFromValhalla', () => {
   const principal = trip([{ maneuvers: [{ toll: true, length: 100, street_names: ['A 1'] }] }]);
   const alternativa = trip([{ maneuvers: [{ toll: true, length: 60, street_names: ['A 13'] }] }], { length: 125, time: 5000 });
@@ -117,6 +147,7 @@ describe('routeFromValhalla', () => {
         { motorway: 'A1', tollM: 10200 },
         { motorway: 'A1', tollM: 300 },
       ],
+      motorways: ['A1'],
     });
   });
 
@@ -136,6 +167,7 @@ describe('routeFromValhalla', () => {
       durationS: 1,
       tollM: 0,
       tollSegments: [],
+      motorways: [],
     });
     expect(routeFromValhalla(trip(undefined, { length: 0.0001, time: 0.2 }))?.distanceM).toBe(1);
   });
@@ -157,7 +189,11 @@ describe('routeFromCache', () => {
       durationS: 4301,
       tollM: 10500,
       tollSegments: good.toll_segments,
+      // Rows cached before the motorways column: still a good route, just unnamed.
+      motorways: [],
     });
+    expect(routeFromCache({ ...good, motorways: ['A13', 'A1'] })?.motorways).toEqual(['A13', 'A1']);
+    expect(routeFromCache({ ...good, motorways: ['A13', 7, ''] })?.motorways).toEqual(['A13']);
     expect(routeFromCache({ ...good, toll_segments: [] })?.tollM).toBe(0);
     expect(routeFromCache({ ...good, distance_m: '120400' })?.distanceM).toBe(120400);
   });
