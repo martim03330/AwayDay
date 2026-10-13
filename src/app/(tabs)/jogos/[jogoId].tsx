@@ -7,6 +7,7 @@ import { AvaliacaoJogo } from '@/components/avaliacao-jogo';
 import { Equipa } from '@/components/equipa';
 import { CarimboEstadio } from '@/components/carimbo-estadio';
 import { PlanoDoJogo } from '@/components/plano-do-jogo';
+import { MinhaBoleia, useMinhaBoleia } from '@/features/rides/components/MinhaBoleia';
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { GoingButton } from '@/features/activity/components/GoingButton';
@@ -89,6 +90,8 @@ export default function JogoScreen() {
 
   const { vou } = usePlanosJogos();
   const jogo = obterJogo(jogoId);
+  // Already in a car to this game: the page shows that ride instead of the invitation to sort one out.
+  const minhaBoleia = useMinhaBoleia(jogo?.id ?? null);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
@@ -230,7 +233,15 @@ export default function JogoScreen() {
           {estado === 'agendado' ? <GoingButton fixtureId={jogo.id} /> : null}
 
           <SectionHeader title="Com quem vais" />
-          {estado === 'agendado' ? (
+          {estado === 'agendado' && minhaBoleia ? (
+            <MinhaBoleia
+              boleia={minhaBoleia}
+              agora={agora}
+              onAbrir={() =>
+                router.push({ pathname: '/jogos/boleia', params: { rideId: minhaBoleia.id, jogoId: jogo.id } })
+              }
+            />
+          ) : estado === 'agendado' ? (
             <CombinarComAMalta onPress={() => abrir('/jogos/combinar')} />
           ) : null}
           <Card style={styles.lista}>

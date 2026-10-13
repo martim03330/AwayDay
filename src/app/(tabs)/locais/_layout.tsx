@@ -17,6 +17,20 @@ export default function LocaisLayout() {
       <Stack.Screen name="[localId]" options={{ headerShown: false }}>
         <Stack.Screen.Title>Local</Stack.Screen.Title>
       </Stack.Screen>
+      {/* Every tasco around the stadium, out of the tab (it made the page endless). */}
+      <Stack.Screen name="lista">
+        <Stack.Screen.Title>Tascos</Stack.Screen.Title>
+      </Stack.Screen>
+      {/* The club picker: a sheet with crests, the fan's club on top. */}
+      <Stack.Screen
+        name="escolher-estadio"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.6, 0.92],
+          sheetGrabberVisible: true,
+          headerShown: false,
+        }}
+      />
       <Stack.Screen
         name="sugerir-prato"
         options={{

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LocalCard } from '@/components/local-card';
 import { MapaJogo } from '@/components/mapa-jogo';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { placeCatalogQuery } from '@/features/places/hooks/usePlaceCatalog';
@@ -13,10 +12,11 @@ import { placePulseKey } from '@/features/presence/hooks/usePresence';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
-import { filtrarPorTempoAPe, MAX_MINUTOS_A_PE, ordenarTascos, valeACaminhada } from '@/lib/locais';
+import { estadiosParaEscolha, tascosDoEstadio, temLocaisPerto } from '@/lib/estadios-dos-locais';
+import { MAX_MINUTOS_A_PE } from '@/lib/locais';
 import { obterClube } from '@/mocks/clubes';
 import { estadiosNacionais, obterEstadio } from '@/mocks/estadios';
-import { locaisDoEstadio } from '@/mocks/locais';
+import type { Venue } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
@@ -24,49 +24,27 @@ import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
 import { Escudo } from '@/ui/escudo';
 import { Icon, IconCircle, icons } from '@/ui/icon';
-import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
 
-function temLocaisPerto(estadioId: string) {
-  return filtrarPorTempoAPe(locaisDoEstadio(estadioId)).perto.length > 0;
-}
-
-/** Estádios com locais perto primeiro, mantendo a ordem original. Calculado a cada render: os tascos chegam depois. */
-function ordenarEstadios() {
-  return [...estadiosNacionais].sort(
-    (a, b) => Number(temLocaisPerto(b.id)) - Number(temLocaisPerto(a.id))
-  );
-}
-
-type ChipRelvadoProps = {
-  clubeId: string;
-  nome: string;
-  selected: boolean;
-  onPress: () => void;
-};
-
-/** Club chip on the green header: yellow when selected, translucent white otherwise. */
-function ChipRelvado({ clubeId, nome, selected, onPress }: ChipRelvadoProps) {
+/**
+ * The club picker on the green header: the chosen club's crest and name, opening a sheet with every club (the fan's
+ * first). It replaced a sideways strip of chips, where the fan's own club could be far off to the right.
+ */
+function EscolhaDoClube({ estadio, onPress }: { estadio: Venue; onPress: () => void }) {
   const theme = useTheme();
-  const clube = obterClube(clubeId);
-  const cor = selected ? theme.highlightText : theme.accentText;
-
+  const clube = obterClube(estadio.clubeId);
   return (
     <Pressable
-      hitSlop={4}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
-      style={({ pressed }) => [
-        styles.chip,
-        { backgroundColor: selected ? theme.highlight : 'rgba(255, 255, 255, 0.16)' },
-        pressed && styles.pressed,
-      ]}>
-      {clube ? <Escudo clube={clube} size={17} /> : null}
-      <ThemedText style={[styles.chipTexto, { color: cor, fontWeight: selected ? 800 : 700 }]}>
-        {clube?.nomeCurto ?? nome}
+      accessibilityLabel={`${clube?.nomeCurto ?? estadio.nome}. Toca para escolher outro clube.`}
+      style={({ pressed }) => [styles.escolha, { backgroundColor: theme.highlight }, pressed && styles.pressed]}>
+      {clube ? <Escudo clube={clube} size={22} /> : null}
+      <ThemedText style={[styles.escolhaTexto, { color: theme.highlightText }]} numberOfLines={1}>
+        {clube?.nomeCurto ?? estadio.nome}
       </ThemedText>
+      <Icon name={icons.abaixo} size={18} color={theme.highlightText} strokeWidth={2.5} />
     </Pressable>
   );
 }
@@ -80,10 +58,9 @@ export default function LocaisScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ estadio?: string }>();
-  const { clubeFavoritoId, fezCheckIn, pessoasAqui } = useAppState();
+  const { clubeFavoritoId } = useAppState();
 
-  const estadiosOrdenados = ordenarEstadios();
-  const estadioComLocais = estadiosOrdenados.find((candidato) => temLocaisPerto(candidato.id));
+  const estadioComLocais = estadiosParaEscolha([]).outros.find((candidato) => temLocaisPerto(candidato.id));
   // Without a club, open on a stadium that already has tascos rather than an arbitrary club's.
   const estadioDoClube =
     obterClube(clubeFavoritoId)?.estadioId ?? estadioComLocais?.id ?? estadiosNacionais[0].id;
@@ -91,13 +68,7 @@ export default function LocaisScreen() {
     obterEstadio(params.estadio ?? estadioDoClube) ??
     obterEstadio(estadioDoClube) ??
     estadiosNacionais[0];
-  const todosOsLocais = locaisDoEstadio(estadio.id);
-  const { perto: pertoPorDistancia, maisLonge } = filtrarPorTempoAPe(todosOsLocais);
-  // Further than the list normally goes, but worth it: confirmed by fans, or put there by one.
-  const valeAPena = valeACaminhada(todosOsLocais);
-  const perto = ordenarTascos(pertoPorDistancia);
-  const confirmados = perto.filter((local) => local.confirmacao === 'confirmado');
-  const sugestoes = perto.filter((local) => local.confirmacao === 'sugerido');
+  const { perto, valeAPena, maisLonge } = tascosDoEstadio(estadio.id);
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -118,23 +89,6 @@ export default function LocaisScreen() {
       setRefreshing(false);
     }
   }
-  // The map shows everything at a glance; the long list is there for whoever prefers it.
-  const [verLista, setVerLista] = useState(false);
-
-  function cartao(local: (typeof perto)[number]) {
-    return (
-      <LocalCard
-        key={local.id}
-        local={local}
-        pessoas={pessoasAqui(local)}
-        checkedIn={fezCheckIn(local.id)}
-        onPress={() =>
-          router.push({ pathname: '/locais/[localId]', params: { localId: local.id } })
-        }
-      />
-    );
-  }
-
   function renderConteudo() {
     const estadioDaMalta = obterEstadio(estadioDoClube);
     if (perto.length === 0 && estadio.regiao === 'estrangeiro' && estadioDaMalta) {
@@ -177,11 +131,12 @@ export default function LocaisScreen() {
       <>
         {/* Keyed by stadium: changing club starts the map again on the new stadium. */}
         <MapaJogo key={estadio.id} venue={estadio} inicio="estadio" />
+        {/* The whole list in its own page: here it made the tab endless. */}
         <Button
-          label={verLista ? 'Esconder a lista' : `Ver em lista (${perto.length})`}
+          label={`Ver em lista (${perto.length + valeAPena.length})`}
           variant="secondary"
-          icon={verLista ? icons.fechar : icons.lista}
-          onPress={() => setVerLista((atual) => !atual)}
+          icon={icons.lista}
+          onPress={() => router.push({ pathname: '/locais/lista', params: { estadio: estadio.id } })}
         />
         {/* Always in view, not at the end of the list: new tascos are how the map grows. */}
         <Card style={[styles.sugerir, { backgroundColor: theme.highlight }]}>
@@ -204,53 +159,6 @@ export default function LocaisScreen() {
             }
           />
         </Card>
-        {verLista ? renderLista() : null}
-      </>
-    );
-  }
-
-  function renderLista() {
-    return (
-      <>
-        {confirmados.length > 0 && sugestoes.length > 0 ? (
-          <SectionHeader title="Confirmados" />
-        ) : null}
-        {confirmados.map(cartao)}
-        {sugestoes.length > 0 ? (
-          <>
-            <SectionHeader
-              title="Sugestões por confirmar"
-              trailing={plural(sugestoes.length, 'sítio', 'sítios')}
-            />
-            <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
-              Encontrados automaticamente perto do estádio. Podem não ser tascos para dia de jogo:
-              ajuda a confirmar.
-            </ThemedText>
-          </>
-        ) : null}
-        {sugestoes.map(cartao)}
-        {valeAPena.length > 0 ? (
-          <>
-            <SectionHeader
-              title="Mais longe, mas vale a caminhada"
-              trailing={plural(valeAPena.length, 'sítio', 'sítios')}
-            />
-            <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
-              {`Ficam a mais de ${MAX_MINUTOS_A_PE} min a pé, mas estão confirmados ou foram sugeridos.`}
-            </ThemedText>
-            {valeAPena.map(cartao)}
-          </>
-        ) : null}
-        {maisLonge - valeAPena.length > 0 ? (
-          <View style={[styles.banco, { borderColor: theme.borderStrong }]}>
-            <Icon name={icons.aPe} size={18} color={theme.textSecondary} />
-            <ThemedText themeColor="textSecondary" style={styles.bancoTexto}>
-              {maisLonge - valeAPena.length === 1
-                ? `1 tasco fica a mais de ${MAX_MINUTOS_A_PE} min a pé e ainda ninguém o recomendou.`
-                : `${maisLonge - valeAPena.length} tascos ficam a mais de ${MAX_MINUTOS_A_PE} min a pé e ainda ninguém os recomendou.`}
-            </ThemedText>
-          </View>
-        ) : null}
       </>
     );
   }
@@ -274,22 +182,10 @@ export default function LocaisScreen() {
         {/* Paints the iOS overscroll area above the header green instead of white, like the other tabs. */}
         <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
         <CabecalhoRelvado title="Locais" eyebrow={`Tascos a menos de ${MAX_MINUTOS_A_PE} min a pé`}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentInsetAdjustmentBehavior="never"
-            style={styles.chipsScroll}
-            contentContainerStyle={styles.chips}>
-            {estadiosOrdenados.map((opcao) => (
-              <ChipRelvado
-                key={opcao.id}
-                clubeId={opcao.clubeId}
-                nome={opcao.nome}
-                selected={opcao.id === estadio.id}
-                onPress={() => router.setParams({ estadio: opcao.id })}
-              />
-            ))}
-          </ScrollView>
+          <EscolhaDoClube
+            estadio={estadio}
+            onPress={() => router.push({ pathname: '/locais/escolher-estadio', params: { atual: estadio.id } })}
+          />
         </CabecalhoRelvado>
 
         <View style={styles.conteudo}>
@@ -334,25 +230,22 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: 800,
   },
-  chipsScroll: {
-    marginHorizontal: -20,
-  },
-  chips: {
-    gap: Spacing.two,
-    paddingHorizontal: 20,
-  },
-  chip: {
-    minHeight: 40,
+  escolha: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    paddingLeft: 10,
+    gap: Spacing.two,
+    paddingLeft: 12,
     paddingRight: 14,
     borderRadius: Radius.pill,
   },
-  chipTexto: {
-    fontSize: 14,
-    lineHeight: 19,
+  escolhaTexto: {
+    flexShrink: 1,
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: 800,
   },
   pressed: {
     opacity: 0.7,
