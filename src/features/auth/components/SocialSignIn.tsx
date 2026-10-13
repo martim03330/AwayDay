@@ -11,8 +11,11 @@ import { IDADE_MINIMA } from '@/lib/legal';
 import { Premivel } from '@/ui/premivel';
 import { ThemedText } from '@/ui/themed-text';
 
-/** Same height as the app's buttons. Apple's button needs an explicit size, or it does not appear. */
-const BUTTON_HEIGHT = 54;
+/**
+ * A little lower than the app's buttons: Apple sizes its button's text from the height, so this is what keeps both
+ * labels small. Apple's button needs an explicit size, or it does not appear.
+ */
+const BUTTON_HEIGHT = 48;
 
 type SocialSignInProps = {
   /** After Supabase has the session: the screen closes the account flow, as with email. */
@@ -187,8 +190,8 @@ const styles = StyleSheet.create({
   },
   googleTexto: {
     // The system font, like the text inside Apple's button right above it.
-    fontSize: 17,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: 600,
   },
   divisor: {
