@@ -207,7 +207,10 @@ select pg_temp.expect('answers are not written directly',
     pg_temp.id('p1'), 'ad000007-0000-4000-8000-0000000000e1', 'vou')),
   'permission denied for table fixture_plan_answer');
 select pg_temp.expect('only vou or nao', pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'sim')), 'bad_answer');
-select pg_temp.expect('talvez is no longer an answer', pg_temp.refusal(format('select public.answer_fixture_plan(%L, %L)', pg_temp.id('p1'), 'talvez')), 'bad_answer');
+select public.answer_fixture_plan(pg_temp.id('p1'), 'nao');
+select public.answer_fixture_plan(pg_temp.id('p1'), 'talvez');
+select pg_temp.expect('talvez from an old app clears the answer (back to thinking)',
+  (select answer from public.fixture_plan_people(pg_temp.id('p1')) where is_me), 'pensar');
 select pg_temp.expect('before answering, M is still thinking',
   (select answer from public.fixture_plan_people(pg_temp.id('p1')) where is_me), 'pensar');
 select public.answer_fixture_plan(pg_temp.id('p1'), 'nao');
