@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -18,16 +18,33 @@ type CabecalhoRelvadoProps = {
   children?: ReactNode;
 };
 
-/** Screen header on a mowed pitch, with the centre circle drawn in chalk. */
+/**
+ * Screen header on a mowed pitch, with the centre circle drawn in chalk.
+ *
+ * Only the part of the status bar the header actually sits under is added on top: on iOS the tab screens' scroll view
+ * may already start below the status bar, and adding the full inset again left an empty green band above the title.
+ */
 export function CabecalhoRelvado({ title, eyebrow, children }: CabecalhoRelvadoProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const ref = useRef<View>(null);
+  /** Where the header starts on screen, measured before the first paint. */
+  const [topoNoEcra, setTopoNoEcra] = useState(0);
+
+  useLayoutEffect(() => {
+    ref.current?.measureInWindow((_x, y) => {
+      if (Number.isFinite(y)) setTopoNoEcra(Math.max(0, y));
+    });
+  }, []);
+
+  const debaixoDaBarra = Math.max(0, insets.top - topoNoEcra);
 
   return (
     <View
+      ref={ref}
       style={[
         styles.relvado,
-        { backgroundColor: theme.accent, paddingTop: insets.top + Spacing.three },
+        { backgroundColor: theme.accent, paddingTop: debaixoDaBarra + Spacing.three },
       ]}>
       <View
         style={StyleSheet.absoluteFill}
