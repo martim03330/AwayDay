@@ -76,6 +76,7 @@ export const PRIVACIDADE: DocumentoLegal = {
         p('Para cada tipo de dados dizemos para que serve e a razão legal (artigo 6.º do RGPD).'),
         l(
           'Conta: email, palavra-passe (guardada cifrada pelo nosso fornecedor; nós nunca a vemos) e o nome que escolhes. Serve para entrares e para os outros te reconhecerem. Base: execução do contrato (os termos de utilização).',
+          'Entrar com Apple ou Google: se escolheres, a Apple ou a Google confirmam quem és e enviam-nos o teu email (com a Apple pode ser um endereço privado que reencaminha para o teu) e, se deixares, o teu nome. Não recebemos a palavra-passe dessas contas nem mais nada delas. Base: execução do contrato.',
           'Perfil: foto (opcional) e o clube que apoias, que quem tem conta pode ver. Base: execução do contrato.',
           'De onde partes para os jogos e como costumas ir (opcional): o concelho, nunca a morada, e se vais de carro, à boleia ou de transportes. Só tu vês. Serve para pôr primeiro as boleias que saem perto de ti. Base: o teu consentimento, que retiras apagando estes dados no perfil.',
           'Atividade nos dias de jogo: jogos a que dizes que vais, estádios carimbados, check-ins em tascos, avaliações, pratos recomendados e medições do barulhómetro (só o nível; o som nunca é gravado). Serve para o passaporte, as missões, o ranking e as sugestões. Base: execução do contrato.',
@@ -120,7 +121,7 @@ export const PRIVACIDADE: DocumentoLegal = {
         l(
           'Supabase: base de dados, contas e ficheiros. Os dados ficam na União Europeia (Frankfurt, Alemanha).',
           'Brevo: envio dos emails com o código para confirmares a conta ou mudares a palavra-passe (recebe o teu email). Empresa francesa, dados na União Europeia.',
-          'Expo, Apple e Google: entrega das notificações no teu telemóvel.',
+          'Expo, Apple e Google: entrega das notificações no teu telemóvel e, se escolheres, a entrada com a tua conta Apple ou Google.',
           'Apple Maps (iPhone) e Google Maps (Android): desenho do mapa dentro da app.',
           'Anthropic: escrita das dicas e da retrospetiva (Estados Unidos).',
           'Cloudflare (Turnstile): confirma que quem cria conta, entra ou recupera a palavra-passe é uma pessoa e não um programa automático. Recebe sinais técnicos do telemóvel e da ligação, não o teu nome nem o teu email (Estados Unidos).',

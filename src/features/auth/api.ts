@@ -3,7 +3,9 @@ import * as Notifications from 'expo-notifications';
 
 import { signUpOutcome } from '@/features/auth/outcomes';
 import { clearPendingInvite } from '@/features/auth/pending-invite';
+import { socialMetadataUpdate } from '@/features/auth/social';
 import { normalizeCode, normalizeEmail } from '@/features/auth/validation';
+import { VERSAO_DOS_TERMOS } from '@/lib/legal';
 import { unregisterThisDevice } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
@@ -70,6 +72,48 @@ export async function signIn({ email, password, captchaToken }: SignInInput) {
     options: { captchaToken },
   });
   if (error) throw error;
+}
+
+export type AppleSignInInput = { identityToken: string; rawNonce: string; fullName: string | null } & Captcha;
+export type GoogleSignInInput = { idToken: string } & Captcha;
+
+/**
+ * Signs in (or creates the account) with the ID token from Apple's sheet. No email code: Apple already confirmed the
+ * email. Apple's nonce is checked by Supabase against the hash Apple put in the token.
+ */
+export async function signInWithApple({ identityToken, rawNonce, fullName, captchaToken }: AppleSignInInput) {
+  const { data, error } = await client().auth.signInWithIdToken({
+    provider: 'apple',
+    token: identityToken,
+    nonce: rawNonce,
+    options: { captchaToken },
+  });
+  if (error) throw error;
+  await afterSocialSignIn(data.user?.user_metadata, fullName);
+}
+
+/** Signs in (or creates the account) with the ID token from Google's sheet. */
+export async function signInWithGoogle({ idToken, captchaToken }: GoogleSignInInput) {
+  const { data, error } = await client().auth.signInWithIdToken({
+    provider: 'google',
+    token: idToken,
+    options: { captchaToken },
+  });
+  if (error) throw error;
+  await afterSocialSignIn(data.user?.user_metadata, null);
+}
+
+/**
+ * A new account from Apple or Google records the accepted terms (shown above the buttons) like the email sign-up
+ * does, and Apple's name, which only comes the first time, becomes the profile name. Best effort: the person is
+ * already signed in, so a failure here does not turn into an error on screen.
+ */
+async function afterSocialSignIn(metadata: Record<string, unknown> | undefined, appleName: string | null) {
+  const { data, saveName } = socialMetadataUpdate(metadata, VERSAO_DOS_TERMOS, new Date(), appleName);
+  if (data) await client().auth.updateUser({ data }).catch(() => undefined);
+  // The profile was made (by the sign-up trigger) before the app knew Apple's name. Refused names (offensive) stay
+  // «Adepto»: the person can change it in the profile.
+  if (saveName) await client().rpc('set_display_name', { p_name: saveName }).then(() => undefined, () => undefined);
 }
 
 /**
@@ -169,6 +213,14 @@ export async function deleteAccount({ password, captchaToken }: DeleteAccountInp
   });
   if (reauthentication.error) throw reauthentication.error;
 
+  await apagarContaJaConfirmada();
+}
+
+/**
+ * Deletes the account once the person has just confirmed it is them (palavra-passe, Apple or Google): the
+ * `delete-account` function only accepts a session that signed in within the last minutes.
+ */
+export async function apagarContaJaConfirmada() {
   const { error } = await client().functions.invoke('delete-account', {
     method: 'POST',
   });
@@ -176,4 +228,16 @@ export async function deleteAccount({ password, captchaToken }: DeleteAccountInp
   // The user no longer exists, so the server may reject the sign-out; the local session goes anyway.
   await client().auth.signOut({ scope: 'local' });
   await limparTelemovel();
+}
+
+/** How this account signs in: with a palavra-passe, or only with Apple or Google (no palavra-passe to ask for). */
+export async function comoEntraEstaConta(): Promise<{ id: string; fornecedores: string[] } | null> {
+  const { data } = await client().auth.getSession();
+  const utilizador = data.session?.user;
+  if (!utilizador) return null;
+  const lista: unknown = utilizador.app_metadata?.providers;
+  const fornecedores = Array.isArray(lista)
+    ? lista.filter((item): item is string => typeof item === 'string')
+    : [utilizador.app_metadata?.provider].filter((item): item is string => typeof item === 'string');
+  return { id: utilizador.id, fornecedores };
 }

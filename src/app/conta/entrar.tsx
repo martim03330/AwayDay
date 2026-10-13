@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
 
 import { AuthForm } from '@/features/auth/components/AuthForm';
+import { SocialSignIn } from '@/features/auth/components/SocialSignIn';
 import { authErrorCode, authErrorMessage } from '@/features/auth/errors';
 import { useResendSignUpCode, useSignIn } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
@@ -22,6 +23,8 @@ export default function EntrarScreen() {
   const [password, setPassword] = useState('');
   const campoPassword = useRef<TextInput>(null);
   const [tentou, setTentou] = useState(false);
+  /** Error from «Continuar com Apple / Google». */
+  const [erroSocial, setErroSocial] = useState<string | null>(null);
 
   const erroEmail = tentou ? emailError(email) : null;
   const erroPassword = tentou && !password ? 'Falta a palavra-passe.' : null;
@@ -33,6 +36,7 @@ export default function EntrarScreen() {
 
   function submeter() {
     setTentou(true);
+    setErroSocial(null);
     if (emailError(email) || !password || entrar.isPending || entrar.isSuccess) return;
     entrar.mutate(
       { email, password },
@@ -48,7 +52,8 @@ export default function EntrarScreen() {
   }
 
   return (
-    <AuthForm intro="Entra para os teus clubes e o teu passaporte virem contigo." error={erroPedido}>
+    <AuthForm intro="Entra para os teus clubes e o teu passaporte virem contigo." error={erroSocial ?? erroPedido}>
+      <SocialSignIn onSignedIn={fecharConta} onError={setErroSocial} />
       <Campo
         label="Email"
         value={email}

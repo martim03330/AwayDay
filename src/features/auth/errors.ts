@@ -25,6 +25,9 @@ const MESSAGES: ReadonlyMap<string, string> = new Map([
     session_expired: 'A sessão terminou. Entra outra vez.',
     validation_failed: 'Há um campo que não está bem preenchido.',
     captcha_failed: 'Não conseguimos confirmar que não és um robô. Tenta outra vez.',
+    // Apple or Google not switched on in Supabase (Authentication, Sign In / Providers).
+    provider_disabled: 'Este tipo de entrada ainda não está ligado. Usa o email por agora.',
+    oauth_provider_not_supported: 'Este tipo de entrada ainda não está ligado. Usa o email por agora.',
   }),
 ]);
 
@@ -52,4 +55,14 @@ export function authErrorMessage(error: unknown): string {
 
   const code = readString(error, 'code');
   return (code ? MESSAGES.get(code) : undefined) ?? GENERIC;
+}
+
+/** Apple's or Google's token was refused (wrong client id in Supabase, a nonce that does not match, an old token). */
+const SOCIAL_REFUSED = 'Não conseguimos confirmar essa conta. Tenta outra vez ou usa o email.';
+
+/** Like authErrorMessage, for «Continuar com Apple / Google»: a refused token gets its own message. */
+export function socialAuthErrorMessage(error: unknown): string {
+  const code = authErrorCode(error);
+  if (code === 'validation_failed' || code === 'bad_jwt' || code === 'bad_oauth_callback') return SOCIAL_REFUSED;
+  return authErrorMessage(error);
 }

@@ -5,6 +5,7 @@ import type { TextInput } from 'react-native';
 import { ConsentimentoTermos } from '@/components/consentimento-termos';
 import { isNameAllowed } from '@/features/auth/api';
 import { AuthForm } from '@/features/auth/components/AuthForm';
+import { SocialSignIn } from '@/features/auth/components/SocialSignIn';
 import { authErrorMessage } from '@/features/auth/errors';
 import { useSignUp } from '@/features/auth/hooks/useAuthActions';
 import { useCloseAccountFlow } from '@/features/auth/hooks/useCloseAccountFlow';
@@ -33,6 +34,8 @@ export default function CriarContaScreen() {
   const [password, setPassword] = useState('');
   const [tentou, setTentou] = useState(false);
   const [aceitou, setAceitou] = useState(false);
+  /** Error from «Continuar com Apple / Google». */
+  const [erroSocial, setErroSocial] = useState<string | null>(null);
   /** Email que já tem conta: em vez de pedir um código que nunca chega, propõe entrar. */
   const [emailComConta, setEmailComConta] = useState<string | null>(null);
   /** The name the server refused (a swear word or a slur), until it is changed. */
@@ -47,11 +50,13 @@ export default function CriarContaScreen() {
     password: tentou ? passwordError(password) : null,
     termos: tentou && !aceitou ? 'Para criar conta tens de aceitar os termos e a política de privacidade.' : null,
   };
-  const erroPedido = criar.error
-    ? authErrorMessage(criar.error)
-    : emailComConta
-      ? 'Já existe uma conta com este email. Entra ou recupera a palavra-passe.'
-      : null;
+  const erroPedido =
+    erroSocial ??
+    (criar.error
+      ? authErrorMessage(criar.error)
+      : emailComConta
+        ? 'Já existe uma conta com este email. Entra ou recupera a palavra-passe.'
+        : null);
 
   function mudarEmail(texto: string) {
     setEmail(texto);
@@ -60,6 +65,7 @@ export default function CriarContaScreen() {
 
   async function submeter() {
     setTentou(true);
+    setErroSocial(null);
     if (
       displayNameError(nome) ||
       emailError(email) ||
@@ -97,6 +103,7 @@ export default function CriarContaScreen() {
     <AuthForm
       intro="Com conta, os teus clubes e o teu passaporte ficam guardados."
       error={erroPedido}>
+      <SocialSignIn onSignedIn={fecharConta} onError={setErroSocial} />
       {emailComConta ? (
         <>
           <Button

@@ -2,6 +2,27 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Entrar com Apple e Google
+
+- «Continuar com Apple» e «Continuar com Google» no topo de Entrar e Criar conta, com tokens nativos
+  (`signInWithIdToken`, sem browser). Dependências aprovadas: `expo-apple-authentication` e
+  `@react-native-google-signin/google-signin`. Passos de configuração em `docs/LOGIN-SOCIAL.md`.
+- **Só iOS por agora.** Apple: só onde `isAvailableAsync()` diz que há. Google: só numa build nativa com os dois IDs
+  de cliente (`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`); o módulo é importado só nessa
+  altura, porque no Expo Go não existe e rebentava ao importar. O URL scheme do plugin da Google vem de
+  `GOOGLE_IOS_URL_SCHEME` (ou é calculado a partir do ID iOS) no `app.config.js`.
+- Apple com **nonce**: SHA-256 em JS puro (`src/features/auth/social.ts`, sem `expo-crypto`) de 256 bits aleatórios
+  do gerador seguro do sistema, nunca `Math.random`. Na Google o nonce é do SDK: «Skip nonce checks» no Supabase.
+- Contas novas por Apple/Google não pedem código de email. Os termos aceitam-se pela frase acima dos botões
+  («Ao continuar, confirmas que tens 18 anos ou mais e aceitas…», com a idade, como na caixa do email) e ficam
+  registados como no registo por email (`terms_version`, `terms_accepted_at`), só se a conta ainda não os tiver.
+- **Nome do perfil:** o trigger passa a usar `display_name`, depois `full_name` e `name` (a Google manda-os), e
+  por fim «Adepto». **Nunca parte do email** (mantém a regra de 2026-09-14, e o formulário promete que ninguém vê o
+  email). Um nome vindo da Apple/Google que seja ofensivo dá «Adepto» em vez de falhar a entrada; o nome escrito no
+  formulário continua a ser recusado com `bad_name`. A Apple só dá o nome na primeira entrada e não no token: a app
+  grava-o logo a seguir (`set_display_name`), só em contas sem nome nos metadados (uma conta de email que passe a
+  entrar com a Apple mantém o nome que escolheu).
+
 ## 2026-10-13 — Perfis abertos a partir do ranking
 
 - Tocar numa pessoa das tabelas (pontos, estádios, tascos) abre o perfil dela. Para isso, quem aparece no ranking
