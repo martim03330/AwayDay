@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -6,17 +7,34 @@ import { estadiosParaEscolha, tascosDoEstadio } from '@/lib/estadios-dos-locais'
 import { plural } from '@/lib/formatos';
 import { clubesDoUtilizador } from '@/lib/jogos';
 import { MOSTRAR_CLUBE_DA_TERRA, obterClube } from '@/mocks/clubes';
-import type { Venue } from '@/mocks/tipos';
+import type { Divisao, Venue } from '@/mocks/tipos';
 import { useAppState } from '@/state/app-state';
 import { Card } from '@/ui/card';
 import { Escudo } from '@/ui/escudo';
 import { Icon, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
 import { Screen } from '@/ui/screen';
+import { Segmentado } from '@/ui/segmentado';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
-/** The club picker of the Locais tab: the fan's own club on top, then every other stadium (those with tascos first). */
+type Liga = 'liga-1' | 'liga-2' | 'liga-3' | 'outros';
+
+const NOMES_DAS_LIGAS: Record<Liga, string> = {
+  'liga-1': 'Liga Betclic',
+  'liga-2': 'Liga 2',
+  'liga-3': 'Liga 3',
+  outros: 'Outros',
+};
+
+function ligaDe(divisao: Divisao | null | undefined): Liga {
+  return divisao === 1 ? 'liga-1' : divisao === 2 ? 'liga-2' : divisao === 3 ? 'liga-3' : 'outros';
+}
+
+/**
+ * The club picker of the Locais tab: the fan's own club on top, then the other stadiums of one league at a time (the
+ * full list was too long to scroll), those with tascos first.
+ */
 export default function EscolherEstadioScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -25,6 +43,16 @@ export default function EscolherEstadioScreen() {
   const { meus, outros } = estadiosParaEscolha(
     clubesDoUtilizador(clubeFavoritoId, MOSTRAR_CLUBE_DA_TERRA ? clubeDaTerraId : null)
   );
+
+  const ligaDoEstadio = (estadio: Venue) => ligaDe(obterClube(estadio.clubeId)?.divisao);
+  const ligas = (Object.keys(NOMES_DAS_LIGAS) as Liga[]).filter((liga) =>
+    outros.some((estadio) => ligaDoEstadio(estadio) === liga)
+  );
+  // Opens on the fan's league (where rivals and neighbours are), or the first one there is.
+  const ligaDoAdepto = meus[0] ? ligaDoEstadio(meus[0]) : null;
+  const [liga, setLiga] = useState<Liga | null>(null);
+  const ligaVista = liga ?? (ligaDoAdepto && ligas.includes(ligaDoAdepto) ? ligaDoAdepto : (ligas[0] ?? 'liga-1'));
+  const daLiga = outros.filter((estadio) => ligaDoEstadio(estadio) === ligaVista);
 
   const escolher = (estadioId: string) => router.dismissTo({ pathname: '/locais', params: { estadio: estadioId } });
 
@@ -62,7 +90,14 @@ export default function EscolherEstadioScreen() {
         </>
       ) : null}
       <SectionHeader title={meus.length > 0 ? 'Outros clubes' : 'Clubes'} />
-      {linhas(outros)}
+      {ligas.length > 1 ? (
+        <Segmentado
+          opcoes={ligas.map((valor) => ({ valor, label: NOMES_DAS_LIGAS[valor] }))}
+          valor={ligaVista}
+          onChange={setLiga}
+        />
+      ) : null}
+      {linhas(daLiga)}
     </Screen>
   );
 }

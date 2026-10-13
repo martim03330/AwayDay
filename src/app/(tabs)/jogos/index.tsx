@@ -16,8 +16,6 @@ import { useRefreshFriends } from '@/features/friends/hooks/useFriends';
 import { useMyOpenTripSessions } from '@/features/trips/hooks/useTrips';
 import { useMyAttendance } from '@/features/activity/hooks/useAttendance';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { ConviteTreinador } from '@/components/convite-treinador';
-import { CoachBanner } from '@/features/coach/components/CoachBanner';
 import { AlertasBoleias } from '@/features/rides/components/AlertasBoleias';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
@@ -41,7 +39,6 @@ import {
 } from '@/mocks/clubes';
 import { jogos } from '@/mocks/jogos';
 import type { Clube, Jogo } from '@/mocks/tipos';
-import { useAICoach } from '@/state/ai-coach';
 import { useAppState } from '@/state/app-state';
 import { Aviso } from '@/ui/aviso';
 import { CabecalhoRelvado } from '@/ui/cabecalho-relvado';
@@ -146,8 +143,6 @@ export default function JogosScreen() {
     sessao.ride ? [sessao.ride.id] : []
   );
   const { foste } = useJogosAQueFoste();
-  const treinador = useAICoach();
-  const destinoDaDica = treinador.destino;
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   // Only the user's clubs by default; the rest is one (humorous) tap away.
   const [verConcorrencia, setVerConcorrencia] = useState(false);
@@ -311,15 +306,8 @@ export default function JogosScreen() {
         {/* Paints the iOS overscroll area above the header green instead of whitewash. */}
         <View style={[styles.relvadoAcima, { backgroundColor: theme.accent }]} pointerEvents="none" />
 
-        <CabecalhoRelvado title="Jogos" eyebrow={hoje}>
-          <CoachBanner
-            message={treinador.message}
-            loading={treinador.loading}
-            sobreRelvado
-            onPress={destinoDaDica ? () => router.push(destinoDaDica) : undefined}
-          />
-          <ConviteTreinador />
-        </CabecalhoRelvado>
+        {/* No coach tip here any more: it took half the screen and made the first page noisy (owner's call). */}
+        <CabecalhoRelvado title="Jogos" eyebrow={hoje} />
 
         <View style={styles.largura} onLayout={(evento) => setYDosFiltros(evento.nativeEvent.layout.y)}>
           <View style={styles.filtros}>

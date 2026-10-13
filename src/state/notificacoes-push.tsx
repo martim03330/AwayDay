@@ -73,7 +73,7 @@ export function abrirNotificacao(router: Router, resposta: Notifications.Notific
  * Liga as notificações push à conta. Não desenha nada.
  * - Com sessão, regista este telemóvel. Se o telemóvel nunca foi perguntado, pede a permissão aqui, uma vez (sem
  *   isso o iOS nem mostra a AwayDay nas definições de Notificações).
- * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem a lista de jogos, onde está a dica do treinador. O
+ * - Tocar numa dica sobre um jogo abre o jogo; as outras abrem a lista de jogos. O
  *   aviso da retrospetiva abre a retrospetiva.
  * - Uma mensagem de um grupo abre a conversa do grupo; um convite para um grupo abre a Malta.
  * - Uma despesa ou um pagamento abre as despesas da viagem.

@@ -139,7 +139,7 @@ export default function DefinicoesScreen() {
           accessibilityLabel="Notificações: boleias, malta e dicas. Toca para escolher."
           leading={<Icon name={icons.notificacoes} size={20} color={theme.accentInk} />}
           title="Notificações"
-          subtitle="Boleias, malta e dicas do treinador"
+          subtitle="Boleias, malta e dicas para dias de jogo"
           trailing={chevron}
         />
         <LinhaGrupo

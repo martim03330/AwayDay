@@ -2,6 +2,18 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Sem a dica do treinador na página inicial; pesquisa de moradas mais rápida
+
+- A dica do treinador e o convite para a ligar saíram do cabeçalho dos Jogos (ocupava metade do ecrã e fazia a página
+  barulhenta). O `AICoachProvider` saiu da raiz: sem nada no ecrã, não se pede dica nenhuma à IA. Os avisos diários
+  por push (também escritos por IA) continuam, com o mesmo interruptor nas Notificações. O código da dica fica, para
+  voltar noutro sítio se fizer falta.
+- Pesquisa de moradas (ponto de encontro e sugerir tasco): Nominatim e Photon pedidos ao mesmo tempo; fica o Nominatim
+  se responder em 2,5 s, senão o primeiro com resultados. Antes esperava até 10 s pelo Nominatim antes de tentar o
+  Photon (que sozinho leva ~4 s).
+- Locais: a escolha do clube abre uma folha com o clube do adepto em cima e os outros por liga (Liga Betclic, Liga 2,
+  Liga 3, Outros); a lista de tascos tem página própria.
+
 ## 2026-10-13 — Boleias de carro elétrico e preço do litro da DGEG
 
 - Carro elétrico: a boleia divide só as portagens (o carregamento é do condutor e um preço por kWh seria um palpite).

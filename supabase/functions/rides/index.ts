@@ -27,6 +27,11 @@ const ROUTER = 'https://valhalla1.openstreetmap.de/route';
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
 /** Fallback geocoder (Photon, by Komoot, on OpenStreetMap data). */
 const FALLBACK_GEOCODER = 'https://photon.komoot.io/api/';
+/** Nominatim answers in well under a second when it is well: its answer is kept if it comes this soon… */
+const NOMINATIM_PREFERRED_MS = 2_500;
+/** …and neither search keeps the driver waiting longer than this. */
+const NOMINATIM_TIMEOUT_MS = 5_000;
+const PHOTON_TIMEOUT_MS = 6_000;
 const USER_AGENT = 'AwayDay/1.0 (match-day app for football fans)';
 /** DGEG's daily averages (the same data as precoscombustiveis.dgeg.gov.pt). */
 const FUEL_PRICES = 'https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb/PMD';
@@ -207,7 +212,7 @@ async function searchNominatim(query: string, near: Point | null): Promise<Place
   try {
     const response = await fetch(`${GEOCODER}?${params}`, {
       headers: { 'User-Agent': USER_AGENT },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(NOMINATIM_TIMEOUT_MS),
     });
     if (!response.ok) return null;
     const results: unknown = await response.json();
@@ -234,7 +239,7 @@ async function searchPhoton(query: string, near: Point | null): Promise<PlaceRes
   try {
     const response = await fetch(`${FALLBACK_GEOCODER}?${params}`, {
       headers: { 'User-Agent': USER_AGENT },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(PHOTON_TIMEOUT_MS),
     });
     if (!response.ok) return [];
     const features = asRecord(await response.json())?.features;
@@ -254,7 +259,36 @@ async function searchPhoton(query: string, near: Point | null): Promise<PlaceRes
   }
 }
 
-/** A place search from cache (7 days), or Nominatim (Photon if it fails), then cached. */
+/** The first of these searches to find something, or nothing once they have all answered. */
+function firstWithResults(searches: Promise<PlaceResult[] | null>[]): Promise<PlaceResult[]> {
+  return new Promise((resolve) => {
+    let waiting = searches.length;
+    for (const search of searches) {
+      void search.then((found) => {
+        if (found && found.length > 0) resolve(found);
+        waiting -= 1;
+        if (waiting === 0) resolve([]);
+      });
+    }
+  });
+}
+
+/**
+ * Nominatim and Photon asked at once (one after the other, a slow or refused Nominatim made a search take over 10 s).
+ * Nominatim's answer is preferred when it comes within NOMINATIM_PREFERRED_MS; otherwise the first with results.
+ */
+async function searchBoth(query: string, near: Point | null): Promise<PlaceResult[]> {
+  const nominatim = searchNominatim(query, near);
+  const photon = searchPhoton(query, near);
+  const quick = await Promise.race([
+    nominatim,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), NOMINATIM_PREFERRED_MS)),
+  ]);
+  if (quick && quick.length > 0) return quick;
+  return firstWithResults([nominatim, photon]);
+}
+
+/** A place search from cache (7 days), or Nominatim and Photon at once, then cached. */
 async function searchPlaces(admin: SupabaseClient, query: string, near: Point | null) {
   const area = near ? `${near.latitude.toFixed(1)},${near.longitude.toFixed(1)}` : 'pt';
   const key = `${query.toLowerCase().replace(/\s+/g, ' ')}@${area}`;
@@ -270,7 +304,7 @@ async function searchPlaces(admin: SupabaseClient, query: string, near: Point | 
       placeResult(place.name, place.detail, { latitude: place.latitude, longitude: place.longitude }, near)
     );
   }
-  const results = (await searchNominatim(query, near)) ?? (await searchPhoton(query, near));
+  const results = await searchBoth(query, near);
   if (results.length > 0) {
     await admin.from('place_search_cache').upsert({ key, results, created_at: new Date().toISOString() });
   }

@@ -98,7 +98,7 @@ function MensagensDaConta() {
       <Card style={styles.cartaoLinhas}>
         <LinhaInterruptor
           titulo="Dicas para dias de jogo"
-          descricao="A dica do treinador e no máximo um aviso por dia. São escritas por IA (Claude, da Anthropic) com o teu clube, os jogos e o que fazes na app, sem o teu nome nem email."
+          descricao="No máximo um aviso por dia, antes dos teus jogos. São escritos por IA (Claude, da Anthropic) com o teu clube, os jogos e o que fazes na app, sem o teu nome nem email."
           value={nudgesEnabled}
           disabled={guardar.isPending}
           onValueChange={(ligar) => void alternarSugestoes(ligar)}

@@ -39,7 +39,6 @@ import { BannerDeMensagem } from '@/components/banner-de-mensagem';
 import { BloqueioDaApp } from '@/components/bloqueio-da-app';
 import { AvisosBoleias } from '@/features/rides/components/AvisosBoleias';
 import { QueryProvider } from '@/lib/query-client';
-import { AICoachProvider } from '@/state/ai-coach';
 import { AppStateProvider, useAppState } from '@/state/app-state';
 import { PlanosJogosProvider } from '@/state/planos-jogos';
 import { JuntarAtividade } from '@/state/juntar-atividade';
@@ -172,16 +171,15 @@ export default function RootLayout() {
                 <SonsProvider>
                   <AvisosBoleias />
                   <AvisosJogosPerto />
-                  <AICoachProvider>
-                    <LigacaoDemo />
-                    <SincronizarConta />
-                    <JuntarAtividade />
-                    <NotificacoesPush />
-                    <NavegacaoRaiz />
-                    <BannerDeMensagem />
-                    {/* Last, so the optional lock covers everything, the banners included. */}
-                    <BloqueioDaApp />
-                  </AICoachProvider>
+                  {/* No coach tip on screen any more (owner's call, 2026-10-13): nothing asks the AI for one. */}
+                  <LigacaoDemo />
+                  <SincronizarConta />
+                  <JuntarAtividade />
+                  <NotificacoesPush />
+                  <NavegacaoRaiz />
+                  <BannerDeMensagem />
+                  {/* Last, so the optional lock covers everything, the banners included. */}
+                  <BloqueioDaApp />
                 </SonsProvider>
               </PlanosJogosProvider>
             </TemaDaNavegacao>
