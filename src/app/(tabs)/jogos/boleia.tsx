@@ -75,7 +75,7 @@ import { useFormatarDinheiro } from '@/ui/valor';
 
 const OPCOES: Record<RideSummary['routeOption'], string> = {
   rapida: 'Mais rápido',
-  equilibrio: 'Equilíbrio',
+  equilibrio: 'Menos portagens',
   sem_portagens: 'Sem portagens',
 };
 

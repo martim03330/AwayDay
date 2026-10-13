@@ -14,6 +14,8 @@ export type RouteOption = 'rapida' | 'equilibrio' | 'sem_portagens';
 
 export type RideQuote = {
   option: RouteOption;
+  /** The motorways it takes, in driving order ("A13", "A1"); empty without tolls. */
+  motorways: string[];
   distanceM: number;
   durationS: number;
   tollM: number;
@@ -133,10 +135,12 @@ export async function quoteRide(settings: TripSettings): Promise<RideQuote[]> {
     if (typeof item !== 'object' || item === null) return [];
     const option = Reflect.get(item, 'option');
     const shares = Reflect.get(item, 'share_cents_by_people');
+    const motorways = Reflect.get(item, 'motorways');
     if (!isRouteOption(option) || !Array.isArray(shares)) return [];
     return [
       {
         option,
+        motorways: Array.isArray(motorways) ? motorways.filter((name): name is string => typeof name === 'string') : [],
         distanceM: toNumber(Reflect.get(item, 'distance_m')),
         durationS: toNumber(Reflect.get(item, 'duration_s')),
         tollM: toNumber(Reflect.get(item, 'toll_m')),

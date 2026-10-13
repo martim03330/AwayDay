@@ -54,7 +54,27 @@ function sumTollM(segments: readonly TollSegment[]) {
 
 /** A route from Valhalla's JSON answer (kilometres and seconds), or `null` when it has no usable summary. */
 export function routeFromValhalla(answer: unknown): Route | null {
-  const trip = asRecord(asRecord(answer)?.trip);
+  return routeFromTrip(asRecord(answer)?.trip);
+}
+
+/**
+ * Every route of a Valhalla answer asked with `alternates`: the main trip first, then each alternative that can be
+ * read. Empty when not even the main trip can.
+ */
+export function routesFromValhalla(answer: unknown): Route[] {
+  const record = asRecord(answer);
+  const main = routeFromTrip(record?.trip);
+  if (!main) return [];
+  const alternates = Array.isArray(record?.alternates) ? record.alternates : [];
+  const others = alternates.flatMap((alternate) => {
+    const found = routeFromTrip(asRecord(alternate)?.trip);
+    return found ? [found] : [];
+  });
+  return [main, ...others];
+}
+
+function routeFromTrip(tripValue: unknown): Route | null {
+  const trip = asRecord(tripValue);
   const summary = asRecord(trip?.summary);
   const lengthKm = summary?.length;
   const timeS = summary?.time;

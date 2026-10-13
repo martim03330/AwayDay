@@ -5,6 +5,7 @@ import {
   motorwayOf,
   routeFromCache,
   routeFromValhalla,
+  routesFromValhalla,
   tollSegmentsOf,
 } from '../../supabase/functions/_shared/route-parse';
 
@@ -82,6 +83,24 @@ describe('tollSegmentsOf', () => {
     ).toEqual([]);
     expect(tollSegmentsOf(undefined)).toEqual([]);
     expect(tollSegmentsOf({ legs: 'nope' })).toEqual([]);
+  });
+});
+
+describe('routesFromValhalla', () => {
+  const principal = trip([{ maneuvers: [{ toll: true, length: 100, street_names: ['A 1'] }] }]);
+  const alternativa = trip([{ maneuvers: [{ toll: true, length: 60, street_names: ['A 13'] }] }], { length: 125, time: 5000 });
+
+  it('gives the main trip first, then each alternative', () => {
+    const routes = routesFromValhalla({ ...principal, alternates: [alternativa] });
+    expect(routes.map((route) => route.tollSegments[0]?.motorway)).toEqual(['A1', 'A13']);
+    expect(routes[1]).toMatchObject({ distanceM: 125000, durationS: 5000, tollM: 60000 });
+  });
+
+  it('skips an alternative it cannot read, and has nothing without a main trip', () => {
+    expect(routesFromValhalla({ ...principal, alternates: [{ trip: {} }, null, 'x'] })).toHaveLength(1);
+    expect(routesFromValhalla({ ...principal, alternates: 'x' })).toHaveLength(1);
+    expect(routesFromValhalla({ alternates: [alternativa] })).toEqual([]);
+    expect(routesFromValhalla(null)).toEqual([]);
   });
 });
 

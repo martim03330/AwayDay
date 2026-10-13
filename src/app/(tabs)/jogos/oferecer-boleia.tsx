@@ -74,7 +74,10 @@ const DELTA = 0.05;
 
 const OPCOES: Record<RouteOption, { titulo: string; descricao: string }> = {
   rapida: { titulo: 'Mais rápido', descricao: 'Pelo caminho mais curto em tempo, com portagens.' },
-  equilibrio: { titulo: 'Equilíbrio', descricao: 'Poupa portagens sem perder muito tempo.' },
+  equilibrio: {
+    titulo: 'Menos portagens',
+    descricao: 'Autoestrada só numa parte do caminho: mais barato, sem perder muito tempo.',
+  },
   sem_portagens: { titulo: 'Sem portagens', descricao: 'Evita todas as portagens que pode.' },
 };
 
@@ -965,6 +968,12 @@ export default function OferecerBoleiaScreen() {
           <Card style={styles.linhas}>
             {cotacoes.map((opcao, indice) => {
               const selecionada = opcao.option === escolhida;
+              const rapida = cotacoes.find((outra) => outra.option === 'rapida');
+              // Against the fastest: «poupas 9,00 € · +18 min», so the cheaper roads say what they are worth.
+              const poupanca =
+                rapida && opcao !== rapida && rapida.totalCents > opcao.totalCents
+                  ? `poupas ${dinheiro.formatar(rapida.totalCents - opcao.totalCents)} · +${Math.max(1, Math.round((opcao.durationS - rapida.durationS) / 60))} min`
+                  : null;
               return (
                 <Pressable
                   key={opcao.option}
@@ -993,8 +1002,19 @@ export default function OferecerBoleiaScreen() {
                   <View style={styles.flex}>
                     <ThemedText style={styles.rotulo}>{OPCOES[opcao.option].titulo}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {`${duracao(opcao.durationS)} · ${formatarDistancia(opcao.distanceM)} · ${opcao.tollM > 0 ? `${formatarDistancia(opcao.tollM)} com portagem` : 'sem portagens'}`}
+                      {`${duracao(opcao.durationS)} · ${formatarDistancia(opcao.distanceM)} · ${
+                        opcao.tollM === 0
+                          ? 'sem portagens'
+                          : opcao.motorways.length > 0
+                            ? `${opcao.motorways.join(' + ')}${opcao.option === 'equilibrio' ? ' e estradas sem portagem' : ''}`
+                            : `${formatarDistancia(opcao.tollM)} com portagem`
+                      }`}
                     </ThemedText>
+                    {poupanca ? (
+                      <ThemedText type="smallBold" themeColor="accentInk">
+                        {poupanca}
+                      </ThemedText>
+                    ) : null}
                     {selecionada ? (
                       <ThemedText type="small" themeColor="textMuted">
                         {`Combustível ${dinheiro.formatar(opcao.fuelCents)} · portagens ${dinheiro.formatar(opcao.tollCents)} (estimativa)`}

@@ -1,6 +1,7 @@
 // Rides to a game (slice 3), for signed-in fans:
-// - action "quote": the car routes from a meeting point to the stadium (fastest, balanced, without tolls) with what
-//   each costs in fuel and tolls and the price per person as seats fill up;
+// - action "quote": the car routes from a meeting point to the stadium (fastest, cheapest with some motorway, without
+//   tolls: see _shared/route-choice.ts) with what each costs in fuel and tolls and the price per person as seats fill
+//   up;
 // - action "create": opens a ride on one of those routes. The cost is computed here again, never taken from the app;
 // - action "search": streets and places for the meeting point (OpenStreetMap Nominatim), when the driver searches.
 // A driver has at most one open ride per game.
@@ -17,7 +18,8 @@ import {
   type TollRate,
   type TripCost,
 } from '../_shared/ride-cost.ts';
-import { routeFromCache, routeFromValhalla, type Route } from '../_shared/route-parse.ts';
+import { chooseRoutes, motorwaysOf, type Candidate, type RouteOption } from '../_shared/route-choice.ts';
+import { routeFromCache, routesFromValhalla, type Route } from '../_shared/route-parse.ts';
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
@@ -35,14 +37,16 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** A ride is published at least this long before it leaves (src/lib/regras-boleia.ts shows the same). */
 const MIN_NOTICE_MS = 3 * 60 * 60 * 1000;
 
-/** How much the router avoids tolls for each option: 1 does not care, 0 avoids them whenever it can. */
-const OPTIONS = [
-  { option: 'rapida', useTolls: 1 },
-  { option: 'equilibrio', useTolls: 0.2 },
-  { option: 'sem_portagens', useTolls: 0 },
-] as const;
+const OPTIONS: readonly RouteOption[] = ['rapida', 'equilibrio', 'sem_portagens'];
+/**
+ * How much the router avoids tolls, from 1 (does not care) to 0 (avoids them whenever it can). The levels in between
+ * are where the mixes come out (a motorway for part of the way, then a national road): asked with one alternative
+ * each, they give the routes the cheapest one is picked from with the real price of each motorway.
+ */
+const TOLL_LEVELS = [1, 0.4, 0.3, 0] as const;
+/** The cache rows of these routes start with this, so rows from before the alternatives are not read as complete. */
+const CACHE_VERSION = 'v2';
 
-type RouteOption = (typeof OPTIONS)[number]['option'];
 type Point = { latitude: number; longitude: number };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -74,7 +78,7 @@ function wholeBetween(value: unknown, min: number, max: number): number | null {
 }
 
 function isOption(value: unknown): value is RouteOption {
-  return OPTIONS.some((candidate) => candidate.option === value);
+  return typeof value === 'string' && OPTIONS.some((option) => option === value);
 }
 
 function straightLineM(from: Point, to: Point) {
@@ -87,7 +91,8 @@ function straightLineM(from: Point, to: Point) {
   return 2 * 6_371_000 * Math.asin(Math.sqrt(a));
 }
 
-async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<Route | null> {
+/** The router's routes at one level of toll avoidance: the main one and up to one alternative. Empty on failure. */
+async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<Route[]> {
   try {
     const response = await fetch(ROUTER, {
       method: 'POST',
@@ -99,14 +104,15 @@ async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<
         ],
         costing: 'auto',
         costing_options: { auto: { use_tolls: useTolls } },
+        alternates: 1,
         directions_options: { units: 'kilometers' },
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) return null;
-    return routeFromValhalla(await response.json());
+    if (!response.ok) return [];
+    return routesFromValhalla(await response.json());
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -114,33 +120,47 @@ async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<
 const coord = (value: number) => value.toFixed(3);
 
 /**
- * A route from cache, or from Valhalla, then cached for 30 days. There is no fallback router on purpose: the free
- * ones (OSRM) know nothing about tolls, and a ride price without tolls would be wrong money for real people.
+ * The routes at one level of toll avoidance, from cache or from Valhalla, then cached for 30 days (one row per route:
+ * `<key>#0` is the main one, `<key>#1` the alternative). There is no fallback router on purpose: the free ones (OSRM)
+ * know nothing about tolls, and a ride price without tolls would be wrong money for real people.
  */
-async function route(admin: SupabaseClient, from: Point, to: Point, useTolls: number): Promise<Route | null> {
-  const key = `${coord(from.latitude)},${coord(from.longitude)}>${coord(to.latitude)},${coord(to.longitude)}:${useTolls}`;
+async function routesAt(admin: SupabaseClient, from: Point, to: Point, useTolls: number): Promise<Route[]> {
+  const key = `${CACHE_VERSION}:${coord(from.latitude)},${coord(from.longitude)}>${coord(to.latitude)},${coord(to.longitude)}:${useTolls}`;
   const cached = await admin
     .from('route_cache')
-    .select('distance_m, duration_s, toll_segments')
-    .eq('key', key)
-    .gte('created_at', new Date(Date.now() - 30 * DAY_MS).toISOString())
-    .maybeSingle();
-  // A malformed row is ignored: the route is asked again and the upsert below overwrites it.
-  const fromCache = cached.data ? routeFromCache(cached.data) : null;
-  if (fromCache) return fromCache;
+    .select('key, distance_m, duration_s, toll_segments')
+    .in('key', [`${key}#0`, `${key}#1`])
+    .gte('created_at', new Date(Date.now() - 30 * DAY_MS).toISOString());
+  const rows = [...(cached.data ?? [])].sort((a, b) => String(a.key).localeCompare(String(b.key)));
+  const fromCache = rows.map((row) => routeFromCache(row));
+  // A malformed row is ignored: the routes are asked again and the upsert below overwrites them.
+  if (rows.length > 0 && String(rows[0].key).endsWith('#0') && fromCache.every((found) => found !== null)) {
+    return fromCache.filter((found): found is Route => found !== null);
+  }
   // Without the key: it holds the coordinates of the meeting point and the stadium.
-  if (cached.data) console.error('rides: discarding malformed route_cache row');
+  if (rows.length > 0) console.error('rides: discarding incomplete or malformed route_cache rows');
   const found = await routeValhalla(from, to, useTolls);
-  if (found) {
-    await admin.from('route_cache').upsert({
-      key,
-      distance_m: found.distanceM,
-      duration_s: found.durationS,
-      toll_segments: found.tollSegments,
-      created_at: new Date().toISOString(),
-    });
+  if (found.length > 0) {
+    const createdAt = new Date().toISOString();
+    await admin.from('route_cache').upsert(
+      found.map((one, index) => ({
+        key: `${key}#${index}`,
+        distance_m: one.distanceM,
+        duration_s: one.durationS,
+        toll_segments: one.tollSegments,
+        created_at: createdAt,
+      }))
+    );
+    // An older alternative that the router no longer gives must not come back from the cache next time.
+    if (found.length === 1) await admin.from('route_cache').delete().eq('key', `${key}#1`);
   }
   return found;
+}
+
+/** Every route the router gives at each level of toll avoidance, all at once. */
+async function allRoutes(admin: SupabaseClient, from: Point, to: Point): Promise<Route[]> {
+  const levels = await Promise.all(TOLL_LEVELS.map((level) => routesAt(admin, from, to, level)));
+  return levels.flat();
 }
 
 type PlaceResult = { name: string; detail: string; latitude: number; longitude: number; distance_m: number | null };
@@ -378,43 +398,42 @@ Deno.serve(async (request) => {
     }
   };
 
+  /**
+   * The routes to offer, each with its cost: the same for the quote and for the create (the routes come from the same
+   * cache), so the ride is opened on exactly the road and price the driver picked. `null` when a cost fails.
+   */
+  const offeredRoutes = async () => {
+    const candidates: Candidate[] = [];
+    for (const found of await allRoutes(admin, origin, stadium)) {
+      const cost = costOf(found);
+      if (!cost) return null;
+      candidates.push({ route: found, cost });
+    }
+    return chooseRoutes(candidates);
+  };
+
   if (action === 'quote') {
     const limited = await takeLimit(admin, caller.user.id, QUOTE_LIMIT);
     if (limited === 'failed') return json(500, { error: 'rate_limit_failed' });
     if (limited === 'limited') return json(429, { error: 'rate_limited' });
 
-    const routes = await Promise.all(
-      OPTIONS.map(async ({ option, useTolls }) => ({
-        option,
-        found: await route(admin, origin, stadium, useTolls),
-      }))
-    );
-    const quotes: Record<string, unknown>[] = [];
-    for (const { option, found } of routes) {
-      if (!found) continue;
-      // The balanced route is often the same as one of the others: show it once.
-      const same = quotes.some(
-        (quote) =>
-          Math.abs(Number(quote.distance_m) - found.distanceM) <= found.distanceM * 0.01 &&
-          Math.abs(Number(quote.toll_m) - found.tollM) <= 1000
-      );
-      if (same) continue;
-      const cost = costOf(found);
-      if (!cost) return json(500, { error: 'cost_failed' });
-      quotes.push({
-        option,
-        distance_m: found.distanceM,
-        duration_s: found.durationS,
-        toll_m: found.tollM,
-        fuel_cents: cost.fuelCents,
-        toll_cents: cost.tollCents,
-        total_cents: cost.totalCents,
-        // What each person pays with 1 (the driver alone) up to MAX_PEOPLE in the car.
-        share_cents_by_people: Array.from({ length: MAX_PEOPLE }, (_, index) =>
-          sharePerPersonCents(cost.totalCents, index + 1)
-        ),
-      });
-    }
+    const choices = await offeredRoutes();
+    if (!choices) return json(500, { error: 'cost_failed' });
+    const quotes = choices.map(({ option, candidate: { route: found, cost } }) => ({
+      option,
+      // The motorways it takes, in order ("A13", "A1"), so the driver knows which way the cheaper one goes.
+      motorways: motorwaysOf(found.tollSegments),
+      distance_m: found.distanceM,
+      duration_s: found.durationS,
+      toll_m: found.tollM,
+      fuel_cents: cost.fuelCents,
+      toll_cents: cost.tollCents,
+      total_cents: cost.totalCents,
+      // What each person pays with 1 (the driver alone) up to MAX_PEOPLE in the car.
+      share_cents_by_people: Array.from({ length: MAX_PEOPLE }, (_, index) =>
+        sharePerPersonCents(cost.totalCents, index + 1)
+      ),
+    }));
     if (quotes.length === 0) return json(404, { error: 'no_route' });
     return json(200, {
       quotes,
@@ -473,14 +492,16 @@ Deno.serve(async (request) => {
   if (limited === 'failed') return json(500, { error: 'rate_limit_failed' });
   if (limited === 'limited') return json(429, { error: 'rate_limited' });
 
-  const useTolls = OPTIONS.find((candidate) => candidate.option === option)?.useTolls ?? 1;
   // Para onde a boleia volta: o concelho de onde saiu. É o que deixa a app mostrar «quem volta para Viseu» no fim
   // do jogo. Se não se souber, a boleia entra na mesma sem destino — é só uma etiqueta. Pedido ao mesmo tempo que
   // o caminho.
-  const [found, originCity] = await Promise.all([route(admin, origin, stadium, useTolls), reverseCity(admin, origin)]);
-  if (!found) return json(404, { error: 'no_route' });
-  const cost = costOf(found);
-  if (!cost) return json(500, { error: 'cost_failed' });
+  const [choices, originCity] = await Promise.all([offeredRoutes(), reverseCity(admin, origin)]);
+  if (!choices) return json(500, { error: 'cost_failed' });
+  // The option the driver picked, recomputed here: never the app's numbers. Gone (the routes changed since the quote,
+  // say a month later) means asking for the routes again.
+  const chosen = choices.find((choice) => choice.option === option);
+  if (!chosen) return json(404, { error: 'no_route' });
+  const { route: found, cost } = chosen.candidate;
 
   const inserted = await admin
     .from('ride')

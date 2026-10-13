@@ -5,6 +5,7 @@ import {
   priceLadder,
   returnShareCents,
   sharePerPersonCents,
+  rateKeyOf,
   tollCents,
   tripCost,
   type TollRate,
@@ -68,6 +69,53 @@ describe('tollCents', () => {
 
   it('refuses an unknown motorway when there is no default rate', () => {
     expect(() => tollCents([{ motorway: 'A8', tollM: 1000 }], [RATES[0]])).toThrow(RangeError);
+  });
+
+  it('charges a branch at its main motorway\'s rate, adding it to the main road before rounding', () => {
+    expect(tollCents([{ motorway: 'A1-1', tollM: 270_000 }], RATES)).toBe(2505);
+    const halves = [
+      { motorway: 'A1', tollM: 1500 },
+      { motorway: 'A1-1', tollM: 1500 },
+    ];
+    // A1-1 has no rate of its own: it counts as the A1. 3 km together: 27,83 → 28.
+    expect(tollCents(halves, RATES)).toBe(28);
+    const small = [
+      { motorway: 'A1', tollM: 500 },
+      { motorway: 'A1-1', tollM: 500 },
+      { motorway: 'A1-2', tollM: 500 },
+    ];
+    // 1,5 km together: 13,92 → 14; apart, 4,64 → 5 three times = 15.
+    expect(tollCents(small, RATES)).toBe(14);
+  });
+
+  it('a motorway that is free now costs nothing, also next to paid ones', () => {
+    const rates: TollRate[] = [...RATES, { motorway: 'A23', referenceCents: 0, referenceM: 1000 }];
+    expect(tollCents([{ motorway: 'A23', tollM: 50_000 }], rates)).toBe(0);
+    expect(
+      tollCents(
+        [
+          { motorway: 'A23', tollM: 17_000 },
+          { motorway: 'A1', tollM: 270_000 },
+        ],
+        rates
+      )
+    ).toBe(2505);
+  });
+
+  it('a branch of a motorway without a rate goes to the default rate', () => {
+    expect(tollCents([{ motorway: 'A8-1', tollM: 10_000 }], RATES)).toBe(80);
+  });
+});
+
+describe('rateKeyOf', () => {
+  it('prefers the motorway\'s own rate, then its main road, then the default', () => {
+    const rates: TollRate[] = [...RATES, { motorway: 'A13-1', referenceCents: 100, referenceM: 10_000 }];
+    expect(rateKeyOf('A1', rates)).toBe('A1');
+    expect(rateKeyOf('A13-1', rates)).toBe('A13-1');
+    expect(rateKeyOf('A1-1', rates)).toBe('A1');
+    expect(rateKeyOf('A8', rates)).toBe('default');
+    expect(rateKeyOf('default', rates)).toBe('default');
+    expect(rateKeyOf('IC19', rates)).toBe('default');
   });
 });
 

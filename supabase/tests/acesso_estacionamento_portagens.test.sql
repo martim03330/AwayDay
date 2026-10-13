@@ -149,8 +149,12 @@ select pg_temp.expect('toll rates, car parks and stadium parking notes hold no p
   (select count(*)::integer from pg_constraint as c
    where c.contype = 'f' and c.confrelid = 'public.profile'::regclass
      and c.conrelid in ('public.toll_rate'::regclass, 'public.parking_spot'::regclass, 'public.venue_parking'::regclass)), 0);
-select pg_temp.expect('toll prices are whole positive cents with an https source',
-  (select bool_and(reference_cents > 0 and reference_m > 0 and source_url like 'https://%') from public.toll_rate), true);
+select pg_temp.expect('toll prices are whole cents (0 for a motorway free now) with an https source',
+  (select bool_and(reference_cents >= 0 and reference_m > 0 and source_url like 'https://%') from public.toll_rate), true);
+select pg_temp.expect('the national rate for unlisted toll roads is never free',
+  (select reference_cents > 0 from public.toll_rate where motorway = 'default'), true);
+select pg_temp.expect('a toll price cannot be negative',
+  split_part(pg_temp.refusal('update public.toll_rate set reference_cents = -1 where motorway = ''A1'''), ' ', 1), 'new');
 select pg_temp.expect('the toll price column is an integer',
   (select data_type from information_schema.columns
    where table_schema = 'public' and table_name = 'toll_rate' and column_name = 'reference_cents'), 'integer');

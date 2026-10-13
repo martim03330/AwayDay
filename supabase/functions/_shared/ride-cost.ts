@@ -57,15 +57,25 @@ export function fuelCents(
 }
 
 /**
+ * The rate a motorway is charged at: its own, else its main road's for a branch ("A13-1" → "A13"), else "default".
+ */
+export function rateKeyOf(motorway: string, rates: readonly TollRate[]) {
+  if (rates.some((rate) => rate.motorway === motorway)) return motorway;
+  const main = /^(A\d+)-\d+$/.exec(motorway)?.[1];
+  if (main && rates.some((rate) => rate.motorway === main)) return main;
+  return 'default';
+}
+
+/**
  * Tolls for one way, in cents. Metres are added up per motorway before rounding, so a motorway split into many
- * pieces by the router costs the same as in one piece. Motorways without their own rate use "default".
+ * pieces by the router costs the same as in one piece. Motorways without their own rate use their main road's (for a
+ * branch) or "default".
  */
 export function tollCents(segments: readonly TollSegment[], rates: readonly TollRate[]) {
   const byMotorway = new Map<string, number>();
   for (const segment of segments) {
     const tollM = wholeNonNegative(segment.tollM, 'tollM');
-    const known = rates.some((rate) => rate.motorway === segment.motorway);
-    const key = known ? segment.motorway : 'default';
+    const key = rateKeyOf(segment.motorway, rates);
     byMotorway.set(key, (byMotorway.get(key) ?? 0) + tollM);
   }
   let total = 0;

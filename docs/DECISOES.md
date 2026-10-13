@@ -2,6 +2,23 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Boleias: caminhos mais baratos e portagens por autoestrada
+
+- Preço de portagem por autoestrada (classe 1, 2026), em vez de um valor nacional único (migração
+  `20261013220000_toll_rates_per_motorway`). Fontes: tabela de taxas de portagem 2026 do IMT e calculadora das
+  Infraestruturas de Portugal. As ex-SCUT gratuitas desde 2025 (A22, A23, A24, A25, A13 Coimbra–Atalaia, A13-1) e
+  A27/A44 ficam a 0 €, para o caso de o OpenStreetMap ainda as marcar com portagem. Um ramal (A13-1) usa o seu preço
+  ou o da autoestrada principal; o resto continua no valor «default». Continua a ser uma estimativa (a Brisa cobra por
+  par entrada–saída e as pontes do Tejo têm valor fixo num só sentido).
+- O orçamento da boleia pede ao Valhalla rotas a quatro níveis de evitar portagens (1; 0,4; 0,3; 0), cada uma com uma
+  alternativa, guardadas em cache 30 dias com a chave `v2:…#0/#1`. Das rotas, com o custo real de cada uma, saem
+  (`_shared/route-choice.ts`): a mais rápida, «Menos portagens» (antes «Equilíbrio»: a mais barata que ainda usa
+  autoestrada, se poupar ≥ 1,50 € e não demorar mais de 45 min a mais) e sem portagens; uma opção pior em tempo e em
+  preço do que outra não aparece. O `route_option` na base de dados não mudou.
+- Ao criar a boleia, o servidor volta a escolher com as mesmas rotas da cache: o preço é o da opção que o condutor viu.
+- Razão: um tester notou que Coimbra → Lisboa fica mais barato com só uma parte em autoestrada, e a app só mostrava a A1
+  ou nenhuma portagem.
+
 ## 2026-10-13 — Respostas a um plano: «vou» ou «não vou»
 
 - Saiu o «estou a pensar» (`talvez`): as respostas são «vou» ou «não vou» (`nao`), e quem ainda não respondeu é que
