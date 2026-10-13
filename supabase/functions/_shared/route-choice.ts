@@ -8,7 +8,7 @@
 //   longer, the one where the saving is worth most once each extra minute at the wheel is counted against it: by the
 //   A19 and national roads, 23 € cheaper but 30 min slower each way, loses to the A13, 14,50 € cheaper and 4 min slower;
 // - «sem_portagens»: the cheapest without any toll, only when the fastest pays some (two toll-free options read as
-//   a mistake);
+//   a mistake) and when it does not take far longer (Braga → Lisboa in 7 h instead of 3 h 40 is no option);
 // An option that is both slower and dearer than another one is left out: nobody would pick it.
 
 import type { TripCost } from './ride-cost.ts';
@@ -22,6 +22,11 @@ export type Choice = { option: RouteOption; candidate: Candidate };
 export const MIN_SAVING_CENTS = 150;
 /** …and may take at most this much longer than the fastest. */
 export const MAX_EXTRA_S = 45 * 60;
+/** «Sem portagens» may take at most this share of the fastest's time more (75 %: 2 h becomes at most 3 h 30)… */
+export const MAX_EXTRA_SEM_PORTAGENS_SHARE = 0.75;
+/** …and never more than this. */
+export const MAX_EXTRA_SEM_PORTAGENS_S = 2 * 60 * 60;
+
 /** What a minute more at the wheel costs, for weighing a saving against the time it takes (24 € an hour). */
 export const MINUTE_CENTS = 40;
 
@@ -56,7 +61,15 @@ export function chooseRoutes(candidates: readonly Candidate[], ways: 1 | 2 = 1):
   const rapida = unique[0];
   if (!rapida) return [];
 
-  const semPortagens = unique.filter((c) => c.route.tollM === 0 && c !== rapida).sort(cheapestFirst)[0];
+  const extraSemPortagens = Math.min(
+    rapida.route.durationS * MAX_EXTRA_SEM_PORTAGENS_SHARE,
+    MAX_EXTRA_SEM_PORTAGENS_S
+  );
+  const semPortagens = unique
+    .filter(
+      (c) => c.route.tollM === 0 && c !== rapida && c.route.durationS - rapida.route.durationS <= extraSemPortagens
+    )
+    .sort(cheapestFirst)[0];
 
   /** The saving over the fastest, less what the extra minutes are worth. */
   const worth = (c: Candidate) =>

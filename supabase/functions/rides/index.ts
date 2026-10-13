@@ -3,7 +3,9 @@
 //   tolls: see _shared/route-choice.ts) with what each costs in fuel and tolls and the price per person as seats fill
 //   up;
 // - action "create": opens a ride on one of those routes. The cost is computed here again, never taken from the app;
-// - action "search": streets and places for the meeting point (OpenStreetMap Nominatim), when the driver searches.
+// - action "search": streets and places for the meeting point (OpenStreetMap Nominatim), when the driver searches;
+// - action "fuel_prices": yesterday's national average price of petrol 95 and diesel (DGEG), cached in fuel_price,
+//   as the starting value of the ride form.
 // A driver has at most one open ride per game.
 // Routes come from the public Valhalla router of the FOSSGIS / OpenStreetMap community (no key, fair use), so the
 // app never calls it. Routes and place searches are cached in Postgres
@@ -26,6 +28,16 @@ const GEOCODER = 'https://nominatim.openstreetmap.org/search';
 /** Fallback geocoder (Photon, by Komoot, on OpenStreetMap data). */
 const FALLBACK_GEOCODER = 'https://photon.komoot.io/api/';
 const USER_AGENT = 'AwayDay/1.0 (match-day app for football fans)';
+/** DGEG's daily averages (the same data as precoscombustiveis.dgeg.gov.pt). */
+const FUEL_PRICES = 'https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb/PMD';
+const FUEL_SOURCE = 'https://precoscombustiveis.dgeg.gov.pt/';
+/** DGEG's fuel type ids: petrol 95 and diesel, both the plain ones most cars use. */
+const FUELS = [
+  { fuel: 'gasolina', id: 3201 },
+  { fuel: 'gasoleo', id: 2101 },
+] as const;
+/** Asked again at most this often: the average changes once a day. */
+const FUEL_REFRESH_MS = 6 * 60 * 60 * 1000;
 const QUOTE_LIMIT = { bucket: 'ride-quote', limit: 30, window: '1 hour' } as const;
 const CREATE_LIMIT = { bucket: 'ride-create', limit: 10, window: '1 day' } as const;
 /** Searches only when the driver presses "Procurar" (Nominatim does not allow search-as-you-type). */
@@ -277,6 +289,66 @@ async function tollRates(admin: SupabaseClient): Promise<TollRate[] | null> {
   }));
 }
 
+/** "2,110 €" → 2110 thousandths of a euro, or `null` for anything else. */
+function milliFromEuroText(text: unknown): number | null {
+  const match = typeof text === 'string' ? /^(\d),(\d{3})\s*€?$/.exec(text.trim()) : null;
+  if (!match) return null;
+  const milli = Number(match[1]) * 1000 + Number(match[2]);
+  return milli >= 500 && milli <= 4000 ? milli : null;
+}
+
+/** The day's average of one fuel, trying yesterday and the day before (Lisbon dates). `null` when DGEG fails. */
+async function fetchFuelAverage(id: number): Promise<{ milli: number; date: string } | null> {
+  for (const daysBack of [1, 2, 3]) {
+    const day = new Date(Date.now() - daysBack * DAY_MS).toLocaleDateString('sv-SE', { timeZone: 'Europe/Lisbon' });
+    try {
+      const response = await fetch(`${FUEL_PRICES}?idsTiposComb=${id}&dataIni=${day}`, {
+        headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) continue;
+      const body = asRecord(await response.json());
+      const rows = Array.isArray(body?.resultado) ? body.resultado : [];
+      const milli = milliFromEuroText(asRecord(rows[0])?.PrecoMedio);
+      if (milli !== null) return { milli, date: day };
+    } catch {
+      // Next day back.
+    }
+  }
+  return null;
+}
+
+/**
+ * Petrol and diesel averages from the cache, refreshed from DGEG when older than FUEL_REFRESH_MS. A failed refresh
+ * keeps the old prices (still a good starting value); with none at all, the app keeps its own.
+ */
+async function fuelPrices(admin: SupabaseClient) {
+  const cached = await admin.from('fuel_price').select('fuel, milli_per_litre, price_date, updated_at');
+  const rows = cached.data ?? [];
+  const fresh =
+    rows.length === FUELS.length &&
+    rows.every((row) => Date.now() - Date.parse(String(row.updated_at)) < FUEL_REFRESH_MS);
+  if (!fresh) {
+    const found = await Promise.all(FUELS.map(async ({ fuel, id }) => ({ fuel, average: await fetchFuelAverage(id) })));
+    const updates = found.flatMap(({ fuel, average }) =>
+      average
+        ? [{ fuel, milli_per_litre: average.milli, price_date: average.date, source_url: FUEL_SOURCE, updated_at: new Date().toISOString() }]
+        : []
+    );
+    if (updates.length > 0) {
+      await admin.from('fuel_price').upsert(updates);
+      for (const update of updates) {
+        const index = rows.findIndex((row) => row.fuel === update.fuel);
+        if (index >= 0) rows[index] = update;
+        else rows.push(update);
+      }
+    }
+  }
+  return Object.fromEntries(
+    rows.map((row) => [String(row.fuel), { milli_per_litre: Number(row.milli_per_litre), date: String(row.price_date) }])
+  );
+}
+
 async function takeLimit(
   admin: SupabaseClient,
   profileId: string,
@@ -326,11 +398,17 @@ Deno.serve(async (request) => {
     if (limited === 'limited') return json(429, { error: 'rate_limited' });
     return json(200, { results: await searchPlaces(admin, query, near) });
   }
+
+  if (action === 'fuel_prices') {
+    return json(200, { prices: await fuelPrices(admin), source: 'DGEG – Direção-Geral de Energia e Geologia' });
+  }
   const fixtureId = typeof body?.fixtureId === 'string' ? body.fixtureId : null;
   const origin = toPoint(body?.origin);
+  // An electric car shares only the tolls: no consumption nor price per litre.
+  const electric = body?.electric === true;
   // Realistic bounds (3–15 L/100 km, 1,000–2,600 €/L): the driver cannot inflate what the passengers pay.
-  const consumption = wholeBetween(body?.consumptionClPer100Km, 300, 1500);
-  const fuelPrice = wholeBetween(body?.fuelPriceMilliPerLitre, 1000, 2600);
+  const consumption = electric ? 0 : wholeBetween(body?.consumptionClPer100Km, 300, 1500);
+  const fuelPrice = electric ? 0 : wholeBetween(body?.fuelPriceMilliPerLitre, 1000, 2600);
   const roundTrip = typeof body?.roundTrip === 'boolean' ? body.roundTrip : null;
   if (
     (action !== 'quote' && action !== 'create') ||
@@ -388,6 +466,7 @@ Deno.serve(async (request) => {
         {
           distanceM: found.distanceM,
           tollSegments: found.tollSegments,
+          electric,
           consumptionClPer100Km: consumption,
           fuelPriceMilliPerLitre: fuelPrice,
           roundTrip,
@@ -520,8 +599,9 @@ Deno.serve(async (request) => {
       distance_m: found.distanceM,
       duration_s: found.durationS,
       toll_m: found.tollM,
-      consumption_cl_per_100km: consumption,
-      fuel_price_milli_per_litre: fuelPrice,
+      energy: electric ? 'eletrico' : 'combustivel',
+      consumption_cl_per_100km: electric ? null : consumption,
+      fuel_price_milli_per_litre: electric ? null : fuelPrice,
       fuel_cents: cost.fuelCents,
       toll_cents: cost.tollCents,
       total_cents: cost.totalCents,

@@ -142,6 +142,32 @@ describe('tripCost', () => {
   });
 });
 
+describe('tripCost of an electric car', () => {
+  const ida = { distanceM: 200_000, tollSegments: [{ motorway: 'A1', tollM: 270_000 }], roundTrip: false };
+
+  it('shares only the tolls', () => {
+    expect(tripCost({ ...ida, electric: true, consumptionClPer100Km: 650, fuelPriceMilliPerLitre: 1750 }, RATES)).toEqual({
+      fuelCents: 0,
+      tollCents: 2505,
+      totalCents: 2505,
+    });
+  });
+
+  it('counts the tolls both ways when it comes back', () => {
+    expect(tripCost({ ...ida, roundTrip: true, electric: true, consumptionClPer100Km: 0, fuelPriceMilliPerLitre: 0 }, RATES)).toEqual({
+      fuelCents: 0,
+      tollCents: 5010,
+      totalCents: 5010,
+    });
+  });
+
+  it('costs nothing without tolls', () => {
+    expect(
+      tripCost({ ...ida, tollSegments: [], electric: true, consumptionClPer100Km: 0, fuelPriceMilliPerLitre: 0 }, RATES).totalCents
+    ).toBe(0);
+  });
+});
+
 describe('sharePerPersonCents', () => {
   it('splits evenly when it can', () => {
     expect(sharePerPersonCents(3000, 3)).toBe(1000);

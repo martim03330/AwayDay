@@ -2,6 +2,17 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-13 — Boleias de carro elétrico e preço do litro da DGEG
+
+- Carro elétrico: a boleia divide só as portagens (o carregamento é do condutor e um preço por kWh seria um palpite).
+  `ride.energy` ('combustivel' | 'eletrico'); num elétrico o consumo e o preço por litro ficam a `null` e o combustível
+  a 0 (constraint `ride_energy_inputs`). O custo continua a ser calculado no servidor (`tripCost` com `electric`).
+- O preço por litro de partida vem da DGEG (preço médio diário de ontem da gasolina simples 95 e do gasóleo simples,
+  `precoscombustiveis.dgeg.gov.pt/api/PrecoComb/PMD`), pedido pela Edge Function `rides` (ação `fuel_prices`) no
+  máximo de 6 em 6 horas e guardado em `fuel_price`. O condutor pode mudá-lo; sem DGEG ficam os valores de recurso.
+- «Sem portagens» só aparece se não demorar mais do que 75 % do tempo da mais rápida a mais, nunca mais de 2 h
+  (Braga → Lisboa em 7 h em vez de 3 h 40 não é opção).
+
 ## 2026-10-13 — Ver o caminho da boleia no Mapas
 
 - Na boleia, a linha do percurso («Mais rápido · ida e volta») abre o caminho escolhido pelo condutor no Apple Maps,

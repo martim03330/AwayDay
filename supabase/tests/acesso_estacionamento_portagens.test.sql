@@ -173,6 +173,25 @@ from public.fixture as f where f.id = 'teste-acesso-parque';
 select pg_temp.make_ride(pg_temp.id('r'), 'teste-acesso-parque', 'e8000000-0000-4000-8000-000000000003', 3, 1000, 0);
 update public.ride set parking_spot_id = pg_temp.id('parque') where id = pg_temp.id('r');
 
+-- An electric ride shares only the tolls: no consumption, no price per litre, no fuel cost.
+select pg_temp.expect('an electric ride cannot keep a consumption or a price per litre',
+  split_part(pg_temp.refusal(format('update public.ride set energy = %L where id = %L', 'eletrico', pg_temp.id('r'))), ' ', 1),
+  'new');
+select pg_temp.expect('an electric ride cannot charge for fuel',
+  split_part(pg_temp.refusal(format(
+    'update public.ride set energy = %L, consumption_cl_per_100km = null, fuel_price_milli_per_litre = null where id = %L',
+    'eletrico', pg_temp.id('r'))), ' ', 1),
+  'new');
+select pg_temp.expect('an electric ride with only its tolls is fine',
+  pg_temp.refusal(format(
+    'update public.ride set energy = %L, consumption_cl_per_100km = null, fuel_price_milli_per_litre = null, fuel_cents = 0, total_cents = toll_cents where id = %L',
+    'eletrico', pg_temp.id('r'))),
+  'accepted');
+select pg_temp.expect('a fuel ride needs its consumption',
+  split_part(pg_temp.refusal(format(
+    'update public.ride set energy = %L where id = %L', 'combustivel', pg_temp.id('r'))), ' ', 1),
+  'new');
+
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 1. Everyone reads, nobody in the app writes.
 
@@ -185,6 +204,8 @@ select pg_temp.expect('anon reads car parks but cannot write them', pg_temp.dire
 select pg_temp.expect('anon reads stadium parking notes but cannot write them', pg_temp.direct_access('venue_parking'),
   'select:allowed insert:denied update:denied delete:denied');
 select pg_temp.expect('anon sees the toll rates', (select count(*)::integer > 0 from public.toll_rate), true);
+select pg_temp.expect('anon does not read the fuel prices', pg_temp.direct_access('fuel_price'),
+  'select:denied insert:denied update:denied delete:denied');
 select pg_temp.expect('anon sees the car parks', (select count(*)::integer > 0 from public.parking_spot), true);
 
 set local role authenticated;
@@ -194,6 +215,8 @@ select pg_temp.expect('a fan reads toll rates but cannot write them', pg_temp.di
 select pg_temp.expect('a fan reads car parks but cannot write them', pg_temp.direct_access('parking_spot'),
   'select:allowed insert:denied update:denied delete:denied');
 select pg_temp.expect('a fan reads stadium parking notes but cannot write them', pg_temp.direct_access('venue_parking'),
+  'select:allowed insert:denied update:denied delete:denied');
+select pg_temp.expect('a fan reads the fuel prices but cannot write them', pg_temp.direct_access('fuel_price'),
   'select:allowed insert:denied update:denied delete:denied');
 select pg_temp.expect('a fan cannot lower the toll prices',
   pg_temp.refusal('update public.toll_rate set reference_cents = 1'), 'permission denied for table toll_rate');

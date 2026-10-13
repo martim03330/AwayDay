@@ -15,6 +15,7 @@ import {
   setRideGroup,
   setRideVisibility,
   quoteRide,
+  fetchFuelPrices,
   RideRefused,
   type RideQuote,
   type RouteOption,
@@ -62,13 +63,14 @@ import { Expansor } from '@/ui/expansor';
 import { useFormatarDinheiro } from '@/ui/valor';
 
 /**
- * Starting values only, not an official price: the driver sets what they paid. Not attributed to any source, since they
- * are not kept up to date from one.
+ * Fallback prices only, for when DGEG's daily average cannot be had (it normally comes from the server, see
+ * fetchFuelPrices). The driver can always set what they paid.
  */
 const COMBUSTIVEIS = [
   { id: 'gasolina', nome: 'Gasolina 95', milesimas: 2072 },
   { id: 'gasoleo', nome: 'Gasóleo', milesimas: 2152 },
 ] as const;
+type Energia = (typeof COMBUSTIVEIS)[number]['id'] | 'eletrico';
 const LUGARES = [1, 2, 3, 4, 5, 6, 7] as const;
 const DELTA = 0.05;
 
@@ -200,8 +202,21 @@ export default function OferecerBoleiaScreen() {
   const [lugares, setLugares] = useState<(typeof LUGARES)[number]>(3);
   const [consumo, setConsumo] = useState('6,5');
   const campoPrecoLitro = useRef<TextInput>(null);
-  const [combustivel, setCombustivel] = useState<(typeof COMBUSTIVEIS)[number]['id']>('gasolina');
-  const [precoLitro, setPrecoLitro] = useState(milesimasEmTexto(COMBUSTIVEIS[0].milesimas));
+  const [combustivel, setCombustivel] = useState<Energia>('gasolina');
+  // What the driver typed as the price per litre; until then it is DGEG's daily average (or the fallback).
+  const [precoEscrito, setPrecoEscrito] = useState<string | null>(null);
+  const precosDgeg = useQuery({
+    queryKey: ['rides', 'fuel-prices'],
+    queryFn: fetchFuelPrices,
+    staleTime: 60 * 60 * 1000,
+  });
+  const eletrico = combustivel === 'eletrico';
+  const precoDgeg = combustivel === 'eletrico' ? null : (precosDgeg.data?.[combustivel] ?? null);
+  const precoDeReferencia =
+    precoDgeg?.milliPerLitre ??
+    COMBUSTIVEIS.find((opcao) => opcao.id === combustivel)?.milesimas ??
+    COMBUSTIVEIS[0].milesimas;
+  const precoLitro = precoEscrito ?? milesimasEmTexto(precoDeReferencia);
   const [idaEVolta, setIdaEVolta] = useState(true);
   // A seat home for whoever is left at the stadium: only makes sense when the driver is coming back anyway.
   const [aceitaVolta, setAceitaVolta] = useState(true);
@@ -346,8 +361,9 @@ export default function OferecerBoleiaScreen() {
     );
   }
 
-  const consumoCl = lerConsumo(consumo);
-  const precoMilesimas = lerPrecoLitro(precoLitro);
+  // An electric car shares only the tolls: the server ignores consumption and price, sent as 0.
+  const consumoCl = eletrico ? 0 : lerConsumo(consumo);
+  const precoMilesimas = eletrico ? 0 : lerPrecoLitro(precoLitro);
   // The window the server accepts: published 3 h before, at most 3 days before, 30 min before kick-off at the latest.
   const limites = limitesDaSaida(jogo.inicio, agora);
   const semTempo = limites === null;
@@ -443,6 +459,7 @@ export default function OferecerBoleiaScreen() {
       const resultado = await quoteRide({
         fixtureId: jogo.id,
         origin: partida,
+        electric: eletrico,
         consumptionClPer100Km: consumoCl,
         fuelPriceMilliPerLitre: precoMilesimas,
         roundTrip: idaEVolta,
@@ -486,6 +503,7 @@ export default function OferecerBoleiaScreen() {
         fixtureId: jogo.id,
         origin: partida,
         originName: nomeLimpo,
+        electric: eletrico,
         consumptionClPer100Km: consumoCl,
         fuelPriceMilliPerLitre: precoMilesimas,
         roundTrip: idaEVolta,
@@ -519,15 +537,16 @@ export default function OferecerBoleiaScreen() {
     COMBUSTIVEIS.find((opcao) => opcao.id === combustivel)?.nome ?? COMBUSTIVEIS[0].nome;
   // What "Mais opções" is set to, so the defaults are visible without opening it.
   const resumoOpcoes = [
-    `${consumo || '…'} l/100 km`,
-    `${nomeCombustivel} a ${precoLitro || '…'} €`,
+    eletrico ? 'carro elétrico: só portagens' : `${consumo || '…'} l/100 km`,
+    eletrico ? null : `${nomeCombustivel} a ${precoLitro || '…'} €`,
     parqueEscolhido ? parqueEscolhido.name : null,
     idaEVolta ? (aceitaVolta ? 'aceitas pedidos de volta' : 'sem pedidos de volta') : null,
     nota.trim() ? 'com nota' : null,
   ]
     .filter(Boolean)
     .join(' · ');
-  const opcoesComErro = (consumo !== '' && consumoCl === null) || (precoLitro !== '' && precoMilesimas === null);
+  const opcoesComErro =
+    !eletrico && ((consumo !== '' && consumoCl === null) || (precoLitro !== '' && precoMilesimas === null));
   const partilhas = cotacao ? cotacao.shareCentsByPeople.slice(0, lugares + 1) : [];
   const interruptor = (valor: boolean, mudar: (valor: boolean) => void, rotulo: string) => (
     <Switch
@@ -859,20 +878,8 @@ export default function OferecerBoleiaScreen() {
             <ThemedText type="eyebrow" themeColor="accentInk">
               O teu carro
             </ThemedText>
-            <Campo
-              label="Consumo (litros aos 100 km)"
-              value={consumo}
-              onChangeText={(texto) => {
-                setConsumo(texto);
-                mudou();
-              }}
-              keyboardType="decimal-pad"
-              returnKeyType="next"
-              onSubmitEditing={() => campoPrecoLitro.current?.focus()}
-              erro={consumo && consumoCl === null ? 'Escreve um valor entre 3 e 15, ex.: 6,5' : null}
-            />
             <View style={styles.chips}>
-              {COMBUSTIVEIS.map((opcao) => (
+              {[...COMBUSTIVEIS, { id: 'eletrico' as const, nome: 'Elétrico' }].map((opcao) => (
                 <Chip
                   key={opcao.id}
                   label={opcao.nome}
@@ -880,25 +887,50 @@ export default function OferecerBoleiaScreen() {
                   emCartao
                   onPress={() => {
                     setCombustivel(opcao.id);
-                    setPrecoLitro(milesimasEmTexto(opcao.milesimas));
+                    // Another fuel: back to its average, not the price typed for the other one.
+                    setPrecoEscrito(null);
                     mudou();
                   }}
                 />
               ))}
             </View>
-            <Campo
-              ref={campoPrecoLitro}
-              label="Preço por litro (€)"
-              value={precoLitro}
-              onChangeText={(texto) => {
-                setPrecoLitro(texto);
-                mudou();
-              }}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              ajuda="Valor de referência. Põe o que pagaste da última vez que atestaste."
-              erro={precoLitro && precoMilesimas === null ? 'Escreve um preço entre 1,000 e 2,600, ex.: 2,072' : null}
-            />
+            {eletrico ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Num carro elétrico, a boleia divide só as portagens. O carregamento fica por tua conta.
+              </ThemedText>
+            ) : (
+              <>
+                <Campo
+                  label="Consumo (litros aos 100 km)"
+                  value={consumo}
+                  onChangeText={(texto) => {
+                    setConsumo(texto);
+                    mudou();
+                  }}
+                  keyboardType="decimal-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => campoPrecoLitro.current?.focus()}
+                  erro={consumo && consumoCl === null ? 'Escreve um valor entre 3 e 15, ex.: 6,5' : null}
+                />
+                <Campo
+                  ref={campoPrecoLitro}
+                  label="Preço por litro (€)"
+                  value={precoLitro}
+                  onChangeText={(texto) => {
+                    setPrecoEscrito(texto);
+                    mudou();
+                  }}
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  ajuda={
+                    precoDgeg && precoEscrito === null
+                      ? `Preço médio em Portugal a ${formatarData(new Date(`${precoDgeg.date}T12:00:00Z`))} (DGEG). Muda se pagaste outro.`
+                      : 'Põe o que pagaste da última vez que atestaste.'
+                  }
+                  erro={precoLitro && precoMilesimas === null ? 'Escreve um preço entre 1,000 e 2,600, ex.: 2,072' : null}
+                />
+              </>
+            )}
 
             <View style={[styles.separador, { backgroundColor: theme.backgroundSelected }]} />
             <ThemedText type="eyebrow" themeColor="accentInk">

@@ -29,6 +29,8 @@ export type RideQuote = {
 export type TripSettings = {
   fixtureId: string;
   origin: { latitude: number; longitude: number };
+  /** An electric car: the ride shares only the tolls (the server ignores consumption and price). */
+  electric: boolean;
   /** 6,5 L/100 km = 650. */
   consumptionClPer100Km: number;
   /** 2,072 €/L = 2072. */
@@ -151,6 +153,27 @@ export async function quoteRide(settings: TripSettings): Promise<RideQuote[]> {
       },
     ];
   });
+}
+
+export type FuelAverage = { milliPerLitre: number; date: string };
+
+/** DGEG's national average price per litre of petrol 95 and diesel (yesterday's, cached by the server). */
+export async function fetchFuelPrices(): Promise<Partial<Record<'gasolina' | 'gasoleo', FuelAverage>>> {
+  const { data, error } = await client().functions.invoke('rides', { body: { action: 'fuel_prices' } });
+  if (error) throw await functionError(error);
+  const prices = typeof data === 'object' && data !== null ? Reflect.get(data, 'prices') : null;
+  const result: Partial<Record<'gasolina' | 'gasoleo', FuelAverage>> = {};
+  if (typeof prices !== 'object' || prices === null) return result;
+  for (const fuel of ['gasolina', 'gasoleo'] as const) {
+    const entry = Reflect.get(prices, fuel);
+    if (typeof entry !== 'object' || entry === null) continue;
+    const milli = Reflect.get(entry, 'milli_per_litre');
+    const date = Reflect.get(entry, 'date');
+    if (typeof milli === 'number' && milli >= 1000 && milli <= 2600 && typeof date === 'string') {
+      result[fuel] = { milliPerLitre: milli, date };
+    }
+  }
+  return result;
 }
 
 /** Opens a ride. Returns its id. */

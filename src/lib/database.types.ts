@@ -1192,6 +1192,30 @@ export type Database = {
           },
         ]
       }
+      fuel_price: {
+        Row: {
+          fuel: string
+          milli_per_litre: number
+          price_date: string
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          fuel: string
+          milli_per_litre: number
+          price_date: string
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          fuel?: string
+          milli_per_litre?: number
+          price_date?: string
+          source_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_invite: {
         Row: {
           created_at: string
@@ -2621,15 +2645,16 @@ export type Database = {
         Row: {
           accepts_return_requests: boolean
           cancelled_at: string | null
-          consumption_cl_per_100km: number
+          consumption_cl_per_100km: number | null
           created_at: string
           departure_at: string
           distance_m: number
           driver_id: string
           duration_s: number
+          energy: string
           fixture_id: string
           fuel_cents: number
-          fuel_price_milli_per_litre: number
+          fuel_price_milli_per_litre: number | null
           group_id: string | null
           id: string
           note: string | null
@@ -2653,15 +2678,16 @@ export type Database = {
         Insert: {
           accepts_return_requests?: boolean
           cancelled_at?: string | null
-          consumption_cl_per_100km: number
+          consumption_cl_per_100km?: number | null
           created_at?: string
           departure_at: string
           distance_m: number
           driver_id: string
           duration_s: number
+          energy?: string
           fixture_id: string
           fuel_cents: number
-          fuel_price_milli_per_litre: number
+          fuel_price_milli_per_litre?: number | null
           group_id?: string | null
           id?: string
           note?: string | null
@@ -2685,15 +2711,16 @@ export type Database = {
         Update: {
           accepts_return_requests?: boolean
           cancelled_at?: string | null
-          consumption_cl_per_100km?: number
+          consumption_cl_per_100km?: number | null
           created_at?: string
           departure_at?: string
           distance_m?: number
           driver_id?: string
           duration_s?: number
+          energy?: string
           fixture_id?: string
           fuel_cents?: number
-          fuel_price_milli_per_litre?: number
+          fuel_price_milli_per_litre?: number | null
           group_id?: string | null
           id?: string
           note?: string | null

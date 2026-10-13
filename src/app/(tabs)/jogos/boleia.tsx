@@ -985,7 +985,12 @@ export default function BoleiaScreen() {
         {verCusto ? (
           <View style={[styles.contas, linhaSeparada(!depoisDoCusto)]}>
             {/* Only what each one pays; the detail of how it adds up stays in two short lines. */}
-            <LinhaValor rotulo="Combustível" valor={dinheiro.formatar(boleia.fuelCents)} />
+            {/* An electric car (no fuel cost at all): only the tolls are shared. */}
+            {boleia.fuelCents > 0 ? (
+              <LinhaValor rotulo="Combustível" valor={dinheiro.formatar(boleia.fuelCents)} />
+            ) : (
+              <LinhaValor rotulo="Carro elétrico" valor="só portagens" />
+            )}
             {boleia.tollCents > 0 ? (
               <LinhaValor rotulo="Portagens" valor={dinheiro.formatar(boleia.tollCents)} />
             ) : null}

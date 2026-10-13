@@ -94,6 +94,19 @@ describe('chooseRoutes', () => {
     expect(escolha?.candidate).toBe(mistaB);
   });
 
+  it('no «sem portagens» that takes far longer than the fastest', () => {
+    // Braga → Lisboa: 3 h 40 by motorway, 7 h without tolls.
+    const auto = rota(360, 220, 340, 7412);
+    expect(opcoes([auto, rota(380, 424, 0, 5445)])).toEqual(['rapida:7412']);
+    // 75 % of 2 h 07 is 95 min more: 3 h 30 (83 min more) stays, 3 h 45 (98 min more) goes.
+    const coimbra = rota(204, 127, 189, 4026);
+    expect(opcoes([coimbra, rota(207, 210, 0, 2353)])).toEqual(['rapida:4026', 'sem_portagens:2353']);
+    expect(opcoes([coimbra, rota(207, 225, 0, 2353)])).toEqual(['rapida:4026']);
+    // Never more than 2 h more, however long the trip.
+    const longe = rota(600, 400, 580, 12000);
+    expect(opcoes([longe, rota(620, 400 + 121, 0, 9000)])).toEqual(['rapida:12000']);
+  });
+
   it('no «sem portagens» when the fastest is already free (the A25 from Guarda)', () => {
     const a25 = rota(170, 123, 160, 1952, 'A25');
     a25.cost = { fuelCents: 1952, tollCents: 0, totalCents: 1952 };

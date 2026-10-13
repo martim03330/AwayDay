@@ -22,7 +22,11 @@ export type TollSegment = { motorway: string; tollM: number };
 export type TripInput = {
   distanceM: number;
   tollSegments: readonly TollSegment[];
+  /** An electric car: only the tolls are shared (charging is the driver's, often free or at home). */
+  electric?: boolean;
+  /** Ignored for an electric car. */
   consumptionClPer100Km: number;
+  /** Ignored for an electric car. */
   fuelPriceMilliPerLitre: number;
   /** The driver comes back too: fuel and tolls count twice. */
   roundTrip: boolean;
@@ -94,8 +98,9 @@ export function tollCents(segments: readonly TollSegment[], rates: readonly Toll
 /** Fuel and tolls for the whole trip (both ways when it is a round trip). */
 export function tripCost(input: TripInput, rates: readonly TollRate[]): TripCost {
   const ways = input.roundTrip ? 2 : 1;
-  const fuel =
-    fuelCents(input.distanceM, input.consumptionClPer100Km, input.fuelPriceMilliPerLitre) * ways;
+  const fuel = input.electric
+    ? 0
+    : fuelCents(input.distanceM, input.consumptionClPer100Km, input.fuelPriceMilliPerLitre) * ways;
   const tolls = tollCents(input.tollSegments, rates) * ways;
   return { fuelCents: fuel, tollCents: tolls, totalCents: fuel + tolls };
 }
