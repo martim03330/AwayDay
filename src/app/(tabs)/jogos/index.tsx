@@ -23,7 +23,6 @@ import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useNow } from '@/hooks/use-now';
 import { useEstaEscuro, useTheme } from '@/hooks/use-theme';
-import { chaveDoDia, formatarDiaComSemana } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import {
   clubesDoUtilizador,
@@ -53,7 +52,6 @@ import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinkTexto } from '@/ui/link-texto';
 import { ThemedText } from '@/ui/themed-text';
 import { useVoltarAoTopo } from '@/ui/voltar-ao-topo';
-import { Expansor } from '@/ui/expansor';
 
 const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string }[] = [
   { id: 'todas', label: 'Todas', emTexto: '' },
@@ -62,11 +60,6 @@ const filtrosCompeticao: { id: FiltroCompeticao; label: string; emTexto: string 
   { id: 'europa', label: 'Europa', emTexto: ' nas competições europeias' },
 ];
 
-/** How many upcoming games of your club the list shows before "Ver o calendário todo". */
-const PROXIMOS_DO_CLUBE = 2;
-/** With every club's games (or no club), the next few only: drawing the whole season at once froze the screen. */
-const PROXIMOS_DE_TODOS = 12;
-
 /** Today's date for the header eyebrow ("segunda-feira, 14 de setembro"), always in Lisbon. */
 const formatoHoje = new Intl.DateTimeFormat('pt-PT', {
   timeZone: 'Europe/Lisbon',
@@ -74,27 +67,6 @@ const formatoHoje = new Intl.DateTimeFormat('pt-PT', {
   day: 'numeric',
   month: 'long',
 });
-
-type GrupoDeJogos = {
-  chave: string;
-  titulo: string;
-  jogos: Jogo[];
-};
-
-function agruparPorDia(lista: Jogo[]) {
-  const grupos: GrupoDeJogos[] = [];
-  for (const jogo of lista) {
-    const inicio = new Date(jogo.inicio);
-    const chave = chaveDoDia(inicio);
-    const ultimo = grupos[grupos.length - 1];
-    if (ultimo?.chave === chave) {
-      ultimo.jogos.push(jogo);
-    } else {
-      grupos.push({ chave, titulo: formatarDiaComSemana(inicio), jogos: [jogo] });
-    }
-  }
-  return grupos;
-}
 
 /** Day heading: display font on the left, game count on the right. Muted for finished games. */
 function CabecalhoDia({
@@ -179,8 +151,6 @@ export default function JogosScreen() {
   const [competicao, setCompeticao] = useState<FiltroCompeticao>('todas');
   // Only the user's clubs by default; the rest is one (humorous) tap away.
   const [verConcorrencia, setVerConcorrencia] = useState(false);
-  // The next games of your club by default; the whole season only when asked for.
-  const [verCalendario, setVerCalendario] = useState(false);
   // Once the filters have scrolled away, a bar stays at the top with the leagues and «Esconder jogos» (testers had to
   // scroll all the way back to close a long list).
   const [yDosFiltros, setYDosFiltros] = useState(0);
@@ -236,9 +206,6 @@ export default function JogosScreen() {
   const terminados = filtrados
     .filter((jogo) => estadoDoJogo(jogo, agora) === 'terminado')
     .reverse();
-  const limite = verTodos ? PROXIMOS_DE_TODOS : PROXIMOS_DO_CLUBE;
-  const grupos = agruparPorDia(proximos.slice(0, limite));
-  const clubeFavorito = obterClube(clubeFavoritoId);
   // The earliest game the fan marked as going to (the catalogue is sorted by kick-off).
   const hoje = formatoHoje.format(new Date(agora));
 
@@ -291,38 +258,13 @@ export default function JogosScreen() {
 
     return (
       <>
-        {/* The whole calendar is a month grid (testers preferred it to a long list of days). */}
-        {verCalendario ? (
-          <CalendarioMensal
-            jogos={proximos}
-            agora={agora}
-            renderJogo={renderJogo}
-            vou={(jogoId) => presencas.data?.[jogoId] != null}
-          />
-        ) : (
-          grupos.map((grupo) => (
-            <View key={grupo.chave} style={styles.grupo}>
-              <CabecalhoDia titulo={grupo.titulo} total={grupo.jogos.length} />
-              {grupo.jogos.map(renderJogo)}
-            </View>
-          ))
-        )}
-        {proximos.length > limite ? (
-          <Expansor
-            icon={icons.calendario}
-            titulo={verCalendario ? 'Só os próximos jogos' : 'Calendário todo'}
-            subtitulo={
-              verTodos
-                ? 'Os jogos de todos os clubes até ao fim da época'
-                : clubeFavorito
-                  ? `Os jogos do ${clubeFavorito.nomeCurto} até ao fim da época`
-                  : undefined
-            }
-            contagem={verCalendario ? undefined : proximos.length}
-            aberto={verCalendario}
-            onPress={() => startTransition(() => setVerCalendario((atual) => !atual))}
-          />
-        ) : null}
+        {/* The games are a month calendar (testers preferred it to a list of days): tap a day for its games. */}
+        <CalendarioMensal
+          jogos={proximos}
+          agora={agora}
+          renderJogo={renderJogo}
+          vou={(jogoId) => presencas.data?.[jogoId] != null}
+        />
         {terminados.length > 0 ? (
           <View style={styles.grupo}>
             <CabecalhoDia titulo="Jogos a que foste" total={terminados.length} apagado />
@@ -454,15 +396,8 @@ export default function JogosScreen() {
                 />
               ))}
           </ScrollView>
-          {verCalendario || verConcorrencia ? (
-            <Chip
-              label="Esconder jogos"
-              selected={false}
-              onPress={() => {
-                setVerCalendario(false);
-                setVerConcorrencia(false);
-              }}
-            />
+          {verConcorrencia ? (
+            <Chip label="Esconder jogos" selected={false} onPress={() => setVerConcorrencia(false)} />
           ) : null}
         </Animated.View>
       ) : null}
