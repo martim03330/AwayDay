@@ -33,7 +33,8 @@ export default function TabsLayout() {
   return (
     <View style={styles.flex}>
       {/* The bar keeps its colour at the end of a page too (iOS makes it transparent there by default, which
-          testers took for a bug). */}
+          testers took for a bug). `disableAutomaticContentInsets`: every tab draws its own header under the status
+          bar; with iOS's automatic inset on top the status bar height counted twice (an empty green band). */}
       <NativeTabs
         disableTransparentOnScrollEdge
         backgroundColor={colors.background}
@@ -41,17 +42,17 @@ export default function TabsLayout() {
         labelStyle={{ selected: { color: colors.accentInk } }}>
         <NativeTabs.Trigger name="index" hidden />
 
-        <NativeTabs.Trigger name="jogos">
+        <NativeTabs.Trigger name="jogos" disableAutomaticContentInsets>
           <NativeTabs.Trigger.Label>Jogos</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon sf="soccerball" md="sports_soccer" selectedColor={colors.accent} />
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="malta">
+        <NativeTabs.Trigger name="malta" disableAutomaticContentInsets>
           <NativeTabs.Trigger.Label>Malta</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon sf="person.3" md="groups" selectedColor={colors.accent} />
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="locais">
+        <NativeTabs.Trigger name="locais" disableAutomaticContentInsets>
           <NativeTabs.Trigger.Label>Locais</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon
             sf="mappin.and.ellipse"
@@ -60,12 +61,12 @@ export default function TabsLayout() {
           />
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="ranking">
+        <NativeTabs.Trigger name="ranking" disableAutomaticContentInsets>
           <NativeTabs.Trigger.Label>Ranking</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon sf="trophy" md="emoji_events" selectedColor={colors.accent} />
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="perfil">
+        <NativeTabs.Trigger name="perfil" disableAutomaticContentInsets>
           <NativeTabs.Trigger.Label>Perfil</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon
             sf="person.crop.circle"
