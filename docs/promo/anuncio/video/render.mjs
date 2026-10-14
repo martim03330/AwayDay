@@ -23,7 +23,7 @@ const publico = join(aqui, 'public');
 mkdirSync(publico, { recursive: true });
 cpSync(join(anuncio, 'clipes'), join(publico, 'clipes'), { recursive: true });
 cpSync(join(aqui, '../../../../assets/images/icon.png'), join(publico, 'icone.png'));
-for (const musica of ['musica.wav', 'musica-longo.wav']) {
+for (const musica of ['musica.wav', 'musica-longo.wav', 'musica-boleias.wav']) {
   if (!existsSync(join(publico, musica))) {
     throw new Error(`Falta public/${musica}: gera-a com musica.py (ver docs/promo/LEIA-ME.md).`);
   }
@@ -31,11 +31,16 @@ for (const musica of ['musica.wav', 'musica-longo.wav']) {
 
 const servido = await bundle({ entryPoint: join(aqui, 'src/index.ts'), publicDir: publico });
 // Which videos: `npm run render` does the short ad; `npm run render -- longo` the full tour and the chapter Reels;
-// `npm run render -- reels` only the chapter Reels.
+// `npm run render -- reels` only the chapter Reels; `npm run render -- boleias` the rides ad (9:16 and 4:5).
 const qual = process.argv[2] ?? 'curto';
 const capitulos = Array.from({ length: 11 }, (_, i) => String(i + 1).padStart(2, '0'));
 const lista =
-  qual === 'reels'
+  qual === 'boleias'
+    ? [
+        ['BoleiasReels', 'boleias-reels-9x16.mp4', 'capa-boleias-reels.png'],
+        ['BoleiasFeed', 'boleias-feed-4x5.mp4', 'capa-boleias-feed.png'],
+      ]
+    : qual === 'reels'
     ? capitulos.map((n) => [`Capitulo-${n}`, `reels/capitulo-${n}.mp4`, `reels/capa-capitulo-${n}.png`])
     : qual === 'longo'
     ? [

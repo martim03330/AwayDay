@@ -10,7 +10,8 @@ the same as in src/tempos.ts: change them in both places.
     20     the end card: impact and a big chord ringing out to 23
 
 Usage:  python3 musica.py curto public/musica.wav
-        python3 musica.py longo public/musica-longo.wav   (needs numpy and scipy, outside the app)
+        python3 musica.py longo public/musica-longo.wav
+        python3 musica.py boleias public/musica-boleias.wav   (the rides ad: moments in src/boleias/tempos.ts)   (needs numpy and scipy, outside the app)
 """
 
 import os
@@ -24,11 +25,11 @@ SR = 48000
 BPM = 120
 BEAT = 60 / BPM
 BAR = 4 * BEAT
-# Which piece: `curto` (the 23 s ad) or `longo` (the full tour of the app). Chapter lengths of the long one, in bars
+# Which piece: `curto` (the 23 s ad), `boleias` (the rides ad) or `longo` (the full tour of the app). Chapter lengths of the long one, in bars
 # of 2 s, are the same as CAPITULOS in src/longo/capitulos.ts: change them in both places.
 MODO = sys.argv[1] if len(sys.argv) > 2 else 'curto'
 BARRAS_LONGO = [2, 4, 4, 5, 2, 3, 3, 5, 3, 3, 3, 4, 3]
-LENGTH = 29.0 if MODO == 'curto' else sum(BARRAS_LONGO) * 2.0 + 1.0
+LENGTH = {'curto': 29.0, 'boleias': 32.0}.get(MODO, sum(BARRAS_LONGO) * 2.0 + 1.0)
 N = int(SR * LENGTH)
 rng = np.random.default_rng(7)
 
@@ -199,6 +200,14 @@ def tick():
     return filt(rng.standard_normal(n), 'bandpass', [2000, 5000]) * np.exp(-t / 0.006) * 0.5
 
 
+def crowd(length):
+    """A stadium roar: band-passed noise that swells and fades."""
+    n = int(length * SR)
+    t = np.arange(n) / SR
+    s = filt(rng.standard_normal(n), 'bandpass', [350, 2800], order=2)
+    return s * np.minimum(1, t / 0.25) * np.exp(-np.maximum(0, t - 0.6) / 0.5) * 0.6
+
+
 def app_sound(name):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../../assets/sounds', name)
     with wave.open(path) as w:
@@ -282,6 +291,95 @@ if MODO == 'curto':
     place(music, pad(['A2', 'A3', 'C4', 'E4', 'A4'], LENGTH - FECHO), FECHO, 0.7)
     place(music, stab(['A3', 'C4', 'E4', 'A4'], 0.6), FECHO, 0.6)
     place(fx, app_sound('check-in.wav'), FECHO + 1.1, 0.6)
+
+elif MODO == 'boleias':
+    # Same moments as src/boleias/tempos.ts (seconds).
+    MAPA, CARRO, BOLHA, CARTOES, CAMINHO, FRASES, FECHO = 4.0, 8.0, 11.0, 12.0, 18.0, 24.0, 28.0
+
+    # The question: a pop as the dot becomes a bubble, a tick per typed letter, the reply; a riser into the map.
+    place(music, pad(['A3', 'C4', 'E4'], MAPA), 0, 0.3)
+    place(music, pluck('E5', 0.3), 0.07, 0.45)
+    place(music, pluck('A5', 0.3), 0.53, 0.45)
+    for i in range(16):
+        place(fx, tick(), 1.0 + i * 1.07 / 16, 0.25)
+    place(music, pluck('C6', 0.3), 2.8, 0.45)
+    place(fx, riser(MAPA - 3.0), 3.0, 0.7)
+
+    # DROP on the map; full beat to the kinetic type.
+    place(fx, impact(), MAPA, 1.0)
+    place(music, stab(['A3', 'C4', 'E4', 'A4'], 0.6), MAPA, 0.7)
+    for bar in range(int((FRASES - MAPA) / BAR)):
+        t0 = MAPA + bar * BAR
+        chord, root, arp = CHORDS[bar % 4]
+        for b in range(4):
+            t = t0 + b * BEAT
+            place(drums, K, t, 1.0)
+            sidechain(t)
+            place(drums, HO, t + BEAT / 2, 0.45)
+            place(music, bass(root), t + BEAT / 2, 0.9)
+            place(music, stab(chord), t + BEAT / 2, 0.4)
+            for sub in range(4):
+                place(drums, HC, t + sub * BEAT / 4, 0.22 if sub % 2 else 0.1)
+                if bar >= 2:
+                    place(music, pluck(arp[(b + sub) % 4]), t + sub * BEAT / 4, 0.13)
+        place(drums, CL, t0 + BEAT, 0.75)
+        place(drums, CL, t0 + 3 * BEAT, 0.75)
+
+    # The stadium pops in; the tap on «Pedir lugar» and «Tens lugar».
+    place(music, pluck('E6', 0.3), MAPA + 70 / 30, 0.5)
+    place(fx, swell(), CARRO - 0.6, 1.0)
+    place(fx, impact(), CARRO, 0.3)
+    place(fx, tick(), CARRO + 52 / 30, 0.9)
+    place(fx, app_sound('check-in.wav'), CARRO + 70 / 30, 0.8)
+
+    # The green wipe: the beat keeps going, a clap roll and a swell build into the cut, the cards land on the hit.
+    for i in range(8):
+        place(drums, CL, CARTOES - BEAT + i * BEAT / 8, 0.25 + 0.5 * i / 8)
+    place(fx, swell(1.0), CARTOES - 1.0, 1.2)
+    place(fx, impact(), CARTOES, 0.8)
+    place(drums, K, CARTOES, 1.0)
+    place(music, stab(['A3', 'C4', 'E4', 'A4'], 0.5), CARTOES, 0.6)
+    for i, nm in enumerate(['A5', 'C6', 'E6']):  # three seats filling, on the beat
+        place(music, pluck(nm, 0.3), CARTOES + (30 + i * 15) / 30, 0.5)
+        place(fx, tick(), CARTOES + (30 + i * 15) / 30, 0.6)
+    place(music, pluck('G5', 0.3), CARTOES + 88 / 30, 0.45)  # the meeting point pin
+    for i in range(10):  # the split counting up
+        place(fx, tick(), CARTOES + (124 + i * 3.2) / 30, 0.45)
+    place(fx, app_sound('check-in.wav'), CARTOES + 156 / 30, 0.7)
+
+    # On the road (frames as in Caminho, Boleias.tsx): a pop per passenger reaching the car, a whoosh as it leaves,
+    # a note per message, and the crowd when the stadium lights up.
+    place(fx, swell(), CAMINHO - 0.6, 1.0)
+    place(fx, impact(), CAMINHO, 0.3)
+    for t, nm in zip((36, 48, 60), ('A5', 'C6', 'E6')):
+        place(music, pluck(nm, 0.3), CAMINHO + t / 30, 0.55)
+        place(fx, tick(), CAMINHO + t / 30, 0.6)
+    place(fx, swell(0.8), CAMINHO + 72 / 30 - 0.5, 1.0)
+    for t, nm in zip((86, 108), ('E5', 'G5')):
+        place(music, pluck(nm, 0.3), CAMINHO + t / 30, 0.45)
+    place(fx, impact(), CAMINHO + 132 / 30, 0.7)
+    place(music, stab(['A4', 'C5', 'E5', 'A5'], 0.5), CAMINHO + 132 / 30, 0.5)
+    place(fx, crowd(1.9), CAMINHO + 130 / 30, 0.9)
+
+    # The kinetic type: half-time, a clap per word, the hit on «Vamos juntos.»
+    place(music, pad(CHORDS[2][0], 2.0), FRASES, 0.5)
+    for f in (2, 9, 16, 20):
+        place(drums, CL, FRASES + f / 30, 0.6)
+    place(fx, riser(1.6), FRASES + 0.4, 0.5)
+    place(fx, impact(), FRASES + 2.0, 0.6)
+    place(drums, K, FRASES + 2.0, 1.0)
+    place(music, stab(['C4', 'E4', 'G4', 'C5'], 0.6), FRASES + 2.0, 0.6)
+    place(music, pad(CHORDS[3][0], 2.0), FRASES + 2.0, 0.5)
+    for i in range(8):
+        place(music, pluck(['G4', 'B4', 'D5', 'B4'][i % 4]), FRASES + 2.0 + i * BEAT / 2, 0.2)
+    place(fx, riser(1.4), FECHO - 1.4, 0.45)
+
+    # End card.
+    place(fx, impact(), FECHO, 0.8)
+    place(drums, K, FECHO, 1.0)
+    place(music, pad(['A2', 'A3', 'C4', 'E4', 'A4'], LENGTH - FECHO), FECHO, 0.7)
+    place(music, stab(['A3', 'C4', 'E4', 'A4'], 0.6), FECHO, 0.6)
+    place(fx, app_sound('check-in.wav'), FECHO + 1.3, 0.6)
 
 else:
     starts = np.cumsum([0] + BARRAS_LONGO) * BAR

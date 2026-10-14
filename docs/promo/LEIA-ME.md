@@ -12,6 +12,7 @@ Tudo o que é preciso para as lojas e para as redes sociais. Os textos das ficha
 | Posts simples do Instagram (10) | `instagram/` | 1080 × 1350 |
 | Anúncio para Reels, TikTok, Stories, Shorts | `anuncio/awayday-reels-9x16.mp4` | 1080 × 1920, 29 s |
 | Anúncio para o feed do Instagram e do Facebook | `anuncio/awayday-feed-4x5.mp4` | 1080 × 1350, 29 s |
+| Anúncio das boleias (motion design, sem gravações) | `anuncio/boleias-reels-9x16.mp4`, `anuncio/boleias-feed-4x5.mp4` | 1080 × 1920 · 1080 × 1350, 32 s |
 | Vídeo completo: tudo o que a app faz, em 11 capítulos | `anuncio/awayday-completo-9x16.mp4`, `anuncio/awayday-completo-4x5.mp4` | 89 s |
 | Um Reel por capítulo (11) | `anuncio/reels/` | 1080 × 1920, 12 a 18 s |
 | Capas dos anúncios | `anuncio/capa-reels.png`, `anuncio/capa-feed.png` | |
@@ -68,6 +69,11 @@ parte com o seu próprio `package.json`: não entra na app.
   e depois uma ideia por cena com o telemóvel inteiro: a boleia ao cêntimo (a única cena com dinheiro), o tasco ao
   vivo, seis carimbos a cair no passaporte, a subida no ranking, as missões da semana e a memória da viagem. Sem
   frases de rodapé. A capa (fotograma 0) é o fecho já assente.
+- `src/boleias/` — o anúncio das boleias, em motion design sobre a página limpa (inspirado nos conceitos de produto
+  tipo «Uber»): o ponto que vira pergunta, o mapa a desenhar o caminho até ao estádio, «Boleia?» e o toque em
+  «Pedir lugar», o verde que cobre o ecrã e se abre em íris, os cartões a flutuar (lugares a encher, ponto de encontro, a divisão — o único
+  dinheiro), a malta a ir ter ao carro de pontos diferentes, o carro a seguir até ao estádio que se acende, com a conversa do carro, «Ninguém fica em casa. Vamos juntos.» e o fecho. Tempos em
+  `src/boleias/tempos.ts`, iguais aos do modo `boleias` do `musica.py`.
 - `src/longo/` — o vídeo completo: os capítulos (texto, gravações, recortes e tempos) estão em `capitulos.ts`.
   O telemóvel aparece sempre inteiro; cada plano mostra um ecrã parado ou um toque curto (os momentos parados foram
   encontrados com o `freezedetect` do ffmpeg), sem scroll comprido.
@@ -86,6 +92,8 @@ ffmpeg -i public/musica-bruta.wav -af "afade=t=out:st=27.6:d=1.4,loudnorm=I=-14:
 python3 musica.py longo public/musica-longo-bruta.wav     # e normalizar como acima, com o fade no fim (88 s)
 npm run render                 # o anúncio curto e as capas, em docs/promo/anuncio/
 npm run render -- longo        # o vídeo completo (9:16 e 4:5) e os 11 Reels de capítulo
+python3 musica.py boleias public/musica-boleias-bruta.wav  # e normalizar como acima, com o fade aos 30,6 s
+npm run render -- boleias      # o anúncio das boleias (9:16 e 4:5) e as capas
 npm run estudio                # para ver e afinar no browser
 ```
 
