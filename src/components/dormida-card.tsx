@@ -198,6 +198,15 @@ function CasaProposta({
   const theme = useTheme();
   const livres = casa.sparePlaces - casa.taken;
   const reservada = casa.status === 'reservada';
+  // Two prices only while they differ: once the house is full (or closed) "now" is already the final share.
+  const doisPrecos = !reservada && livres > 0 && casa.shareFullCents !== casa.shareNowCents;
+  const verAnuncio =
+    site && casa.listingUrl ? (
+      <LinkTexto
+        label={`Ver no ${site.nome}`}
+        onPress={() => casa.listingUrl && void Linking.openURL(casa.listingUrl).catch(() => undefined)}
+      />
+    ) : null;
 
   return (
     <View style={[styles.casa, { borderColor: reservada ? theme.success : theme.border }]}>
@@ -205,22 +214,8 @@ function CasaProposta({
         <ThemedText style={styles.nome} numberOfLines={1}>
           {casa.isMine ? 'A tua casa' : `Casa de ${casa.displayName}`}
         </ThemedText>
-        <ThemedText
-          style={styles.preco}>{`${dinheiro.formatar(casa.shareNowCents)} cada`}</ThemedText>
-      </View>
-      {!casa.isMine ? (
-        <ThemedText type="small" themeColor="textMuted">
-          {sinais(casa)}
-        </ThemedText>
-      ) : null}
-
-      <ThemedText type="small" themeColor="textSecondary">
-        {`${dinheiro.formatar(casa.totalCents)} no total · ${plural(casa.nights, 'noite', 'noites')}`}
-      </ThemedText>
-
-      <View style={styles.etiquetas}>
         {reservada ? (
-          <Etiqueta icon={icons.selecionado} label="Casa reservada" tone="positivo" />
+          <Etiqueta icon={icons.selecionado} label="Reservada" tone="positivo" />
         ) : (
           <Etiqueta
             icon={icons.perfil}
@@ -228,49 +223,78 @@ function CasaProposta({
             tone={livres > 0 ? 'positivo' : 'neutro'}
           />
         )}
-        {deOutroGrupo && casa.groupName ? (
+      </View>
+      {!casa.isMine ? (
+        <ThemedText type="small" themeColor="textMuted">
+          {sinais(casa)}
+        </ThemedText>
+      ) : null}
+      <ThemedText type="small" themeColor="textSecondary">
+        {`${dinheiro.formatar(casa.totalCents)} no total · ${plural(casa.nights, 'noite', 'noites')}`}
+      </ThemedText>
+      {deOutroGrupo && casa.groupName ? (
+        <View style={styles.etiquetas}>
           <Etiqueta icon={icons.perfil} label={rotuloDeOutroGrupo('casa', casa.groupName)} tone="info" />
+        </View>
+      ) : null}
+
+      <View style={[styles.precos, { borderColor: theme.border }]}>
+        <View style={styles.flex}>
+          <ThemedText type="small" themeColor="textMuted" style={styles.rotuloPreco}>
+            {doisPrecos ? 'Agora' : 'Fica a cada um'}
+          </ThemedText>
+          <ThemedText style={styles.preco}>{`${dinheiro.formatar(casa.shareNowCents)} cada`}</ThemedText>
+        </View>
+        {doisPrecos ? (
+          <View style={styles.flex}>
+            <ThemedText type="small" themeColor="textMuted" style={styles.rotuloPreco}>
+              Com a casa cheia
+            </ThemedText>
+            <ThemedText style={[styles.preco, { color: theme.accentInk }]}>
+              {`${dinheiro.formatar(casa.shareFullCents)} cada`}
+            </ThemedText>
+          </View>
         ) : null}
       </View>
 
       {casa.note ? <ThemedText>{casa.note}</ThemedText> : null}
-
-      {site && casa.listingUrl ? (
-        <LinkTexto
-          label={`Ver no ${site.nome}`}
-          onPress={() => casa.listingUrl && void Linking.openURL(casa.listingUrl).catch(() => undefined)}
-        />
-      ) : null}
+      {!casa.isMine && verAnuncio ? <View style={styles.acoes}>{verAnuncio}</View> : null}
 
       <PessoasDaCasa casa={casa} aTratar={aTratar} onResponder={onResponder} />
 
       {casa.isMine ? (
-        <View style={styles.acoes}>
-          <LinkTexto
+        <>
+          <Button
             label={reservada ? 'Voltar a juntar gente' : 'Já reservei a casa'}
+            icon={reservada ? icons.perfil : icons.selecionado}
+            variant={reservada ? 'secondary' : 'primary'}
+            disabled={aTratar}
             onPress={() => onReservar(!reservada)}
           />
-          {/* The rest, less used, behind one button. */}
-          <LinkTexto
-            neutro
-            label="Mais opções"
-            onPress={() =>
-              Alert.alert('A tua casa', undefined, [
-                { text: 'Mudar', onPress: onMudar },
-                ...(casa.groupId
-                  ? [
-                      {
-                        text: casa.visibility === 'grupo' ? 'Abrir a toda a gente' : 'Fechar ao grupo',
-                        onPress: () => onAbrir(casa.visibility === 'grupo'),
-                      },
-                    ]
-                  : []),
-                { text: 'Apagar', style: 'destructive' as const, onPress: onApagar },
-                { text: 'Cancelar', style: 'cancel' as const },
-              ])
-            }
-          />
-        </View>
+          <View style={styles.acoes}>
+            {verAnuncio}
+            {/* The rest, less used, behind one button. */}
+            <LinkTexto
+              neutro
+              label="Mais opções"
+              onPress={() =>
+                Alert.alert('A tua casa', undefined, [
+                  { text: 'Mudar', onPress: onMudar },
+                  ...(casa.groupId
+                    ? [
+                        {
+                          text: casa.visibility === 'grupo' ? 'Abrir a toda a gente' : 'Fechar ao grupo',
+                          onPress: () => onAbrir(casa.visibility === 'grupo'),
+                        },
+                      ]
+                    : []),
+                  { text: 'Apagar', style: 'destructive' as const, onPress: onApagar },
+                  { text: 'Cancelar', style: 'cancel' as const },
+                ])
+              }
+            />
+          </View>
+        </>
       ) : casa.myStatus === 'aceite' ? (
         <>
           <Etiqueta icon={icons.selecionado} label="Tens lugar nesta casa" tone="positivo" />
@@ -877,6 +901,18 @@ const styles = StyleSheet.create({
   preco: {
     fontWeight: 800,
     fontVariant: ['tabular-nums'],
+  },
+  precos: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  rotuloPreco: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    fontWeight: 700,
   },
   flex: {
     flex: 1,
