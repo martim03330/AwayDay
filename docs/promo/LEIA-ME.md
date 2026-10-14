@@ -10,6 +10,7 @@ Tudo o que é preciso para as lojas e para as redes sociais. Os textos das ficha
 | **Plano de Instagram (6 semanas, legendas, horários)** | [`instagram/PLANO-INSTAGRAM.md`](instagram/PLANO-INSTAGRAM.md) | |
 | Campanha de Instagram: posts, 7 carrosséis e Stories (48 imagens) | `instagram/campanha/` | 1080 × 1350 · 1080 × 1920 |
 | Posts simples do Instagram (10) | `instagram/` | 1080 × 1350 |
+| **Cartazes de dia de jogo, 4 estilos** (revista, papel, verde, próximo jogo) | `posts/15-` a `posts/18-` | 1080 × 1350 |
 | Anúncio para Reels, TikTok, Stories, Shorts | `anuncio/awayday-reels-9x16.mp4` | 1080 × 1920, 29 s |
 | Anúncio para o feed do Instagram e do Facebook | `anuncio/awayday-feed-4x5.mp4` | 1080 × 1350, 29 s |
 | Vídeo completo: tudo o que a app faz, em 11 capítulos | `anuncio/awayday-completo-9x16.mp4`, `anuncio/awayday-completo-4x5.mp4` | 89 s |
