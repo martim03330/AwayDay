@@ -34,6 +34,10 @@ export const groupMessagesKey = (groupId: string | null) =>
   [GROUPS_KEY, 'messages', groupId] as const;
 /** Tudo o que é de planos fica debaixo desta chave: uma resposta nova refresca cartões, listas e pessoas. */
 export const plansKey = () => [GROUPS_KEY, 'fixture-plans'] as const;
+const groupMembersKey = (groupId: string | null) => [GROUPS_KEY, 'members', groupId] as const;
+const groupFixturePlansKey = (groupId: string | null) => [...plansKey(), 'group', groupId] as const;
+/** How many groups at the top of the Malta get their conversation fetched ahead. */
+const GRUPOS_A_PRECARREGAR = 3;
 
 /** A lista da Malta. Sem Realtime aqui: volta a perguntar de minuto a minuto, e quando se volta ao ecrã. */
 export function useMyGroupInbox(signedIn: boolean) {
@@ -72,7 +76,7 @@ export function useGroupMessages(groupId: string | null) {
 
 export function useGroupMembers(groupId: string | null) {
   return useQuery({
-    queryKey: [GROUPS_KEY, 'members', groupId],
+    queryKey: groupMembersKey(groupId),
     queryFn: groupId ? () => fetchGroupMembers(groupId) : skipToken,
     meta: { persist: false },
   });
@@ -124,11 +128,44 @@ export function usePlan(planId: string | null) {
 /** Os planos de um grupo. */
 export function useGroupFixturePlans(groupId: string | null) {
   return useQuery({
-    queryKey: [...plansKey(), 'group', groupId],
+    queryKey: groupFixturePlansKey(groupId),
     queryFn: groupId ? () => fetchGroupFixturePlans(groupId) : skipToken,
     staleTime: 10 * 1000,
     meta: { persist: false },
   });
+}
+
+/**
+ * What a group's conversation needs on opening (messages, members, plans), asked for in the background for the
+ * groups at the top of the Malta: tapping one opens it full instead of on the skeleton. These are not saved on the
+ * phone, so without this the first open of each group after launching the app waited for the server. Whatever was
+ * fetched in the last minute is not asked for again.
+ */
+export function usePrecarregarGrupos(groupIds: readonly string[]) {
+  const queryClient = useQueryClient();
+  const chave = groupIds.slice(0, GRUPOS_A_PRECARREGAR).join(',');
+
+  useEffect(() => {
+    if (!chave) return;
+    const opcoes = { staleTime: 60 * 1000, meta: { persist: false } };
+    for (const groupId of chave.split(',')) {
+      void queryClient.prefetchQuery({
+        queryKey: groupMessagesKey(groupId),
+        queryFn: () => fetchGroupMessages(groupId),
+        ...opcoes,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: groupMembersKey(groupId),
+        queryFn: () => fetchGroupMembers(groupId),
+        ...opcoes,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: groupFixturePlansKey(groupId),
+        queryFn: () => fetchGroupFixturePlans(groupId),
+        ...opcoes,
+      });
+    }
+  }, [chave, queryClient]);
 }
 
 export function usePlanPeople(planId: string | null) {

@@ -40,6 +40,7 @@ jest.mock('@/features/groups/hooks/useGroups', () => ({
     group: (mockInbox.data ?? []).find((grupo) => grupo.id === groupId) ?? null,
   }),
   useRefreshGroups: () => mockRefrescarGrupos,
+  usePrecarregarGrupos: () => undefined,
   useGroupMessages: () => mockVazio,
   useGroupChannel: () => 1,
   usePlans: () => mockVazio,

@@ -9,7 +9,7 @@ import { useMyGroupInvites, useRefreshFriends } from '@/features/friends/hooks/u
 import type { GroupInboxItem } from '@/features/groups/api';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { EntrarComCodigo } from '@/features/groups/components/EntrarComCodigo';
-import { useMyGroupInbox, useRefreshGroups } from '@/features/groups/hooks/useGroups';
+import { useMyGroupInbox, usePrecarregarGrupos, useRefreshGroups } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
 import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { chaveDoDia, formatarData, formatarHora } from '@/lib/datas';
@@ -74,6 +74,7 @@ export default function MaltaScreen() {
   const [erro, setErro] = useState<string | null>(null);
 
   const grupos = inbox.data ?? [];
+  usePrecarregarGrupos(grupos.map((grupo) => grupo.id));
   // A failed fetch with nothing cached is «no connection», never «no groups».
   const semLigacao = inbox.isError && inbox.data === undefined;
   const porResponder = convites.data ?? [];
