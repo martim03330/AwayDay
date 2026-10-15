@@ -130,6 +130,11 @@ const AVISOS_DA_MALTA: { kind: NotificationKind; titulo: string; descricao: stri
     descricao: 'Quando alguém escreve na conversa de uma boleia em que vais.',
   },
   {
+    kind: 'rides',
+    titulo: 'Boleias',
+    descricao: 'Quando há boleia num plano onde vais e quando alguém entra no teu carro.',
+  },
+  {
     kind: 'group_message',
     titulo: 'Conversa do grupo',
     descricao: 'Quando alguém escreve num grupo teu, ou diz em que tasco está.',

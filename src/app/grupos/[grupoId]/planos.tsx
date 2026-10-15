@@ -12,6 +12,7 @@ import { EmptyState } from '@/ui/empty-state';
 import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SkeletonCard } from '@/ui/skeleton';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 
 /**
  * Os planos do grupo: os jogos para onde alguém convidou a malta (aqui ou noutro grupo que mandou o plano
@@ -23,11 +24,12 @@ export default function PlanosDoGrupoScreen() {
   const queryClient = useQueryClient();
   const { grupoId } = useLocalSearchParams<{ grupoId?: string }>();
   const planos = useGroupFixturePlans(grupoId ?? null);
+  const puxar = usePuxarParaAtualizar(() => planos.refetch());
   const lista = planos.data ?? [];
   const conflitos = usePlanConflicts(lista.map((plano) => plano.id));
 
   return (
-    <Screen refreshing={planos.isRefetching} onRefresh={() => void planos.refetch()}>
+    <Screen refreshing={puxar.refreshing} onRefresh={puxar.onRefresh}>
       {planos.isLoading ? (
         <>
           <SkeletonCard lines={3} />

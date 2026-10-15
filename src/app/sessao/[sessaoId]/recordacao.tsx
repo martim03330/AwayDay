@@ -11,6 +11,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTripMemory, useTripPhotos } from '@/features/trips/hooks/useTrips';
 import { addTripPhoto, removeTripPhoto, type TripPhoto } from '@/features/trips/memories';
 import { useTheme } from '@/hooks/use-theme';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { parteDeCada } from '@/lib/acerto';
 import { plural } from '@/lib/formatos';
 import { obterClube } from '@/mocks/clubes';
@@ -49,6 +50,7 @@ export default function RecordacaoScreen() {
   const { sessaoId } = useLocalSearchParams<{ sessaoId?: string }>();
   const memoria = useTripMemory(sessaoId ?? null);
   const fotos = useTripPhotos(sessaoId ?? null);
+  const puxar = usePuxarParaAtualizar(() => queryClient.invalidateQueries({ queryKey: ['trips'] }));
   const [aberta, setAberta] = useState<TripPhoto | null>(null);
   const [aSubir, setASubir] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
@@ -132,7 +134,7 @@ export default function RecordacaoScreen() {
     ]);
 
   return (
-    <Screen refreshing={fotos.isRefetching} onRefresh={() => void refrescar()}>
+    <Screen refreshing={puxar.refreshing} onRefresh={puxar.onRefresh}>
       <View style={[styles.capa, { backgroundColor: theme.accent }]}>
         {capa ? (
           <Image

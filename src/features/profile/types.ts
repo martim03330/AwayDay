@@ -39,7 +39,9 @@ export type NotificationKind =
   /** Pedidos de amizade e respostas. */
   | 'friends'
   /** Despesas e pagamentos das contas da viagem. */
-  | 'trip_money';
+  | 'trip_money'
+  /** Boleias oferecidas nos planos e quem entra no carro. */
+  | 'rides';
 
 /** Only the kinds the user changed; the others follow the app default. */
 export type NotificationPreferences = Partial<Record<NotificationKind, boolean>>;

@@ -11,6 +11,7 @@ import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { EntrarComCodigo } from '@/features/groups/components/EntrarComCodigo';
 import { useMyGroupInbox, useRefreshGroups } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { chaveDoDia, formatarData, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
@@ -69,6 +70,7 @@ export default function MaltaScreen() {
   const convites = useMyGroupInvites(userId !== null);
   const refrescarGrupos = useRefreshGroups();
   const refrescarAmigos = useRefreshFriends();
+  const puxar = usePuxarParaAtualizar(() => Promise.all([refrescarGrupos(), refrescarAmigos()]));
   const [erro, setErro] = useState<string | null>(null);
 
   const grupos = inbox.data ?? [];
@@ -106,8 +108,8 @@ export default function MaltaScreen() {
         refreshControl={
           userId ? (
             <RefreshControl
-              refreshing={inbox.isRefetching}
-              onRefresh={() => void Promise.all([refrescarGrupos(), refrescarAmigos()])}
+              refreshing={puxar.refreshing}
+              onRefresh={puxar.onRefresh}
               progressViewOffset={insets.top}
               tintColor={theme.accentText}
             />

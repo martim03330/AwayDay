@@ -9,6 +9,7 @@ import { rankingKey, useMyMissions } from '@/features/ranks/hooks/useRanking';
 import { conquistasPorFamilia, nomeDoPatamar, segundaFeiraDe } from '@/features/ranks/labels';
 import type { Mission } from '@/features/ranks/types';
 import { useTheme } from '@/hooks/use-theme';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { chaveDoDia } from '@/lib/datas';
 import { useUserId } from '@/lib/session';
 import { useAppState } from '@/state/app-state';
@@ -84,6 +85,7 @@ export default function MissoesScreen() {
   const { fonte } = useAppState();
   const conta = fonte === 'conta' ? userId : null;
   const missoes = useMyMissions(conta);
+  const puxar = usePuxarParaAtualizar(() => queryClient.invalidateQueries({ queryKey: rankingKey(conta) }));
   const agir = useAcaoDaMissao();
   const [verRegras, setVerRegras] = useState(false);
 
@@ -127,8 +129,8 @@ export default function MissoesScreen() {
 
   return (
     <Screen
-      refreshing={missoes.isRefetching}
-      onRefresh={() => void queryClient.invalidateQueries({ queryKey: rankingKey(conta) })}>
+      refreshing={puxar.refreshing}
+      onRefresh={puxar.onRefresh}>
       {missoes.isLoading ? (
         <>
           <SkeletonCard />

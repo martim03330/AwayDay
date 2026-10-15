@@ -14,6 +14,7 @@ import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
 import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { useAppState } from '@/state/app-state';
 import { Chip } from '@/ui/chip';
 import { EmptyState } from '@/ui/empty-state';
@@ -81,6 +82,12 @@ export default function TabelasScreen() {
   const [periodo, setPeriodo] = useState<LeaderboardPeriod>('epoca');
 
   const pontos = useLeaderboard(conta, ambito, ambito === 'divisao' ? 'epoca' : periodo);
+  const puxar = usePuxarParaAtualizar(() =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: rankingKey(conta) }),
+      queryClient.invalidateQueries({ queryKey: rankingsKey(conta) }),
+    ])
+  );
   const estadios = useQuery({
     queryKey: [...rankingKey(conta), 'stadiums'],
     queryFn: conta ? () => fetchStadiumRanking(50) : skipToken,
@@ -157,13 +164,8 @@ export default function TabelasScreen() {
     sou: false,
   }));
 
-  function refrescar() {
-    void queryClient.invalidateQueries({ queryKey: rankingKey(conta) });
-    void queryClient.invalidateQueries({ queryKey: rankingsKey(conta) });
-  }
-
   return (
-    <Screen refreshing={pontos.isRefetching} onRefresh={refrescar}>
+    <Screen refreshing={puxar.refreshing} onRefresh={puxar.onRefresh}>
       <Segmentado opcoes={TABELAS} valor={tabela} onChange={setTabela} />
 
       {tabela === 'pontos' ? (

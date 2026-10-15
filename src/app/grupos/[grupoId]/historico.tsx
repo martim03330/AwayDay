@@ -7,6 +7,7 @@ import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import type { GroupHistoryTrip } from '@/features/groups/history';
 import { useGroupHistory } from '@/features/groups/hooks/useGroups';
 import { useTheme } from '@/hooks/use-theme';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { plural } from '@/lib/formatos';
 import { obterClube } from '@/mocks/clubes';
 import { obterEstadio } from '@/mocks/estadios';
@@ -44,10 +45,11 @@ export default function HistoricoDoGrupoScreen() {
   const router = useRouter();
   const { grupoId } = useLocalSearchParams<{ grupoId?: string }>();
   const historico = useGroupHistory(grupoId ?? null);
+  const puxar = usePuxarParaAtualizar(() => historico.refetch());
   const lista = historico.data ?? [];
 
   return (
-    <Screen refreshing={historico.isRefetching} onRefresh={() => void historico.refetch()}>
+    <Screen refreshing={puxar.refreshing} onRefresh={puxar.onRefresh}>
       {historico.isLoading ? (
         <>
           <SkeletonCard lines={4} />

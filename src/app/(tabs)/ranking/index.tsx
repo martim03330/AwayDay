@@ -20,6 +20,7 @@ import { segundaFeiraDe } from '@/features/ranks/labels';
 import { seasonLabel } from '@/features/recap/stats';
 import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
 import { useTheme } from '@/hooks/use-theme';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 import { BUILD_DE_CAPTURAS } from '@/lib/capturas';
 import { chaveDoDia } from '@/lib/datas';
 import { formatarNumero } from '@/lib/formatos';
@@ -62,6 +63,7 @@ export default function RankingScreen() {
   const conta = fonte === 'conta' ? userId : null;
 
   const ranking = useMyRanking(conta);
+  const puxar = usePuxarParaAtualizar(() => queryClient.invalidateQueries({ queryKey: rankingKey(conta) }));
   const missoes = useMyMissions(conta);
   const topo = useLeaderboard(conta, 'geral', 'epoca');
 
@@ -83,8 +85,6 @@ export default function RankingScreen() {
       perfilId: linha.profileId,
     }));
 
-  const refrescar = () => queryClient.invalidateQueries({ queryKey: rankingKey(conta) });
-
   return (
     <View style={{ flex: 1 }}>
       <ScrollView
@@ -97,8 +97,8 @@ export default function RankingScreen() {
         refreshControl={
           conta ? (
             <RefreshControl
-              refreshing={ranking.isRefetching}
-              onRefresh={() => void refrescar()}
+              refreshing={puxar.refreshing}
+              onRefresh={puxar.onRefresh}
               progressViewOffset={insets.top}
               tintColor={theme.accentText}
             />

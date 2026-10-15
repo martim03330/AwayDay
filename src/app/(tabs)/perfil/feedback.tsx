@@ -21,6 +21,7 @@ import { icons } from '@/ui/icon';
 import { Screen } from '@/ui/screen';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
+import { usePuxarParaAtualizar } from '@/hooks/use-puxar-para-atualizar';
 
 const AREAS: Record<AreaFeedback, string> = {
   jogos: 'Jogos',
@@ -50,6 +51,7 @@ export default function FeedbackAdminScreen() {
   const eAdmin = perfil.data?.isAdmin === true;
   const [estado, setEstado] = useState<FeedbackStatus>('novo');
   const caixa = useFeedbackInbox(eAdmin, estado);
+  const puxar = usePuxarParaAtualizar(() => caixa.refetch());
   const mudar = useSetFeedbackStatus();
 
   function marcar(item: FeedbackItem, novo: FeedbackStatus) {
@@ -87,7 +89,7 @@ export default function FeedbackAdminScreen() {
   const lista = caixa.data ?? [];
 
   return (
-    <Screen refreshing={caixa.isRefetching} onRefresh={() => void caixa.refetch()}>
+    <Screen refreshing={puxar.refreshing} onRefresh={puxar.onRefresh}>
       {titulo}
       <View style={styles.estados}>
         {ESTADOS.map((opcao) => (
