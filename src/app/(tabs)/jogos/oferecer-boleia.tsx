@@ -777,7 +777,6 @@ export default function OferecerBoleiaScreen() {
         <LinhaGrupo
           leading={<IconCircle name={icons.rota} tone="neutral" />}
           title="Ida e volta"
-          subtitle={idaEVolta ? 'Trazes a malta de volta depois do jogo' : 'Só levas a malta ao jogo'}
           trailing={interruptor(
             idaEVolta,
             (valor) => {
@@ -865,7 +864,7 @@ export default function OferecerBoleiaScreen() {
           accessibilityLabel={`Mais opções: ${resumoOpcoes}. Toca para ${verOpcoes ? 'esconder' : 'mudar'}.`}
           leading={<IconCircle name={icons.definicoes} tone={opcoesComErro ? 'red' : 'neutral'} />}
           title="Mais opções"
-          subtitle={opcoesComErro ? 'Há um valor por corrigir' : resumoOpcoes}
+          subtitle={opcoesComErro ? 'Há um valor por corrigir' : undefined}
           trailing={
             <View style={verOpcoes ? styles.setaAberta : undefined}>
               <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
@@ -950,7 +949,6 @@ export default function OferecerBoleiaScreen() {
                 <LinhaGrupo
                   leading={<IconCircle name={icons.carro} tone="sky" />}
                   title="Aceito pedidos de boleia de volta"
-                  subtitle="Quem ficar sem transporte pede-te lugar; decides na hora"
                   trailing={interruptor(
                     aceitaVolta,
                     setAceitaVolta,

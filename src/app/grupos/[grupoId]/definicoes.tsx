@@ -347,7 +347,7 @@ export default function DefinicoesDoGrupoScreen() {
               subtitle={
                 amigo.tripsTogether > 0
                   ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
-                  : 'Teu amigo'
+                  : undefined
               }
               trailing={
                 <LinkTexto

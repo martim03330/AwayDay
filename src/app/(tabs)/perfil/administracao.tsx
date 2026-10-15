@@ -73,7 +73,6 @@ export default function AdministracaoScreen() {
               <Icon name={icons.tasco} size={20} color={theme.accentInk} />
             }
             title="Fotos de tascos por aprovar"
-            subtitle="Enviadas pelos adeptos"
             trailing={chevron}
           />
           <LinhaGrupo
@@ -84,7 +83,6 @@ export default function AdministracaoScreen() {
               <Icon name={icons.aviso} size={20} color={theme.accentInk} />
             }
             title="Denúncias por rever"
-            subtitle="Mensagens, pessoas e grupos denunciados"
             trailing={chevron}
           />
           <LinhaGrupo
@@ -94,7 +92,6 @@ export default function AdministracaoScreen() {
               <Icon name={icons.lista} size={20} color={theme.accentInk} />
             }
             title="Erros e ideias recebidos"
-            subtitle="O que a malta reportou em Ajudar a melhorar"
             trailing={chevron}
           />
         </Card>

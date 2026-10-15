@@ -548,11 +548,7 @@ export default function BoleiaScreen() {
               accessibilityLabel={`Conversa do carro${conversa && conversa.unread > 0 ? `, ${plural(conversa.unread, 'mensagem nova', 'mensagens novas')}` : ''}. Toca para abrir.`}
               leading={<IconCircle name={icons.conversa} />}
               title="Conversa do carro"
-              subtitle={
-                conversa?.lastBody
-                  ? `${conversa.lastName ?? 'Alguém'}: ${conversa.lastBody}`
-                  : 'Combinem a hora certa e o sítio de encontro'
-              }
+              subtitle={conversa?.lastBody ? `${conversa.lastName ?? 'Alguém'}: ${conversa.lastBody}` : undefined}
               trailing={
                 <View style={styles.trailing}>
                   {conversa && conversa.unread > 0 ? (
@@ -598,7 +594,6 @@ export default function BoleiaScreen() {
                     accessibilityLabel={`Convidar amigos, ${plural(porConvidar.length, 'amigo', 'amigos')}. Toca para ${verConvidar ? 'esconder' : 'ver'}.`}
                     leading={<IconCircle name={icons.perfil} tone="yellow" />}
                     title="Convidar amigos"
-                    subtitle="Entram sem pedir: o lugar fica deles quando aceitarem"
                     trailing={<Seta aberta={verConvidar} />}
                     separador={separador || verConvidar}
                   />
@@ -614,7 +609,7 @@ export default function BoleiaScreen() {
                     subtitle={
                       amigo.tripsTogether > 0
                         ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
-                        : 'Ainda sem viagens juntos'
+                        : undefined
                     }
                     trailing={
                       <LinkTexto
@@ -941,7 +936,6 @@ export default function BoleiaScreen() {
           accessibilityLabel={`Ponto de encontro: ${boleia.originName}. Toca para abrir no mapa.`}
           leading={<IconCircle name={icons.pontoEncontro} />}
           title="Ponto de encontro"
-          subtitle="Abrir no mapa"
           trailing={<Seta />}
           separador
         />
@@ -954,11 +948,10 @@ export default function BoleiaScreen() {
             }
             accessibilityLabel={`O carro fica no ${boleia.parking.name}.${boleia.parking.location ? ' Toca para ver como chegar.' : ''}`}
             leading={<IconCircle name={icons.carro} tone="sky" />}
-            title={boleia.parking.name}
-            subtitle={
+            title={
               minutosDoParque !== null
-                ? `${minutosDoParque} min a pé até ao estádio · parque escolhido`
-                : 'Parque verificado'
+                ? `${boleia.parking.name} · ${minutosDoParque} min a pé`
+                : boleia.parking.name
             }
             trailing={boleia.parking.location ? <Seta /> : undefined}
             separador
@@ -968,8 +961,7 @@ export default function BoleiaScreen() {
           onPress={destinoDoCaminho ? verCaminho : undefined}
           accessibilityLabel={`${OPCOES[boleia.routeOption]}, ${boleia.roundTrip ? 'ida e volta' : 'só ida'}. Toca para ver o caminho no mapa.`}
           leading={<IconCircle name={icons.rota} tone="neutral" />}
-          title={`${OPCOES[boleia.routeOption]} · ${boleia.roundTrip ? 'ida e volta' : 'só ida'}`}
-          subtitle={`${formatarDistancia(boleia.distanceM)} · ${duracao(boleia.durationS)} · ver o caminho`}
+          title={`${formatarDistancia(boleia.distanceM)} · ${duracao(boleia.durationS)} · ${boleia.roundTrip ? 'ida e volta' : 'só ida'}`}
           trailing={destinoDoCaminho ? <Seta /> : undefined}
           separador
         />
@@ -978,7 +970,6 @@ export default function BoleiaScreen() {
           accessibilityLabel={`Custo total ${dinheiro.dito(boleia.totalCents)}. Toca para ${verCusto ? 'esconder' : 'ver'} as contas.`}
           leading={<IconCircle name={icons.preco} tone="yellow" />}
           title={`Total ${dinheiro.formatar(boleia.totalCents)}`}
-          subtitle="A dividir por todos"
           trailing={<Seta aberta={verCusto} />}
           separador={depoisDoCusto || verCusto}
         />
@@ -1008,12 +999,12 @@ export default function BoleiaScreen() {
         {cancelada ? null : (
           <LinhaGrupo
             leading={<IconCircle name={icons.horario} tone="neutral" />}
-            title={`Pedidos fecham às ${formatarHora(prazos.pedidosFecham)}`}
-            subtitle={
-              fase === 'fechada' && participante
-                ? 'Já fecharam. Se não puderes ir, regista um imprevisto.'
-                : `Confirmar quem apareceu até ${formatarData(prazos.confirmarAte)}`
+            title={
+              fase === 'fechada'
+                ? 'Pedidos fechados'
+                : `Pedidos fecham às ${formatarHora(prazos.pedidosFecham)}`
             }
+            subtitle={`Confirmar quem apareceu até ${formatarData(prazos.confirmarAte)}`}
             separador={boleia.isMine && boleia.roundTrip}
           />
         )}
@@ -1021,11 +1012,6 @@ export default function BoleiaScreen() {
           <LinhaGrupo
             leading={<IconCircle name={icons.carro} tone="neutral" />}
             title="Lugares na volta"
-            subtitle={
-              boleia.acceptsReturnRequests
-                ? 'Aceitas quem ficou sem transporte'
-                : 'Abre-os a quem ficar sem transporte'
-            }
             trailing={
               <Switch
                 value={boleia.acceptsReturnRequests}

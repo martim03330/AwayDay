@@ -300,7 +300,7 @@ export default function PlanoScreen() {
             subtitle={
               plano.ride
                 ? plural(plano.ride.seatsTaken, 'pessoa foi no carro', 'pessoas foram no carro')
-                : 'Cada um foi como quis.'
+                : undefined
             }
             onPress={
               plano.ride

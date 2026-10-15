@@ -248,7 +248,7 @@ export default function SessaoScreen() {
           accessibilityLabel="Ver o jogo"
           leading={<IconCircle name={icons.jogos} />}
           title={jogo && !jogo.horaConfirmada ? 'Hora por definir' : formatarDiaEHora(inicio)}
-          subtitle={estadio ? `Apito inicial · ${estadio.nome}` : 'Apito inicial'}
+          subtitle={estadio?.nome}
           trailing={chevron}
         />
         {sessao.groupId ? (
@@ -260,7 +260,6 @@ export default function SessaoScreen() {
             accessibilityLabel="Abrir a conversa do grupo"
             leading={<IconCircle name={icons.conversa} tone="neutral" />}
             title="Conversa do grupo"
-            subtitle="Combinem onde e a que horas se encontram"
             trailing={chevron}
           />
         ) : null}

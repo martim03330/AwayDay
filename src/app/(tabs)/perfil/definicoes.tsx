@@ -121,7 +121,6 @@ export default function DefinicoesScreen() {
           separador
           leading={<Icon name={icons.som} size={20} color={theme.accentInk} />}
           title="Sons"
-          subtitle="Um som curto no check-in e quando ganhas um carimbo."
           trailing={
             <Switch
               value={sonsLigados}
@@ -139,7 +138,6 @@ export default function DefinicoesScreen() {
           accessibilityLabel="Notificações: boleias, malta e dicas. Toca para escolher."
           leading={<Icon name={icons.notificacoes} size={20} color={theme.accentInk} />}
           title="Notificações"
-          subtitle="Boleias, malta e dicas para dias de jogo"
           trailing={chevron}
         />
         <LinhaGrupo
@@ -157,7 +155,6 @@ export default function DefinicoesScreen() {
           accessibilityLabel="Rever a introdução"
           leading={<Icon name={icons.recomecar} size={20} color={theme.accentInk} />}
           title="Rever a introdução"
-          subtitle="As boas-vindas e os passos do início, outra vez."
           trailing={chevron}
           separador
         />
@@ -167,7 +164,6 @@ export default function DefinicoesScreen() {
           accessibilityLabel="Ver a apresentação da app"
           leading={<Icon name={icons.introducao} size={20} color={theme.accentInk} />}
           title="Ver a apresentação"
-          subtitle="O que há em cada separador, em cinco passos."
           trailing={chevron}
         />
       </Card>
@@ -179,7 +175,6 @@ export default function DefinicoesScreen() {
           accessibilityLabel="Reportar um erro ou sugerir uma melhoria"
           leading={<Icon name={icons.aviso} size={20} color={theme.accentInk} />}
           title="Reportar um erro ou dar uma ideia"
-          subtitle="Chega-nos com o modelo do telemóvel e a versão da app. Nada mais."
           trailing={chevron}
         />
       </Card>
@@ -206,7 +201,6 @@ export default function DefinicoesScreen() {
             separador
             leading={<Icon name={icons.password} size={20} color={theme.accentInk} />}
             title={`Bloquear com ${metodo.nome}`}
-            subtitle="Ao abrir a app e ao voltar a ela passado mais de um minuto."
             trailing={
               <Switch
                 value={bloqueioAoAbrir}
@@ -294,7 +288,6 @@ export default function DefinicoesScreen() {
               accessibilityLabel="Pessoas bloqueadas. Toca para abrir."
               leading={<Icon name={icons.silencio} size={20} color={theme.accentInk} />}
               title="Pessoas bloqueadas"
-              subtitle="Não vês o que escrevem e não te podem convidar"
               trailing={chevron}
             />
           </>
@@ -321,7 +314,6 @@ export default function DefinicoesScreen() {
           onPress={() => router.push({ pathname: '/legal/[documento]', params: { documento: 'sobre' } })}
           leading={<Icon name={icons.email} size={20} color={theme.accentInk} />}
           title="Sobre e contactos"
-          subtitle="Quem faz a app, fontes dos dados e das imagens"
           trailing={chevron}
         />
       </Card>
@@ -333,11 +325,6 @@ export default function DefinicoesScreen() {
             <LinhaGrupo
               leading={<Icon name={icons.demo} size={20} color={theme.accentInk} />}
               title="Modo demo"
-              subtitle={
-                modoDemo
-                  ? 'Dados de exemplo e hora simulada. Nada vai para a tua conta.'
-                  : 'Mostra a app com dados de exemplo, sem mexer nos teus.'
-              }
               trailing={
                 <Switch
                   value={modoDemo}
