@@ -253,17 +253,34 @@ export default function AmigosScreen() {
           <SectionHeader title="Pedidos por responder" contagem={enviados.length} />
           {enviados.map((pedido) => (
             <Card key={pedido.profileId} style={styles.cartao}>
-              <Pressable
-                onPress={() => abrirPerfil(pedido.profileId)}
-                accessibilityRole="button"
-                accessibilityLabel={`Ver o perfil de ${pedido.displayName}, ${sinais(pedido)}`}>
-                <ThemedText style={styles.nome}>{pedido.displayName}</ThemedText>
-              </Pressable>
-              <LinkTexto
-                perigo
-                label="Desistir do pedido"
-                onPress={() => void tratar(() => removeFriend(pedido.profileId))}
-              />
+              <View style={styles.linha}>
+                <Pressable
+                  style={styles.flex}
+                  onPress={() => abrirPerfil(pedido.profileId)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver o perfil de ${pedido.displayName}, ${sinais(pedido)}`}>
+                  <ThemedText style={styles.nome} numberOfLines={1}>
+                    {pedido.displayName}
+                  </ThemedText>
+                </Pressable>
+                <Etiqueta icon={icons.horario} label="Enviado" tone="neutro" />
+                {/* Like a friend's row: taking the request back sits behind the same discreet «⋯». */}
+                <BotaoMais
+                  nome={pedido.displayName}
+                  onPress={() =>
+                    moderacao.abrirPessoa({
+                      pessoa: { profileId: pedido.profileId, nome: pedido.displayName },
+                      extras: [
+                        {
+                          label: 'Desistir do pedido',
+                          destrutiva: true,
+                          onPress: () => void tratar(() => removeFriend(pedido.profileId)),
+                        },
+                      ],
+                    })
+                  }
+                />
+              </View>
             </Card>
           ))}
         </>
