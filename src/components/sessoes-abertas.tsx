@@ -4,9 +4,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { nomeDoJogo } from '@/features/groups/components/CartaoDoPlano';
 import { useMyOpenTripSessions } from '@/features/trips/hooks/useTrips';
+import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
+import { DURACAO_JOGO_MINUTOS } from '@/lib/jogos';
 import { useUserId } from '@/lib/session';
 import { Icon, icons } from '@/ui/icon';
 import { ThemedText } from '@/ui/themed-text';
@@ -21,8 +23,9 @@ function saldo(centimos: number, dinheiro: FormatarDinheiro) {
 }
 
 /**
- * As sessões da viagem abertas, no topo da página dos Jogos: da véspera do jogo até uns dias depois. Um toque abre a
- * sessão — quem vai, a hora do carro, quem deu a boleia e as despesas.
+ * As sessões da viagem abertas, no topo da página dos Jogos: da véspera do jogo até ao fim dele e, depois, só enquanto
+ * houver contas por acertar (a sessão continua aberta três dias, mas quem está em dia já não tem nada a fazer ali).
+ * Um toque abre a sessão — quem vai, a hora do carro, quem deu a boleia e as despesas.
  */
 export function SessoesAbertas() {
   const dinheiro = useFormatarDinheiro();
@@ -30,12 +33,18 @@ export function SessoesAbertas() {
   const theme = useTheme();
   const userId = useUserId();
   const sessoes = useMyOpenTripSessions(userId !== null);
+  const agora = useNow(60 * 1000);
+  const visiveis = (sessoes.data ?? []).filter(
+    (sessao) =>
+      sessao.myBalanceCents !== 0 ||
+      agora < Date.parse(sessao.kickoffAt) + DURACAO_JOGO_MINUTOS * 60 * 1000
+  );
 
-  if (!userId || (sessoes.data ?? []).length === 0) return null;
+  if (!userId || visiveis.length === 0) return null;
 
   return (
     <>
-      {(sessoes.data ?? []).map((sessao) => (
+      {visiveis.map((sessao) => (
         <Pressable
           key={sessao.sessionId}
           onPress={() =>
@@ -44,7 +53,7 @@ export function SessoesAbertas() {
           accessibilityRole="button"
           accessibilityLabel={dinheiro.leitor(
             `Viagem para ${nomeDoJogo(sessao.fixtureId)}, com ${plural(sessao.people, 'pessoa', 'pessoas')}.${
-              sessao.ride
+              sessao.ride && Date.parse(sessao.ride.departureAt) > agora
                 ? ` ${sessao.ride.iDrive ? 'Sais tu' : `Sais com ${sessao.ride.driverName}`} ${formatarDiaEHora(new Date(sessao.ride.departureAt)).toLowerCase()}.`
                 : ''
             } ${dinheiro.formatar(sessao.totalCents)} gastos. ${saldo(sessao.myBalanceCents, dinheiro)}. Toca para abrir.`
