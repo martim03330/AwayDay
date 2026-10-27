@@ -43,14 +43,9 @@ export function AvaliacaoJogo({ jogo, agora, avaliacao, podeAvaliar, onAvaliar }
       <Card style={styles.card}>
         <View style={styles.linhaTile}>
           <TileEstrela />
-          <View style={styles.textos}>
-            <ThemedText type="section" style={styles.pergunta}>
-              Como foi o jogo?
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Dá nota ao estádio, ao ambiente e aos acessos.
-            </ThemedText>
-          </View>
+          <ThemedText type="section" style={[styles.textos, styles.pergunta]}>
+            Como foi o jogo?
+          </ThemedText>
         </View>
         <Button
           label="Avaliar experiência"

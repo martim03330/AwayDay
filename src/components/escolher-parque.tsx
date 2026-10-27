@@ -21,6 +21,7 @@ import { ThemedText } from '@/ui/themed-text';
 
 function Opcao({
   nome,
+  valor,
   detalhe,
   nota,
   cor,
@@ -28,8 +29,11 @@ function Opcao({
   onPress,
 }: {
   nome: string;
-  detalhe: string;
-  /** When to be there for it to still have a space. */
+  /** The one number on screen, at the right: «8 min a pé». */
+  valor?: string;
+  /** How easy it is to park there, read by VoiceOver (on screen it is the dot's colour). */
+  detalhe?: string;
+  /** When to be there for it to still have a space (VoiceOver only). */
   nota?: string;
   cor: string | null;
   escolhido: boolean;
@@ -41,7 +45,7 @@ function Opcao({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: escolhido }}
-      accessibilityLabel={[nome, detalhe, nota].filter(Boolean).join('. ')}
+      accessibilityLabel={[nome, valor, detalhe, nota].filter(Boolean).join('. ')}
       style={({ pressed }) => [
         styles.opcao,
         {
@@ -55,17 +59,14 @@ function Opcao({
       ) : (
         <View style={styles.bola} />
       )}
-      <View style={styles.texto}>
-        <ThemedText type="smallBold">{nome}</ThemedText>
+      <ThemedText type="smallBold" style={styles.texto}>
+        {nome}
+      </ThemedText>
+      {valor ? (
         <ThemedText type="small" themeColor="textSecondary">
-          {detalhe}
+          {valor}
         </ThemedText>
-        {nota ? (
-          <ThemedText type="small" style={{ color: theme.accentInk }}>
-            {nota}
-          </ThemedText>
-        ) : null}
-      </View>
+      ) : null}
       {escolhido ? <Icon name={icons.selecionado} size={16} color={theme.accentInk} /> : null}
     </Pressable>
   );
@@ -103,7 +104,6 @@ export function EscolherParque({
       <View style={styles.lista}>
         <Opcao
           nome="Ainda não sei"
-          detalhe="Decides no caminho"
           cor={null}
           escolhido={escolhido === null}
           onPress={() => onEscolher(null)}
@@ -121,12 +121,10 @@ export function EscolherParque({
             <Opcao
               key={parque.id}
               nome={parque.name}
-              // Just what decides it: how far, and whether it fills (testers found the reasons too much here).
-              detalhe={[minutos !== null ? `${minutos} min a pé` : null, ROTULO_FACILIDADE[nivel]]
-                .filter(Boolean)
-                .join(' · ')}
-              // Only on the chosen one: the list stays one line per car park.
-              nota={escolhido === parque.id ? `Chega até às ${formatarHora(chegada)}` : undefined}
+              // How far on screen; whether it fills is the dot's colour (and the words, for VoiceOver).
+              valor={minutos !== null ? `${minutos} min a pé` : undefined}
+              detalhe={ROTULO_FACILIDADE[nivel]}
+              nota={`Chega até às ${formatarHora(chegada)}`}
               cor={corFacilidade(theme, nivel)}
               escolhido={escolhido === parque.id}
               onPress={() => onEscolher(parque.id)}

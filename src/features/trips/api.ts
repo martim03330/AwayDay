@@ -514,6 +514,8 @@ export type TripSettlement = {
   /** Se o posso apagar: estive nele ou fui eu que o lancei. */
   mine: boolean;
   createdOn: string;
+  /** Até quando eu, que recebi, ainda posso desfazer a confirmação (10 minutos). `null` se não for eu a receber. */
+  receiverUndoUntil: string | null;
 };
 
 export async function fetchTripSettlements(sessionId: string): Promise<TripSettlement[]> {
@@ -530,6 +532,7 @@ export async function fetchTripSettlements(sessionId: string): Promise<TripSettl
     iReceive: row.i_receive === true,
     mine: row.mine === true,
     createdOn: row.created_on ?? '',
+    receiverUndoUntil: row.receiver_undo_until,
   }));
 }
 

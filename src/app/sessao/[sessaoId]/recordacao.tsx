@@ -211,7 +211,7 @@ export default function RecordacaoScreen() {
             accessibilityLabel={`Ver as contas: ${plural(viagem.expenses, 'despesa', 'despesas')}`}
             leading={<IconCircle name={icons.preco} />}
             title="Ver as contas"
-            subtitle={plural(viagem.expenses, 'despesa', 'despesas')}
+            valor={String(viagem.expenses)}
             trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
           />
         ) : null}

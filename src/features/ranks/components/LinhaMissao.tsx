@@ -51,16 +51,17 @@ export function LinhaMissao({
       <View style={[stylesLinha.azulejo, { backgroundColor: cores.fundo }]}>
         <Icon name={feita ? icons.checkInFeito : iconeDaMissao(missao.icon)} size={20} color={cores.tinta} />
       </View>
-      <View style={stylesLinha.corpo}>
-        <ThemedText type="smallBold" style={feita ? { color: theme.textSecondary } : undefined} numberOfLines={2}>
-          {missao.title}
+      <ThemedText
+        type="smallBold"
+        style={[stylesLinha.corpo, feita ? { color: theme.textSecondary } : undefined]}
+        numberOfLines={2}>
+        {missao.title}
+      </ThemedText>
+      {!feita && missao.target > 1 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {`${missao.progress}/${missao.target}`}
         </ThemedText>
-        {!feita && missao.target > 1 ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            {`${missao.progress} de ${missao.target}`}
-          </ThemedText>
-        ) : null}
-      </View>
+      ) : null}
       <ThemedText type="smallBold" themeColor={feita ? 'textMuted' : 'accentInk'}>
         {`+${missao.xp}`}
       </ThemedText>

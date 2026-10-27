@@ -56,14 +56,9 @@ export function GruposDoPlano({ grupos, podeGerir, aTratar, onMandar, onRetirar 
               }
               style={({ pressed }) => [styles.linha, pressed && styles.premido]}>
               <IconCircle name={icons.malta} tone={grupo.aberto ? 'green' : 'neutral'} />
-              <View style={styles.corpo}>
-                <ThemedText style={styles.nome} numberOfLines={1}>
-                  {grupo.name}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {grupo.aberto ? 'Convidados: podem pedir lugar no carro e na casa' : 'Ainda não foram convidados'}
-                </ThemedText>
-              </View>
+              <ThemedText style={[styles.corpo, styles.nome]} numberOfLines={1}>
+                {grupo.name}
+              </ThemedText>
               {grupo.aberto ? (
                 <View style={styles.estado}>
                   <View style={[styles.pilula, { backgroundColor: theme.successBackground }]}>

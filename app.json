@@ -70,7 +70,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "O AwayDay usa a tua localização no momento em que fazes check-in num tasco, carimbas o estádio, escolhes o ponto de partida de uma boleia ou procuras a casa de banho mais perto. A tua posição não fica guardada.",
+          "locationWhenInUsePermission": "O AwayDay usa a tua localização no momento em que fazes check-in num tasco, carimbas o estádio, escolhes o ponto de partida de uma boleia, procuras a casa de banho mais perto ou vês onde estás no mapa. A tua posição não fica guardada.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false,
           "motionUsagePermission": "O AwayDay não usa os sensores de movimento. Este texto existe porque a biblioteca de localização inclui essa função; o AwayDay nunca a ativa."

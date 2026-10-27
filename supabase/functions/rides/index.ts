@@ -21,9 +21,19 @@ import {
   type TripCost,
 } from '../_shared/ride-cost.ts';
 import { chooseRoutes, type Candidate, type RouteOption } from '../_shared/route-choice.ts';
-import { routeFromCache, routesFromValhalla, type Route } from '../_shared/route-parse.ts';
+import {
+  edgesFromTraceAttributes,
+  legShapesOf,
+  routeFromCache,
+  routesFromValhalla,
+  tripNeedsEdges,
+  tripsOfValhalla,
+  type Route,
+  type RouteEdge,
+} from '../_shared/route-parse.ts';
 
 const ROUTER = 'https://valhalla1.openstreetmap.de/route';
+const ROUTER_EDGES = 'https://valhalla1.openstreetmap.de/trace_attributes';
 const GEOCODER = 'https://nominatim.openstreetmap.org/search';
 /** Fallback geocoder (Photon, by Komoot, on OpenStreetMap data). */
 const FALLBACK_GEOCODER = 'https://photon.komoot.io/api/';
@@ -62,7 +72,8 @@ const OPTIONS: readonly RouteOption[] = ['rapida', 'equilibrio', 'sem_portagens'
  */
 const TOLL_LEVELS = [1, 0.4, 0.3, 0] as const;
 /** The cache rows of these routes start with this, so rows from before the alternatives are not read as complete. */
-const CACHE_VERSION = 'v4';
+// v5: long maneuvers named by their edges (Lisboa → Porto is A1, not one «2ª Circular» of 288 km).
+const CACHE_VERSION = 'v5';
 
 type Point = { latitude: number; longitude: number };
 
@@ -108,8 +119,43 @@ function straightLineM(from: Point, to: Point) {
   return 2 * 6_371_000 * Math.asin(Math.sqrt(a));
 }
 
-/** The router's routes at one level of toll avoidance: the main one and up to one alternative. Empty on failure. */
-async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<Route[]> {
+/**
+ * The edges of one leg's line, from Valhalla's `/trace_attributes` walking the exact line it gave: each road's real
+ * name, which a long maneuver loses. `null` on failure.
+ */
+async function edgesOfLeg(shape: string): Promise<RouteEdge[] | null> {
+  try {
+    const response = await fetch(ROUTER_EDGES, {
+      method: 'POST',
+      headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        encoded_polyline: shape,
+        shape_match: 'edge_walk',
+        costing: 'auto',
+        filters: {
+          attributes: ['edge.names', 'edge.length', 'edge.toll', 'edge.begin_shape_index'],
+          action: 'include',
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) return null;
+    return edgesFromTraceAttributes(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The router's routes at one level of toll avoidance: the main one and up to one alternative. Empty on failure.
+ * `complete` is false when the edges of a trip that needed them could not be had: the routes are still good (named
+ * by their maneuvers only), but are not cached, so the next quote asks again.
+ */
+async function routeValhalla(
+  from: Point,
+  to: Point,
+  useTolls: number
+): Promise<{ routes: Route[]; complete: boolean }> {
   try {
     const response = await fetch(ROUTER, {
       method: 'POST',
@@ -126,10 +172,20 @@ async function routeValhalla(from: Point, to: Point, useTolls: number): Promise<
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) return [];
-    return routesFromValhalla(await response.json());
+    if (!response.ok) return { routes: [], complete: false };
+    const answer: unknown = await response.json();
+    let complete = true;
+    const edgesByTrip = await Promise.all(
+      tripsOfValhalla(answer).map(async (trip) => {
+        if (!tripNeedsEdges(trip)) return [];
+        const legs = await Promise.all(legShapesOf(trip).map((shape) => (shape ? edgesOfLeg(shape) : null)));
+        if (legs.some((edges) => edges === null)) complete = false;
+        return legs.map((edges) => edges ?? []);
+      })
+    );
+    return { routes: routesFromValhalla(answer, edgesByTrip), complete };
   } catch {
-    return [];
+    return { routes: [], complete: false };
   }
 }
 
@@ -156,8 +212,8 @@ async function routesAt(admin: SupabaseClient, from: Point, to: Point, useTolls:
   }
   // Without the key: it holds the coordinates of the meeting point and the stadium.
   if (rows.length > 0) console.error('rides: discarding incomplete or malformed route_cache rows');
-  const found = await routeValhalla(from, to, useTolls);
-  if (found.length > 0) {
+  const { routes: found, complete } = await routeValhalla(from, to, useTolls);
+  if (found.length > 0 && complete) {
     const createdAt = new Date().toISOString();
     await admin.from('route_cache').upsert(
       found.map((one, index) => ({

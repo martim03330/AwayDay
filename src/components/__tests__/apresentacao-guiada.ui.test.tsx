@@ -25,4 +25,11 @@ describe('ApresentacaoGuiada', () => {
     fireEvent.press(screen.getByLabelText('Saltar a apresentação'));
     expect(onFim).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps the text and the buttons as separate accessible elements', () => {
+    render(<ApresentacaoGuiada onFim={jest.fn()} />);
+    expect(screen.getByLabelText(/^Jogos\. .*Passo 1 de 5\.$/)).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Seguinte' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Saltar a apresentação' })).toBeOnTheScreen();
+  });
 });

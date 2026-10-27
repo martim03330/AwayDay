@@ -135,19 +135,26 @@ export function ApresentacaoGuiada({ onFim }: { onFim: () => void }) {
       </Pressable>
 
       <View style={[styles.caixaLugar, { bottom: barra.baixo + barra.altura + 14 }]}>
-        <View
-          style={[styles.caixa, CardShadow, { backgroundColor: theme.backgroundElement }]}
-          accessible
-          accessibilityLabel={`${passo.titulo}. ${passo.texto}. Passo ${indice + 1} de ${PASSOS.length}.`}>
-          <ThemedText type="eyebrow" themeColor="accentInk">
-            {`${indice + 1} de ${PASSOS.length}`}
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.titulo}>
-            {passo.titulo}
-          </ThemedText>
-          <ThemedText themeColor="textSecondary">{passo.texto}</ThemedText>
+        {/* The box itself is not one accessible element: VoiceOver reads the text, then reaches the button on its own. */}
+        <View style={[styles.caixa, CardShadow, { backgroundColor: theme.backgroundElement }]}>
+          <View
+            style={styles.textos}
+            accessible
+            accessibilityLabel={`${passo.titulo}. ${passo.texto}. Passo ${indice + 1} de ${PASSOS.length}.`}>
+            <ThemedText type="eyebrow" themeColor="accentInk">
+              {`${indice + 1} de ${PASSOS.length}`}
+            </ThemedText>
+            <ThemedText type="subtitle" style={styles.titulo}>
+              {passo.titulo}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary">{passo.texto}</ThemedText>
+          </View>
           <View style={styles.rodape}>
-            <View style={styles.pontos}>
+            {/* The dots repeat «Passo x de y», already in the text above. */}
+            <View
+              style={styles.pontos}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants">
               {PASSOS.map((outro, i) => (
                 <View
                   key={outro.titulo}
@@ -193,6 +200,9 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     borderRadius: Radius.card,
     borderCurve: 'continuous',
+  },
+  textos: {
+    gap: Spacing.one,
   },
   titulo: {
     fontSize: 28,

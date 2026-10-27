@@ -9,8 +9,6 @@ import { ThemedText } from '@/ui/themed-text';
 
 type ExpansorProps = {
   titulo: string;
-  /** A short line under the title (e.g. «Fecham ruas e parques»). */
-  subtitulo?: string;
   icon?: IconName;
   /** How many things are inside, in a pill on the right. */
   contagem?: number;
@@ -27,7 +25,6 @@ type ExpansorProps = {
  */
 export function Expansor({
   titulo,
-  subtitulo,
   icon,
   contagem,
   aberto,
@@ -49,7 +46,7 @@ export function Expansor({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ expanded: aberto }}
-      accessibilityLabel={[titulo, subtitulo, contagem !== undefined ? String(contagem) : null]
+      accessibilityLabel={[titulo, contagem !== undefined ? String(contagem) : null]
         .filter(Boolean)
         .join(', ')}
       style={({ pressed }) => [styles.faixa, { backgroundColor: fundo }, pressed && styles.premido]}>
@@ -58,19 +55,11 @@ export function Expansor({
           <Icon name={icon} size={18} color={tinta} />
         </View>
       ) : null}
-      <View style={styles.texto}>
-        <ThemedText style={[styles.titulo, aviso && { color: theme.warningText }]} numberOfLines={2}>
-          {titulo}
-        </ThemedText>
-        {subtitulo ? (
-          <ThemedText
-            type="small"
-            style={{ color: aviso ? theme.warningText : theme.textSecondary }}
-            numberOfLines={2}>
-            {subtitulo}
-          </ThemedText>
-        ) : null}
-      </View>
+      <ThemedText
+        style={[styles.texto, styles.titulo, aviso && { color: theme.warningText }]}
+        numberOfLines={2}>
+        {titulo}
+      </ThemedText>
       {contagem !== undefined ? (
         <View style={[styles.contagem, { backgroundColor: aviso ? theme.warningText : theme.accent }]}>
           <ThemedText style={[styles.contagemTexto, { color: aviso ? theme.warningBackground : theme.accentText }]}>
@@ -108,7 +97,6 @@ const styles = StyleSheet.create({
   },
   texto: {
     flex: 1,
-    gap: 1,
   },
   titulo: {
     fontSize: 15,

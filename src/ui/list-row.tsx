@@ -6,6 +6,7 @@ import { ThemedText } from '@/ui/themed-text';
 
 type ListRowProps = {
   title: string;
+  /** A second line for rows that state a fact and are not tapped («Tirada / sábado às 20:30»). */
   subtitle?: string;
   leading?: ReactNode;
   trailing?: ReactNode;

@@ -92,3 +92,19 @@ export function formatarPreco(centimos: number, moeda: string) {
   }
   return formato.format(exigirCentimos(centimos) / 100);
 }
+
+/**
+ * The «cada» of an amount split equally between `pessoas`: the share rounded up to the cent, which is what nobody
+ * pays more than (13630 by 4 → 3408, as two pay 3408 and two 3407). The same rule as the server's `ride_share_cents`
+ * and `sharePerPersonCents` in supabase/functions/_shared/ride-cost.ts, so every screen shows the same figure for
+ * the same ride. Display only: who pays which cent is the server's business (`trip_balances`).
+ */
+export function parteDeCadaCentimos(totalCentimos: number, pessoas: number) {
+  exigirCentimos(totalCentimos);
+  if (totalCentimos < 0) throw new RangeError('Um valor a dividir não pode ser negativo.');
+  if (!Number.isSafeInteger(pessoas) || pessoas < 1) {
+    throw new RangeError(`Esperava pelo menos uma pessoa e recebi ${pessoas}.`);
+  }
+  const base = Math.floor(totalCentimos / pessoas);
+  return totalCentimos % pessoas === 0 ? base : base + 1;
+}

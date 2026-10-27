@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { CardShadow, Spacing } from '@/constants/theme';
+import { CardShadow } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Clube } from '@/mocks/tipos';
 import { Escudo } from '@/ui/escudo';
@@ -10,7 +10,7 @@ import { ThemedText } from '@/ui/themed-text';
 
 type OpcaoClubeProps = {
   clube: Clube;
-  /** A line under the name; nothing when there is nothing true to say. */
+  /** Read by VoiceOver after the name; on screen the row is just the club. */
   detalhe?: string | null;
   selecionado: boolean;
   onPress: () => void;
@@ -66,16 +66,9 @@ export function OpcaoClube({ clube, detalhe, selecionado, onPress }: OpcaoClubeP
         <Cachecol clube={clube} />
         <View style={styles.conteudo}>
           <Escudo clube={clube} size={30} />
-          <View style={styles.flex}>
-            <ThemedText type="section" style={styles.nome} numberOfLines={1}>
-              {clube.nomeCurto}
-            </ThemedText>
-            {detalhe ? (
-              <ThemedText style={styles.detalhe} themeColor="textSecondary" numberOfLines={1}>
-                {detalhe}
-              </ThemedText>
-            ) : null}
-          </View>
+          <ThemedText type="section" style={[styles.flex, styles.nome]} numberOfLines={1}>
+            {clube.nomeCurto}
+          </ThemedText>
           {selecionado ? (
             <View style={[styles.visto, { backgroundColor: theme.accent }]}>
               <Icon name={icons.checkInFeito} size={16} strokeWidth={3} color={theme.accentText} />
@@ -124,15 +117,10 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-    gap: Spacing.half,
   },
   nome: {
     fontSize: 18,
     lineHeight: 22,
-  },
-  detalhe: {
-    fontSize: 13,
-    lineHeight: 18,
   },
   visto: {
     width: 28,

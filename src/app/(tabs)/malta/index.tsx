@@ -221,33 +221,21 @@ function CartaoDoGrupo({ grupo, onPress }: { grupo: GroupInboxItem; onPress: () 
         pressed && styles.premido,
       ]}>
       <CaraDoGrupo nome={grupo.name} url={grupo.photoUrl} size={44} />
-      <View style={styles.meio}>
-        <View style={styles.linha}>
-          <ThemedText numberOfLines={1} style={[styles.flex, styles.nome]}>
-            {grupo.name}
+      {/* Only the name: the last message stays in the chat (and in what VoiceOver reads). */}
+      <View style={[styles.meio, styles.linha]}>
+        <ThemedText numberOfLines={1} style={[styles.flex, styles.nome]}>
+          {grupo.name}
+        </ThemedText>
+        {grupo.last ? (
+          <ThemedText type="small" themeColor={porLer ? 'accentInk' : 'textMuted'}>
+            {quando(grupo.last.at)}
           </ThemedText>
-          {grupo.last ? (
-            <ThemedText type="small" themeColor={porLer ? 'accentInk' : 'textMuted'}>
-              {quando(grupo.last.at)}
+        ) : null}
+        {porLer ? (
+          <View style={[styles.porLer, { backgroundColor: theme.accent }]}>
+            <ThemedText type="smallBold" style={{ color: theme.accentText }}>
+              {grupo.unread > 99 ? '99+' : String(grupo.unread)}
             </ThemedText>
-          ) : null}
-        </View>
-        {ultima ? (
-          <View style={styles.linha}>
-            <ThemedText
-              type="small"
-              numberOfLines={1}
-              themeColor={porLer ? 'text' : 'textSecondary'}
-              style={styles.flex}>
-              {ultima}
-            </ThemedText>
-            {porLer ? (
-              <View style={[styles.porLer, { backgroundColor: theme.accent }]}>
-                <ThemedText type="smallBold" style={{ color: theme.accentText }}>
-                  {grupo.unread > 99 ? '99+' : String(grupo.unread)}
-                </ThemedText>
-              </View>
-            ) : null}
           </View>
         ) : null}
       </View>

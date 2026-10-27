@@ -15,7 +15,6 @@ import {
   ROTULO_FACILIDADE,
 } from '@/lib/facilidade-estacionamento';
 import { chegadaRecomendada } from '@/lib/hora-saida';
-import { plural } from '@/lib/formatos';
 import { useAppState } from '@/state/app-state';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
@@ -249,7 +248,6 @@ export function EstacionamentoEstadio({
               tom="aviso"
               icon={icons.aviso}
               titulo="Avisos para dia de jogo"
-              subtitulo="Lê antes de ir de carro"
               contagem={info.warnings.length}
               aberto={avisosAbertos}
               onPress={() => setAvisosAbertos((atual) => !atual)}
@@ -272,7 +270,6 @@ export function EstacionamentoEstadio({
             <Expansor
               icon={icons.carro}
               titulo="Outros parques"
-              subtitulo={`${plural(outros.length, 'parque', 'parques')} perto do estádio`}
               contagem={outros.length}
               aberto={todosAbertos}
               onPress={() => setTodosAbertos((atual) => !atual)}

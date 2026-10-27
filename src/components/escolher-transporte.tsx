@@ -10,6 +10,7 @@ export const OPCOES_TRANSPORTE: readonly {
   valor: UsualTransport;
   icon: IconName;
   titulo: string;
+  /** Read by VoiceOver only: on screen each option is just its title. */
   detalhe: string;
 }[] = [
   {
@@ -70,14 +71,9 @@ export function EscolherTransporte({ valor, onChange }: EscolherTransporteProps)
                 color={escolhida ? theme.accentText : theme.textSecondary}
               />
             </View>
-            <View style={styles.texto}>
-              <ThemedText type="smallBold" style={styles.titulo}>
-                {opcao.titulo}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {opcao.detalhe}
-              </ThemedText>
-            </View>
+            <ThemedText type="smallBold" style={[styles.texto, styles.titulo]}>
+              {opcao.titulo}
+            </ThemedText>
             {escolhida ? <Icon name={icons.selecionado} size={20} color={theme.accentInk} /> : null}
           </Pressable>
         );
@@ -109,7 +105,6 @@ const styles = StyleSheet.create({
   },
   texto: {
     flex: 1,
-    gap: Spacing.half,
   },
   titulo: {
     fontSize: 15,

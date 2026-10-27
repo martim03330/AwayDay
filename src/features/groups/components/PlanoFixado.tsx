@@ -5,7 +5,7 @@ import { proximoPlano } from '@/features/groups/fase-do-plano';
 import type { FixturePlan } from '@/features/groups/plans';
 import { useRealNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
@@ -34,13 +34,14 @@ export function PlanoFixado({
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const nome = casa && fora ? `${casa.nomeCurto} x ${fora.nomeCurto}` : 'Jogo combinado';
   const outros = planos.filter((outro) => outro.id !== plano.id && Date.parse(outro.kickoffAt) > agora).length;
-  const quem = plano.going > 0 ? ` · ${plural(plano.going, 'vai', 'vão')}` : '';
+  const quem = plano.going > 0 ? `, ${plural(plano.going, 'vai', 'vão')}` : '';
+  const inicio = new Date(plano.kickoffAt);
 
   return (
     <Pressable
       onPress={() => onAbrir(plano)}
       accessibilityRole="button"
-      accessibilityLabel={`Jogo combinado: ${nome}, ${formatarDiaEHora(new Date(plano.kickoffAt), agora)}. Toca para abrir o plano.`}
+      accessibilityLabel={`Jogo combinado: ${nome}, ${formatarDiaEHora(inicio, agora)}${quem}. Toca para abrir o plano.`}
       style={({ pressed }) => [
         styles.barra,
         { backgroundColor: theme.backgroundElement, borderBottomColor: theme.border },
@@ -53,14 +54,12 @@ export function PlanoFixado({
           <Escudo clube={fora} size={18} />
         </View>
       ) : null}
-      <View style={styles.texto}>
-        <ThemedText type="smallBold" numberOfLines={1}>
-          {nome}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {`${formatarDiaEHora(new Date(plano.kickoffAt), agora)}${quem}`}
-        </ThemedText>
-      </View>
+      <ThemedText type="smallBold" numberOfLines={1} style={styles.texto}>
+        {nome}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+        {`${formatarDiaCurto(inicio, agora)} ${formatarHora(inicio)}`}
+      </ThemedText>
       {outros > 0 ? (
         <ThemedText type="smallBold" themeColor="textSecondary">{`+${outros}`}</ThemedText>
       ) : null}

@@ -20,6 +20,7 @@ import { ThemedText } from '@/ui/themed-text';
 
 type LinhaInterruptorProps = {
   titulo: string;
+  /** What the switch covers, read by VoiceOver only: on screen the row is just its title. */
   descricao: string;
   value: boolean;
   onValueChange: (ligar: boolean) => void;
@@ -28,7 +29,7 @@ type LinhaInterruptorProps = {
   divisoria?: boolean;
 };
 
-/** Title, one line of explanation and a switch, as in the "Interruptor e linha" component. */
+/** Title and a switch, as in the "Interruptor e linha" component. */
 function LinhaInterruptor({
   titulo,
   descricao,
@@ -45,12 +46,7 @@ function LinhaInterruptor({
         styles.linha,
         divisoria && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
       ]}>
-      <View style={styles.flex}>
-        <ThemedText style={styles.tituloLinha}>{titulo}</ThemedText>
-        <ThemedText style={styles.descricao} themeColor="textSecondary">
-          {descricao}
-        </ThemedText>
-      </View>
+      <ThemedText style={[styles.flex, styles.tituloLinha]}>{titulo}</ThemedText>
       <Switch
         value={value}
         disabled={disabled}
@@ -58,6 +54,7 @@ function LinhaInterruptor({
         trackColor={{ true: theme.accent, false: theme.border }}
         ios_backgroundColor={theme.border}
         accessibilityLabel={titulo}
+        accessibilityHint={descricao}
         testID={`interruptor-${titulo}`}
       />
     </View>
@@ -98,7 +95,7 @@ function MensagensDaConta() {
       <Card style={styles.cartaoLinhas}>
         <LinhaInterruptor
           titulo="Dicas para dias de jogo"
-          descricao="No máximo um aviso por dia, antes dos teus jogos. São escritos por IA (Claude, da Anthropic) com o teu clube, os jogos e o que fazes na app, sem o teu nome nem email."
+          descricao="No máximo um aviso por dia, antes dos teus jogos."
           value={nudgesEnabled}
           disabled={guardar.isPending}
           onValueChange={(ligar) => void alternarSugestoes(ligar)}
@@ -106,7 +103,7 @@ function MensagensDaConta() {
         />
         <LinhaInterruptor
           titulo="Retrospetiva da época"
-          descricao="Um resumo em junho: jogos, estádios novos e o tasco onde mais voltaste. Também escrito por IA, com os mesmos cuidados."
+          descricao="Um resumo em junho: jogos, estádios novos e o tasco onde mais voltaste."
           value={recapEnabled}
           disabled={guardar.isPending}
           onValueChange={(ligar) => guardar.mutate({ recapEnabled: ligar })}
@@ -118,6 +115,11 @@ function MensagensDaConta() {
           </ThemedText>
         ) : null}
       </Card>
+      {/* The AI disclosure stays on screen: it left the rows, not the page. */}
+      <ThemedText style={styles.descricao} themeColor="textSecondary">
+        Escritas por IA (Claude, da Anthropic) com o teu clube, os jogos e o que fazes na app, sem o teu nome nem
+        email.
+      </ThemedText>
     </>
   );
 }
@@ -292,7 +294,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-    gap: 1,
   },
   tituloLinha: {
     fontSize: 15,

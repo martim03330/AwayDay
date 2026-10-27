@@ -29,7 +29,10 @@ function explicacao(ranking: MyRanking) {
     : `No fim da época sobem os ${ranking.promotionSpots} primeiros com pelo menos ${ranking.promotionMinXp} pontos.`;
 }
 
-/** The season's division: where you are in it and what happens if the season ended today. */
+/**
+ * The season's division: where you are in it, with the zone as a pill. What happens if the season ended today is
+ * written under it only when the card does not open the tables (there it is read by VoiceOver).
+ */
 export function CartaoDivisao({ ranking, onPress }: { ranking: MyRanking; onPress?: () => void }) {
   const theme = useTheme();
   const zona = zonaDaDivisao(ranking);
@@ -72,9 +75,12 @@ export function CartaoDivisao({ ranking, onPress }: { ranking: MyRanking; onPres
         {zona === 'descida' ? <Etiqueta label="Zona de descida" tone="negativo" /> : null}
       </View>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        {explicacao(ranking)}
-      </ThemedText>
+      {/* A card you tap carries only its title and pills; the read-only one keeps the sentence. */}
+      {onPress ? null : (
+        <ThemedText type="small" themeColor="textSecondary">
+          {explicacao(ranking)}
+        </ThemedText>
+      )}
     </Card>
   );
 }

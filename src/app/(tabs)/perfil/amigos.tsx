@@ -174,7 +174,7 @@ export default function AmigosScreen() {
                   style={styles.flex}
                   onPress={() => abrirPerfil(pedido.profileId)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Ver o perfil de ${pedido.displayName}`}>
+                  accessibilityLabel={`Ver o perfil de ${pedido.displayName}, ${sinais(pedido)}`}>
                   <ThemedText style={styles.nome} numberOfLines={1}>
                     {pedido.displayName}
                   </ThemedText>
@@ -188,9 +188,6 @@ export default function AmigosScreen() {
                   }
                 />
               </View>
-              <ThemedText type="small" themeColor="textMuted">
-                {sinais(pedido)}
-              </ThemedText>
               <Button
                 label="Aceitar"
                 icon={icons.selecionado}
@@ -224,7 +221,7 @@ export default function AmigosScreen() {
                 style={styles.flex}
                 onPress={() => abrirPerfil(amigo.profileId)}
                 accessibilityRole="button"
-                accessibilityLabel={`Ver o perfil de ${amigo.displayName}`}>
+                accessibilityLabel={`Ver o perfil de ${amigo.displayName}, ${sinais(amigo)}`}>
                 <ThemedText style={styles.nome} numberOfLines={1}>
                   {amigo.displayName}
                 </ThemedText>
@@ -247,9 +244,6 @@ export default function AmigosScreen() {
                 }
               />
             </View>
-            <ThemedText type="small" themeColor="textMuted">
-              {sinais(amigo)}
-            </ThemedText>
           </Card>
         ))
       )}
@@ -262,12 +256,9 @@ export default function AmigosScreen() {
               <Pressable
                 onPress={() => abrirPerfil(pedido.profileId)}
                 accessibilityRole="button"
-                accessibilityLabel={`Ver o perfil de ${pedido.displayName}`}>
+                accessibilityLabel={`Ver o perfil de ${pedido.displayName}, ${sinais(pedido)}`}>
                 <ThemedText style={styles.nome}>{pedido.displayName}</ThemedText>
               </Pressable>
-              <ThemedText type="small" themeColor="textMuted">
-                À espera de resposta · {sinais(pedido)}
-              </ThemedText>
               <LinkTexto
                 perigo
                 label="Desistir do pedido"

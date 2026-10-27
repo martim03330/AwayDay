@@ -99,7 +99,7 @@ function EspreitarConcorrencia({ onPress }: { onPress: () => void }) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Espreitar a concorrência. Fica entre nós, não contamos à claque."
+      accessibilityLabel="Espreitar a concorrência"
       accessibilityHint="Mostra os jogos de todos os clubes"
       style={({ pressed }) => [
         styles.concorrencia,
@@ -107,12 +107,7 @@ function EspreitarConcorrencia({ onPress }: { onPress: () => void }) {
         pressed && styles.pressed,
       ]}>
       <IconCircle name={icons.espreitar} tone="yellow" />
-      <View style={styles.flex}>
-        <ThemedText style={styles.concorrenciaTitulo}>Espreitar a concorrência</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Fica entre nós, não contamos à claque.
-        </ThemedText>
-      </View>
+      <ThemedText style={[styles.flex, styles.concorrenciaTitulo]}>Espreitar a concorrência</ThemedText>
       <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
     </Pressable>
   );
@@ -268,7 +263,7 @@ export default function JogosScreen() {
         ) : null}
         {semClube ? (
           <LinkTexto
-            label="Escolhe o teu clube para veres primeiro os jogos dele"
+            label="Escolher o teu clube"
             onPress={() => router.push('/perfil/clube')}
           />
         ) : verConcorrencia || clubesSemJogos ? null : (

@@ -51,8 +51,7 @@ export function PontoEncontroCard({ ponto }: { ponto: PontoEncontro | null }) {
       />
       <LinhaQueAbre
         leading={<IconCircle name={icons.selecionado} />}
-        title={origens[ponto.origem]}
-        subtitle={ponto.nota ? 'Nota e fonte' : 'Ver a fonte'}>
+        title={origens[ponto.origem]}>
         {ponto.nota ? (
           <ThemedText type="small" themeColor="textSecondary">
             {ponto.nota}

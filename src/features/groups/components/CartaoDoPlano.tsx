@@ -1,4 +1,4 @@
-import { useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { skipToken, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -159,6 +159,12 @@ export function CartaoDoPlano({
     try {
       await answerPlan(plano.id, nova);
       onRespondido?.();
+      // «Vou» / «não vou» marks or unmarks the game on the server: the game page's ticket and count follow.
+      void queryClient.invalidateQueries({
+        queryKey: ['attendance'],
+        predicate: (query) => query.options.queryFn !== skipToken,
+      });
+      void queryClient.invalidateQueries({ queryKey: ['going-count', plano.fixtureId] });
     } catch (problema) {
       for (const [chave, dados] of anteriores) queryClient.setQueryData(chave, dados);
       setErro(

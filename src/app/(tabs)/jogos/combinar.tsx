@@ -5,11 +5,14 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { CardShadow, Radius, Spacing } from '@/constants/theme';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { nomeDoJogo, quandoEOnde } from '@/features/groups/components/CartaoDoPlano';
-import { useMyGroupInbox, useRefreshGroups } from '@/features/groups/hooks/useGroups';
+import {
+  useGroupPlansForFixture,
+  useMyGroupInbox,
+  useRefreshGroups,
+} from '@/features/groups/hooks/useGroups';
 import { avisarConviteRepetido } from '@/features/groups/convite-repetido';
 import { inviteGroupToFixture, PlanRefused } from '@/features/groups/plans';
 import { useTheme } from '@/hooks/use-theme';
-import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { obterJogo } from '@/mocks/jogos';
 import { Button } from '@/ui/button';
@@ -45,6 +48,16 @@ export default function CombinarScreen() {
   const [erro, setErro] = useState<string | null>(null);
 
   const grupos = inbox.data ?? [];
+  const planoDoGrupo = useGroupPlansForFixture(
+    grupos.map((grupo) => grupo.id),
+    jogo?.id ?? null
+  );
+
+  /** A group that already has this game convoked opens that plan: a second invite would only be refused. */
+  function abrirPlano(grupoId: string, planoId: string) {
+    router.back();
+    router.push({ pathname: '/grupos/[grupoId]/plano/[planoId]', params: { grupoId, planoId } });
+  }
 
   async function convidar(grupoId: string) {
     if (!jogo) return;
@@ -106,33 +119,36 @@ export default function CombinarScreen() {
             Escolhe o grupo. O convite cai na conversa e a malta responde se vai.
           </ThemedText>
           <View style={styles.lista}>
-            {grupos.map((grupo) => (
-              <Pressable
-                key={grupo.id}
-                disabled={aConvidar !== null}
-                onPress={() => void convidar(grupo.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Convidar ${grupo.name}`}
-                style={({ pressed }) => [
-                  styles.grupo,
-                  CardShadow,
-                  { backgroundColor: theme.backgroundElement },
-                  pressed && styles.premido,
-                ]}>
-                <CaraDoGrupo nome={grupo.name} url={grupo.photoUrl} size={44} />
-                <View style={styles.flex}>
-                  <ThemedText type="smallBold" numberOfLines={1}>
+            {grupos.map((grupo) => {
+              const planoId = planoDoGrupo.get(grupo.id);
+              return (
+                <Pressable
+                  key={grupo.id}
+                  disabled={aConvidar !== null}
+                  onPress={() => (planoId ? abrirPlano(grupo.id, planoId) : void convidar(grupo.id))}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    planoId ? `${grupo.name}: já convocado. Abrir o convite` : `Convidar ${grupo.name}`
+                  }
+                  style={({ pressed }) => [
+                    styles.grupo,
+                    CardShadow,
+                    { backgroundColor: theme.backgroundElement },
+                    pressed && styles.premido,
+                  ]}>
+                  <CaraDoGrupo nome={grupo.name} url={grupo.photoUrl} size={44} />
+                  <ThemedText type="smallBold" numberOfLines={1} style={styles.flex}>
                     {grupo.name}
                   </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {aConvidar === grupo.id
-                      ? 'A convidar…'
-                      : plural(grupo.members, 'pessoa', 'pessoas')}
-                  </ThemedText>
-                </View>
-                <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
-              </Pressable>
-            ))}
+                  {aConvidar === grupo.id || planoId ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {aConvidar === grupo.id ? 'A convidar…' : 'Convocado'}
+                    </ThemedText>
+                  ) : null}
+                  <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
+                </Pressable>
+              );
+            })}
           </View>
         </>
       )}

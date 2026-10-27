@@ -118,36 +118,150 @@ export function motorwayOf(names: unknown): string {
   return 'default';
 }
 
-/** Tolled stretches of a Valhalla trip, in metres, one per maneuver on a toll road. */
-export function tollSegmentsOf(trip: unknown): TollSegment[] {
-  const segments: TollSegment[] = [];
+/**
+ * One road edge of a leg, from Valhalla's `/trace_attributes` (`edge.names`, `edge.length`, `edge.toll`,
+ * `edge.begin_shape_index`). A long maneuver keeps only the name of the street it starts on: Lisboa → Porto is one
+ * 288 km «keep left onto 2ª Circular» that is A1 almost all the way. The edges carry each road's real name.
+ */
+export type RouteEdge = { beginShapeIndex: number; lengthM: number; toll: boolean; motorway: string };
+
+/** The edges of a `/trace_attributes` answer, in driving order. Malformed edges are left out. */
+export function edgesFromTraceAttributes(answer: unknown): RouteEdge[] {
+  const edges = asRecord(answer)?.edges;
+  return (Array.isArray(edges) ? edges : []).flatMap((value) => {
+    const edge = asRecord(value);
+    const begin = edge?.begin_shape_index;
+    const lengthKm = edge?.length;
+    if (typeof begin !== 'number' || !Number.isSafeInteger(begin) || begin < 0) return [];
+    if (typeof lengthKm !== 'number' || !Number.isFinite(lengthKm) || lengthKm < 0) return [];
+    const motorway = motorwayOf(edge?.names);
+    return [{ beginShapeIndex: begin, lengthM: lengthKm * 1000, toll: edge?.toll === true, motorway }];
+  });
+}
+
+/** Metres on each motorway among the edges inside a maneuver's stretch of line, in driving order. */
+function motorwayMetresInside(
+  edges: readonly RouteEdge[],
+  begin: number,
+  end: number,
+  onlyTolled: boolean
+): Map<string, number> {
+  const metres = new Map<string, number>();
+  for (const edge of edges) {
+    if (edge.beginShapeIndex < begin || edge.beginShapeIndex >= end) continue;
+    if (edge.motorway === 'default' || (onlyTolled && !edge.toll)) continue;
+    metres.set(edge.motorway, (metres.get(edge.motorway) ?? 0) + edge.lengthM);
+  }
+  return metres;
+}
+
+/** The motorway with the most metres, or "default" when there is none. */
+function longestOf(metres: ReadonlyMap<string, number>): string {
+  let best = 'default';
+  let bestM = 0;
+  for (const [motorway, total] of metres) {
+    if (total > bestM) {
+      best = motorway;
+      bestM = total;
+    }
+  }
+  return best;
+}
+
+/** A maneuver's stretch of the leg's line, as shape indices, or `null` when Valhalla did not give it. */
+function shapeRangeOf(maneuver: Readonly<Record<string, unknown>>): [number, number] | null {
+  const begin = maneuver.begin_shape_index;
+  const end = maneuver.end_shape_index;
+  return typeof begin === 'number' && typeof end === 'number' && end > begin ? [begin, end] : null;
+}
+
+/**
+ * The maneuvers of each leg of a trip, with the edges of that leg (empty when there are none). `edgesByLeg[i]` goes
+ * with leg `i`.
+ */
+function legsOf(trip: unknown, edgesByLeg: readonly (readonly RouteEdge[])[]) {
   const legs = asRecord(trip)?.legs;
-  for (const legValue of Array.isArray(legs) ? legs : []) {
+  return (Array.isArray(legs) ? legs : []).map((legValue, index) => {
     const maneuvers = asRecord(legValue)?.maneuvers;
-    for (const maneuverValue of Array.isArray(maneuvers) ? maneuvers : []) {
-      const maneuver = asRecord(maneuverValue);
-      const lengthKm = maneuver?.length;
-      if (maneuver?.toll !== true || typeof lengthKm !== 'number') continue;
+    return {
+      maneuvers: (Array.isArray(maneuvers) ? maneuvers : []).flatMap((value) => {
+        const maneuver = asRecord(value);
+        return maneuver ? [maneuver] : [];
+      }),
+      edges: edgesByLeg[index] ?? [],
+    };
+  });
+}
+
+/**
+ * Whether a trip has a stretch of 1 km or more on a fast or tolled road that its maneuvers do not name as a
+ * motorway: only then is it worth asking Valhalla for the edges.
+ */
+export function tripNeedsEdges(trip: unknown): boolean {
+  return legsOf(trip, []).some(({ maneuvers }) =>
+    maneuvers.some((maneuver) => {
+      const lengthKm = maneuver.length;
+      return (
+        (maneuver.highway === true || maneuver.toll === true) &&
+        typeof lengthKm === 'number' &&
+        lengthKm >= 1 &&
+        motorwayOf(maneuver.street_names) === 'default'
+      );
+    })
+  );
+}
+
+/** The encoded line of each leg of a trip, to ask `/trace_attributes` for its edges. */
+export function legShapesOf(trip: unknown): string[] {
+  const legs = asRecord(trip)?.legs;
+  return (Array.isArray(legs) ? legs : []).map((leg) => {
+    const shape = asRecord(leg)?.shape;
+    return typeof shape === 'string' ? shape : '';
+  });
+}
+
+/**
+ * Tolled stretches of a Valhalla trip, in metres, one per maneuver on a toll road. The metres are always the
+ * maneuver's (the rates are measured in them); the edges, when given, only name a maneuver its street names do not:
+ * the tolled motorway with the most metres inside it.
+ */
+export function tollSegmentsOf(trip: unknown, edgesByLeg: readonly (readonly RouteEdge[])[] = []): TollSegment[] {
+  const segments: TollSegment[] = [];
+  for (const { maneuvers, edges } of legsOf(trip, edgesByLeg)) {
+    for (const maneuver of maneuvers) {
+      const lengthKm = maneuver.length;
+      if (maneuver.toll !== true || typeof lengthKm !== 'number') continue;
       if (!Number.isFinite(lengthKm) || lengthKm < 0) continue;
-      segments.push({ motorway: motorwayOf(maneuver.street_names), tollM: Math.round(lengthKm * 1000) });
+      let motorway = motorwayOf(maneuver.street_names);
+      const range = shapeRangeOf(maneuver);
+      if (motorway === 'default' && range) {
+        motorway = longestOf(motorwayMetresInside(edges, range[0], range[1], true));
+      }
+      segments.push({ motorway, tollM: Math.round(lengthKm * 1000) });
     }
   }
   return segments;
 }
 
-/** The motorways of a Valhalla trip in driving order, tolled or not, each once when it adds up to 1 km or more. */
-export function motorwaysOfTrip(trip: unknown): string[] {
+/**
+ * The motorways of a Valhalla trip in driving order, tolled or not, each once when it adds up to 1 km or more. A
+ * maneuver its street names do not name counts the motorways of its edges, when given.
+ */
+export function motorwaysOfTrip(trip: unknown, edgesByLeg: readonly (readonly RouteEdge[])[] = []): string[] {
   const metres = new Map<string, number>();
-  const legs = asRecord(trip)?.legs;
-  for (const legValue of Array.isArray(legs) ? legs : []) {
-    const maneuvers = asRecord(legValue)?.maneuvers;
-    for (const maneuverValue of Array.isArray(maneuvers) ? maneuvers : []) {
-      const maneuver = asRecord(maneuverValue);
-      const lengthKm = maneuver?.length;
+  const add = (motorway: string, total: number) => metres.set(motorway, (metres.get(motorway) ?? 0) + total);
+  for (const { maneuvers, edges } of legsOf(trip, edgesByLeg)) {
+    for (const maneuver of maneuvers) {
+      const lengthKm = maneuver.length;
       if (typeof lengthKm !== 'number' || !Number.isFinite(lengthKm) || lengthKm < 0) continue;
-      const motorway = motorwayOf(maneuver?.street_names);
-      if (motorway === 'default') continue;
-      metres.set(motorway, (metres.get(motorway) ?? 0) + lengthKm * 1000);
+      const motorway = motorwayOf(maneuver.street_names);
+      if (motorway !== 'default') {
+        add(motorway, lengthKm * 1000);
+        continue;
+      }
+      const range = shapeRangeOf(maneuver);
+      if (!range) continue;
+      for (const [inside, total] of motorwayMetresInside(edges, range[0], range[1], false)) add(inside, total);
     }
   }
   return [...metres].filter(([, total]) => total >= 1000).map(([motorway]) => motorway);
@@ -158,41 +272,54 @@ function sumTollM(segments: readonly TollSegment[]) {
 }
 
 /** A route from Valhalla's JSON answer (kilometres and seconds), or `null` when it has no usable summary. */
-export function routeFromValhalla(answer: unknown): Route | null {
-  return routeFromTrip(asRecord(answer)?.trip);
+export function routeFromValhalla(
+  answer: unknown,
+  edgesByLeg: readonly (readonly RouteEdge[])[] = []
+): Route | null {
+  return routeFromTrip(asRecord(answer)?.trip, edgesByLeg);
+}
+
+/** The trips of a Valhalla answer asked with `alternates`: the main one first, then each alternative, as given. */
+export function tripsOfValhalla(answer: unknown): unknown[] {
+  const record = asRecord(answer);
+  const alternates = Array.isArray(record?.alternates) ? record.alternates : [];
+  return [record?.trip, ...alternates.map((alternate) => asRecord(alternate)?.trip)];
 }
 
 /**
  * Every route of a Valhalla answer asked with `alternates`: the main trip first, then each alternative that can be
- * read. Empty when not even the main trip can.
+ * read. Empty when not even the main trip can. `edgesByTrip[i]` are the edges of trip `i` of `tripsOfValhalla`, per
+ * leg, for the trips that needed them.
  */
-export function routesFromValhalla(answer: unknown): Route[] {
-  const record = asRecord(answer);
-  const main = routeFromTrip(record?.trip);
+export function routesFromValhalla(
+  answer: unknown,
+  edgesByTrip: readonly (readonly (readonly RouteEdge[])[])[] = []
+): Route[] {
+  const trips = tripsOfValhalla(answer);
+  const main = routeFromTrip(trips[0], edgesByTrip[0] ?? []);
   if (!main) return [];
-  const alternates = Array.isArray(record?.alternates) ? record.alternates : [];
-  const others = alternates.flatMap((alternate) => {
-    const found = routeFromTrip(asRecord(alternate)?.trip);
+  const others = trips.slice(1).flatMap((trip, index) => {
+    const found = routeFromTrip(trip, edgesByTrip[index + 1] ?? []);
     return found ? [found] : [];
   });
   return [main, ...others];
 }
 
-function routeFromTrip(tripValue: unknown): Route | null {
+function routeFromTrip(tripValue: unknown, edgesByLeg: readonly (readonly RouteEdge[])[]): Route | null {
   const trip = asRecord(tripValue);
   const summary = asRecord(trip?.summary);
   const lengthKm = summary?.length;
   const timeS = summary?.time;
   if (typeof lengthKm !== 'number' || typeof timeS !== 'number') return null;
   if (!Number.isFinite(lengthKm) || !Number.isFinite(timeS) || lengthKm < 0 || timeS < 0) return null;
-  const tollSegments = tollSegmentsOf(trip);
+  const tollSegments = tollSegmentsOf(trip, edgesByLeg);
   return {
     // A route of zero metres (origin on top of the stadium) still counts as 1 m: costs never divide by nothing.
     distanceM: Math.max(Math.round(lengthKm * 1000), 1),
     durationS: Math.max(Math.round(timeS), 1),
     tollM: sumTollM(tollSegments),
     tollSegments,
-    motorways: motorwaysOfTrip(trip),
+    motorways: motorwaysOfTrip(trip, edgesByLeg),
     viaPoints: viaPointsOfTrip(trip),
   };
 }

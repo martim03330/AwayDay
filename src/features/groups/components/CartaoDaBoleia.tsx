@@ -171,6 +171,7 @@ function Interruptor({
   onValueChange,
 }: {
   titulo: string;
+  /** What the switch does, for VoiceOver only: on screen the row is just its title. */
   descricao: string;
   value: boolean;
   disabled: boolean;
@@ -179,12 +180,9 @@ function Interruptor({
   const theme = useTheme();
   return (
     <View style={styles.interruptor}>
-      <View style={styles.flex}>
-        <ThemedText type="smallBold">{titulo}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {descricao}
-        </ThemedText>
-      </View>
+      <ThemedText type="smallBold" style={styles.flex}>
+        {titulo}
+      </ThemedText>
       <Switch
         value={value}
         disabled={disabled}
@@ -192,6 +190,7 @@ function Interruptor({
         trackColor={{ true: theme.accent, false: theme.border }}
         ios_backgroundColor={theme.border}
         accessibilityLabel={titulo}
+        accessibilityHint={descricao}
       />
     </View>
   );

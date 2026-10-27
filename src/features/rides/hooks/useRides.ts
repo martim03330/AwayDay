@@ -80,9 +80,11 @@ export function useReturnPeople(rideId: string | null, enabled: boolean) {
  */
 export function useRefreshRides() {
   const queryClient = useQueryClient();
-  return () =>
-    queryClient.invalidateQueries({
-      queryKey: [RIDES_KEY],
-      predicate: (query) => query.options.queryFn !== skipToken,
-    });
+  return () => {
+    const ligada = (query: { options: { queryFn?: unknown } }) => query.options.queryFn !== skipToken;
+    // A seat accepted or a car offered marks the game as «vou» on the server: the ticket and the count follow.
+    void queryClient.invalidateQueries({ queryKey: ['attendance'], predicate: ligada });
+    void queryClient.invalidateQueries({ queryKey: ['going-count'], predicate: ligada });
+    return queryClient.invalidateQueries({ queryKey: [RIDES_KEY], predicate: ligada });
+  };
 }

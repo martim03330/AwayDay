@@ -551,12 +551,12 @@ export function DormidaCard({
                       {String(pesquisa.pessoas)}
                     </ThemedText>
                   </View>
-                  <View style={styles.flex}>
-                    <ThemedText type="smallBold">{`Casa para ${pesquisa.pessoas}`}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {rotuloDoTotal(pesquisa.totalMinCentimos, pesquisa.totalMaxCentimos)}
-                    </ThemedText>
-                  </View>
+                  <ThemedText type="smallBold" style={styles.flex}>
+                    {`Casa para ${pesquisa.pessoas}`}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {rotuloDoTotal(pesquisa.totalMinCentimos, pesquisa.totalMaxCentimos)}
+                  </ThemedText>
                   <Icon name={icons.seguinte} size={16} color={theme.accentInk} />
                 </Pressable>
               ))}
@@ -616,7 +616,7 @@ export function DormidaCard({
         </ThemedText>
         {!userId ? (
           <LinkTexto
-            label="Entra para propores uma casa ou pedires lugar"
+            label="Entrar"
             onPress={() => router.push('/conta/entrar')}
           />
         ) : !podePartilhar ? (
@@ -711,12 +711,7 @@ export function DormidaCard({
                 </ScrollView>
                 {grupoId ? (
                   <View style={[styles.linhaSwitch, styles.depoisDosGrupos]}>
-                    <View style={styles.flex}>
-                      <ThemedText>Só o grupo vê, por agora</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        Se sobrarem lugares, abres a todos com um toque.
-                      </ThemedText>
-                    </View>
+                    <ThemedText style={styles.flex}>Só o grupo vê, por agora</ThemedText>
                     <Switch
                       value={soParaOGrupo}
                       onValueChange={setSoParaOGrupo}
@@ -724,6 +719,7 @@ export function DormidaCard({
                       thumbColor={theme.accentText}
                       ios_backgroundColor={theme.border}
                       accessibilityLabel="Só o grupo vê, por agora"
+                      accessibilityHint="Se sobrarem lugares, abres a todos com um toque"
                     />
                   </View>
                 ) : null}

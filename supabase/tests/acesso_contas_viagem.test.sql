@@ -325,12 +325,20 @@ select pg_temp.expect('an admin sees no expenses', (select count(*)::integer fro
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 4. Balances: computed on the server, the leftover cent goes to one person, and they always add up to zero.
+-- Who gets the leftover cent depends on the expense's id (md5 of expense and person, see
+-- acesso_contas_centimos.test.sql), so these checks hold whoever gets it.
 
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000003');
-select pg_temp.expect('balances per person (10,00 € / 3 = 3,34 + 3,33 + 3,33)',
-  (select string_agg(display_name || ':' || paid_cents || '/' || owed_cents || '/' || balance_cents, ',' order by display_name)
-   from public.trip_balances(pg_temp.id('s2'))),
-  'Contas A:1000/1459/-459,Contas B:4500/1458/3042,Contas C:0/1458/-1458,Contas M:0/1125/-1125');
+select pg_temp.expect('what each one paid',
+  (select string_agg(display_name || ':' || paid_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s2'))),
+  'Contas A:1000,Contas B:4500,Contas C:0,Contas M:0');
+select pg_temp.expect('what each one owes: 10,00 € / 3 = 3,34 + 3,33 + 3,33 for A, B and C, plus 45,00 € / 4 = 11,25 € for all',
+  (select string_agg((owed_cents - 1125)::text, ',' order by owed_cents) from public.trip_balances(pg_temp.id('s2'))
+   where display_name <> 'Contas M')
+  || ' M:' || (select owed_cents from public.trip_balances(pg_temp.id('s2')) where display_name = 'Contas M'),
+  '333,333,334 M:1125');
+select pg_temp.expect('each balance is what one paid minus what one owes',
+  (select count(*)::integer from public.trip_balances(pg_temp.id('s2')) where balance_cents <> paid_cents - owed_cents), 0);
 select pg_temp.expect('the balances add up to zero', (select sum(balance_cents)::integer from public.trip_balances(pg_temp.id('s2'))), 0);
 select pg_temp.expect('what is owed adds up to what was spent',
   (select sum(owed_cents)::integer || '/' || sum(paid_cents)::integer from public.trip_balances(pg_temp.id('s2'))), '5500/5500');
@@ -368,14 +376,17 @@ select pg_temp.expect('a negative payment is refused',
 
 -- What the payer records counts before it is confirmed, so it is capped at what they owe.
 select pg_temp.expect('the payer cannot record more than they owe',
-  pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, 460)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002')), 'more_than_owed');
+  pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, %s)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002',
+    (select 1 - b.balance_cents from public.trip_balances(pg_temp.id('s2')) as b where b.profile_id = 'e5000000-0000-4000-8000-000000000001'))), 'more_than_owed');
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000002');
 select pg_temp.expect('someone who owes nothing cannot record a payment',
   pg_temp.refusal(format('select public.add_trip_settlement(%L, %L, 100)', pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000001')), 'nothing_owed');
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000001');
 
 -- A says "I paid B" (waits for B); B says "C paid me" (confirmed at once).
-insert into t_ids (key, id) values ('pagou_a', public.add_trip_settlement(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002', 459));
+-- A pays exactly what A owes (4,58 € or 4,59 €, depending on who got the beers' leftover cent).
+insert into t_ids (key, id) values ('pagou_a', public.add_trip_settlement(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002',
+  (select -b.balance_cents from public.trip_balances(pg_temp.id('s2')) as b where b.profile_id = 'e5000000-0000-4000-8000-000000000001')));
 select pg_temp.expect('the payer cannot confirm their own payment',
   pg_temp.refusal(format('select public.confirm_trip_settlement(%L)', pg_temp.id('pagou_a'))), 'not_yours');
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000005');
@@ -393,16 +404,24 @@ select pg_temp.as_user('e5000000-0000-4000-8000-000000000002');
 select public.confirm_trip_settlement(pg_temp.id('pagou_a'));
 select pg_temp.expect('a payment is confirmed only once',
   pg_temp.refusal(format('select public.confirm_trip_settlement(%L)', pg_temp.id('pagou_a'))), 'not_yours');
-select pg_temp.expect('the receiver cannot undo a payment they confirmed',
+-- The receiver may take back a confirmation only within 10 minutes (acesso_pagamento_desfazer.test.sql covers the
+-- window itself): past it, a confirmed payment stays.
+reset role;
+update public.trip_settlement set confirmed_at = now() - interval '11 minutes' where id = pg_temp.id('pagou_a');
+set local role authenticated;
+select pg_temp.expect('the receiver cannot undo a payment they confirmed more than 10 minutes ago',
   pg_temp.refusal(format('select public.remove_trip_settlement(%L)', pg_temp.id('pagou_a'))), 'confirmed_settlement');
-insert into t_ids (key, id) values ('recebeu_b', public.add_trip_settlement(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002', 1458,
+insert into t_ids (key, id) values ('recebeu_b', public.add_trip_settlement(pg_temp.id('s2'), 'e5000000-0000-4000-8000-000000000002',
+  (select -b.balance_cents from public.trip_balances(pg_temp.id('s2')) as b where b.profile_id = 'e5000000-0000-4000-8000-000000000003'),
   'e5000000-0000-4000-8000-000000000003'));
 
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000004');
 select pg_temp.expect('every member sees the payments, both confirmed',
-  (select string_agg(from_name || '>' || to_name || ':' || cents || ':' || confirmed || ':' || mine, ',' order by cents)
+  (select string_agg(from_name || '>' || to_name || ':' || confirmed || ':' || mine, ',' order by cents)
    from public.trip_settlements(pg_temp.id('s2'))),
-  'Contas A>Contas B:459:true:false,Contas C>Contas B:1458:true:false');
+  'Contas A>Contas B:true:false,Contas C>Contas B:true:false');
+select pg_temp.expect('the payments are what A and C owed (4,58 € or 4,59 €; 14,58 € or 14,59 €)',
+  (select (min(cents) in (458, 459)) and (max(cents) in (1458, 1459)) from public.trip_settlements(pg_temp.id('s2'))), true);
 select pg_temp.expect('after paying, only M still owes B',
   (select string_agg(display_name || ':' || balance_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s2'))),
   'Contas A:0,Contas B:1125,Contas C:0,Contas M:-1125');
@@ -421,10 +440,11 @@ select pg_temp.expect('only the people chosen share the expense',
   (select count(*)::integer from public.trip_expense_share where expense_id = pg_temp.id('petiscos')), 2);
 set local role authenticated;
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000001');
-select pg_temp.expect('after the snacks: A +150, B +1124 and still zero',
+select pg_temp.expect('after the snacks (3,01 € by two): A +1,50 € or +1,51 €, B owed the rest, and still zero',
   (select string_agg(display_name || ':' || balance_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s2')))
-  || '=' || (select sum(balance_cents) from public.trip_balances(pg_temp.id('s2'))),
-  'Contas A:150,Contas B:975,Contas C:0,Contas M:-1125=0');
+  || '=' || (select sum(balance_cents) from public.trip_balances(pg_temp.id('s2'))) in (
+    'Contas A:150,Contas B:975,Contas C:0,Contas M:-1125=0', 'Contas A:151,Contas B:974,Contas C:0,Contas M:-1125=0'),
+  true);
 select public.remove_trip_expense(pg_temp.id('petiscos'));
 
 -- ---------------------------------------------------------------------------------------------------------------------
@@ -495,9 +515,9 @@ select pg_temp.expect('the car''s accounts hold the ride''s total, paid by the d
   (select description || ':' || cents || ':' || payer_name || ':' || participants || ':' || source || ':' || mine
    from public.trip_expenses(pg_temp.id('s3'))),
   'Boleia de Contas D:3001:Contas D:2:boleia:false');
-select pg_temp.expect('30,01 € between two: the driver is owed 15,00 €, the passenger owes it',
-  (select string_agg(display_name || ':' || balance_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s3'))),
-  'Contas D:1500,Contas P:-1500');
+select pg_temp.expect('30,01 € between two: the driver is owed 15,00 € or 15,01 €, the passenger owes it',
+  (select string_agg(display_name || ':' || balance_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s3')))
+  in ('Contas D:1500,Contas P:-1500', 'Contas D:1501,Contas P:-1501'), true);
 insert into t_ids (key, id) select 'boleia', id from public.trip_expenses(pg_temp.id('s3'));
 select pg_temp.expect('the passenger finds the car''s accounts',
   (select total_cents from public.ride_trip_session(pg_temp.id('ride'))), 3001);
@@ -515,15 +535,16 @@ select public.request_ride_seat(pg_temp.id('ride'), true);
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000007');
 select public.answer_ride_request(pg_temp.id('ride'), 'e5000000-0000-4000-8000-000000000010', true);
 select pg_temp.expect('three in the car: 30,01 € = 10,01 + 10,00 + 10,00',
-  (select string_agg(display_name || ':' || owed_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s3'))),
-  'Contas D:1001,Contas P:1000,Contas Q:1000');
+  (select string_agg(display_name, ',' order by display_name) || ' ' || string_agg(owed_cents::text, ',' order by owed_cents)
+   from public.trip_balances(pg_temp.id('s3'))),
+  'Contas D,Contas P,Contas Q 1000,1000,1001');
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000010');
 select public.leave_ride(pg_temp.id('ride'));
 select pg_temp.as_user('e5000000-0000-4000-8000-000000000007');
 select pg_temp.expect('who leaves the car leaves its expense',
-  (select string_agg(display_name || ':' || owed_cents, ',' order by display_name) from public.trip_balances(pg_temp.id('s3'))
-   where owed_cents > 0),
-  'Contas D:1501,Contas P:1500');
+  (select string_agg(display_name, ',' order by display_name) || ' ' || string_agg(owed_cents::text, ',' order by owed_cents)
+   from public.trip_balances(pg_temp.id('s3')) where owed_cents > 0),
+  'Contas D,Contas P 1500,1501');
 select pg_temp.expect('the car''s accounts add up to zero', (select sum(balance_cents)::integer from public.trip_balances(pg_temp.id('s3'))), 0);
 
 reset role;

@@ -59,19 +59,19 @@ describe('LinhaMissao', () => {
   it('an open mission is one element read with progress and points', () => {
     render(<LinhaMissao missao={missao()} />);
     expect(screen.getByLabelText('Vai a três tascos. 1 de 3. Mais 50 pontos.')).toBeOnTheScreen();
-    expect(screen.getByText('1 de 3', { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getByText('1/3', { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('a done mission is read as «Feito» and hides the progress', () => {
     render(<LinhaMissao missao={missao({ progress: 3, completedAt: '2026-10-06T12:00:00Z' })} />);
     expect(screen.getByLabelText('Vai a três tascos. Feito. Mais 50 pontos.')).toBeOnTheScreen();
-    expect(screen.queryByText('3 de 3', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByText('3/3', { includeHiddenElements: true })).toBeNull();
   });
 
-  it('a one-step mission shows no «0 de 1»', () => {
+  it('a one-step mission shows no «0/1»', () => {
     render(<LinhaMissao missao={missao({ target: 1, progress: 0 })} />);
-    expect(screen.queryByText('0 de 1', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByText('0/1', { includeHiddenElements: true })).toBeNull();
   });
 
   it('with a handler, tapping the row opens how to do it and a button that goes there', () => {
@@ -173,6 +173,16 @@ describe('CartaoDivisao', () => {
     expect(screen.queryByLabelText('Zona de descida')).toBeNull();
     expect(
       screen.getByText('Zona de subida: se a época acabasse hoje, subias de divisão.', { includeHiddenElements: true })
+    ).toBeOnTheScreen();
+  });
+
+  it('tappable: no sentence under the card, the rule is in what VoiceOver reads', () => {
+    render(<CartaoDivisao ranking={ranking({ divisionPosition: 2 })} onPress={() => undefined} />);
+    expect(
+      screen.queryByText('Zona de subida: se a época acabasse hoje, subias de divisão.', { includeHiddenElements: true })
+    ).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /Zona de subida: se a época acabasse hoje, subias de divisão\./ })
     ).toBeOnTheScreen();
   });
 

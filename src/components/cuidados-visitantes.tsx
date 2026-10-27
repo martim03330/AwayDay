@@ -15,18 +15,16 @@ const COR_ADEPTOS_CASA = '#E8590C';
 /** Red used for the areas to avoid, here and on the map (orange already marks home fans' places). */
 export const COR_ZONA_A_EVITAR = '#C92A2A';
 
-/** Display order and the one-line label each kind of note gets under its title. */
-const TIPOS: { kind: SafetyNote['kind']; rotulo: string; detalhe?: string }[] = [
-  { kind: 'percurso_visitantes', rotulo: 'Entrada dos visitantes' },
+/** Display order and, for some kinds, a sentence added to the description once the row opens. */
+const TIPOS: { kind: SafetyNote['kind']; detalhe?: string }[] = [
+  { kind: 'percurso_visitantes' },
   {
     kind: 'zona_adeptos_casa',
-    rotulo: 'Zona dos adeptos da casa',
     detalhe: 'Evita-a com as cores do teu clube.',
   },
-  { kind: 'indicacao_oficial', rotulo: 'Como a PSP organizou os visitantes' },
+  { kind: 'indicacao_oficial' },
   {
     kind: 'zona_a_evitar',
-    rotulo: 'Zona a evitar com as cores do clube',
     detalhe: 'Está a vermelho no mapa.',
   },
 ];
@@ -91,10 +89,6 @@ export function CuidadosVisitantes({ notas }: CuidadosVisitantesProps) {
           key={nota.id}
           leading={<Marca kind={nota.kind} />}
           title={nota.title}
-          // The category only helps when the title does not already say it.
-          subtitle={
-            nota.title.toLowerCase().includes(tipo.rotulo.toLowerCase()) ? undefined : tipo.rotulo
-          }
           separador>
           <ThemedText type="small" themeColor="textSecondary">
             {tipo.detalhe ? `${nota.description} ${tipo.detalhe}` : nota.description}

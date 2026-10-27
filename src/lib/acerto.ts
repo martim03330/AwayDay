@@ -4,8 +4,9 @@
  * Duas coisas vivem aqui, ambas só com aritmética de inteiros (cêntimos, como manda a casa):
  *
  * 1. `dividirCentimos` — a divisão de uma despesa pelas pessoas que entram nela. É por igual; quando não dá certo,
- *    os cêntimos que sobram vão um a um para os primeiros por ordem do identificador. É exatamente a mesma regra
- *    que o servidor aplica em `trip_balances`, para o que a app mostra antes de gravar ser o que fica gravado.
+ *    os cêntimos que sobram vão um a um para as primeiras pessoas numa ordem que muda de despesa para despesa
+ *    (`md5(despesa || pessoa)`), para não calharem sempre à mesma. É exatamente a mesma regra que o servidor aplica
+ *    em `trip_balances`.
  * 2. `acertarContas` — a lista de transferências que fecha os saldos.
  *
  * Sobre o «menor número de transferências»: encontrar o mínimo absoluto é um problema sem solução rápida conhecida
@@ -14,6 +15,8 @@
  * — e só depois se vai ao maior devedor com o maior credor. Nunca sai daqui mais do que uma transferência por
  * pessoa menos uma, e em quase todas as viagens sai o mínimo mesmo.
  */
+
+import { md5 } from '@/lib/md5';
 
 export type SaldoDeViagem = {
   profileId: string;
@@ -38,9 +41,8 @@ function exigirCentimos(valor: number) {
 }
 
 /**
- * The order the server uses for the leftover cents: `row_number() over (partition by expense order by profile_id)`
- * in `trip_balances`, where `profile_id` is a uuid. Postgres compares uuids byte by byte, which for the canonical
- * text form is the same as comparing the lowercase hex strings character by character.
+ * The tie-break order of profiles, as Postgres orders uuids: byte by byte, which for the canonical text form is the
+ * same as comparing the lowercase hex strings character by character.
  */
 function compararIds(a: string, b: string) {
   const x = a.toLowerCase();
@@ -49,11 +51,28 @@ function compararIds(a: string, b: string) {
 }
 
 /**
+ * The order the server gives the leftover cents of one expense: `row_number() over (partition by e.id order by
+ * md5(e.id::text || sh.profile_id::text) collate "C", sh.profile_id)` in `trip_balances`. The hash changes from one
+ * expense to the next, so the extra cent lands on a different person each time instead of always on the lowest id;
+ * `collate "C"` compares the hex digests byte by byte, which is what `<` does on these strings.
+ */
+export function ordemDosCentimosQueSobram(despesaId: string, pessoas: string[]): string[] {
+  const chave = (pessoa: string) => md5(`${despesaId.toLowerCase()}${pessoa.toLowerCase()}`);
+  const chaves = new Map(pessoas.map((pessoa) => [pessoa, chave(pessoa)]));
+  return [...pessoas].sort((a, b) => {
+    const x = chaves.get(a) ?? '';
+    const y = chaves.get(b) ?? '';
+    return x < y ? -1 : x > y ? 1 : compararIds(a, b);
+  });
+}
+
+/**
  * Quanto cabe a cada pessoa numa despesa. Devolve uma parte por pessoa distinta, pela ordem em que cada uma aparece
  * pela primeira vez (alguém repetido na lista entra uma vez só, como no servidor), e a soma das partes é sempre
- * exatamente o total: ninguém paga um cêntimo a mais por acaso, nem falta um no fim.
+ * exatamente o total: ninguém paga um cêntimo a mais por acaso, nem falta um no fim. Quem fica com os cêntimos que
+ * sobram depende da despesa (`despesaId`, o id que o servidor lhe deu), como em `trip_balances`.
  */
-export function dividirCentimos(totalCentimos: number, participantes: string[]): number[] {
+export function dividirCentimos(totalCentimos: number, participantes: string[], despesaId: string): number[] {
   exigirCentimos(totalCentimos);
   if (totalCentimos < 0) throw new RangeError('Uma despesa não pode ser negativa.');
 
@@ -69,8 +88,8 @@ export function dividirCentimos(totalCentimos: number, participantes: string[]):
 
   const base = Math.floor(totalCentimos / pessoas.length);
   const resto = totalCentimos - base * pessoas.length;
-  // Os cêntimos a mais seguem a ordem do identificador — a mesma que o servidor usa, e que não muda de dia para dia.
-  const ordenados = [...pessoas].sort(compararIds);
+  // Os cêntimos a mais seguem a ordem que o servidor usa: fixa para cada despesa, diferente de despesa para despesa.
+  const ordenados = ordemDosCentimosQueSobram(despesaId, pessoas);
   const comMais = new Set(ordenados.slice(0, resto));
 
   return pessoas.map((pessoa) => (comMais.has(pessoa) ? base + 1 : base));

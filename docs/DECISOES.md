@@ -2,6 +2,77 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-10-27 — Botões e linhas só com título
+
+- **Porquê:** o dono quer menus limpos: «todos esses componentes tenham apenas título». A passagem de 2026-10-15
+  (commit 412ec4d, «Linhas mais limpas») tirou só os subtítulos que explicavam; os «informativos» ficaram e a app
+  continuava cheia de frases debaixo dos botões.
+- **Regra:** tudo o que se toca (botões, linhas, interruptores, opções, faixas que abrem, cartões com toque) mostra
+  só o título. Se um dado decide a escolha (hora, preço, contagem, estado), fica curto à direita — o novo `valor` de
+  `LinhaGrupo` («até 13:00», «Amanhã 15:00», «2 faltas», «Por corrigir»), uma pastilha ou um contador que já
+  existia — nunca uma frase. O que saiu do ecrã passa para o `accessibilityLabel`/`accessibilityHint`, para o
+  VoiceOver não perder nada.
+- **Componentes:** `Expansor` e `LinhaQueAbre` perdem o subtítulo; `LinhaGrupo` troca-o por `valor` nas linhas que
+  se tocam (o `subtitle` fica só para linhas que não se tocam e mostram um facto, como a morada do ponto de
+  encontro); `OpcaoClube`, `EscolherTransporte`, `EscolherParque` e as linhas de interruptor das Notificações e da
+  boleia do plano mostram só o título. Pessoas nas listas: só o nome, e as faltas quando as há.
+- **Fica:** o que é a coisa em si e não a explicação de um botão — conversas e mensagens, cartões de jogo, de tasco e
+  do álbum, a lista de boleias com preços, despesas e acertos, tabelas do ranking, resultados de pesquisa de morada
+  (a morada distingue sítios com o mesmo nome), avisos, termos e consentimentos, estados vazios e erros. O aviso de
+  que as dicas e a retrospetiva são escritas por IA passou das linhas para uma nota única debaixo do cartão.
+
+## 2026-10-27 — Contas da viagem: os cêntimos que sobram rodam, um «cada» só, pagamentos à vista
+
+- **Porquê:** na ronda de testes (FC Porto x Estoril) o cêntimo a mais da boleia e o das imperiais foram os dois
+  para o mesmo amigo (35,34 € contra 35,32 €); a boleia de 136,30 € a quatro aparecia como «34,08 € cada» no carro e
+  no plano mas «cerca de 34,07 € cada» na sessão; e «Já recebi» gravava ao primeiro toque, sem volta atrás à vista.
+- **Cêntimos que sobram** (`20261027150000_trip_balances_fair_leftover_cents`, substitui a regra de 2026-09-16
+  «Os cêntimos que sobram têm dono»): em cada despesa, os `cents % n` cêntimos a mais vão para as primeiras pessoas
+  por `md5(id da despesa || id da pessoa)` (comparado byte a byte, `collate "C"`), e não por `profile_id`. Fixo para
+  cada despesa (apagar outra não mexe no cêntimo de ninguém), diferente de despesa para despesa. Os totais continuam
+  exatos. Espelho na app: `dividirCentimos`/`ordemDosCentimosQueSobram` em `src/lib/acerto.ts`, com um MD5 puro em
+  `src/lib/md5.ts` (sem dependências; testado contra o `md5()` do Postgres). Os testes SQL que esperavam o cêntimo
+  numa pessoa certa passaram a aceitar qualquer pessoa.
+- **«cada»:** é sempre a parte arredondada para cima (o que ninguém ultrapassa), `parteDeCadaCentimos` em
+  `src/lib/money.ts`, a mesma regra de `ride_share_cents`/`sharePerPersonCents`. Sem «cerca de».
+- **Pagamentos:** «Já paguei», «Já recebi» e «Recebi» pedem confirmação; em «Acertar contas» há a lista
+  «Pagamentos» (por confirmar e confirmados), com «Desfazer» para quem o servidor deixa: por confirmar, quem está nele
+  ou o lançou; confirmado, quem pagou, e quem recebeu só durante 10 minutos depois de confirmar
+  (`20261027180000_settlement_receiver_undo_window`; `trip_settlements` devolve `receiver_undo_until`). Chega para
+  emendar um toque na pessoa errada (aconteceu na ronda) sem deixar quem recebeu reabrir uma dívida já paga.
+- **Despesas antigas não mexem** (`20261027170000_trip_balances_old_expenses_keep_split`): a regra nova dos cêntimos
+  aplicada às despesas já acertadas criava dívidas fantasma de 0,01 € (um pagamento confirmado com a divisão antiga).
+  Só as despesas lançadas a partir de 2026-10-27 14:00 UTC rodam os cêntimos; as anteriores ficam com a ordem por
+  pessoa. Não havia nenhuma despesa depois dessa hora quando se aplicou.
+
+## 2026-10-27 — «Vou a este jogo» segue o plano e o carro; plano fechado avisa a conversa
+
+- **Porquê:** na ronda de testes, quem disse «vou» no plano e tinha lugar no carro via o bilhete por marcar e a
+  contagem «Menos de 5 adeptos…» não o contava; e quando o carro encheu o plano fechou sem ninguém na conversa ver.
+- **Como:** triggers na base de dados (`20261027140000_plans_and_rides_mark_going`): um «vou» no plano, um lugar
+  aceite num carro ou um carro oferecido marcam `fixture_attendance` como 'going' se o jogo ainda não começou (nunca
+  mexe num 'attended'); um «não vou» tira só o 'going'; sair do carro não tira nada. Os «vou» e lugares já dados
+  para jogos futuros foram marcados de uma vez. Na página do jogo, sem boleia mas com plano num grupo, aparece a linha
+  do grupo, que abre o plano.
+- **Plano fechado** (`20261027141000_plan_closed_notice`): um aviso (`kind = 'aviso'`) no grupo do plano e nos
+  grupos a quem foi mandado — «Plano X fechado: Rui já tem o carro cheio.» ou «Ana fechou o plano X.». **Sem push:**
+  quem está no carro já foi avisado pelas notificações da boleia, e um push ao grupo inteiro por uma mudança de estado
+  (outra vez a cada reabrir e fechar) seria ruído. O trigger do push salta estes avisos por uma definição local à
+  transação (`awayday.quiet_notice`).
+
+## 2026-10-19 — Sem captcha nas contas
+
+- **Porquê:** um tester novo ficou preso no «Só para confirmar que és tu» ao criar conta: o desafio da Cloudflare
+  aparecia na WebView e nunca devolvia o código. Numa app, o captcha custa mais (pessoas presas, sem saída) do que
+  protege; o registo continua limitado por endereço e pelo código de confirmação por email.
+- **Como:** tirou-se `EXPO_PUBLIC_TURNSTILE_SITE_KEY` dos ambientes `production` e `preview` do EAS e do `.env.local`
+  (lá fica comentada). Sem site key, o `CaptchaProvider` não monta a WebView e não pede código, como já estava previsto
+  (ver «Captcha (Cloudflare Turnstile) nas contas», 2026-10-13). Chegou aos testers por atualização OTA («Sem captcha
+  nas contas», runtime 1.0.1), sem build nova. No Supabase o captcha nunca tinha sido ligado, por isso não há nada a
+  desligar lá.
+- **Fica:** o código do captcha e o `react-native-webview` continuam no repositório, inativos. Apagar de vez ou trocar
+  por uma alternativa que funcione dentro de uma app é decisão para depois.
+
 ## 2026-10-13 — Sem a dica do treinador na página inicial; pesquisa de moradas mais rápida
 
 - A dica do treinador e o convite para a ligar saíram do cabeçalho dos Jogos (ocupava metade do ecrã e fazia a página

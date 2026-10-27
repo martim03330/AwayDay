@@ -42,7 +42,13 @@ export function SessoesAbertas() {
             router.push({ pathname: '/sessao/[sessaoId]', params: { sessaoId: sessao.sessionId } })
           }
           accessibilityRole="button"
-          accessibilityLabel={`Viagem para ${nomeDoJogo(sessao.fixtureId)}, com ${plural(sessao.people, 'pessoa', 'pessoas')}. ${saldo(sessao.myBalanceCents, dinheiro)}. Toca para abrir.`}
+          accessibilityLabel={dinheiro.leitor(
+            `Viagem para ${nomeDoJogo(sessao.fixtureId)}, com ${plural(sessao.people, 'pessoa', 'pessoas')}.${
+              sessao.ride
+                ? ` ${sessao.ride.iDrive ? 'Sais tu' : `Sais com ${sessao.ride.driverName}`} ${formatarDiaEHora(new Date(sessao.ride.departureAt)).toLowerCase()}.`
+                : ''
+            } ${dinheiro.formatar(sessao.totalCents)} gastos. ${saldo(sessao.myBalanceCents, dinheiro)}. Toca para abrir.`
+          )}
           style={({ pressed }) => [
             styles.cartao,
             CardShadow,
@@ -59,34 +65,27 @@ export function SessoesAbertas() {
           <ThemedText type="subtitle" style={{ color: theme.accentText }}>
             {nomeDoJogo(sessao.fixtureId)}
           </ThemedText>
-          <ThemedText type="small" style={{ color: theme.accentText }}>
-            {sessao.ride
-              ? `${sessao.ride.iDrive ? 'Sais tu' : `Sai com ${sessao.ride.driverName}`} ${formatarDiaEHora(new Date(sessao.ride.departureAt)).toLowerCase()}`
-              : plural(sessao.people, 'pessoa vai', 'pessoas vão')}
-          </ThemedText>
-          <View style={styles.linha}>
-            <View style={[styles.pastilha, { backgroundColor: theme.accentPressed }]}>
-              <ThemedText type="smallBold" style={{ color: theme.accentText }}>
-                {`${dinheiro.formatar(sessao.totalCents)} gastos`}
-              </ThemedText>
+          {/* Only what may need doing: the balance, and only when there is one. */}
+          {sessao.myBalanceCents !== 0 ? (
+            <View style={styles.linha}>
+              <View
+                style={[
+                  styles.pastilha,
+                  {
+                    backgroundColor:
+                      sessao.myBalanceCents < 0 ? theme.highlight : theme.accentPressed,
+                  },
+                ]}>
+                <ThemedText
+                  type="smallBold"
+                  style={{
+                    color: sessao.myBalanceCents < 0 ? theme.highlightText : theme.accentText,
+                  }}>
+                  {saldo(sessao.myBalanceCents, dinheiro)}
+                </ThemedText>
+              </View>
             </View>
-            <View
-              style={[
-                styles.pastilha,
-                {
-                  backgroundColor:
-                    sessao.myBalanceCents < 0 ? theme.highlight : theme.accentPressed,
-                },
-              ]}>
-              <ThemedText
-                type="smallBold"
-                style={{
-                  color: sessao.myBalanceCents < 0 ? theme.highlightText : theme.accentText,
-                }}>
-                {saldo(sessao.myBalanceCents, dinheiro)}
-              </ThemedText>
-            </View>
-          </View>
+          ) : null}
         </Pressable>
       ))}
     </>

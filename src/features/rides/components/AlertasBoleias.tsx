@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import { fetchMyRideAlerts, type RideAlert } from '@/features/rides/api';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { obterClube } from '@/mocks/clubes';
@@ -20,6 +20,16 @@ function nomeDoJogo(fixtureId: string) {
   return `${obterClube(jogo.casaId)?.nomeCurto ?? ''} x ${obterClube(jogo.foraId)?.nomeCurto ?? ''}`;
 }
 
+/** «Amanhã 15:00», «31/10 15:00»: when the car leaves, in as few characters as fit at the end of a row. */
+function quandoSai(alerta: RideAlert) {
+  const partida = new Date(alerta.departureAt);
+  return `${formatarDiaCurto(partida)} ${formatarHora(partida)}`;
+}
+
+/**
+ * The row's title, a short value for its right side (a time, never a sentence) and, for VoiceOver, the line that
+ * used to sit under the title.
+ */
 function conteudo(alerta: RideAlert) {
   const jogo = nomeDoJogo(alerta.fixtureId);
   switch (alerta.kind) {
@@ -28,56 +38,64 @@ function conteudo(alerta: RideAlert) {
         tom: 'yellow' as const,
         icon: icons.perfil,
         titulo: `${plural(alerta.pending, 'pedido', 'pedidos')} de lugar por responder`,
-        texto: `Boleia para ${jogo} · responde até às ${formatarHora(new Date(alerta.requestsCloseAt))}`,
+        valor: `até ${formatarHora(new Date(alerta.requestsCloseAt))}`,
+        detalhe: `Boleia para ${jogo} · responde até às ${formatarHora(new Date(alerta.requestsCloseAt))}`,
       };
     case 'aceite':
       return {
         tom: 'green' as const,
         icon: icons.carro,
         titulo: `Tens lugar na boleia de ${alerta.driverName ?? 'um adepto'}`,
-        texto: `${jogo} · sai ${formatarDiaEHora(new Date(alerta.departureAt)).toLowerCase()}`,
+        valor: quandoSai(alerta),
+        detalhe: jogo,
       };
     case 'recusado':
       return {
         tom: 'neutral' as const,
         icon: icons.fechar,
         titulo: 'O teu pedido de lugar foi recusado',
-        texto: `${jogo} · vê se há outra boleia com lugar`,
+        valor: undefined,
+        detalhe: `${jogo} · vê se há outra boleia com lugar`,
       };
     case 'sem_resposta':
       return {
         tom: 'neutral' as const,
         icon: icons.horario,
         titulo: 'O teu pedido ficou sem resposta',
-        texto: `${jogo} · vê se há outra boleia com lugar`,
+        valor: undefined,
+        detalhe: `${jogo} · vê se há outra boleia com lugar`,
       };
     case 'cancelada':
       return {
         tom: 'red' as const,
         icon: icons.aviso,
         titulo: `${alerta.driverName ?? 'O condutor'} cancelou a boleia`,
-        texto: `${jogo} · procura outra boleia`,
+        valor: undefined,
+        detalhe: `${jogo} · procura outra boleia`,
       };
     case 'volta_pedidos':
       return {
         tom: 'yellow' as const,
         icon: icons.carro,
         titulo: `${plural(alerta.pending, 'pedido', 'pedidos')} de boleia de volta`,
-        texto: `${jogo} · alguém ficou sem transporte e está à espera de resposta`,
+        valor: undefined,
+        detalhe: `${jogo} · alguém ficou sem transporte e está à espera de resposta`,
       };
     case 'volta_aceite':
       return {
         tom: 'green' as const,
         icon: icons.carro,
         titulo: `${alerta.driverName ?? 'Um adepto'} leva-te de volta`,
-        texto: `${jogo} · combina onde se encontram`,
+        valor: undefined,
+        detalhe: `${jogo} · combina onde se encontram`,
       };
     case 'volta_recusado':
       return {
         tom: 'neutral' as const,
         icon: icons.fechar,
         titulo: 'Sem boleia de volta neste carro',
-        texto: `${jogo} · vê se há outro carro a voltar`,
+        valor: undefined,
+        detalhe: `${jogo} · vê se há outro carro a voltar`,
       };
   }
 }
@@ -112,7 +130,7 @@ export function AlertasBoleias({
   return (
     <Card style={styles.cartao}>
       {lista.map((alerta, indice) => {
-        const { tom, icon, titulo, texto } = conteudo(alerta);
+        const { tom, icon, titulo, valor, detalhe } = conteudo(alerta);
         return (
           <LinhaGrupo
             key={`${alerta.kind}-${alerta.rideId}`}
@@ -128,10 +146,10 @@ export function AlertasBoleias({
                     }
               )
             }
-            accessibilityLabel={`${titulo}. ${texto}. Toca para abrir a boleia.`}
+            accessibilityLabel={`${titulo}${valor ? `, ${valor}` : ''}. ${detalhe}. Toca para abrir a boleia.`}
             leading={<IconCircle name={icon} tone={tom} />}
             title={titulo}
-            subtitle={texto}
+            valor={valor}
             trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
             separador={indice < lista.length - 1}
           />

@@ -54,11 +54,6 @@ export function GoingButton({ fixtureId }: { fixtureId: string }) {
   return (
     <View style={styles.block}>
       <BilheteAlternar going={going} onPress={toggle} />
-      {going ? null : (
-        <ThemedText themeColor="textSecondary" style={styles.help}>
-          Marca e preparamos o teu dia: horas, avisos e quem vai contigo.
-        </ThemedText>
-      )}
       {modoDemo || quantos.isLoading ? null : (
         quantos.data != null ? (
           <NumeroAnimado
@@ -127,7 +122,8 @@ function BilheteAlternar({ going, onPress }: { going: boolean; onPress: () => vo
       onPress={tocar}
       accessibilityRole="button"
       accessibilityState={{ selected: going }}
-      accessibilityLabel={texto}>
+      accessibilityLabel={texto}
+      accessibilityHint={going ? undefined : 'Prepara o teu dia: horas, avisos e quem vai contigo'}>
       <Animated.View
         style={[
           styles.botao,

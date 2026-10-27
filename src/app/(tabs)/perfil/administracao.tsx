@@ -62,7 +62,6 @@ export default function AdministracaoScreen() {
               />
             }
             title="Pontos de encontro por confirmar"
-            subtitle="Encontrados nas notícias dos clubes"
             trailing={chevron}
           />
           <LinhaGrupo

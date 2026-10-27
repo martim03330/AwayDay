@@ -94,7 +94,7 @@ export const PRIVACIDADE: DocumentoLegal = {
       titulo: 'A tua localização',
       blocos: [
         p(
-          'A app só lê a tua localização quando usas uma função que precisa dela: fazer check-in num tasco, carimbar o estádio, escolher o ponto de partida de uma boleia ou encontrar a casa de banho mais perto. Lê uma vez, e a posição não fica guardada. Numa boleia, fica guardado o ponto de encontro que escolhes no mapa, não a tua posição.'
+          'A app só lê a tua localização quando usas uma função que precisa dela: fazer check-in num tasco, carimbar o estádio, escolher o ponto de partida de uma boleia, encontrar a casa de banho mais perto ou ver onde estás no mapa. Lê uma vez (no mapa, enquanto o tens aberto, para o ponto azul te acompanhar), e a posição não sai do telemóvel nem fica guardada. Numa boleia, fica guardado o ponto de encontro que escolhes no mapa, não a tua posição.'
         ),
         l(
           'Guardamos o resultado, não a posição: por exemplo, que estiveste num estádio num certo dia.',

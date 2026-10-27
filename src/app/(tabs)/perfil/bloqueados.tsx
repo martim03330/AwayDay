@@ -8,7 +8,6 @@ import {
   useBlockedPeople,
   useRefreshAfterModeration,
 } from '@/features/moderation/hooks/useModeration';
-import { formatarData } from '@/lib/datas';
 import { useUserId } from '@/lib/session';
 import { Avatar } from '@/ui/avatar';
 import { Card } from '@/ui/card';
@@ -85,7 +84,6 @@ export default function PessoasBloqueadasScreen() {
               separador={indice < lista.length - 1}
               leading={<Avatar nome={pessoa.displayName} />}
               title={pessoa.displayName}
-              subtitle={`Desde ${formatarData(new Date(pessoa.blockedAt))}`}
               trailing={
                 <LinkTexto
                   label="Desbloquear"

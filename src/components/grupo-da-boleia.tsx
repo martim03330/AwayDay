@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { fetchMyGroups } from '@/features/groups/api';
@@ -37,6 +37,8 @@ export function GrupoDaBoleia({ boleia, participante }: { boleia: RideSummary; p
   const soDoGrupo = boleia.visibility === 'grupo';
   // A car of a group I am not in: I see it because a plan was sent to one of my groups.
   const deOutroGrupo = meusGrupos.data !== undefined && !meusGrupos.data.some((grupo) => grupo.id === grupoId);
+  // Opening a full car to everyone makes no sense: the offer only shows while there are free seats.
+  const temLugares = boleia.seatsTaken < boleia.seatsOffered;
   const titulo = deOutroGrupo ? rotuloDeOutroGrupo('boleia', boleia.groupName) : `Boleia do grupo ${boleia.groupName}`;
 
   async function abrirATodos() {
@@ -60,17 +62,14 @@ export function GrupoDaBoleia({ boleia, participante }: { boleia: RideSummary; p
         accessibilityLabel={`${titulo}. ${soDoGrupo ? 'Só a malta do grupo a vê' : 'Aberta a toda a gente'}.${deOutroGrupo ? '' : ' Toca para abrir o grupo.'}`}
         style={({ pressed }) => [styles.linha, pressed && styles.premido]}>
         <Icon name={icons.perfil} size={20} color={theme.accentInk} />
-        <View style={styles.flex}>
-          <ThemedText type="smallBold">{titulo}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {soDoGrupo ? 'Só a malta do grupo a vê' : 'Aberta a toda a gente'}
-          </ThemedText>
-        </View>
+        <ThemedText type="smallBold" style={styles.flex}>
+          {titulo}
+        </ThemedText>
         {deOutroGrupo ? null : <Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
       </Pressable>
-      {boleia.isMine && soDoGrupo ? (
+      {boleia.isMine && soDoGrupo && temLugares ? (
         <LinkTexto
-          label={aTratar ? 'A abrir…' : 'O carro não enche? Abrir a toda a gente'}
+          label={aTratar ? 'A abrir…' : 'Abrir a toda a gente'}
           disabled={aTratar}
           onPress={() => void abrirATodos()}
         />
@@ -95,7 +94,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-    gap: Spacing.half,
   },
   premido: {
     opacity: 0.7,

@@ -17,8 +17,8 @@ import {
 } from '@/features/trips/hooks/useTrips';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
-import { parteDeCada } from '@/lib/acerto';
-import { formatarDiaEHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { parteDeCadaCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { obterEstadio } from '@/mocks/estadios';
 import { obterJogo } from '@/mocks/jogos';
@@ -35,13 +35,8 @@ import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
 import { MensagemErro } from '@/ui/mensagem-erro';
-import { type FormatarDinheiro, useFormatarDinheiro } from '@/ui/valor';
+import { useFormatarDinheiro } from '@/ui/valor';
 
-/** "15,00 €" ou "cerca de 15,00 €", quando a divisão não dá certa ao cêntimo. */
-function parteDaBoleia(centimos: number, pessoas: number, dinheiro: FormatarDinheiro) {
-  const { base, comMaisUmCentimo } = parteDeCada(centimos, pessoas);
-  return comMaisUmCentimo === 0 ? dinheiro.formatar(base) : `cerca de ${dinheiro.formatar(base)}`;
-}
 
 /**
  * The trip session. What matters most comes first: how much you owe or are owed (and to whom), with one action to
@@ -150,12 +145,15 @@ export default function SessaoScreen() {
 
   const chevron = <Icon name={icons.seguinte} size={18} color={theme.textMuted} />;
 
+  /** «Amanhã 15:00», «31/10 15:00»: the short value at the end of the day's rows. */
+  const quando = (data: Date) => `${formatarDiaCurto(data)} ${formatarHora(data)}`;
+
   const subtituloDaBoleia = boleia
     ? [
         boleia.iDrive ? 'Levas tu o carro' : `Carro de ${boleia.driverName}`,
         boleia.originName ? `de ${boleia.originName}` : null,
         boleia.cents !== null && boleia.people
-          ? `${parteDaBoleia(boleia.cents, boleia.people, dinheiro)} cada`
+          ? `${dinheiro.formatar(parteDeCadaCentimos(boleia.cents, boleia.people))} cada`
           : null,
       ]
         .filter(Boolean)
@@ -235,8 +233,8 @@ export default function SessaoScreen() {
             }
             accessibilityLabel={`Partida ${formatarDiaEHora(new Date(boleia.departureAt))}. ${subtituloDaBoleia}. Toca para ver a boleia.`}
             leading={<IconCircle name={icons.carro} />}
-            title={formatarDiaEHora(new Date(boleia.departureAt))}
-            subtitle={subtituloDaBoleia}
+            title="Boleia"
+            valor={quando(new Date(boleia.departureAt))}
             trailing={chevron}
           />
         ) : null}
@@ -245,10 +243,10 @@ export default function SessaoScreen() {
           onPress={() =>
             router.push({ pathname: '/jogos/[jogoId]', params: { jogoId: sessao.fixtureId } })
           }
-          accessibilityLabel="Ver o jogo"
+          accessibilityLabel={`Ver o jogo. ${jogo && !jogo.horaConfirmada ? 'Hora por definir' : formatarDiaEHora(inicio)}${estadio ? `, ${estadio.nome}` : ''}.`}
           leading={<IconCircle name={icons.jogos} />}
-          title={jogo && !jogo.horaConfirmada ? 'Hora por definir' : formatarDiaEHora(inicio)}
-          subtitle={estadio?.nome}
+          title="Jogo"
+          valor={jogo && !jogo.horaConfirmada ? 'Hora por definir' : quando(inicio)}
           trailing={chevron}
         />
         {sessao.groupId ? (
@@ -278,7 +276,7 @@ export default function SessaoScreen() {
                   <Avatar nome={pessoa.displayName} url={fotoDe(pessoa.profileId)} size={36} />
                 }
                 title={pessoa.isMe ? `${pessoa.displayName} (tu)` : pessoa.displayName}
-                subtitle={boleia?.driverId === pessoa.profileId ? 'Leva o carro' : undefined}
+                valor={boleia?.driverId === pessoa.profileId ? 'Condutor' : undefined}
                 trailing={
                   aTirar && !pessoa.isMe ? (
                     <Pressable

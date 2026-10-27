@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { skipToken, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { LayoutAnimation, StyleSheet, View } from 'react-native';
@@ -33,7 +33,6 @@ import { useProfileCards } from '@/features/profile/hooks/useMyProfile';
 import { leaveRide, setRideReturnRequests, setRideVisibility } from '@/features/rides/api';
 import { useRealNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { Avatar } from '@/ui/avatar';
@@ -162,6 +161,12 @@ export default function PlanoScreen() {
       void queryClient.invalidateQueries({ queryKey: ['groups'] });
       void queryClient.invalidateQueries({ queryKey: ['rides'] });
       void queryClient.invalidateQueries({ queryKey: ['stays'] });
+      // Taking a seat from the plan marks the game as «vou» on the server: the game page follows.
+      void queryClient.invalidateQueries({
+        queryKey: ['attendance'],
+        predicate: (query) => query.options.queryFn !== skipToken,
+      });
+      void queryClient.invalidateQueries({ queryKey: ['going-count'] });
       return true;
     } catch (problema) {
       setErro(mensagemDeRecusa(problema));
@@ -220,7 +225,13 @@ export default function PlanoScreen() {
     (cartoes.data ?? []).find((cartao) => cartao.profileId === profileId)?.avatarUrl;
 
   const pessoasQueResponderam = [...vao, ...(congelado ? [] : naoVao), ...aPensar];
-  const podeAbrirAoPublico = aberto && souCondutor && plano.ride !== null && !plano.ride.publica;
+  // A full car has nothing to offer the public: the row only shows while there are free seats.
+  const podeAbrirAoPublico =
+    aberto &&
+    souCondutor &&
+    plano.ride !== null &&
+    !plano.ride.publica &&
+    plano.ride.seatsTaken < plano.ride.seatsOffered;
   const podeGerirGrupos = aberto && souQuemConvidou;
   // Who invited sees every other group of theirs (sent or not); everyone else only the groups it was sent to.
   const gruposVisiveis: GrupoDoPlano[] = podeGerirGrupos
@@ -266,16 +277,26 @@ export default function PlanoScreen() {
               <LinhaGrupo
                 key={pessoa.profileId}
                 onPress={() => abrirPerfil(pessoa.profileId)}
+                accessibilityLabel={`${pessoa.displayName}, ${
+                  pessoa.otherGroup
+                    ? `vai com ${pessoa.otherGroup}`
+                    : pessoa.answer === 'vou'
+                      ? 'vai'
+                      : pessoa.answer === 'nao'
+                        ? 'não vai'
+                        : 'a pensar'
+                }. Toca para ver o perfil.`}
                 separador={indice < pessoasQueResponderam.length - 1}
                 leading={
                   <Avatar nome={pessoa.displayName} url={fotoDe(pessoa.profileId)} size={36} />
                 }
                 title={pessoa.isMe ? `${pessoa.displayName} (tu)` : pessoa.displayName}
-                subtitle={
+                // The tick says «vai»; only the other answers need a word.
+                valor={
                   pessoa.otherGroup
-                    ? `Vai com ${pessoa.otherGroup}`
+                    ? `Com ${pessoa.otherGroup}`
                     : pessoa.answer === 'vou'
-                      ? 'Vai'
+                      ? undefined
                       : pessoa.answer === 'nao'
                         ? 'Não vai'
                         : 'A pensar'
@@ -297,11 +318,6 @@ export default function PlanoScreen() {
           <LinhaGrupo
             leading={<IconCircle name={icons.carro} tone={plano.ride ? 'green' : 'neutral'} />}
             title={plano.ride ? `Carro de ${plano.ride.driverName}` : 'Sem boleia no plano'}
-            subtitle={
-              plano.ride
-                ? plural(plano.ride.seatsTaken, 'pessoa foi no carro', 'pessoas foram no carro')
-                : undefined
-            }
             onPress={
               plano.ride
                 ? () =>
@@ -358,12 +374,7 @@ export default function PlanoScreen() {
               separador={indice < boleiasDoGrupo.length - 1}
               leading={<IconCircle name={icons.carro} />}
               title={boleia.isMine ? 'A tua boleia' : `Boleia de ${boleia.ownerName}`}
-              subtitle={[
-                boleia.departureAt ? `Sai ${formatarDiaEHora(new Date(boleia.departureAt)).toLowerCase()}` : null,
-                plural(Math.max(0, boleia.seatsTotal - boleia.taken), 'lugar livre', 'lugares livres'),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              valor={boleia.seatsTotal - boleia.taken <= 0 ? 'Cheia' : undefined}
               trailing={
                 <LinkTexto
                   label="Pôr no plano"
@@ -418,7 +429,6 @@ export default function PlanoScreen() {
                 separador={gruposVisiveis.length > 0}
                 leading={<IconCircle name={icons.partilhar} />}
                 title="Abrir a boleia ao público"
-                subtitle="Qualquer adepto pode pedir lugar."
                 onPress={aTratar ? undefined : abrirBoleiaAoPublico}
                 trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
               />

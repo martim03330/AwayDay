@@ -8,6 +8,12 @@ import { ThemedText } from '@/ui/themed-text';
 type LinhaGrupoProps = {
   leading: ReactNode;
   title: string;
+  /** A short value at the right of the title («sáb 15:00», «2,50 €», «Cheia»): one to three words, never a sentence. */
+  valor?: string;
+  /**
+   * A second line, only for rows that are not buttons and show a fact (an address, a label for the value above).
+   * Rows you tap carry only their title (and at most a short `valor`).
+   */
   subtitle?: string;
   trailing?: ReactNode;
   onPress?: () => void;
@@ -20,6 +26,7 @@ type LinhaGrupoProps = {
 export function LinhaGrupo({
   leading,
   title,
+  valor,
   subtitle,
   trailing,
   onPress,
@@ -34,14 +41,21 @@ export function LinhaGrupo({
         separador && { borderBottomWidth: 1, borderBottomColor: theme.backgroundSelected },
       ]}>
       {leading}
-      <View style={styles.corpo}>
-        <ThemedText style={styles.titulo}>{title}</ThemedText>
-        {subtitle ? (
+      {subtitle ? (
+        <View style={styles.corpo}>
+          <ThemedText style={styles.titulo}>{title}</ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.subtitulo}>
             {subtitle}
           </ThemedText>
-        ) : null}
-      </View>
+        </View>
+      ) : (
+        <ThemedText style={[styles.corpo, styles.titulo]}>{title}</ThemedText>
+      )}
+      {valor ? (
+        <ThemedText themeColor="textSecondary" style={styles.valor} numberOfLines={1}>
+          {valor}
+        </ThemedText>
+      ) : null}
       {trailing}
     </View>
   );
@@ -72,14 +86,21 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 1,
   },
+  subtitulo: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
   titulo: {
     fontSize: 15,
     lineHeight: 20,
     fontWeight: 800,
   },
-  subtitulo: {
+  valor: {
+    flexShrink: 0,
+    maxWidth: '40%',
     fontSize: 13,
     lineHeight: 18,
+    fontWeight: 600,
   },
   pressed: {
     opacity: 0.85,

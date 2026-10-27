@@ -1,4 +1,4 @@
-import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query';
+import { skipToken, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -20,6 +20,7 @@ import {
   fetchPlanPeople,
   fetchPlanSharedGroups,
   fetchPlans,
+  type FixturePlan,
 } from '@/features/groups/plans';
 import { fetchGroupHistory } from '@/features/groups/history';
 import { comAMinhaReacao, idLocal, lembrarChave, type Emoji } from '@/lib/conversa';
@@ -133,6 +134,64 @@ export function useGroupFixturePlans(groupId: string | null) {
     staleTime: 10 * 1000,
     meta: { persist: false },
   });
+}
+
+/**
+ * For each group, the plan it already has for this game (its own, or one sent to it), the same one the server
+ * points to when a second invite is refused: the list can say «já convocado» before the tap. Same cache as each
+ * group's plans, so opening the conversation afterwards does not ask again.
+ */
+export function useGroupPlansForFixture(groupIds: readonly string[], fixtureId: string | null) {
+  const resultados = useQueries({
+    queries: groupIds.map((groupId) => ({
+      queryKey: groupFixturePlansKey(groupId),
+      queryFn: fixtureId ? () => fetchGroupFixturePlans(groupId) : skipToken,
+      staleTime: 10 * 1000,
+      meta: { persist: false },
+    })),
+  });
+  const porGrupo = new Map<string, string>();
+  groupIds.forEach((groupId, indice) => {
+    const planos = (resultados[indice]?.data ?? []).filter((plano) => plano.fixtureId === fixtureId);
+    // The group's own plan first, as the server does; otherwise the first one sent to it.
+    const plano = planos.find((candidato) => candidato.groupId === groupId) ?? planos[0];
+    if (plano) porGrupo.set(groupId, plano.id);
+  });
+  return porGrupo;
+}
+
+/** A plan for a game in one of my groups, with the group it is seen from (its page lives under that group). */
+export type MyPlanForFixture = {
+  groupId: string;
+  groupName: string;
+  groupPhotoUrl: string | null;
+  plan: FixturePlan;
+};
+
+/**
+ * The plan I am in for this game, through any of my groups: the one I said «vou» to first, otherwise one I have not
+ * answered yet. A plan I said «não vou» to is not mine. `null` while signed out or with none.
+ */
+export function useMyPlanForFixture(fixtureId: string | null, signedIn: boolean): MyPlanForFixture | null {
+  const inbox = useMyGroupInbox(signedIn);
+  const grupos = inbox.data ?? [];
+  const resultados = useQueries({
+    queries: grupos.map((grupo) => ({
+      queryKey: groupFixturePlansKey(grupo.id),
+      queryFn: fixtureId ? () => fetchGroupFixturePlans(grupo.id) : skipToken,
+      staleTime: 10 * 1000,
+      meta: { persist: false },
+    })),
+  });
+  let melhor: MyPlanForFixture | null = null;
+  for (const [indice, grupo] of grupos.entries()) {
+    for (const plan of resultados[indice]?.data ?? []) {
+      if (plan.fixtureId !== fixtureId || plan.myAnswer === 'nao') continue;
+      if (melhor && (melhor.plan.myAnswer === 'vou' || plan.myAnswer !== 'vou')) continue;
+      melhor = { groupId: grupo.id, groupName: grupo.name, groupPhotoUrl: grupo.photoUrl, plan };
+    }
+  }
+  return melhor;
 }
 
 /**

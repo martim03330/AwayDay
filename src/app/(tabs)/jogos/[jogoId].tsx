@@ -11,11 +11,14 @@ import { MinhaBoleia, useMinhaBoleia } from '@/features/rides/components/MinhaBo
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { GoingButton } from '@/features/activity/components/GoingButton';
+import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
+import { useMyPlanForFixture } from '@/features/groups/hooks/useGroups';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { mostrarBarulhometro } from '@/lib/barulhometro';
 import { formatarDia, formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { useUserId } from '@/lib/session';
 import { estadoDoJogo } from '@/lib/jogos';
 import { precisaDeDormida } from '@/lib/dormida';
 import { avisoMeteorologico } from '@/lib/meteorologia';
@@ -92,6 +95,9 @@ export default function JogoScreen() {
   const jogo = obterJogo(jogoId);
   // Already in a car to this game: the page shows that ride instead of the invitation to sort one out.
   const minhaBoleia = useMinhaBoleia(jogo?.id ?? null);
+  // No car, but in a group plan for this game: the page shows that plan instead of the invitation to make one.
+  const userId = useUserId();
+  const meuPlano = useMyPlanForFixture(jogo?.id ?? null, userId !== null);
   const casa = jogo ? obterClube(jogo.casaId) : undefined;
   const fora = jogo ? obterClube(jogo.foraId) : undefined;
   const estadio = jogo ? obterEstadio(jogo.estadioId) : undefined;
@@ -241,6 +247,21 @@ export default function JogoScreen() {
                 router.push({ pathname: '/jogos/boleia', params: { rideId: minhaBoleia.id, jogoId: jogo.id } })
               }
             />
+          ) : estado === 'agendado' && meuPlano ? (
+            <Card style={styles.lista}>
+              <LinhaGrupo
+                onPress={() =>
+                  router.push({
+                    pathname: '/grupos/[grupoId]/plano/[planoId]',
+                    params: { grupoId: meuPlano.groupId, planoId: meuPlano.plan.id },
+                  })
+                }
+                accessibilityLabel={`Plano com ${meuPlano.groupName}. Toca para abrir.`}
+                leading={<CaraDoGrupo nome={meuPlano.groupName} url={meuPlano.groupPhotoUrl} size={38} />}
+                title={meuPlano.groupName}
+                trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
+              />
+            </Card>
           ) : estado === 'agendado' ? (
             <CombinarComAMalta onPress={() => abrir('/jogos/combinar')} />
           ) : null}
@@ -326,14 +347,9 @@ function CombinarComAMalta({ onPress }: { onPress: () => void }) {
       <View style={[styles.combinarIcone, { backgroundColor: theme.highlight }]}>
         <Icon name={icons.perfil} size={22} color={theme.highlightText} />
       </View>
-      <View style={styles.flex}>
-        <ThemedText type="subtitle" style={{ color: theme.accentText }}>
-          Combinar com a malta
-        </ThemedText>
-        <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.9 }}>
-          Quem vai, a boleia e a dormida, num só sítio.
-        </ThemedText>
-      </View>
+      <ThemedText type="subtitle" style={[styles.flex, { color: theme.accentText }]}>
+        Combinar com a malta
+      </ThemedText>
       <View style={[styles.combinarSeta, { backgroundColor: theme.accentPressed }]}>
         <Icon name={icons.seguinte} size={18} color={theme.accentText} />
       </View>

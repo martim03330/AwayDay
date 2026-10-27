@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import MapView, {
   Circle,
   MapMarker,
@@ -22,7 +22,7 @@ import { corFacilidade } from '@/components/facilidade-parque';
 import { WcDetalhes } from '@/components/wc-detalhes';
 import { CardShadow, COR_TASCO, Radius, Spacing } from '@/constants/theme';
 import { fetchStadiumParking, type ParkingSpot } from '@/features/parking/api';
-import { getCurrentPosition } from '@/features/presence/location';
+import { getCurrentPosition, useLocationPermission } from '@/features/presence/location';
 import {
   fetchHomeFanStreets,
   fetchHomeFanZones,
@@ -34,6 +34,7 @@ import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { abrirDirecoes } from '@/lib/direcoes';
 import { casasDeBanhoPerto } from '@/lib/casas-de-banho';
+import { distanciaEmLinhaRetaKm } from '@/lib/distancia';
 import { eJogoGrande } from '@/lib/classicos';
 import { facilidadeEstacionamento } from '@/lib/facilidade-estacionamento';
 import { plural } from '@/lib/formatos';
@@ -57,6 +58,8 @@ const INTERVALO_PONTOS_MS = 60;
 const ATRASO_PRIMEIRO_PONTO_MS = 150;
 const DELTA_CIDADE = 0.12;
 const DELTA_ESTADIO = 0.02;
+/** Within this distance the map zooms on the fan; further away it frames the fan and the stadium together. */
+const PERTO_DO_ESTADIO_KM = 3;
 const COR_ADEPTOS_DA_CASA = '#E8590C';
 
 type WcPerto = { wc: Restroom; metros: number; minutos: number };
@@ -207,6 +210,9 @@ export function MapaJogo({
   const [mapaLivre, setMapaLivre] = useState(false);
 
   const [modo, setModo] = useState<'cidade' | 'estadio'>(inicio);
+  // Where the fan is, drawn by the map itself (the blue dot): the position never leaves the phone.
+  const [permissaoLocalizacao] = useLocationPermission();
+  const [aLocalizar, setALocalizar] = useState(false);
   const [pontosVisiveis, setPontosVisiveis] = useState(0);
   const [selecao, setSelecao] = useState<Selecao | null>(null);
 
@@ -295,6 +301,49 @@ export function MapaJogo({
     if (modo === 'estadio') return;
     setPontosVisiveis(animar ? 0 : totalPontos);
     setModo('estadio');
+  }
+
+  /**
+   * Shows where the fan is. Close to the stadium the map zooms on them with the tascos around; far away it frames
+   * both, so they see which way to go.
+   */
+  function mostrarOndeEstou() {
+    if (aLocalizar) return;
+    setALocalizar(true);
+    void getCurrentPosition()
+      .then((resultado) => {
+        if (resultado.status === 'denied') {
+          Alert.alert(
+            'Sem localização',
+            'Para te vermos no mapa, deixa o AwayDay usar a localização enquanto está aberto.',
+            resultado.canAskAgain
+              ? [{ text: 'OK' }]
+              : [
+                  { text: 'Agora não', style: 'cancel' },
+                  { text: 'Abrir Definições', onPress: () => void Linking.openSettings() },
+                ]
+          );
+          return;
+        }
+        if (resultado.status !== 'ok') {
+          Alert.alert('Sem localização', 'Não deu para saber onde estás. Tenta outra vez.');
+          return;
+        }
+        const aqui = { latitude: resultado.position.latitude, longitude: resultado.position.longitude };
+        if (modo !== 'estadio') {
+          setPontosVisiveis(totalPontos);
+          setModo('estadio');
+        }
+        if (distanciaEmLinhaRetaKm(aqui, venue.coordenadas) <= PERTO_DO_ESTADIO_KM) {
+          mapa.current?.animateToRegion(regiao(aqui, DELTA_ESTADIO), animar ? DURACAO_MS : 0);
+        } else {
+          mapa.current?.fitToCoordinates([aqui, venue.coordenadas], {
+            edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
+            animated: animar,
+          });
+        }
+      })
+      .finally(() => setALocalizar(false));
   }
 
   function voltarACidade() {
@@ -399,6 +448,8 @@ export function MapaJogo({
           rotateEnabled={false}
           toolbarEnabled={false}
           showsPointsOfInterests={false}
+          showsUserLocation={permissaoLocalizacao?.granted === true}
+          showsMyLocationButton={false}
           accessibilityLabel={`Mapa de ${venue.cidade} com o ${venue.nome}`}>
           <MapMarker
             identifier={venue.id}
@@ -567,6 +618,20 @@ export function MapaJogo({
             style={[styles.trancaTexto, { color: mapaLivre ? theme.accentText : theme.text }]}>
             {mapaLivre ? 'Prender' : 'Mexer no mapa'}
           </ThemedText>
+        </Pressable>
+
+        <Pressable
+          onPress={mostrarOndeEstou}
+          accessibilityRole="button"
+          accessibilityLabel="Onde estou"
+          accessibilityState={{ busy: aLocalizar }}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.ondeEstou,
+            { backgroundColor: theme.backgroundElement },
+            pressed && styles.trancaPressionada,
+          ]}>
+          <Icon name={icons.localizacao} size={18} color={theme.text} />
         </Pressable>
 
         {localSelecionado ? (
@@ -785,6 +850,17 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one + 2,
+    borderRadius: Radius.pill,
+    ...CardShadow,
+  },
+  ondeEstou: {
+    position: 'absolute',
+    top: Spacing.two,
+    left: Spacing.two,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: Radius.pill,
     ...CardShadow,
   },

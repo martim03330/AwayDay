@@ -2,16 +2,11 @@ import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { iniciais } from '@/lib/iniciais';
 import { ThemedText } from '@/ui/themed-text';
 
-/** "Martim Henriques" -> "MH". Uma pessoa sem foto é reconhecida pelas iniciais, como sempre foi. */
-export function iniciais(nome: string) {
-  const partes = nome.trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return '?';
-  const primeira = partes[0][0] ?? '';
-  const ultima = partes.length > 1 ? (partes[partes.length - 1][0] ?? '') : '';
-  return (primeira + ultima).toUpperCase();
-}
+// Re-exported: screens and the group face import the initials from here.
+export { iniciais };
 
 type AvatarProps = {
   nome: string;

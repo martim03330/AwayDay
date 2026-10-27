@@ -6,7 +6,10 @@ import {
   routeFromCache,
   routeFromValhalla,
   decodePolyline6,
+  edgesFromTraceAttributes,
   motorwaysOfTrip,
+  tripNeedsEdges,
+  tripsOfValhalla,
   pointsAlong,
   routesFromValhalla,
   viaPointsOfTrip,
@@ -309,3 +312,138 @@ describe('tripCost on an unknown motorway', () => {
     ).toThrow(RangeError);
   });
 });
+
+/**
+ * Lisboa (38.7406, -9.1669) → Estádio do Dragão, the fastest way, as Valhalla answered on 2026-10-27 (maneuvers and
+ * `/trace_attributes` edges trimmed to the ones that matter, real names, lengths and shape indices). The third
+ * maneuver is 288 km of A1 that Valhalla names after the 2ª Circular, the street it starts on.
+ */
+const LISBOA_DRAGAO = {
+  trip: {
+    summary: { length: 311.086, time: 11_000 },
+    legs: [
+      {
+        shape: '',
+        maneuvers: [
+          { begin_shape_index: 34, end_shape_index: 78, length: 1.558, street_names: ['IP 7', 'Eixo Norte-Sul'] },
+          {
+            begin_shape_index: 78,
+            end_shape_index: 131,
+            length: 3.507,
+            street_names: ['Avenida General Norton de Matos/2ª Circular'],
+          },
+          {
+            begin_shape_index: 131,
+            end_shape_index: 2617,
+            length: 287.817,
+            toll: true,
+            highway: true,
+            street_names: ['Avenida Marechal Craveiro Lopes/2ª Circular'],
+          },
+          { begin_shape_index: 2617, end_shape_index: 2699, length: 7.132, highway: true, street_names: ['Via Verde'] },
+          {
+            begin_shape_index: 2699,
+            end_shape_index: 2866,
+            length: 9.516,
+            highway: true,
+            street_names: ['A 20', 'IP 1', 'E 01'],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+const LISBOA_DRAGAO_EDGES = {
+  units: 'kilometers',
+  edges: [
+    { begin_shape_index: 40, length: 1.11, toll: false, names: ['IP 7', 'Eixo Norte-Sul'] },
+    { begin_shape_index: 80, length: 1.46, toll: false, names: ['Avenida General Norton de Matos/2ª Circular'] },
+    { begin_shape_index: 110, length: 1.75, toll: false, names: ['Avenida Marechal Craveiro Lopes/2ª Circular'] },
+    { begin_shape_index: 131, length: 1.28, toll: false, names: ['Avenida Marechal Craveiro Lopes/2ª Circular'] },
+    { begin_shape_index: 160, length: 1.37, toll: false, names: ['Avenida Cidade do Porto/2ª Circular'] },
+    { begin_shape_index: 190, length: 1.43, toll: false, names: ['A 1', 'E 80', 'Autoestrada do Norte'] },
+    { begin_shape_index: 220, length: 11.75, toll: false, names: ['A 1', 'E 01', 'E 80', 'Autoestrada do Norte'] },
+    { begin_shape_index: 400, length: 234.31, toll: true, names: ['A 1', 'E 01', 'E 80', 'Autoestrada do Norte'] },
+    { begin_shape_index: 2300, length: 37.38, toll: true, names: ['A 1', 'E 01', 'Autoestrada do Norte'] },
+    { begin_shape_index: 2620, length: 0.44, toll: false },
+    { begin_shape_index: 2630, length: 6.57, toll: false, names: ['A 1', 'E 01', 'Autoestrada do Norte'] },
+    {
+      begin_shape_index: 2699,
+      length: 7.88,
+      toll: false,
+      names: ['A 20', 'IP 1', 'E 01', 'Circular Regional Interior do Porto'],
+    },
+    // Malformed edges are left out.
+    { begin_shape_index: -1, length: 3, names: ['A 2'] },
+    { begin_shape_index: 2800, length: 'muito', names: ['A 2'] },
+  ],
+};
+
+describe('a long maneuver named by its edges', () => {
+  const edges = edgesFromTraceAttributes(LISBOA_DRAGAO_EDGES);
+
+  it('reads the edges, leaving the malformed ones out', () => {
+    expect(edges).toHaveLength(12);
+    expect(edges[7]).toEqual({ beginShapeIndex: 400, lengthM: 234_310, toll: true, motorway: 'A1' });
+    expect(edgesFromTraceAttributes(null)).toEqual([]);
+    expect(edgesFromTraceAttributes({ edges: 'nada' })).toEqual([]);
+  });
+
+  it('asks for the edges only when a long fast or tolled stretch has no motorway name', () => {
+    expect(tripNeedsEdges(LISBOA_DRAGAO.trip)).toBe(true);
+    const named = trip([{ maneuvers: [{ toll: true, highway: true, length: 287.8, street_names: ['A 1'] }] }]).trip;
+    expect(tripNeedsEdges(named)).toBe(false);
+    const town = trip([{ maneuvers: [{ length: 3, street_names: ['Rua Augusta'] }] }]).trip;
+    expect(tripNeedsEdges(town)).toBe(false);
+    expect(tripNeedsEdges(null)).toBe(false);
+  });
+
+  it('without the edges, the 288 km of A1 are lost (the bug: only A20 came out)', () => {
+    expect(motorwaysOfTrip(LISBOA_DRAGAO.trip)).toEqual(['A20']);
+    expect(tollSegmentsOf(LISBOA_DRAGAO.trip)).toEqual([{ motorway: 'default', tollM: 287_817 }]);
+  });
+
+  it('with the edges, finds the A1 in driving order, and charges its toll as A1 in the same metres', () => {
+    expect(motorwaysOfTrip(LISBOA_DRAGAO.trip, [edges])).toEqual(['A1', 'A20']);
+    expect(tollSegmentsOf(LISBOA_DRAGAO.trip, [edges])).toEqual([{ motorway: 'A1', tollM: 287_817 }]);
+    const [route] = routesFromValhalla(LISBOA_DRAGAO, [[edges]]);
+    expect(route?.motorways).toEqual(['A1', 'A20']);
+    expect(route?.tollM).toBe(287_817);
+  });
+
+  it('a maneuver its street names already name keeps that name, edges or not', () => {
+    const named = trip([
+      { maneuvers: [{ begin_shape_index: 0, end_shape_index: 10, toll: true, length: 50, street_names: ['A 8'] }] },
+    ]).trip;
+    const others = edgesFromTraceAttributes({ edges: [{ begin_shape_index: 0, length: 50, toll: true, names: ['A 1'] }] });
+    expect(tollSegmentsOf(named, [others])).toEqual([{ motorway: 'A8', tollM: 50_000 }]);
+    expect(motorwaysOfTrip(named, [others])).toEqual(['A8']);
+  });
+
+  it('lists every trip of the answer, the main one first', () => {
+    expect(tripsOfValhalla({ trip: 1, alternates: [{ trip: 2 }, {}] })).toEqual([1, 2, undefined]);
+    expect(tripsOfValhalla(null)).toEqual([undefined]);
+  });
+
+  it('the A1 rate gives the real Lisboa–Porto toll where "default" did not', () => {
+    const rates: TollRate[] = [
+      { motorway: 'default', referenceCents: 6425, referenceM: 687_500 },
+      { motorway: 'A1', referenceCents: 2505, referenceM: 287_800 },
+    ];
+    const cost = (tollSegments: { motorway: string; tollM: number }[]) =>
+      tripCost(
+        {
+          distanceM: 311_086,
+          tollSegments,
+          consumptionClPer100Km: 650,
+          fuelPriceMilliPerLitre: 1729,
+          roundTrip: false,
+        },
+        rates
+      ).tollCents;
+    expect(cost(tollSegmentsOf(LISBOA_DRAGAO.trip, [edges]))).toBe(2505);
+    expect(cost(tollSegmentsOf(LISBOA_DRAGAO.trip))).not.toBe(2505);
+  });
+});
+

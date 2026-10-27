@@ -21,8 +21,7 @@ import { CATEGORIA } from '@/features/trips/categorias';
 import { useRefreshTrips, useTripPeople } from '@/features/trips/hooks/useTrips';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
 import { useTheme } from '@/hooks/use-theme';
-import { dividirCentimos } from '@/lib/acerto';
-import { lerPrecoEmCentimos } from '@/lib/money';
+import { lerPrecoEmCentimos, parteDeCadaCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
@@ -61,9 +60,10 @@ export default function NovaDespesaScreen() {
   const gente = pessoas.data ?? [];
   const escolhidos = quemEntra ?? gente.map((pessoa) => pessoa.profileId);
   const centimos = lerPrecoEmCentimos(valor);
-  const partes =
+  // The same «cada» as everywhere else: the share nobody pays more than (who pays the odd cent is the server's call).
+  const cada =
     centimos !== null && centimos > 0 && escolhidos.length > 0
-      ? dividirCentimos(centimos, escolhidos)
+      ? parteDeCadaCentimos(centimos, new Set(escolhidos).size)
       : null;
   const podeLancar =
     !aLancar &&
@@ -181,11 +181,9 @@ export default function NovaDespesaScreen() {
             <ThemedText type="small" themeColor="textMuted">
               Escolhe pelo menos uma pessoa.
             </ThemedText>
-          ) : partes ? (
+          ) : cada !== null ? (
             <ThemedText type="small" themeColor="textSecondary">
-              {Math.max(...partes) === Math.min(...partes)
-                ? `${dinheiro.formatar(partes[0])} para cada um`
-                : `Cerca de ${dinheiro.formatar(Math.min(...partes))} para cada um`}
+              {`${dinheiro.formatar(cada)} para cada um`}
             </ThemedText>
           ) : null}
         </View>

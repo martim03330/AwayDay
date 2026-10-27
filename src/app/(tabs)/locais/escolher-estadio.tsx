@@ -66,10 +66,10 @@ export default function EscolherEstadioScreen() {
           <LinhaGrupo
             key={estadio.id}
             onPress={() => escolher(estadio.id)}
-            accessibilityLabel={`${clube?.nomeCurto ?? estadio.nome}, ${estadio.nome}${escolhido ? ', escolhido' : ''}`}
+            accessibilityLabel={`${clube?.nomeCurto ?? estadio.nome}, ${estadio.nome}, ${tascos > 0 ? plural(tascos, 'tasco', 'tascos') : 'sem tascos ainda'}${escolhido ? ', escolhido' : ''}`}
             leading={clube ? <Escudo clube={clube} size={28} /> : undefined}
             title={clube?.nomeCurto ?? estadio.nome}
-            subtitle={`${estadio.nome} · ${tascos > 0 ? plural(tascos, 'tasco', 'tascos') : 'sem tascos ainda'}`}
+            valor={tascos > 0 ? plural(tascos, 'tasco', 'tascos') : undefined}
             trailing={escolhido ? <Icon name={icons.selecionado} size={20} color={theme.accentInk} /> : undefined}
             separador={indice < lista.length - 1}
           />

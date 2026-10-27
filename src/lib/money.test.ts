@@ -7,9 +7,11 @@ import {
   formatarCentimosCurto,
   formatarPreco,
   lerPrecoEmCentimos,
+  parteDeCadaCentimos,
   PRECO_MAXIMO_CENTIMOS,
   somarCentimos,
 } from './money';
+import { sharePerPersonCents } from '../../supabase/functions/_shared/ride-cost';
 
 /** Intl uses a non-breaking space before "€"; compare with plain spaces. */
 function comEspacosNormais(texto: string) {
@@ -189,4 +191,52 @@ describe('eCentimos', () => {
       expect(eCentimos(valor)).toBe(false);
     }
   );
+});
+
+describe('parteDeCadaCentimos', () => {
+  it('a boleia de 136,30 € a quatro é 34,08 € cada (dois pagam 34,08 € e dois 34,07 €)', () => {
+    expect(parteDeCadaCentimos(13630, 4)).toBe(3408);
+  });
+
+  it.each([
+    [3000, 3, 1000],
+    [1001, 8, 126],
+    [1000, 8, 125],
+    [1, 4, 1],
+    [0, 4, 0],
+    [999, 1, 999],
+    [100, 3, 34],
+  ])('%s cêntimos por %s dá %s cada', (total, pessoas, esperado) => {
+    expect(parteDeCadaCentimos(total, pessoas)).toBe(esperado);
+  });
+
+  it('é a parte que ninguém ultrapassa: no máximo um cêntimo acima da mais pequena', () => {
+    for (let total = 0; total <= 500; total += 1) {
+      for (let pessoas = 1; pessoas <= 9; pessoas += 1) {
+        const cada = parteDeCadaCentimos(total, pessoas);
+        const base = Math.floor(total / pessoas);
+        expect(cada * pessoas).toBeGreaterThanOrEqual(total);
+        expect(cada - base).toBe(total % pessoas === 0 ? 0 : 1);
+      }
+    }
+  });
+
+  it('dá o mesmo que o servidor dá nos ecrãs da boleia (sharePerPersonCents)', () => {
+    for (let total = 0; total <= 20_000; total += 7) {
+      for (let pessoas = 1; pessoas <= 9; pessoas += 1) {
+        expect(parteDeCadaCentimos(total, pessoas)).toBe(sharePerPersonCents(total, pessoas));
+      }
+    }
+  });
+
+  it('não transborda perto do limite dos inteiros seguros', () => {
+    expect(parteDeCadaCentimos(Number.MAX_SAFE_INTEGER, 2)).toBe(4_503_599_627_370_496);
+  });
+
+  it('recusa o que não se divide', () => {
+    expect(() => parteDeCadaCentimos(10.5, 2)).toThrow(RangeError);
+    expect(() => parteDeCadaCentimos(-100, 2)).toThrow(RangeError);
+    expect(() => parteDeCadaCentimos(100, 0)).toThrow(RangeError);
+    expect(() => parteDeCadaCentimos(100, 1.5)).toThrow(RangeError);
+  });
 });

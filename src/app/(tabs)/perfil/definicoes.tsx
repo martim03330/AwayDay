@@ -25,10 +25,11 @@ import { Screen } from '@/ui/screen';
 import { SectionHeader } from '@/ui/section-header';
 import { ThemedText } from '@/ui/themed-text';
 
+/** The demo's (simulated) answer to the location question, as the short value at the end of the row. */
 function textoPermissaoDemo(estado: EstadoPermissao) {
-  if (estado === 'aceite') return 'Aceite na introdução (simulado)';
-  if (estado === 'recusada') return 'Continuas sem (simulado)';
-  return 'Ainda não decidiste';
+  if (estado === 'aceite') return 'Aceite';
+  if (estado === 'recusada') return 'Recusada';
+  return 'Por decidir';
 }
 
 /** The three appearance options; until one is picked, the app follows the phone. */
@@ -109,9 +110,9 @@ export default function DefinicoesScreen() {
 
   function textoLocalizacao() {
     if (modoDemo) return textoPermissaoDemo(permissoes.localizacao);
-    if (permissaoLocalizacao?.granted) return 'Autorizada. Só a usamos para confirmar o check-in.';
-    if (localizacaoBloqueada) return 'Recusada. Toca para abrir as definições do telemóvel.';
-    return 'Pedimos quando fizeres check-in num tasco.';
+    if (permissaoLocalizacao?.granted) return 'Autorizada';
+    if (localizacaoBloqueada) return 'Recusada';
+    return 'Por pedir';
   }
 
   return (
@@ -145,9 +146,12 @@ export default function DefinicoesScreen() {
           onPress={
             !modoDemo && localizacaoBloqueada ? () => void Linking.openSettings() : undefined
           }
+          accessibilityLabel={`Localização, ${textoLocalizacao().toLowerCase()}.${
+            !modoDemo && localizacaoBloqueada ? ' Toca para abrir as definições do telemóvel.' : ''
+          }`}
           leading={<Icon name={icons.localizacao} size={20} color={theme.accentInk} />}
           title="Localização"
-          subtitle={textoLocalizacao()}
+          valor={textoLocalizacao()}
           trailing={!modoDemo && localizacaoBloqueada ? chevron : undefined}
         />
         <LinhaGrupo
@@ -225,7 +229,6 @@ export default function DefinicoesScreen() {
             />
           }
           title="Esconder valores"
-          subtitle="Mostra «•••• €» em vez dos montantes, para quem espreita por cima do ombro."
           trailing={
             <Switch
               value={esconderValores}
@@ -234,6 +237,7 @@ export default function DefinicoesScreen() {
               thumbColor={theme.accentText}
               ios_backgroundColor={theme.border}
               accessibilityLabel="Esconder valores"
+              accessibilityHint="Mostra «•••• €» em vez dos montantes"
               testID="interruptor-esconder-valores"
             />
           }
@@ -244,7 +248,6 @@ export default function DefinicoesScreen() {
               separador
               leading={<Icon name={icons.ranking} size={20} color={theme.accentInk} />}
               title="Aparecer no ranking"
-              subtitle="Nome, nível e pontos nas tabelas, e o teu perfil a quem tocar em ti (sem o concelho). Nunca onde estás."
               trailing={
                 <Switch
                   value={aparecoNoRanking}
@@ -261,6 +264,7 @@ export default function DefinicoesScreen() {
                   thumbColor={theme.accentText}
                   ios_backgroundColor={theme.border}
                   accessibilityLabel="Aparecer no ranking"
+                  accessibilityHint="Nome, nível e pontos nas tabelas. Nunca onde estás."
                   testID="interruptor-aparecer-ranking"
                 />
               }
@@ -269,7 +273,6 @@ export default function DefinicoesScreen() {
               separador
               leading={<Icon name={icons.tasco} size={20} color={theme.accentInk} />}
               title="Dizer aos meus grupos em que tasco estou"
-              subtitle="Quando fazes check-in, a conversa dos teus grupos recebe «estás no Tasco do Zé». Só o nome do tasco, nunca onde estás."
               trailing={
                 <Switch
                   value={partilharCheckIns}
@@ -279,6 +282,7 @@ export default function DefinicoesScreen() {
                   thumbColor={theme.accentText}
                   ios_backgroundColor={theme.border}
                   accessibilityLabel="Dizer aos meus grupos em que tasco estou"
+                  accessibilityHint="Só o nome do tasco, nunca onde estás"
                   testID="interruptor-partilhar-checkins"
                 />
               }

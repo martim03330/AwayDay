@@ -89,6 +89,11 @@ function duracao(segundos: number) {
   return horas > 0 ? `${horas} h ${String(minutos % 60).padStart(2, '0')}` : `${minutos} min`;
 }
 
+/** Only the warning: «1 falta», «3 faltas». Nothing for a clean record (the rows show the name and nothing else). */
+function faltas(faults: number) {
+  return faults > 0 ? plural(faults, 'falta', 'faltas') : undefined;
+}
+
 function reputacao(completed: number, faults: number) {
   if (completed === 0 && faults === 0) return 'Primeira boleia';
   return `${plural(completed, 'boleia', 'boleias')} · ${plural(faults, 'falta', 'faltas')}`;
@@ -164,10 +169,10 @@ function Pessoa({
   return (
     <LinhaGrupo
       onPress={() => abrirPerfil(pessoa.profileId)}
-      accessibilityLabel={`${pessoa.name}. Toca para ver o perfil.`}
+      accessibilityLabel={`${pessoa.name}, ${reputacao(pessoa.completed, pessoa.faults)}. Toca para ver o perfil.`}
       leading={<Avatar nome={pessoa.name} url={cartao?.avatarUrl} />}
       title={pessoa.name}
-      subtitle={reputacao(pessoa.completed, pessoa.faults)}
+      valor={faltas(pessoa.faults)}
       trailing={
         etiqueta || onMais ? (
           <View style={styles.trailing}>
@@ -548,7 +553,6 @@ export default function BoleiaScreen() {
               accessibilityLabel={`Conversa do carro${conversa && conversa.unread > 0 ? `, ${plural(conversa.unread, 'mensagem nova', 'mensagens novas')}` : ''}. Toca para abrir.`}
               leading={<IconCircle name={icons.conversa} />}
               title="Conversa do carro"
-              subtitle={conversa?.lastBody ? `${conversa.lastName ?? 'Alguém'}: ${conversa.lastBody}` : undefined}
               trailing={
                 <View style={styles.trailing}>
                   {conversa && conversa.unread > 0 ? (
@@ -577,9 +581,10 @@ export default function BoleiaScreen() {
           desenhar: (separador: boolean) => (
             <LinhaGrupo
               onPress={() => abrirPerfil(pessoa.profileId)}
+              accessibilityLabel={`${pessoa.displayName}. Só na volta, a ${formatarDistancia(pessoa.distanceToCarM)} do carro, paga ${dinheiro.dito(pessoa.shareCents)}. Toca para ver o perfil.`}
               leading={<Avatar nome={pessoa.displayName} />}
               title={pessoa.displayName}
-              subtitle={`Só na volta · a ${formatarDistancia(pessoa.distanceToCarM)} do carro · paga ${dinheiro.formatar(pessoa.shareCents)}`}
+              valor={`Só volta · ${dinheiro.formatar(pessoa.shareCents)}`}
               separador={separador}
             />
           ),
@@ -606,11 +611,6 @@ export default function BoleiaScreen() {
                     onPress={() => abrirPerfil(amigo.profileId)}
                     leading={<Avatar nome={amigo.displayName} />}
                     title={amigo.displayName}
-                    subtitle={
-                      amigo.tripsTogether > 0
-                        ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
-                        : undefined
-                    }
                     trailing={
                       <LinkTexto
                         label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}
@@ -789,9 +789,12 @@ export default function BoleiaScreen() {
                 style={[styles.bloco, linhaSeparada(indice === pedidosVolta.length - 1)]}>
                 <LinhaGrupo
                   onPress={() => abrirPerfil(pedido.profileId)}
+                  accessibilityLabel={`${pedido.displayName}, a ${formatarDistancia(pedido.distanceToCarM)} do carro, ${reputacao(pedido.completed, pedido.faults)}, paga ${dinheiro.dito(pedido.shareCents)}. Toca para ver o perfil.`}
                   leading={<Avatar nome={pedido.displayName} />}
                   title={pedido.displayName}
-                  subtitle={`A ${formatarDistancia(pedido.distanceToCarM)} do carro · ${reputacao(pedido.completed, pedido.faults)}`}
+                  valor={[formatarDistancia(pedido.distanceToCarM), faltas(pedido.faults)]
+                    .filter(Boolean)
+                    .join(' · ')}
                   trailing={
                     <ThemedText type="smallBold">
                       {dinheiro.formatar(pedido.shareCents)}
@@ -1004,7 +1007,6 @@ export default function BoleiaScreen() {
                 ? 'Pedidos fechados'
                 : `Pedidos fecham às ${formatarHora(prazos.pedidosFecham)}`
             }
-            subtitle={`Confirmar quem apareceu até ${formatarData(prazos.confirmarAte)}`}
             separador={boleia.isMine && boleia.roundTrip}
           />
         )}

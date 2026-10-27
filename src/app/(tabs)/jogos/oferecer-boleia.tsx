@@ -842,11 +842,6 @@ export default function OferecerBoleiaScreen() {
               <LinhaGrupo
                 leading={<IconCircle name={icons.perfil} />}
                 title="Só para o grupo, por agora"
-                subtitle={
-                  soParaOGrupo
-                    ? 'Se o carro não encher, abres a toda a gente'
-                    : 'Qualquer adepto deste jogo a vê'
-                }
                 trailing={interruptor(soParaOGrupo, setSoParaOGrupo, 'Só para o grupo, por agora')}
               />
             ) : (
@@ -864,7 +859,7 @@ export default function OferecerBoleiaScreen() {
           accessibilityLabel={`Mais opções: ${resumoOpcoes}. Toca para ${verOpcoes ? 'esconder' : 'mudar'}.`}
           leading={<IconCircle name={icons.definicoes} tone={opcoesComErro ? 'red' : 'neutral'} />}
           title="Mais opções"
-          subtitle={opcoesComErro ? 'Há um valor por corrigir' : undefined}
+          valor={opcoesComErro ? 'Por corrigir' : undefined}
           trailing={
             <View style={verOpcoes ? styles.setaAberta : undefined}>
               <Icon name={icons.seguinte} size={18} color={theme.textMuted} />
@@ -1010,7 +1005,7 @@ export default function OferecerBoleiaScreen() {
                   onPress={() => setEscolhida(opcao.option)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selecionada }}
-                  accessibilityLabel={`${OPCOES[opcao.option].titulo}, ${dinheiro.dito(opcao.totalCents)}. ${OPCOES[opcao.option].descricao}`}
+                  accessibilityLabel={`${OPCOES[opcao.option].titulo}, ${dinheiro.dito(opcao.totalCents)}, ${duracao(opcao.durationS)}, ${formatarDistancia(opcao.distanceM)}${poupanca ? `, ${dinheiro.leitor(poupanca)}` : ''}. ${OPCOES[opcao.option].descricao}`}
                   style={({ pressed }) => [
                     styles.percurso,
                     indice < cotacoes.length - 1 && {
@@ -1029,28 +1024,11 @@ export default function OferecerBoleiaScreen() {
                       <Icon name={icons.checkInFeito} size={12} color={theme.accentText} strokeWidth={3} />
                     ) : null}
                   </View>
-                  <View style={styles.flex}>
-                    <ThemedText style={styles.rotulo}>{OPCOES[opcao.option].titulo}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {`${duracao(opcao.durationS)} · ${formatarDistancia(opcao.distanceM)} · ${
-                        opcao.tollM === 0
-                          ? 'sem portagens'
-                          : opcao.motorways.length > 0
-                            ? `pela ${opcao.motorways.join(' → ')}`
-                            : `${formatarDistancia(opcao.tollM)} com portagem`
-                      }`}
-                    </ThemedText>
-                    {poupanca ? (
-                      <ThemedText type="smallBold" themeColor="accentInk">
-                        {poupanca}
-                      </ThemedText>
-                    ) : null}
-                    {selecionada ? (
-                      <ThemedText type="small" themeColor="textMuted">
-                        {`Combustível ${dinheiro.formatar(opcao.fuelCents)} · portagens ${dinheiro.formatar(opcao.tollCents)} (estimativa)`}
-                      </ThemedText>
-                    ) : null}
-                  </View>
+                  <ThemedText style={[styles.flex, styles.rotulo]}>{OPCOES[opcao.option].titulo}</ThemedText>
+                  {/* Only the two things to choose by: how long and how much. */}
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {duracao(opcao.durationS)}
+                  </ThemedText>
                   <ThemedText style={styles.valor}>{dinheiro.formatar(opcao.totalCents)}</ThemedText>
                 </Pressable>
               );

@@ -99,12 +99,7 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
 
         <View style={[styles.linha, styles.separado, { borderTopColor: theme.backgroundSelected }]}>
           <IconCircle name={icons.notificacoes} />
-          <View style={styles.flex}>
-            <ThemedText style={styles.rotuloAvisos}>Avisos para este jogo</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {resumoDosAvisos}
-            </ThemedText>
-          </View>
+          <ThemedText style={[styles.flex, styles.rotuloAvisos]}>Avisos para este jogo</ThemedText>
           <Switch
             value={ligados}
             onValueChange={() => alternarAvisos(jogo.id)}
@@ -112,6 +107,7 @@ export function PlanoDoJogo({ jogo, agora }: { jogo: Jogo; agora: number }) {
             thumbColor={theme.accentText}
             ios_backgroundColor={theme.border}
             accessibilityLabel="Avisos deste jogo"
+            accessibilityHint={resumoDosAvisos}
           />
         </View>
         {ligados && avisos.length > 0 ? (

@@ -291,9 +291,16 @@ export default function DefinicoesDoGrupoScreen() {
               onPress={() =>
                 router.push({ pathname: '/pessoa/[pessoaId]', params: { pessoaId: pessoa.profileId } })
               }
-              accessibilityLabel={`Ver o perfil de ${pessoa.displayName}`}
+              accessibilityLabel={`Ver o perfil de ${[pessoa.displayName, pessoa.role === 'owner' ? 'dono' : null, sinais(pessoa)].filter(Boolean).join(', ')}`}
               title={pessoa.isMine ? `${pessoa.displayName} (tu)` : pessoa.displayName}
-              subtitle={[pessoa.role === 'owner' ? 'Dono' : null, sinais(pessoa)].filter(Boolean).join(' · ') || undefined}
+              valor={
+                [
+                  pessoa.role === 'owner' ? 'Dono' : null,
+                  pessoa.ridesFaults > 0 ? plural(pessoa.ridesFaults, 'falta', 'faltas') : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || undefined
+              }
               trailing={
                 pessoa.isMine ? undefined : (
                   // Everything about someone else sits behind one discreet «⋯»: report, block and, for the
@@ -344,11 +351,6 @@ export default function DefinicoesDoGrupoScreen() {
               separador={indice < porConvidar.length - 1}
               leading={<IconCircle name={icons.perfil} tone="neutral" />}
               title={amigo.displayName}
-              subtitle={
-                amigo.tripsTogether > 0
-                  ? plural(amigo.tripsTogether, 'viagem juntos', 'viagens juntos')
-                  : undefined
-              }
               trailing={
                 <LinkTexto
                   label={convidados.includes(amigo.profileId) ? 'Convidado' : 'Convidar'}

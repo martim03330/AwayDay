@@ -229,7 +229,7 @@ export function BoleiasDoJogo({ jogo }: { jogo: Jogo }) {
 
         {minhaComVolta && !minhaComVolta.acceptsReturnRequests ? (
           <LinkTexto
-            label="Tenho lugares na volta: abrir a quem precisa"
+            label="Abrir lugares na volta"
             onPress={() => void abrirVolta(minhaComVolta.id)}
           />
         ) : null}

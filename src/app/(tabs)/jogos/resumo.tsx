@@ -4,11 +4,12 @@ import { StyleSheet } from 'react-native';
 
 import { useJogosAQueFoste } from '@/hooks/use-jogos-a-que-foste';
 import { useAbrirPerfil } from '@/hooks/use-abrir-perfil';
+import { useNow } from '@/hooks/use-now';
 import { Spacing } from '@/constants/theme';
 import { FriendRefused, sendFriendRequest } from '@/features/friends/api';
 import { useRefreshFriends, useTripCompanions } from '@/features/friends/hooks/useFriends';
 import { useMyTripAccounts } from '@/features/trips/hooks/useTrips';
-import { formatarData, formatarHora } from '@/lib/datas';
+import { formatarDia, formatarHora } from '@/lib/datas';
 import { formatarNota, plural } from '@/lib/formatos';
 import { notaMedia } from '@/lib/jogos';
 import { useUserId } from '@/lib/session';
@@ -67,6 +68,7 @@ export default function ResumoScreen() {
   const refrescarAmigos = useRefreshFriends();
   const [aTratar, setATratar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const agora = useNow(60 * 1000);
 
   if (!jogo) {
     return (
@@ -89,6 +91,23 @@ export default function ResumoScreen() {
   const estadio = obterEstadio(jogo.estadioId);
   const avaliacao = avaliacaoDoJogo(jogo.id);
   const inicio = new Date(jogo.inicio);
+
+  // A direct link can land here before kick-off: the summary is written in the past tense, so it waits for the game.
+  if (agora < inicio.getTime()) {
+    return (
+      <Screen>
+        <EmptyState
+          icon={icons.horario}
+          title="Ainda não houve jogo"
+          message="O resumo aparece depois do jogo."
+          action={{
+            label: 'Voltar',
+            onPress: () => (router.canGoBack() ? router.back() : router.replace('/jogos')),
+          }}
+        />
+      </Screen>
+    );
+  }
 
   const viagens = contas.data ?? [];
   const companheiros = companhia.data ?? [];
@@ -115,7 +134,7 @@ export default function ResumoScreen() {
       </ThemedText>
       <ThemedText themeColor="textSecondary">
         {[
-          formatarData(inicio),
+          formatarDia(inicio, agora),
           formatarHora(inicio),
           estadio ? `${estadio.nome}, ${estadio.cidade}` : null,
         ]
@@ -136,14 +155,15 @@ export default function ResumoScreen() {
               key={pessoa.profileId}
               onPress={() => abrirPerfil(pessoa.profileId)}
               leading={<Avatar nome={pessoa.displayName} size={38} />}
-              title={pessoa.displayName}
-              subtitle={
+              accessibilityLabel={`${pessoa.displayName}, ${
                 pessoa.state === 'pedido_enviado'
-                  ? 'Pedido de amizade enviado'
+                  ? 'pedido de amizade enviado'
                   : pessoa.tripsTogether > 1
                     ? plural(pessoa.tripsTogether, 'viagem juntos', 'viagens juntos')
-                    : 'Primeira viagem juntos'
-              }
+                    : 'primeira viagem juntos'
+              }. Toca para ver o perfil.`}
+              title={pessoa.displayName}
+              valor={pessoa.state === 'pedido_enviado' ? 'Pedido enviado' : undefined}
               separador={indice < companheiros.length - 1}
               trailing={
                 pessoa.state === 'amigos' ? (
@@ -183,10 +203,9 @@ export default function ResumoScreen() {
                   params: { sessaoId: viagem.sessionId },
                 })
               }
-              accessibilityLabel={`${viagem.name}: ${dinheiro.dito(viagem.totalCents)}, ${dinheiro.leitor(saldo(viagem.myBalanceCents, dinheiro))}. Toca para ver as contas.`}
+              accessibilityLabel={`${viagem.name}: ${dinheiro.dito(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}, ${dinheiro.leitor(saldo(viagem.myBalanceCents, dinheiro))}. Toca para ver as contas.`}
               leading={<IconCircle name={icons.preco} />}
               title={viagem.name}
-              subtitle={`${dinheiro.formatar(viagem.totalCents)} em ${plural(viagem.expenses, 'despesa', 'despesas')}`}
               separador={indice < comDespesas.length - 1}
               trailing={
                 <Etiqueta

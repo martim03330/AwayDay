@@ -170,10 +170,11 @@ where plan_id = pg_temp.id('casa') and profile_id = 'e8100000-0000-4000-8000-000
 select pg_temp.expect('a bed accepted joins the house expense', pg_temp.casa(pg_temp.id('sessao')), 'Casa A:36001:Casa A,Casa B,Casa C');
 select pg_temp.expect('three-way split still adds up to zero',
   (select sum(balance_cents)::integer from public.trip_balances(pg_temp.id('sessao'))), 0);
+-- Who gets the leftover cent depends on the expense's id (see acesso_contas_centimos.test.sql).
 select pg_temp.expect('no one is owed a cent more than a third, rounded',
-  (select string_agg(display_name || ':' || owed_cents, ',' order by display_name)
+  (select string_agg(display_name, ',' order by display_name) || ' ' || string_agg(owed_cents::text, ',' order by owed_cents)
    from public.trip_balances(pg_temp.id('sessao')) where owed_cents > 0),
-  'Casa A:12001,Casa B:12000,Casa C:12000');
+  'Casa A,Casa B,Casa C 12000,12000,12001');
 
 update public.stay_place set status = 'saiu'
 where plan_id = pg_temp.id('casa') and profile_id = 'e8100000-0000-4000-8000-000000000003';

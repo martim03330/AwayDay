@@ -11,6 +11,7 @@ import {
   removeTripExpense,
   removeTripSettlement,
   type TripExpense,
+  type TripSettlement,
 } from '@/features/trips/api';
 import { CATEGORIA } from '@/features/trips/categorias';
 import { fecharContas } from '@/features/trips/fecharContas';
@@ -23,8 +24,10 @@ import {
 } from '@/features/trips/hooks/useTrips';
 import { casaLancadaAMao, notaDaOrigem } from '@/features/trips/origem';
 import { mensagemDeRecusaDasContas } from '@/features/trips/recusas';
+import { useRealNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/lib/formatos';
+import { formatarCentimos } from '@/lib/money';
 import { useUserId } from '@/lib/session';
 import { useAppState } from '@/state/app-state';
 import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
@@ -70,6 +73,8 @@ export default function DespesasScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const userId = useUserId();
+  // Real time, not the demo clock: the server decides the receiver's 10 minutes with its own clock.
+  const agora = useRealNow(15 * 1000);
   const refrescar = useRefreshTrips();
   const { sessaoId } = useLocalSearchParams<{ sessaoId?: string }>();
 
@@ -99,7 +104,10 @@ export default function DespesasScreen() {
 
   const lista = despesas.data ?? [];
   const acerto = fecharContas(saldos.data ?? []);
-  const porConfirmar = (pagamentos.data ?? []).filter((pagamento) => !pagamento.confirmed);
+  // Pending first (they still need someone to act), then the confirmed ones; the server sends the newest first.
+  const listaDePagamentos = [...(pagamentos.data ?? [])].sort(
+    (a, b) => Number(a.confirmed) - Number(b.confirmed)
+  );
 
   async function tratar(chave: string, acao: () => Promise<void>) {
     setErro(null);
@@ -130,18 +138,62 @@ export default function DespesasScreen() {
     );
 
   const quem = (id: string, nome: string) => (id === userId ? 'Tu' : nome.split(' ')[0]);
+  const primeiroNome = (nome: string) => nome.split(' ')[0];
+
+  // Recording a payment moves the balances for two people (and «Já recebi» is confirmed at once, and the receiver
+  // can only take it back for 10 minutes), so it always asks first. The amount is shown even with values hidden: it is what is
+  // being confirmed.
+  const confirmarAntes = (titulo: string, mensagem: string, botao: string, acao: () => void) =>
+    Alert.alert(titulo, mensagem, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: botao, onPress: acao },
+    ]);
+
+  const desfazerPagamento = (pagamento: TripSettlement) =>
+    Alert.alert(
+      'Desfazer este pagamento?',
+      'Deixa de contar nas contas e a dívida volta a aparecer.',
+      [
+        { text: 'Deixa estar', style: 'cancel' },
+        {
+          text: 'Desfazer',
+          style: 'destructive',
+          onPress: () => void tratar(pagamento.id, () => removeTripSettlement(pagamento.id)),
+        },
+      ]
+    );
+
+  // Who may take a payment back is the server's rule (remove_trip_settlement): while it waits for confirmation,
+  // anyone in it or who wrote it; once confirmed, who paid, and who received only for 10 minutes (a wrong tap).
+  const possoDesfazer = (pagamento: TripSettlement) =>
+    pagamento.confirmed
+      ? pagamento.fromProfileId === userId ||
+        (pagamento.receiverUndoUntil !== null && Date.parse(pagamento.receiverUndoUntil) > agora)
+      : pagamento.mine;
+
+  const tituloDoPagamento = (pagamento: TripSettlement) => {
+    const valor = dinheiro.formatar(pagamento.cents);
+    if (pagamento.fromProfileId === userId) return `Pagaste ${valor} a ${primeiroNome(pagamento.toName)}`;
+    if (pagamento.iReceive) return `${primeiroNome(pagamento.fromName)} pagou-te ${valor}`;
+    return `${primeiroNome(pagamento.fromName)} pagou ${valor} a ${primeiroNome(pagamento.toName)}`;
+  };
+
+  const subtituloDoPagamento = (pagamento: TripSettlement) => {
+    if (pagamento.confirmed) return 'Confirmado';
+    return pagamento.iReceive ? 'Confirma que recebeste' : 'Por confirmar';
+  };
 
   const pastilha = (
     chave: string,
     label: string,
-    acao: () => Promise<void>,
+    onPress: () => void,
     neutra = false,
     accessibilityLabel?: string
   ) => (
     <Pressable
       hitSlop={6}
       disabled={aTratar !== null}
-      onPress={() => void tratar(chave, acao)}
+      onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
@@ -278,21 +330,37 @@ export default function DespesasScreen() {
                       subtitle={pago ? `a ${para}` : recebo ? undefined : `a ${para}`}
                       trailing={
                         pago || recebo
-                          ? pastilha(
-                              chave,
-                              pago ? 'Já paguei' : 'Já recebi',
-                              () =>
-                                addTripSettlement(
-                                  sessaoId,
-                                  transferencia.paraId,
-                                  transferencia.centimos,
-                                  transferencia.deId,
-                                  idDoPedido(`${sessaoId}:${chave}:${transferencia.centimos}`)
-                                ).then(() => {
-                                  idsDosPedidos.delete(`${sessaoId}:${chave}:${transferencia.centimos}`);
-                                  vibrarSucesso();
-                                })
-                            )
+                          ? pastilha(chave, pago ? 'Já paguei' : 'Já recebi', () => {
+                              const registar = () =>
+                                void tratar(chave, () =>
+                                  addTripSettlement(
+                                    sessaoId,
+                                    transferencia.paraId,
+                                    transferencia.centimos,
+                                    transferencia.deId,
+                                    idDoPedido(`${sessaoId}:${chave}:${transferencia.centimos}`)
+                                  ).then(() => {
+                                    idsDosPedidos.delete(`${sessaoId}:${chave}:${transferencia.centimos}`);
+                                    vibrarSucesso();
+                                  })
+                                );
+                              const exato = formatarCentimos(transferencia.centimos);
+                              if (pago) {
+                                confirmarAntes(
+                                  `Confirmar que pagaste ${exato} a ${para}?`,
+                                  `Fica por confirmar até ${para} dizer que recebeu.`,
+                                  'Paguei',
+                                  registar
+                                );
+                              } else {
+                                confirmarAntes(
+                                  `Confirmar que recebeste ${exato} de ${de}?`,
+                                  'Fica logo confirmado. Se te enganares, tens 10 minutos para desfazer.',
+                                  'Recebi',
+                                  registar
+                                );
+                              }
+                            })
                           : undefined
                       }
                     />
@@ -301,33 +369,42 @@ export default function DespesasScreen() {
               </Card>
             )}
 
-            {porConfirmar.length > 0 ? (
+            {listaDePagamentos.length > 0 ? (
               <>
-                <SectionHeader title="Por confirmar" />
+                <SectionHeader title="Pagamentos" contagem={listaDePagamentos.length} />
                 <Card style={styles.grupo}>
-                  {porConfirmar.map((pagamento, indice) => (
+                  {listaDePagamentos.map((pagamento, indice) => (
                     <LinhaGrupo
                       key={pagamento.id}
-                      separador={indice < porConfirmar.length - 1}
-                      leading={<IconCircle name={icons.horario} tone="yellow" />}
-                      title={
-                        pagamento.iReceive
-                          ? `${pagamento.fromName.split(' ')[0]} pagou-te ${dinheiro.formatar(pagamento.cents)}`
-                          : `Pagaste ${dinheiro.formatar(pagamento.cents)} a ${pagamento.toName.split(' ')[0]}`
+                      separador={indice < listaDePagamentos.length - 1}
+                      leading={
+                        <IconCircle
+                          name={pagamento.confirmed ? icons.selecionado : icons.horario}
+                          tone={pagamento.confirmed ? 'green' : 'yellow'}
+                        />
                       }
-                      subtitle={pagamento.iReceive ? 'Confirma que recebeste' : 'Falta confirmar'}
+                      title={tituloDoPagamento(pagamento)}
+                      subtitle={subtituloDoPagamento(pagamento)}
                       trailing={
-                        pagamento.iReceive
+                        !pagamento.confirmed && pagamento.iReceive
                           ? pastilha(pagamento.id, 'Recebi', () =>
-                              confirmTripSettlement(pagamento.id).then(vibrarSucesso)
+                              confirmarAntes(
+                                `Confirmar que recebeste ${formatarCentimos(pagamento.cents)} de ${primeiroNome(pagamento.fromName)}?`,
+                                'Se te enganares, tens 10 minutos para desfazer.',
+                                'Recebi',
+                                () =>
+                                  void tratar(pagamento.id, () =>
+                                    confirmTripSettlement(pagamento.id).then(vibrarSucesso)
+                                  )
+                              )
                             )
-                          : pagamento.mine
+                          : possoDesfazer(pagamento)
                             ? pastilha(
                                 pagamento.id,
-                                'Anular',
-                                () => removeTripSettlement(pagamento.id),
+                                'Desfazer',
+                                () => desfazerPagamento(pagamento),
                                 true,
-                                'Anular este pagamento'
+                                'Desfazer este pagamento'
                               )
                             : undefined
                       }

@@ -4,7 +4,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import type { RideSummary } from '@/features/rides/api';
 import { useRideBoard, useRidePeople } from '@/features/rides/hooks/useRides';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { useUserId } from '@/lib/session';
 import { Icon, icons } from '@/ui/icon';
@@ -28,8 +28,8 @@ export function useMinhaBoleia(fixtureId: string | null) {
 }
 
 /**
- * «A tua boleia» on the game page, where «Combinar com a malta» would be: who drives, when it leaves, how full it is
- * and, for the driver, the requests waiting. Opens the ride.
+ * «A tua boleia» on the game page, where «Combinar com a malta» would be: the title and one short pill (requests
+ * waiting, seats, the time it leaves or «Por confirmar»). The rest is inside the ride, and in what VoiceOver reads.
  */
 export function MinhaBoleia({ boleia, agora, onAbrir }: { boleia: RideSummary; agora: number; onAbrir: () => void }) {
   const theme = useTheme();
@@ -54,6 +54,16 @@ export function MinhaBoleia({ boleia, agora, onAbrir }: { boleia: RideSummary; a
       ? `${plural(boleia.seatsTaken + 1, 'pessoa', 'pessoas')} no carro`
       : 'À espera que o condutor responda';
   const alerta = boleia.isMine ? pedidos > 0 : boleia.myStatus === 'requested';
+  const partida = new Date(boleia.departureAt);
+  const pilula = boleia.isMine
+    ? pedidos > 0
+      ? plural(pedidos, 'pedido', 'pedidos')
+      : livres === 0
+        ? 'Cheia'
+        : `${livres} ${livres === 1 ? 'livre' : 'livres'}`
+    : boleia.myStatus === 'accepted'
+      ? `${formatarDiaCurto(partida, agora)} ${formatarHora(partida)}`
+      : 'Por confirmar';
 
   return (
     <Pressable
@@ -65,18 +75,12 @@ export function MinhaBoleia({ boleia, agora, onAbrir }: { boleia: RideSummary; a
         <Icon name={icons.carro} size={22} color={theme.highlightText} />
       </View>
       <View style={styles.flex}>
-        <ThemedText type="eyebrow" style={{ color: theme.accentText, opacity: 0.85 }}>
-          A tua boleia
-        </ThemedText>
         <ThemedText style={[styles.titulo, { color: theme.accentText }]} numberOfLines={2}>
           {titulo}
         </ThemedText>
-        <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.9 }} numberOfLines={2}>
-          {saida}
-        </ThemedText>
         <View style={[styles.estado, { backgroundColor: alerta ? theme.highlight : 'rgba(255, 255, 255, 0.16)' }]}>
           <ThemedText type="smallBold" style={{ color: alerta ? theme.highlightText : theme.accentText }}>
-            {estado}
+            {pilula}
           </ThemedText>
         </View>
       </View>

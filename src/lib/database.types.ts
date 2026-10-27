@@ -4729,6 +4729,10 @@ export type Database = {
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      mark_going_to_fixture: {
+        Args: { p_fixture_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       mark_group_messages_read: {
         Args: { p_group_id: string }
         Returns: undefined
@@ -5775,6 +5779,7 @@ export type Database = {
           i_receive: boolean
           id: string
           mine: boolean
+          receiver_undo_until: string
           to_name: string
           to_profile_id: string
         }[]

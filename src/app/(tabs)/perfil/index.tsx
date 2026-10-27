@@ -49,7 +49,7 @@ const RISCAS_CACHECOL = Array.from({ length: 14 }, (_, indice) => indice * 16 - 
 function iniciais(nome: string) {
   return nome
     .split(/\s+/)
-    .filter(Boolean)
+    .filter((palavra) => /^\p{L}/u.test(palavra))
     .slice(0, 2)
     .map((palavra) => palavra.charAt(0))
     .join('')
@@ -220,8 +220,11 @@ export default function PerfilScreen() {
                 <CartaoClube
                   clube={clubeDaTerra}
                   onPress={() => router.push('/perfil/clube-terra')}
-                  accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}. Toca para mudar.`}
-                  subtitle={textoAdeptosNaApp(adeptos.data?.[clubeDaTerra.id]) ?? 'Toca para mudar'}
+                  accessibilityLabel={`Clube da terra: ${clubeDaTerra.nomeCurto}.${
+                    textoAdeptosNaApp(adeptos.data?.[clubeDaTerra.id])
+                      ? ` ${textoAdeptosNaApp(adeptos.data?.[clubeDaTerra.id])}.`
+                      : ''
+                  } Toca para mudar.`}
                   chevron={chevron}
                 />
               ) : (
@@ -372,14 +375,13 @@ function AvatarCachecol({ iniciais: letras, foto }: { iniciais: string; foto?: s
 
 type CartaoClubeProps = {
   clube: Clube;
-  subtitle: string;
   onPress: () => void;
   accessibilityLabel: string;
   chevron: ReactNode;
 };
 
 /** Club card with a scarf edge in the club's colours. */
-function CartaoClube({ clube, subtitle, onPress, accessibilityLabel, chevron }: CartaoClubeProps) {
+function CartaoClube({ clube, onPress, accessibilityLabel, chevron }: CartaoClubeProps) {
   return (
     <Card style={styles.clube} onPress={onPress} accessibilityLabel={accessibilityLabel}>
       <View style={[styles.cachecol, { backgroundColor: clube.cores.secundaria }]}>
@@ -392,14 +394,9 @@ function CartaoClube({ clube, subtitle, onPress, accessibilityLabel, chevron }: 
       </View>
       <View style={styles.clubeCorpo}>
         <Escudo clube={clube} size={44} />
-        <View style={styles.clubeTexto}>
-          <ThemedText type="section" style={styles.clubeNome} numberOfLines={1}>
-            {clube.nomeCurto}
-          </ThemedText>
-          <ThemedText themeColor="textSecondary" style={styles.linhaSubtitulo}>
-            {subtitle}
-          </ThemedText>
-        </View>
+        <ThemedText type="section" style={[styles.clubeTexto, styles.clubeNome]} numberOfLines={1}>
+          {clube.nomeCurto}
+        </ThemedText>
         {chevron}
       </View>
     </Card>
@@ -527,10 +524,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  linhaSubtitulo: {
-    fontSize: 13,
-    lineHeight: 18,
   },
   semClube: {
     gap: Spacing.three,

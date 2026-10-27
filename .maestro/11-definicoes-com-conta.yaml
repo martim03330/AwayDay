@@ -59,7 +59,7 @@ tags: [com-conta, privacidade]
     visible: "Mensagens da AwayDay"
     timeout: 15000
 - assertVisible: "Dicas para dias de jogo"
-- assertVisible: "No máximo um aviso por dia.*Claude, da Anthropic.*"
+- assertVisible: "Escritas por IA \\(Claude, da Anthropic\\).*"
 - assertVisible:
     id: "interruptor-Dicas para dias de jogo"
     text: "0"
