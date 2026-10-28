@@ -320,6 +320,8 @@ select pg_temp.expect('no public table or view column named like email is readab
    join pg_class as c on c.oid = a.attrelid
    where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v', 'm', 'f')
      and a.attnum > 0 and not a.attisdropped and a.attname ilike '%email%'
+     -- A Casa's public contact (shown on its page by design), not a person's email.
+     and not (c.relname = 'supporters_club' and a.attname = 'contact_email')
      and (has_column_privilege('anon', c.oid, a.attname, 'SELECT')
        or has_column_privilege('authenticated', c.oid, a.attname, 'SELECT'))), 0);
 select pg_temp.expect('no client-callable function returns an email',

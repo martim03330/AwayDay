@@ -1,5 +1,6 @@
 -- Logic tests for Viagens da Casa: vehicle assignment, the waiting list, one transport per game, payments, the
--- manager's tools, «só sócios» trips, deadlines, cancelling a trip and suspending the Casa.
+-- manager's tools, «só sócios» trips, deadlines, cancelling a trip and suspending the Casa, and the notifications
+-- (what the triggers send to club-trip-notify, and who is alerted about a new trip).
 --
 -- People: G (Gil) owns the Casa; ADM is an admin with the second factor; A, B, C, D, E, F, P, H are fans of the
 -- Casa's club; R (Rui) offers a car to the same game; W is a fan of the other club.
@@ -64,6 +65,23 @@ as $$
   from public.club_trip_booking as b
   left join public.club_trip_vehicle as v on v.id = b.vehicle_id and b.status = 'booked'
   where b.id = pg_temp.id(p_key);
+$$;
+
+-- What the triggers queued for club-trip-notify (pg_net sends it only after commit, so here it just waits), as
+-- 'key:status' (the key in t_ids, or the id), in order.
+create function pg_temp.notified(p_kind text)
+returns text
+language sql
+security definer
+as $$
+  select string_agg(coalesce(k.key, q.body ->> 'id') || coalesce(':' || (q.body ->> 'status'), ''), ',' order by q.id)
+  from (
+    select r.id, convert_from(r.body, 'utf8')::jsonb as body
+    from net.http_request_queue as r
+    where r.url like '%/functions/v1/club-trip-notify'
+  ) as q
+  left join t_ids as k on k.id::text = q.body ->> 'id'
+  where q.body ->> 'kind' = p_kind;
 $$;
 
 create function pg_temp.going(p_user text)
@@ -251,6 +269,8 @@ select pg_temp.expect('first in the waiting list: 4 people, no van',
   (select position_in_waiting || '|' || people || '|' || coalesce(vehicle_label, '-')
    from public.my_club_booking(pg_temp.id('trip'))),
   '1|4|-');
+select pg_temp.expect('nothing is due while waiting (no seat yet)',
+  (select due_cents from public.my_club_booking(pg_temp.id('trip'))), 0);
 select pg_temp.expect('waiting does not mark Duarte as going', pg_temp.going('ca600000-0000-4000-8000-0000000000d1'), null::text);
 
 select pg_temp.as_user('ca600000-0000-4000-8000-0000000000e1');
@@ -449,9 +469,98 @@ select pg_temp.expect('a manual booking with no room waits', pg_temp.booking('bk
 select pg_temp.expect('it has the name and no account',
   (select manual_name || '|' || (profile_id is null) || '|' || people from public.club_trip_booking where id = pg_temp.id('bk_m')),
   'Senhor Joaquim|true|2');
+select pg_temp.expect('a waiting booking cannot be marked paid',
+  pg_temp.refusal(format('select public.manage_club_booking(%L, ''paid'')', pg_temp.id('bk_m'))),
+  'not_booked (22023)');
+select pg_temp.expect('nor unpaid',
+  pg_temp.refusal(format('select public.manage_club_booking(%L, ''unpaid'')', pg_temp.id('bk_m'))),
+  'not_booked (22023)');
 select public.manage_club_booking(pg_temp.id('bk_d'), 'remove');
 select pg_temp.expect('Duarte is removed by the Casa', pg_temp.booking('bk_d'), 'cancelled|manager');
 select pg_temp.expect('the manual booking moves up into the freed van', pg_temp.booking('bk_m'), 'booked|Carrinha Grande');
+
+-- ---------------------------------------------------------------------------------------------------------------------
+-- 7b. Notifications: what the triggers send, and who hears about a new trip.
+
+reset role;
+select pg_temp.expect('each published trip is sent to club-trip-notify', pg_temp.notified('trip'), 'trip:open,socios:open');
+select pg_temp.expect('the waiting list changes people are told about: Eva and Duarte got a seat, Filipe left it',
+  pg_temp.notified('booking'), 'bk_e:booked,bk_d:booked,bk_f:cancelled');
+set local role authenticated;
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
+insert into t_ids (key, id) values ('notice', public.post_club_trip_notice(pg_temp.id('socios'), 'Saída às 14h em ponto.'));
+reset role;
+select pg_temp.expect('a notice is sent too', pg_temp.notified('notice'), 'notice');
+
+-- Where the fans live, measured from the first stop of the «só sócios» trip.
+select set_config('test.first_stop',
+  (select location::text from public.club_trip_stop where trip_id = pg_temp.id('socios') and position = 1), true);
+select set_config('test.near',
+  (select id from public.municipality
+   order by extensions.st_distance(location, current_setting('test.first_stop')::extensions.geography), id limit 1), true);
+select set_config('test.district', (select district from public.municipality where id = current_setting('test.near')), true);
+select set_config('test.close_other',
+  (select id from public.municipality
+   where district <> current_setting('test.district')
+     and extensions.st_dwithin(location, current_setting('test.first_stop')::extensions.geography, 50000)
+   order by id limit 1), true);
+select set_config('test.far',
+  (select id from public.municipality
+   where district <> current_setting('test.district')
+     and not extensions.st_dwithin(location, current_setting('test.first_stop')::extensions.geography, 50000)
+   order by id limit 1), true);
+
+insert into public.profile_club (profile_id, relation, club_id)
+values ('ca600000-0000-4000-8000-0000000000a9', 'supporter', current_setting('test.club'))
+on conflict (profile_id, relation) do update set club_id = excluded.club_id;
+insert into public.profile_home (profile_id, municipality_id)
+values
+  ('ca600000-0000-4000-8000-0000000000e3', current_setting('test.near')),        -- Hugo: same district
+  ('ca600000-0000-4000-8000-0000000000a1', current_setting('test.close_other')), -- Ana: other district, < 50 km
+  ('ca600000-0000-4000-8000-0000000000c1', current_setting('test.far')),         -- Carla: far away
+  ('ca600000-0000-4000-8000-0000000000e1', current_setting('test.near')),        -- Eva: turned the switch off
+  ('ca600000-0000-4000-8000-0000000000b1', current_setting('test.near')),        -- Bruno: blocked Gil
+  ('ca600000-0000-4000-8000-0000000000d1', current_setting('test.near')),        -- Duarte: already alerted
+  ('ca600000-0000-4000-8000-0000000000a9', current_setting('test.near'))         -- Gil: manages the Casa
+on conflict (profile_id) do update set municipality_id = excluded.municipality_id;
+insert into public.notification_preference (profile_id, kind, enabled)
+values ('ca600000-0000-4000-8000-0000000000e1', 'club_trips', false)
+on conflict (profile_id, kind) do update set enabled = false;
+insert into public.user_block (blocker_id, blocked_id)
+values ('ca600000-0000-4000-8000-0000000000b1', 'ca600000-0000-4000-8000-0000000000a9');
+insert into public.club_trip_alert (profile_id, fixture_id)
+values ('ca600000-0000-4000-8000-0000000000d1', current_setting('test.fixture'));
+select pg_temp.expect('one alert per person per game: a second one for Duarte conflicts',
+  pg_temp.refusal(format('insert into public.club_trip_alert (profile_id, fixture_id) values (%L, %L)',
+    'ca600000-0000-4000-8000-0000000000d1', current_setting('test.fixture'))),
+  'duplicate key value violates unique constraint "club_trip_alert_pkey" (23505)');
+
+-- Wilson supports the other club but follows the Casa.
+set local role authenticated;
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000e5');
+select public.set_supporters_club_follow(pg_temp.id('casa'), true);
+reset role;
+
+select pg_temp.expect('alerted: Ana (< 50 km), Hugo (same district) and Wilson (follower); not Carla, Eva, Bruno, Duarte, Gil',
+  (select string_agg(a::text, ',' order by a) from public.claim_club_trip_alerts(pg_temp.id('socios')) as a),
+  'ca600000-0000-4000-8000-0000000000a1,ca600000-0000-4000-8000-0000000000e3,ca600000-0000-4000-8000-0000000000e5');
+select pg_temp.expect('their alerts are recorded for the game',
+  (select count(*)::integer from public.club_trip_alert
+   where fixture_id = current_setting('test.fixture') and profile_id::text like 'ca600000-%'), 4);
+select pg_temp.expect('a second trip to the same game alerts nobody again',
+  (select count(*)::integer from public.claim_club_trip_alerts(pg_temp.id('socios'))), 0);
+select pg_temp.expect('a report of a trip is accepted',
+  pg_temp.refusal(format(
+    'insert into public.content_report (reporter_id, kind, target_id, reason) values (%L, ''club_trip'', %L, ''spam'')',
+    'ca600000-0000-4000-8000-0000000000a1', pg_temp.id('socios'))),
+  'accepted');
+select pg_temp.expect('and of a Casa',
+  pg_temp.refusal(format(
+    'insert into public.content_report (reporter_id, kind, target_id, reason) values (%L, ''supporters_club'', %L, ''spam'')',
+    'ca600000-0000-4000-8000-0000000000a1', pg_temp.id('casa'))),
+  'accepted');
+set local role authenticated;
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 8. Cancelling the trip cancels every live booking.
@@ -471,6 +580,13 @@ select pg_temp.expect('a cancelled trip cannot be reopened',
 select pg_temp.as_user('ca600000-0000-4000-8000-0000000000b1');
 select pg_temp.expect('once cancelled, Bruno can ask for a car seat again',
   pg_temp.refusal(format('select public.request_ride_seat(%L, true)', pg_temp.id('car'))), 'accepted');
+
+reset role;
+select pg_temp.expect('a cancelled trip is sent once, for all its bookings',
+  pg_temp.notified('trip'), 'trip:open,socios:open,trip:cancelled');
+select pg_temp.expect('the bookings cancelled with it send nothing of their own',
+  pg_temp.notified('booking'), 'bk_e:booked,bk_d:booked,bk_f:cancelled');
+set local role authenticated;
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 9. Suspending the Casa cancels its open trips and freezes it.
@@ -504,6 +620,8 @@ select pg_temp.expect('nor change its member code',
   'club_suspended (22023)');
 
 reset role;
+select pg_temp.expect('suspending the Casa sends its cancelled trip',
+  pg_temp.notified('trip'), 'trip:open,socios:open,trip:cancelled,socios:cancelled');
 select count(*) as checks_passed from expect_log;
 
 rollback;

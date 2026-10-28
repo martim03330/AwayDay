@@ -361,6 +361,22 @@ select pg_temp.expect('RLS is on for every new table',
                    'public.club_trip_booking'::regclass, 'public.club_trip_notice'::regclass)),
   true);
 
+select pg_temp.expect('nobody but the server reads or writes the alerts',
+  has_table_privilege('anon', 'public.club_trip_alert', 'select,insert,update,delete')
+    or has_table_privilege('authenticated', 'public.club_trip_alert', 'select,insert,update,delete'),
+  false);
+select pg_temp.expect('RLS is on for the alerts, with no policy',
+  (select c.relrowsecurity and not exists (select 1 from pg_policy as p where p.polrelid = c.oid)
+   from pg_class as c where c.oid = 'public.club_trip_alert'::regclass),
+  true);
+select pg_temp.expect('the alert audience and the notify trigger are not callable by the app',
+  (select bool_or(has_function_privilege(r, f, 'execute'))
+   from unnest(array['anon', 'authenticated']) as r,
+        unnest(array['public.claim_club_trip_alerts(uuid)', 'public.notify_club_trip_change()']) as f),
+  false);
+select pg_temp.expect('the alert audience is callable by club-trip-notify (service role)',
+  has_function_privilege('service_role', 'public.claim_club_trip_alerts(uuid)', 'execute'), true);
+
 select count(*) as checks_passed from expect_log;
 
 rollback;

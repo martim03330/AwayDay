@@ -233,6 +233,8 @@ select pg_temp.expect('the only owner cannot remove themselves',
 select public.remove_supporters_club_manager(pg_temp.id('casa'), 'ca500000-0000-4000-8000-000000000003');
 select pg_temp.expect('the owner removed Marta',
   (select count(*)::integer from public.supporters_club_manager where club_id = pg_temp.id('casa')), 1);
+-- A code handed out before the Casa is suspended (used in 6).
+insert into t_codes (key, code) values ('late', public.create_supporters_club_invite(pg_temp.id('casa')));
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 5. Following: on, then off. The managers see who follows; other fans do not.
@@ -267,6 +269,10 @@ select pg_temp.expect('a suspended Casa is hidden from other fans',
 select pg_temp.as_user('ca500000-0000-4000-8000-000000000001');
 select pg_temp.expect('its owner still sees it, suspended',
   (select status from public.supporters_club where id = pg_temp.id('casa')), 'suspended');
+select pg_temp.as_user('ca500000-0000-4000-8000-000000000002');
+select pg_temp.expect('a manager code of a suspended Casa no longer works',
+  pg_temp.refusal(format('select public.accept_supporters_club_invite(%L)', pg_temp.code('late'))),
+  'club_suspended (22023)');
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 7. Signed-out visitors cannot call any of the functions.
