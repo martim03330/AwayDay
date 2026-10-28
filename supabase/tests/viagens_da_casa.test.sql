@@ -549,16 +549,45 @@ select pg_temp.expect('their alerts are recorded for the game',
    where fixture_id = current_setting('test.fixture') and profile_id::text like 'ca600000-%'), 4);
 select pg_temp.expect('a second trip to the same game alerts nobody again',
   (select count(*)::integer from public.claim_club_trip_alerts(pg_temp.id('socios'))), 0);
-select pg_temp.expect('a report of a trip is accepted',
-  pg_temp.refusal(format(
-    'insert into public.content_report (reporter_id, kind, target_id, reason) values (%L, ''club_trip'', %L, ''spam'')',
-    'ca600000-0000-4000-8000-0000000000a1', pg_temp.id('socios'))),
-  'accepted');
-select pg_temp.expect('and of a Casa',
-  pg_temp.refusal(format(
-    'insert into public.content_report (reporter_id, kind, target_id, reason) values (%L, ''supporters_club'', %L, ''spam'')',
-    'ca600000-0000-4000-8000-0000000000a1', pg_temp.id('casa'))),
-  'accepted');
+
+-- Reports: a fan reports the Casa and the trip; its managers cannot; a pending Casa cannot be reported.
+set local role authenticated;
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a1');
+insert into t_ids (key, id) values
+  ('rep_casa', public.report_content('supporters_club', pg_temp.id('casa'), 'spam', null)),
+  ('rep_trip', public.report_content('club_trip', pg_temp.id('socios'), 'perigoso', 'Preço suspeito'));
+reset role;
+select pg_temp.expect('the Casa report: its owner, its name',
+  (select kind || '|' || reported_profile_id || '|' || content_snapshot from public.content_report
+   where id = pg_temp.id('rep_casa')),
+  'supporters_club|ca600000-0000-4000-8000-0000000000a9|Casa Teste Viagens');
+select pg_temp.expect('the trip report: who published it, the trip and its Casa',
+  (select kind || '|' || reported_profile_id || '|' || content_snapshot from public.content_report
+   where id = pg_temp.id('rep_trip')),
+  'club_trip|ca600000-0000-4000-8000-0000000000a9|Minibus dos Sócios (Casa Teste Viagens)');
+set local role authenticated;
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
+select pg_temp.expect('a manager cannot report their own Casa',
+  pg_temp.refusal(format('select public.report_content(''supporters_club'', %L, ''spam'')', pg_temp.id('casa'))),
+  'own_content (22023)');
+select pg_temp.expect('nor its trip',
+  pg_temp.refusal(format('select public.report_content(''club_trip'', %L, ''spam'')', pg_temp.id('socios'))),
+  'own_content (22023)');
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000e3');
+insert into t_ids (key, id) values ('casa_pendente', public.request_supporters_club(
+  current_setting('test.club'), 'Casa Pendente Viagens', current_setting('test.municipality'), null));
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a1');
+select pg_temp.expect('a pending Casa cannot be reported',
+  pg_temp.refusal(format('select public.report_content(''supporters_club'', %L, ''spam'')', pg_temp.id('casa_pendente'))),
+  'not_found (P0002)');
+select pg_temp.expect('nor a trip that does not exist',
+  pg_temp.refusal(format('select public.report_content(''club_trip'', %L, ''spam'')', gen_random_uuid())),
+  'not_found (P0002)');
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000ad');
+select pg_temp.expect('the admin sees both reports, with what and where',
+  (select string_agg(kind || '|' || content || '|' || context || '|' || content_gone, ' ; ' order by kind desc)
+   from public.pending_content_reports() where target_id in (pg_temp.id('casa'), pg_temp.id('socios'))),
+  'supporters_club|Casa Teste Viagens|Casa|false ; club_trip|Minibus dos Sócios|Viagem da Casa «Casa Teste Viagens»|false');
 set local role authenticated;
 select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
 
@@ -618,6 +647,14 @@ select pg_temp.expect('nor invite managers',
 select pg_temp.expect('nor change its member code',
   pg_temp.refusal(format('select public.rotate_supporters_club_member_code(%L)', pg_temp.id('casa'))),
   'club_suspended (22023)');
+
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a1');
+select pg_temp.expect('a trip of a suspended Casa can no longer be reported (nobody else sees it)',
+  pg_temp.refusal(format('select public.report_content(''club_trip'', %L, ''spam'')', pg_temp.id('socios'))),
+  'not_found (P0002)');
+select pg_temp.expect('nor the suspended Casa',
+  pg_temp.refusal(format('select public.report_content(''supporters_club'', %L, ''spam'')', pg_temp.id('casa'))),
+  'not_found (P0002)');
 
 reset role;
 select pg_temp.expect('suspending the Casa sends its cancelled trip',

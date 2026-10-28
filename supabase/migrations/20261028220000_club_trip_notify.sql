@@ -16,7 +16,9 @@
 -- * `my_club_booking` shows nothing due while waiting, and `manage_club_booking` marks paid / unpaid only `booked`
 --   bookings (`not_booked`);
 -- * `accept_supporters_club_invite` refuses a code of a suspended Casa (`club_suspended`);
--- * `content_report` takes reports of a Casa and of a trip.
+-- * `content_report` takes reports of a Casa and of a trip: `report_content` and `pending_content_reports` learn the
+--   two kinds (`resolve_content_report` needs nothing: a Casa or a trip is only closed or dismissed, and an admin
+--   suspends a Casa with decide_supporters_club).
 
 -- =====================================================================================================================
 -- 1. One alert per person per game. Server only: RLS on, no policy, no grant.
@@ -379,7 +381,221 @@ end;
 $$;
 
 -- =====================================================================================================================
--- 6. Grants: the new functions are server only (create or replace keeps the grants of the others).
+-- 6. Reports of a Casa or a trip (the original definitions are in 20261006115624_report_and_block.sql).
+
+/**
+ * Report something. Only what the reporter can see, never their own, and at most 20 a day.
+ * A Casa: only a verified one; it is its owner's (its managers cannot report it). A trip: only one the reporter can
+ * see; it is whoever published it (the Casa's managers cannot report it).
+ */
+create or replace function public.report_content(
+  p_kind text,
+  p_target_id uuid,
+  p_reason text,
+  p_note text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller uuid := auth.uid();
+  nota text := nullif(btrim(coalesce(p_note, '')), '');
+  autor uuid;
+  grupo uuid;
+  boleia uuid;
+  conteudo text;
+  nova uuid;
+begin
+  if caller is null then
+    raise exception 'not_signed_in' using errcode = '42501';
+  end if;
+  if p_reason is null or p_reason not in ('ofensivo', 'assedio', 'spam', 'perigoso', 'outro') then
+    raise exception 'bad_reason' using errcode = '22023';
+  end if;
+  if nota is not null and char_length(nota) > 500 then
+    raise exception 'bad_note' using errcode = '22023';
+  end if;
+
+  if p_kind = 'message' then
+    select m.profile_id, m.group_id, m.body into autor, grupo, conteudo
+    from public.group_message as m
+    where m.id = p_target_id and m.hidden_at is null and public.is_group_member(m.group_id, caller);
+    if not found then
+      raise exception 'not_found' using errcode = 'P0002';
+    end if;
+  elsif p_kind = 'ride_message' then
+    select m.profile_id, m.ride_id, m.body into autor, boleia, conteudo
+    from public.ride_message as m
+    where m.id = p_target_id and m.hidden_at is null and public.in_ride(m.ride_id, caller);
+    if not found then
+      raise exception 'not_found' using errcode = 'P0002';
+    end if;
+  elsif p_kind in ('profile', 'profile_photo') then
+    if p_target_id = caller then
+      raise exception 'own_content' using errcode = '22023';
+    end if;
+    if not public.can_see_profile(caller, p_target_id) then
+      raise exception 'not_found' using errcode = 'P0002';
+    end if;
+    autor := p_target_id;
+    select case when p_kind = 'profile' then p.display_name else p.avatar_path end into conteudo
+    from public.profile as p
+    where p.id = p_target_id;
+    if p_kind = 'profile_photo' and conteudo is null then
+      raise exception 'no_photo' using errcode = 'P0002';
+    end if;
+  elsif p_kind = 'group' then
+    if not public.is_group_member(p_target_id, caller) then
+      raise exception 'not_found' using errcode = 'P0002';
+    end if;
+    grupo := p_target_id;
+    select g.name into conteudo from public.fan_group as g where g.id = p_target_id;
+  elsif p_kind = 'supporters_club' then
+    if public.is_supporters_club_manager(p_target_id) then
+      raise exception 'own_content' using errcode = '22023';
+    end if;
+    select s.name into conteudo from public.supporters_club as s where s.id = p_target_id and s.status = 'verified';
+    if not found then
+      raise exception 'not_found' using errcode = 'P0002';
+    end if;
+    select m.profile_id into autor
+    from public.supporters_club_manager as m
+    where m.club_id = p_target_id and m.role = 'owner'
+    order by m.created_at, m.profile_id
+    limit 1;
+  elsif p_kind = 'club_trip' then
+    if public.is_club_trip_manager(p_target_id) then
+      raise exception 'own_content' using errcode = '22023';
+    end if;
+    if not public.can_see_club_trip(p_target_id) then
+      raise exception 'not_found' using errcode = 'P0002';
+    end if;
+    select t.created_by, t.name || ' (' || s.name || ')' into autor, conteudo
+    from public.club_trip as t
+    join public.supporters_club as s on s.id = t.supporters_club_id
+    where t.id = p_target_id;
+  else
+    raise exception 'bad_kind' using errcode = '22023';
+  end if;
+
+  if autor = caller then
+    raise exception 'own_content' using errcode = '22023';
+  end if;
+  if not public.take_rate_limit(caller, 'content-report', 20, interval '1 day') then
+    raise exception 'rate_limited' using errcode = '22023';
+  end if;
+
+  insert into public.content_report (
+    reporter_id, kind, target_id, reported_profile_id, group_id, ride_id, reason, note, content_snapshot
+  )
+  values (caller, p_kind, p_target_id, autor, grupo, boleia, p_reason, nota, left(conteudo, 600))
+  on conflict (reporter_id, kind, target_id) where status = 'pendente'
+  do update set reason = excluded.reason, note = excluded.note, created_at = now()
+  returning id into nova;
+
+  return nova;
+end;
+$$;
+
+/**
+ * The open reports, one row per thing reported, newest first. For admins only. Says what was reported and where, but
+ * never who reported it. A Casa shows its current name; a trip its current name, in «Viagem da Casa «…»».
+ */
+create or replace function public.pending_content_reports()
+returns table (
+  report_id uuid,
+  kind text,
+  target_id uuid,
+  reported_profile_id uuid,
+  reported_name text,
+  reasons text[],
+  notes text[],
+  reports integer,
+  content text,
+  content_gone boolean,
+  hidden boolean,
+  context text,
+  first_reported_at timestamptz,
+  last_reported_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with abertas as (
+    select
+      r.kind,
+      r.target_id,
+      (array_agg(r.id order by r.created_at desc))[1] as report_id,
+      array_agg(distinct r.reason) as reasons,
+      array_remove(array_agg(r.note order by r.created_at desc), null) as notes,
+      count(*)::integer as reports,
+      (array_agg(r.content_snapshot order by r.created_at desc))[1] as snapshot,
+      (array_agg(r.reported_profile_id order by r.created_at desc))[1] as reported_profile_id,
+      (array_agg(r.group_id order by r.created_at desc))[1] as group_id,
+      (array_agg(r.ride_id order by r.created_at desc))[1] as ride_id,
+      min(r.created_at) as first_at,
+      max(r.created_at) as last_at
+    from public.content_report as r
+    where r.status = 'pendente' and public.is_admin()
+    group by r.kind, r.target_id
+  )
+  select
+    a.report_id,
+    a.kind,
+    a.target_id,
+    a.reported_profile_id,
+    quem.display_name,
+    a.reasons,
+    a.notes,
+    a.reports,
+    case a.kind
+      when 'message' then coalesce(gm.body, a.snapshot)
+      when 'ride_message' then coalesce(rm.body, a.snapshot)
+      when 'profile' then coalesce(quem.display_name, a.snapshot)
+      when 'profile_photo' then coalesce(quem.avatar_path, a.snapshot)
+      when 'supporters_club' then coalesce(casa.name, a.snapshot)
+      when 'club_trip' then coalesce(viagem.name, a.snapshot)
+      else coalesce(g.name, a.snapshot)
+    end,
+    case a.kind
+      when 'message' then gm.id is null
+      when 'ride_message' then rm.id is null
+      when 'profile' then quem.id is null
+      when 'profile_photo' then quem.avatar_path is null
+      when 'supporters_club' then casa.id is null
+      when 'club_trip' then viagem.id is null
+      else g.id is null
+    end,
+    coalesce(gm.hidden_at, rm.hidden_at) is not null,
+    case a.kind
+      when 'message' then 'Conversa do grupo «' || coalesce(g.name, '?') || '»'
+      when 'ride_message' then 'Conversa do carro de ' || coalesce(condutor.display_name, '?')
+      when 'group' then 'Grupo'
+      when 'supporters_club' then 'Casa'
+      when 'club_trip' then 'Viagem da Casa «' || coalesce(casa_da_viagem.name, '?') || '»'
+      else 'Perfil'
+    end,
+    a.first_at,
+    a.last_at
+  from abertas as a
+  left join public.group_message as gm on a.kind = 'message' and gm.id = a.target_id
+  left join public.ride_message as rm on a.kind = 'ride_message' and rm.id = a.target_id
+  left join public.profile as quem on quem.id = a.reported_profile_id
+  left join public.fan_group as g on g.id = a.group_id
+  left join public.ride as rd on rd.id = a.ride_id
+  left join public.profile as condutor on condutor.id = rd.driver_id
+  left join public.supporters_club as casa on a.kind = 'supporters_club' and casa.id = a.target_id
+  left join public.club_trip as viagem on a.kind = 'club_trip' and viagem.id = a.target_id
+  left join public.supporters_club as casa_da_viagem on casa_da_viagem.id = viagem.supporters_club_id
+  order by a.last_at desc;
+$$;
+
+-- =====================================================================================================================
+-- 7. Grants: the new functions are server only (create or replace keeps the grants of the others).
 
 revoke execute on function public.claim_club_trip_alerts(uuid) from public, anon, authenticated;
 revoke execute on function public.notify_club_trip_change() from public, anon, authenticated;
