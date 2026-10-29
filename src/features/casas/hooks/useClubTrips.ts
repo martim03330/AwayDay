@@ -10,6 +10,7 @@ import {
   fetchClubTripBookings,
   fetchClubTripNotices,
   fetchClubTripsForFixture,
+  fetchSupportersClubTrips,
   manageClubBooking,
   postClubTripNotice,
   removeClubTripVehicle,
@@ -32,6 +33,7 @@ export const clubTripsForFixtureKey = (fixtureId: string | null) =>
 export const clubTripKey = (tripId: string | null) => [CASAS_KEY, 'trips', 'one', tripId] as const;
 export const clubTripBookingsKey = (tripId: string | null) =>
   [CASAS_KEY, 'trips', 'bookings', tripId] as const;
+export const casaTripsKey = (clubId: string | null) => [CASAS_KEY, 'trips', 'casa', clubId] as const;
 export const clubTripNoticesKey = (tripId: string | null) =>
   [CASAS_KEY, 'trips', 'notices', tripId] as const;
 
@@ -39,6 +41,16 @@ export function useClubTripsForFixture(fixtureId: string | null, enabled = true)
   return useQuery({
     queryKey: clubTripsForFixtureKey(fixtureId),
     queryFn: fixtureId && enabled ? () => fetchClubTripsForFixture(fixtureId) : skipToken,
+    staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
+/** The upcoming trips of one Casa, for its page. */
+export function useSupportersClubTrips(clubId: string | null) {
+  return useQuery({
+    queryKey: casaTripsKey(clubId),
+    queryFn: clubId ? () => fetchSupportersClubTrips(clubId) : skipToken,
     staleTime: STALE_MS,
     meta: { persist: false },
   });

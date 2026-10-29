@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/supabase', () => ({ supabase: null }));
 
-const { toClubTripError, toMyClubBooking, toVehicleSummary } = await import('@/features/casas/api');
+const { toClubTripError, toMyClubBooking, toSupportersClubTrip, toVehicleSummary } = await import(
+  '@/features/casas/api'
+);
 
 describe('toClubTripError', () => {
   it('keeps the reasons the screens react to', () => {
@@ -58,5 +60,34 @@ describe('row mappers', () => {
       paidPeople: 1,
       dueCents: 1360,
     });
+  });
+});
+
+describe('toSupportersClubTrip', () => {
+  const row = {
+    id: 't1',
+    fixture_id: 'f1',
+    name: 'Autocarro da sede',
+    price_cents: 1250,
+    members_only: true,
+    status: 'closed',
+    fixture: { kickoff_at: '2026-11-08T20:30:00Z' },
+  };
+
+  it('keeps the price in cents and the game kick-off in UTC', () => {
+    expect(toSupportersClubTrip(row)).toEqual({
+      id: 't1',
+      fixtureId: 'f1',
+      kickoffAt: '2026-11-08T20:30:00Z',
+      name: 'Autocarro da sede',
+      priceCents: 1250,
+      membersOnly: true,
+      status: 'closed',
+    });
+  });
+
+  it('drops a row without its game, and reads an unknown status as open', () => {
+    expect(toSupportersClubTrip({ ...row, fixture: null })).toBeNull();
+    expect(toSupportersClubTrip({ ...row, status: '?' })?.status).toBe('open');
   });
 });

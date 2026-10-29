@@ -41,7 +41,9 @@ export type NotificationKind =
   /** Despesas e pagamentos das contas da viagem. */
   | 'trip_money'
   /** Boleias oferecidas nos planos e quem entra no carro. */
-  | 'rides';
+  | 'rides'
+  /** Autocarros das Casas: o aviso de uma viagem nova perto, um por jogo. */
+  | 'club_trips';
 
 /** Only the kinds the user changed; the others follow the app default. */
 export type NotificationPreferences = Partial<Record<NotificationKind, boolean>>;

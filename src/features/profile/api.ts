@@ -132,6 +132,7 @@ const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   'friends',
   'trip_money',
   'rides',
+  'club_trips',
 ];
 
 function isNotificationKind(value: string): value is NotificationKind {

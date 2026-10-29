@@ -156,6 +156,11 @@ const AVISOS_DA_MALTA: { kind: NotificationKind; titulo: string; descricao: stri
     titulo: 'Contas da viagem',
     descricao: 'Despesas onde entras e pagamentos para confirmares.',
   },
+  {
+    kind: 'club_trips',
+    titulo: 'Autocarros das Casas',
+    descricao: 'Quando uma Casa do teu clube perto de ti marca um autocarro para um jogo. No máximo um aviso por jogo.',
+  },
 ];
 
 /** Os avisos que o servidor envia mesmo. Ligados por omissão: desliga-se o que não se quer. */

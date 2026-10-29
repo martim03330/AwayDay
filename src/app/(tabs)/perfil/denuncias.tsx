@@ -34,6 +34,8 @@ const NOMES: Record<ReportKind, string> = {
   profile: 'Nome de uma pessoa',
   profile_photo: 'Foto de perfil',
   group: 'Grupo',
+  supporters_club: 'Casa',
+  club_trip: 'Viagem de uma Casa',
 };
 
 /** The action that fixes it, when there is one the app can do by itself. */

@@ -11,6 +11,7 @@ import { MinhaBoleia, useMinhaBoleia } from '@/features/rides/components/MinhaBo
 import { RelogioDiaDeJogo } from '@/components/relogio-dia-de-jogo';
 import { CardShadow, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { GoingButton } from '@/features/activity/components/GoingButton';
+import { AutocarrosDasCasas } from '@/features/casas/components/AutocarrosDasCasas';
 import { CaraDoGrupo } from '@/features/groups/components/CaraDoGrupo';
 import { useMyPlanForFixture } from '@/features/groups/hooks/useGroups';
 import { useBarraDeEstadoClara } from '@/hooks/use-barra-de-estado-clara';
@@ -265,6 +266,12 @@ export default function JogoScreen() {
           ) : estado === 'agendado' ? (
             <CombinarComAMalta onPress={() => abrir('/jogos/combinar')} />
           ) : null}
+          {/* The Casas' buses for this game, above the car rides; nothing at all when there are none. */}
+          <AutocarrosDasCasas
+            fixtureId={jogo.id}
+            ativo={estado === 'agendado' && userId !== null}
+            onAbrir={(viagemId) => router.push({ pathname: '/casa/viagem/[viagemId]', params: { viagemId } })}
+          />
           <Card style={styles.lista}>
             <LinhaSeccao
               icone={icons.carro}

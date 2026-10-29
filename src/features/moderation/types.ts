@@ -1,5 +1,15 @@
-/** What can be reported. 'message' is a group chat message; 'ride_message' a car chat message. */
-export type ReportKind = 'message' | 'ride_message' | 'profile' | 'profile_photo' | 'group';
+/**
+ * What can be reported. 'message' is a group chat message; 'ride_message' a car chat message; 'supporters_club' a
+ * Casa; 'club_trip' a Casa's trip.
+ */
+export type ReportKind =
+  | 'message'
+  | 'ride_message'
+  | 'profile'
+  | 'profile_photo'
+  | 'group'
+  | 'supporters_club'
+  | 'club_trip';
 
 export const REPORT_REASONS = ['ofensivo', 'assedio', 'spam', 'perigoso', 'outro'] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];

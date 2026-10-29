@@ -54,7 +54,15 @@ function refusal(error: { message: string }) {
   return new ModerationRefused(RECUSAS.find((reason) => error.message === reason) ?? 'unknown');
 }
 
-const KINDS: ReportKind[] = ['message', 'ride_message', 'profile', 'profile_photo', 'group'];
+const KINDS: ReportKind[] = [
+  'message',
+  'ride_message',
+  'profile',
+  'profile_photo',
+  'group',
+  'supporters_club',
+  'club_trip',
+];
 
 function reportKind(value: string): ReportKind {
   return KINDS.find((kind) => kind === value) ?? 'profile';

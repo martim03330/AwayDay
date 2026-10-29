@@ -100,6 +100,23 @@ describe('Cold start', () => {
   });
 });
 
+describe('Casa trips', () => {
+  it('a Casa trip notification opens the trip', () => {
+    mockUltima = resposta('n4', { type: 'viagem-casa', tripId: 't1', fixtureId: 'j1' });
+    render(<NotificacoesPush />);
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/casa/viagem/[viagemId]',
+      params: { viagemId: 't1' },
+    });
+  });
+
+  it('without a trip id, opens nothing', () => {
+    mockUltima = resposta('n5', { type: 'viagem-casa', fixtureId: 'j1' });
+    render(<NotificacoesPush />);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
 describe('Signing in', () => {
   it('asks for permission when «Ligar avisos» was chosen without an account', async () => {
     mockPedirAoEntrar = true;

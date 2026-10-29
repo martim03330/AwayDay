@@ -37,6 +37,7 @@ export function abrirNotificacao(router: Router, resposta: Notifications.Notific
   const rideId = campo(dados, 'rideId');
   const grupoId = campo(dados, 'groupId');
   const sessaoId = campo(dados, 'sessionId');
+  const tripId = campo(dados, 'tripId');
 
   if (tipo === 'nudge') {
     // A tip about a game opens the game; the others open the games list, where the coach's tip lives.
@@ -64,6 +65,9 @@ export function abrirNotificacao(router: Router, resposta: Notifications.Notific
   if (tipo === 'contas' && typeof sessaoId === 'string') {
     router.push({ pathname: '/sessao/[sessaoId]/despesas', params: { sessaoId } });
   }
+  if (tipo === 'viagem-casa' && typeof tripId === 'string') {
+    router.push({ pathname: '/casa/viagem/[viagemId]', params: { viagemId: tripId } });
+  }
   if (tipo === 'o-meu-jogo' && typeof jogoId === 'string' && obterJogo(jogoId)) {
     router.push({ pathname: '/jogos/[jogoId]', params: { jogoId } });
   }
@@ -77,6 +81,7 @@ export function abrirNotificacao(router: Router, resposta: Notifications.Notific
  *   aviso da retrospetiva abre a retrospetiva.
  * - Uma mensagem de um grupo abre a conversa do grupo; um convite para um grupo abre a Malta.
  * - Uma despesa ou um pagamento abre as despesas da viagem.
+ * - Um aviso de uma viagem da Casa (autocarro novo, aviso da Casa, lista de espera) abre essa viagem.
  * - Com a app fechada, o toque que a abriu é tratado assim que a navegação estiver pronta.
  */
 export function NotificacoesPush() {

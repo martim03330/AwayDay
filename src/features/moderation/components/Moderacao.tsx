@@ -43,7 +43,7 @@ type AlvoDenuncia = {
   kind: ReportKind;
   targetId: string;
   titulo: string;
-  /** The person behind it, to offer blocking afterwards. Empty for a group. */
+  /** The person behind it, to offer blocking afterwards. Empty for a group, a Casa or a trip. */
   pessoa: Pessoa | null;
 };
 
@@ -191,6 +191,22 @@ export function useModeracao() {
     setDenuncia({ kind: 'group', targetId: groupId, titulo: `Denunciar «${nome}»`, pessoa: null });
   }
 
+  /** The «⋯» on a Casa or on a Casa's trip: only «Denunciar», as nobody is behind it to block. */
+  function abrirConteudo(input: { kind: 'supporters_club' | 'club_trip'; targetId: string; nome: string }) {
+    mostrarMenu(input.nome, [
+      {
+        label: 'Denunciar',
+        onPress: () =>
+          setDenuncia({
+            kind: input.kind,
+            targetId: input.targetId,
+            titulo: `Denunciar «${input.nome}»`,
+            pessoa: null,
+          }),
+      },
+    ]);
+  }
+
   const elemento = (
     <>
       <FolhaDeDenuncia
@@ -214,7 +230,7 @@ export function useModeracao() {
     </>
   );
 
-  return { abrirMensagem, abrirPessoa, denunciarGrupo, elemento };
+  return { abrirMensagem, abrirPessoa, denunciarGrupo, abrirConteudo, elemento };
 }
 
 /** The reason, an optional note, and a thank-you. */

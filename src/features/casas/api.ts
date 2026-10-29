@@ -15,6 +15,7 @@ import type {
   SupportersClub,
   SupportersClubRole,
   SupportersClubStatus,
+  SupportersClubTrip,
 } from '@/features/casas/types';
 import { ClubTripError } from '@/features/casas/types';
 import type { Database } from '@/lib/database.types';
@@ -496,6 +497,47 @@ export async function fetchClubTripBookings(tripId: string): Promise<ClubBooking
     paid: row.paid,
     boarded: row.boarded,
   }));
+}
+
+type CasaTripRow = {
+  id: string;
+  fixture_id: string;
+  name: string;
+  price_cents: number;
+  members_only: boolean;
+  status: string;
+  fixture: { kickoff_at: string } | null;
+};
+
+export function toSupportersClubTrip(row: CasaTripRow): SupportersClubTrip | null {
+  if (!row.fixture) return null;
+  return {
+    id: row.id,
+    fixtureId: row.fixture_id,
+    kickoffAt: row.fixture.kickoff_at,
+    name: row.name,
+    priceCents: row.price_cents,
+    membersOnly: row.members_only,
+    status: tripStatus(row.status),
+  };
+}
+
+/** The Casa's upcoming trips (not cancelled, game not started yet), soonest game first. */
+export async function fetchSupportersClubTrips(clubId: string): Promise<SupportersClubTrip[]> {
+  const found = await rows(
+    client()
+      .from('club_trip')
+      .select(
+        'id, fixture_id, name, price_cents, members_only, status, fixture:fixture_id!inner (kickoff_at)'
+      )
+      .eq('supporters_club_id', clubId)
+      .neq('status', 'cancelled')
+      .gt('fixture.kickoff_at', new Date().toISOString())
+  );
+  return found
+    .map(toSupportersClubTrip)
+    .filter((trip): trip is SupportersClubTrip => trip !== null)
+    .sort((a, b) => Date.parse(a.kickoffAt) - Date.parse(b.kickoffAt));
 }
 
 export async function fetchClubTripNotices(tripId: string): Promise<ClubTripNotice[]> {

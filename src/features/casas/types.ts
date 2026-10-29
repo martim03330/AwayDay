@@ -33,6 +33,17 @@ export type ClubTripListItem = {
   myStatus: ClubBookingStatus | null;
 };
 
+/** A trip on the Casa's page: its upcoming ones (not cancelled, game not started). */
+export type SupportersClubTrip = {
+  id: string;
+  fixtureId: string;
+  kickoffAt: string;
+  name: string;
+  priceCents: number;
+  membersOnly: boolean;
+  status: ClubTripStatus;
+};
+
 /** One row of `club_trip_summary`: a vehicle with what is in it. */
 export type ClubTripVehicleSummary = {
   vehicleId: string;
