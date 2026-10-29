@@ -287,6 +287,305 @@ export type Database = {
           },
         ]
       }
+      club_trip: {
+        Row: {
+          bookings_close_at: string
+          created_at: string
+          created_by: string | null
+          fixture_id: string
+          id: string
+          members_only: boolean
+          name: string
+          note: string | null
+          price_cents: number
+          status: string
+          supporters_club_id: string
+          updated_at: string
+        }
+        Insert: {
+          bookings_close_at: string
+          created_at?: string
+          created_by?: string | null
+          fixture_id: string
+          id?: string
+          members_only?: boolean
+          name: string
+          note?: string | null
+          price_cents: number
+          status?: string
+          supporters_club_id: string
+          updated_at?: string
+        }
+        Update: {
+          bookings_close_at?: string
+          created_at?: string
+          created_by?: string | null
+          fixture_id?: string
+          id?: string
+          members_only?: boolean
+          name?: string
+          note?: string | null
+          price_cents?: number
+          status?: string
+          supporters_club_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_trip_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_supporters_club_id_fkey"
+            columns: ["supporters_club_id"]
+            isOneToOne: false
+            referencedRelation: "supporters_club"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_trip_alert: {
+        Row: {
+          fixture_id: string
+          profile_id: string
+          sent_at: string
+        }
+        Insert: {
+          fixture_id: string
+          profile_id: string
+          sent_at?: string
+        }
+        Update: {
+          fixture_id?: string
+          profile_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_trip_alert_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_alert_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_trip_booking: {
+        Row: {
+          boarded_at: string | null
+          cancel_reason: string | null
+          companions: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          manual_name: string | null
+          paid_at: string | null
+          people: number | null
+          profile_id: string | null
+          status: string
+          stop_id: string
+          trip_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          boarded_at?: string | null
+          cancel_reason?: string | null
+          companions?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          manual_name?: string | null
+          paid_at?: string | null
+          people?: number | null
+          profile_id?: string | null
+          status: string
+          stop_id: string
+          trip_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          boarded_at?: string | null
+          cancel_reason?: string | null
+          companions?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          manual_name?: string | null
+          paid_at?: string | null
+          people?: number | null
+          profile_id?: string | null
+          status?: string
+          stop_id?: string
+          trip_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_trip_booking_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_booking_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_booking_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "club_trip_stop"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_booking_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "club_trip"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_booking_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "club_trip_vehicle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_trip_notice: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          trip_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          trip_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_trip_notice_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_trip_notice_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "club_trip"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_trip_stop: {
+        Row: {
+          id: string
+          location: unknown
+          name: string
+          passes_at: string
+          position: number
+          trip_id: string
+        }
+        Insert: {
+          id?: string
+          location: unknown
+          name: string
+          passes_at: string
+          position: number
+          trip_id: string
+        }
+        Update: {
+          id?: string
+          location?: unknown
+          name?: string
+          passes_at?: string
+          position?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_trip_stop_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "club_trip"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_trip_vehicle: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          label: string
+          seats: number
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          label: string
+          seats: number
+          trip_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          seats?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_trip_vehicle_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "club_trip"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_state: {
         Row: {
           created_at: string
@@ -3551,6 +3850,201 @@ export type Database = {
           },
         ]
       }
+      supporters_club: {
+        Row: {
+          club_id: string
+          contact_email: string | null
+          created_at: string
+          id: string
+          member_code: string | null
+          municipality_id: string
+          name: string
+          requested_by: string | null
+          status: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          club_id: string
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          member_code?: string | null
+          municipality_id: string
+          name: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          member_code?: string | null
+          municipality_id?: string
+          name?: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supporters_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_municipality_id_fkey"
+            columns: ["municipality_id"]
+            isOneToOne: false
+            referencedRelation: "municipality"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supporters_club_follower: {
+        Row: {
+          club_id: string
+          created_at: string
+          profile_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          profile_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supporters_club_follower_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "supporters_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_follower_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supporters_club_invite: {
+        Row: {
+          club_id: string
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          club_id: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supporters_club_invite_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "supporters_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_invite_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_invite_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supporters_club_manager: {
+        Row: {
+          club_id: string
+          created_at: string
+          profile_id: string
+          role: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          profile_id: string
+          role?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          profile_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supporters_club_manager_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "supporters_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supporters_club_manager_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       toll_rate: {
         Row: {
           checked_on: string
@@ -4250,6 +4744,50 @@ export type Database = {
       }
       accept_group_invite: { Args: { p_group_id: string }; Returns: undefined }
       accept_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
+      accept_supporters_club_invite: {
+        Args: { p_code: string }
+        Returns: string
+      }
+      add_club_trip_vehicle: {
+        Args: {
+          p_kind: string
+          p_label: string
+          p_seats: number
+          p_trip_id: string
+        }
+        Returns: string
+      }
+      add_manual_club_booking: {
+        Args: {
+          p_companions: string[]
+          p_name: string
+          p_stop_id: string
+          p_trip_id: string
+        }
+        Returns: {
+          boarded_at: string | null
+          cancel_reason: string | null
+          companions: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          manual_name: string | null
+          paid_at: string | null
+          people: number | null
+          profile_id: string | null
+          status: string
+          stop_id: string
+          trip_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "club_trip_booking"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_trip_expense: {
         Args: {
           p_category: string
@@ -4315,6 +4853,37 @@ export type Database = {
         Returns: boolean
       }
       block_user: { Args: { p_profile_id: string }; Returns: undefined }
+      book_club_trip: {
+        Args: {
+          p_code: string
+          p_companions: string[]
+          p_stop_id: string
+          p_trip_id: string
+        }
+        Returns: {
+          boarded_at: string | null
+          cancel_reason: string | null
+          companions: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          manual_name: string | null
+          paid_at: string | null
+          people: number | null
+          profile_id: string | null
+          status: string
+          stop_id: string
+          trip_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "club_trip_booking"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       caller_in_group_folder: { Args: { p_folder: string }; Returns: boolean }
       caller_is_trip_member: {
         Args: { p_session_id: string }
@@ -4326,6 +4895,7 @@ export type Database = {
         Returns: boolean
       }
       can_open_avatar: { Args: { p_name: string }; Returns: boolean }
+      can_see_club_trip: { Args: { p_trip_id: string }; Returns: boolean }
       can_see_fixture_plan: {
         Args: { p_plan_id: string; p_profile_id: string }
         Returns: boolean
@@ -4353,10 +4923,15 @@ export type Database = {
       can_share_house: { Args: { p_profile_id: string }; Returns: boolean }
       can_use_group_topic: { Args: { p_topic: string }; Returns: boolean }
       can_use_ride_topic: { Args: { p_topic: string }; Returns: boolean }
+      cancel_my_club_booking: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
       cancel_return_request: { Args: { p_ride_id: string }; Returns: undefined }
       cancel_ride: { Args: { p_ride_id: string }; Returns: undefined }
       chat_edit_window: { Args: never; Returns: string }
       chat_reaction_allowed: { Args: { p_emoji: string }; Returns: boolean }
+      claim_club_trip_alerts: { Args: { p_trip_id: string }; Returns: string[] }
       clear_profile_photo: { Args: never; Returns: undefined }
       close_finished_seasons: { Args: never; Returns: number }
       close_plans_with_full_ride: {
@@ -4382,6 +4957,75 @@ export type Database = {
           supporters: number
         }[]
       }
+      club_trip_cancel: { Args: { p_trip_id: string }; Returns: undefined }
+      club_trip_clean_companions: {
+        Args: { p_companions: string[] }
+        Returns: string[]
+      }
+      club_trip_companions_ok: {
+        Args: { p_companions: string[] }
+        Returns: boolean
+      }
+      club_trip_conflict: {
+        Args: { p_fixture_id: string; p_profile_id: string; p_trip_id: string }
+        Returns: string
+      }
+      club_trip_for_manager: {
+        Args: { p_trip_id: string }
+        Returns: {
+          bookings_close_at: string
+          created_at: string
+          created_by: string | null
+          fixture_id: string
+          id: string
+          members_only: boolean
+          name: string
+          note: string | null
+          price_cents: number
+          status: string
+          supporters_club_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "club_trip"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      club_trip_free_vehicle: {
+        Args: { p_people: number; p_trip_id: string }
+        Returns: string
+      }
+      club_trip_summary: {
+        Args: { p_trip_id: string }
+        Returns: {
+          due_cents: number
+          kind: string
+          label: string
+          occupied: number
+          paid_people: number
+          seats: number
+          vehicle_id: string
+          waiting_people: number
+        }[]
+      }
+      club_trips_for_fixture: {
+        Args: { p_fixture_id: string }
+        Returns: {
+          club_id: string
+          club_name: string
+          distance_km: number
+          first_stop_name: string
+          first_stop_passes_at: string
+          free_seats: number
+          members_only: boolean
+          municipality_name: string
+          my_status: string
+          price_cents: number
+          trip_id: string
+        }[]
+      }
       coach_club_facts: { Args: { p_club_id: string }; Returns: Json }
       coach_context: {
         Args: { p_now?: string; p_profile_id: string }
@@ -4401,8 +5045,30 @@ export type Database = {
         Args: { p_settlement_id: string }
         Returns: undefined
       }
+      create_club_trip: {
+        Args: {
+          p_bookings_close_at: string
+          p_club_id: string
+          p_fixture_id: string
+          p_members_only: boolean
+          p_name: string
+          p_note: string
+          p_price_cents: number
+          p_stops: Json
+          p_vehicles: Json
+        }
+        Returns: string
+      }
       create_group: { Args: { p_name: string }; Returns: string }
+      create_supporters_club_invite: {
+        Args: { p_club_id: string }
+        Returns: string
+      }
       current_season_id: { Args: never; Returns: string }
+      decide_supporters_club: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
       decline_group_invite: { Args: { p_group_id: string }; Returns: undefined }
       decline_ride_invite: { Args: { p_ride_id: string }; Returns: undefined }
       delete_cancelled_rides: { Args: never; Returns: undefined }
@@ -4702,6 +5368,7 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
+      is_club_trip_manager: { Args: { p_trip_id: string }; Returns: boolean }
       is_fixture_plan_house: {
         Args: { p_plan_id: string; p_stay_plan_id: string }
         Returns: boolean
@@ -4715,6 +5382,14 @@ export type Database = {
         Returns: boolean
       }
       is_offensive_name: { Args: { p_name: string }; Returns: boolean }
+      is_supporters_club_manager: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
+      is_supporters_club_owner: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
       is_trip_member: {
         Args: { p_profile_id: string; p_session_id: string }
         Returns: boolean
@@ -4729,6 +5404,14 @@ export type Database = {
       leave_group: { Args: { p_group_id: string }; Returns: undefined }
       leave_ride: { Args: { p_ride_id: string }; Returns: undefined }
       leave_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      lock_one_transport: {
+        Args: { p_fixture_id: string; p_profile_id: string }
+        Returns: undefined
+      }
+      manage_club_booking: {
+        Args: { p_action: string; p_booking_id: string; p_vehicle_id?: string }
+        Returns: undefined
+      }
       mark_going_to_fixture: {
         Args: { p_fixture_id: string; p_profile_id: string }
         Returns: undefined
@@ -4762,6 +5445,20 @@ export type Database = {
           blocked_at: string
           display_name: string
           profile_id: string
+        }[]
+      }
+      my_club_booking: {
+        Args: { p_trip_id: string }
+        Returns: {
+          booking_id: string
+          due_cents: number
+          paid: boolean
+          passes_at: string
+          people: number
+          position_in_waiting: number
+          status: string
+          stop_name: string
+          vehicle_label: string
         }[]
       }
       my_friend_requests: {
@@ -5050,6 +5747,10 @@ export type Database = {
         Returns: string
       }
       plan_weekly_challenges: { Args: never; Returns: number }
+      post_club_trip_notice: {
+        Args: { p_body: string; p_trip_id: string }
+        Returns: string
+      }
       post_plan_message: {
         Args: { p_group_id: string; p_plan_id: string; p_profile_id: string }
         Returns: undefined
@@ -5075,6 +5776,10 @@ export type Database = {
           rides_completed: number
           rides_faults: number
         }[]
+      }
+      promote_club_trip_waiting: {
+        Args: { p_trip_id: string }
+        Returns: undefined
       }
       public_profile: {
         Args: { p_profile_id: string }
@@ -5192,6 +5897,10 @@ export type Database = {
         Returns: undefined
       }
       reject_place: { Args: { p_place_id: string }; Returns: undefined }
+      remove_club_trip_vehicle: {
+        Args: { p_vehicle_id: string }
+        Returns: undefined
+      }
       remove_friend: { Args: { p_profile_id: string }; Returns: undefined }
       remove_group_member: {
         Args: { p_group_id: string; p_profile_id: string }
@@ -5206,6 +5915,10 @@ export type Database = {
         Returns: undefined
       }
       remove_stay_plan: { Args: { p_fixture_id: string }; Returns: undefined }
+      remove_supporters_club_manager: {
+        Args: { p_club_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       remove_trip_expense: {
         Args: { p_expense_id: string }
         Returns: undefined
@@ -5280,6 +5993,15 @@ export type Database = {
         Returns: undefined
       }
       request_stay_place: { Args: { p_plan_id: string }; Returns: undefined }
+      request_supporters_club: {
+        Args: {
+          p_club_id: string
+          p_contact_email: string
+          p_municipality_id: string
+          p_name: string
+        }
+        Returns: string
+      }
       resolve_content_report: {
         Args: { p_action: string; p_report_id: string }
         Returns: undefined
@@ -5442,6 +6164,10 @@ export type Database = {
       }
       roll_up_home_fan_reports: { Args: never; Returns: number }
       rotate_group_invite: { Args: { p_group_id: string }; Returns: string }
+      rotate_supporters_club_member_code: {
+        Args: { p_club_id: string }
+        Returns: string
+      }
       runs_trip_session: {
         Args: { p_profile_id: string; p_session_id: string }
         Returns: boolean
@@ -5494,6 +6220,10 @@ export type Database = {
           p_ride_id: string
         }
         Returns: string
+      }
+      set_club_trip_status: {
+        Args: { p_status: string; p_trip_id: string }
+        Returns: undefined
       }
       set_display_name: { Args: { p_name: string }; Returns: undefined }
       set_feedback_status: {
@@ -5562,6 +6292,10 @@ export type Database = {
         Args: { p_plan_id: string; p_public: boolean }
         Returns: undefined
       }
+      set_supporters_club_follow: {
+        Args: { p_follow: boolean; p_id: string }
+        Returns: undefined
+      }
       settle_rides: { Args: never; Returns: number }
       share_checkin_with_groups: {
         Args: { p_place_id: string; p_profile_id: string }
@@ -5627,6 +6361,10 @@ export type Database = {
         Returns: string
       }
       suggest_place_candidates: { Args: never; Returns: number }
+      supporters_club_member_code: {
+        Args: { p_club_id: string }
+        Returns: string
+      }
       sync_ride_trip_expense: {
         Args: { p_session_id: string }
         Returns: undefined
@@ -5800,6 +6538,14 @@ export type Database = {
       unblock_user: { Args: { p_profile_id: string }; Returns: undefined }
       unshare_fixture_plan: {
         Args: { p_group_id: string; p_plan_id: string }
+        Returns: undefined
+      }
+      update_club_trip_vehicle: {
+        Args: { p_label: string; p_seats: number; p_vehicle_id: string }
+        Returns: undefined
+      }
+      update_supporters_club: {
+        Args: { p_contact_email: string; p_id: string; p_name: string }
         Returns: undefined
       }
       venue_attendance: {
