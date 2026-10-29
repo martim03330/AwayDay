@@ -1,9 +1,4 @@
-import {
-  skipToken,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   addClubTripVehicle,
@@ -20,37 +15,30 @@ import {
   removeClubTripVehicle,
   setClubTripStatus,
   updateClubTripVehicle,
-} from "@/features/casas/api";
-import { CASAS_KEY } from "@/features/casas/hooks/useCasas";
+} from '@/features/casas/api';
+import { CASAS_KEY } from '@/features/casas/hooks/useCasas';
 import type {
   ClubTripFull,
   ClubTripListItem,
   ClubTripStatus,
   ManageBookingAction,
   NewClubTripVehicle,
-} from "@/features/casas/types";
+} from '@/features/casas/types';
 
 const STALE_MS = 30 * 1000;
 
 export const clubTripsForFixtureKey = (fixtureId: string | null) =>
-  [CASAS_KEY, "trips", "fixture", fixtureId] as const;
-export const clubTripKey = (tripId: string | null) =>
-  [CASAS_KEY, "trips", "one", tripId] as const;
+  [CASAS_KEY, 'trips', 'fixture', fixtureId] as const;
+export const clubTripKey = (tripId: string | null) => [CASAS_KEY, 'trips', 'one', tripId] as const;
 export const clubTripBookingsKey = (tripId: string | null) =>
-  [CASAS_KEY, "trips", "bookings", tripId] as const;
+  [CASAS_KEY, 'trips', 'bookings', tripId] as const;
 export const clubTripNoticesKey = (tripId: string | null) =>
-  [CASAS_KEY, "trips", "notices", tripId] as const;
+  [CASAS_KEY, 'trips', 'notices', tripId] as const;
 
-export function useClubTripsForFixture(
-  fixtureId: string | null,
-  enabled = true,
-) {
+export function useClubTripsForFixture(fixtureId: string | null, enabled = true) {
   return useQuery({
     queryKey: clubTripsForFixtureKey(fixtureId),
-    queryFn:
-      fixtureId && enabled
-        ? () => fetchClubTripsForFixture(fixtureId)
-        : skipToken,
+    queryFn: fixtureId && enabled ? () => fetchClubTripsForFixture(fixtureId) : skipToken,
     staleTime: STALE_MS,
     meta: { persist: false },
   });
@@ -71,8 +59,7 @@ export function useClubTrip(tripId: string | null) {
 export function useClubTripBookings(tripId: string | null, enabled = true) {
   return useQuery({
     queryKey: clubTripBookingsKey(tripId),
-    queryFn:
-      tripId && enabled ? () => fetchClubTripBookings(tripId) : skipToken,
+    queryFn: tripId && enabled ? () => fetchClubTripBookings(tripId) : skipToken,
     staleTime: STALE_MS,
     meta: { persist: false },
   });
@@ -143,11 +130,8 @@ export function useAddManualClubBooking() {
 export function useManageClubBooking() {
   const invalidate = useInvalidateCasas();
   return useMutation({
-    mutationFn: (input: {
-      bookingId: string;
-      action: ManageBookingAction;
-      vehicleId?: string;
-    }) => manageClubBooking(input.bookingId, input.action, input.vehicleId),
+    mutationFn: (input: { bookingId: string; action: ManageBookingAction; vehicleId?: string }) =>
+      manageClubBooking(input.bookingId, input.action, input.vehicleId),
     onSettled: invalidate,
   });
 }
@@ -177,24 +161,44 @@ export function useBookClubTrip(fixtureId: string | null) {
         queryClient.cancelQueries({ queryKey: tripKey }),
         queryClient.cancelQueries({ queryKey: listKey }),
       ]);
-      const previousTrip = queryClient.getQueryData<ClubTripFull | null>(
-        tripKey,
-      );
-      const previousList =
-        queryClient.getQueryData<ClubTripListItem[]>(listKey);
+      const previousTrip = queryClient.getQueryData<ClubTripFull | null>(tripKey);
+      const previousList = queryClient.getQueryData<ClubTripListItem[]>(listKey);
       queryClient.setQueryData<ClubTripListItem[]>(listKey, (items) =>
         items?.map((item) =>
           item.tripId === input.tripId
             ? {
                 ...item,
-                myStatus:
-                  item.freeSeats > input.companions.length
-                    ? "booked"
-                    : "waiting",
+                myStatus: item.freeSeats > input.companions.length ? 'booked' : 'waiting',
               }
-            : item,
-        ),
+            : item
+        )
       );
+      // A provisional booking on the trip screen too. The amount due stays 0 and the vehicle empty: the server
+      // computes both, so the screen must not show them while this mutation is pending.
+      if (previousTrip) {
+        const stop = previousTrip.stops.find((candidate) => candidate.id === input.stopId);
+        const people = input.companions.length + 1;
+        const free = previousTrip.summary.reduce(
+          (total, vehicle) => total + vehicle.seats - vehicle.occupied,
+          0
+        );
+        if (stop) {
+          queryClient.setQueryData(tripKey, {
+            ...previousTrip,
+            myBooking: {
+              bookingId: 'pending',
+              status: free >= people ? 'booked' : 'waiting',
+              stopName: stop.name,
+              passesAt: stop.passesAt,
+              vehicleLabel: null,
+              people,
+              dueCents: 0,
+              paid: false,
+              positionInWaiting: null,
+            },
+          });
+        }
+      }
       return { previousTrip, previousList, tripKey, listKey };
     },
     onError: (_error, _input, context) => {
@@ -207,10 +211,7 @@ export function useBookClubTrip(fixtureId: string | null) {
 }
 
 /** Cancelling is optimistic too: my booking disappears at once and comes back if the server refuses. */
-export function useCancelMyClubBooking(
-  tripId: string | null,
-  fixtureId: string | null,
-) {
+export function useCancelMyClubBooking(tripId: string | null, fixtureId: string | null) {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateCasas();
   return useMutation({
@@ -222,18 +223,13 @@ export function useCancelMyClubBooking(
         queryClient.cancelQueries({ queryKey: tripKey }),
         queryClient.cancelQueries({ queryKey: listKey }),
       ]);
-      const previousTrip = queryClient.getQueryData<ClubTripFull | null>(
-        tripKey,
-      );
-      const previousList =
-        queryClient.getQueryData<ClubTripListItem[]>(listKey);
+      const previousTrip = queryClient.getQueryData<ClubTripFull | null>(tripKey);
+      const previousList = queryClient.getQueryData<ClubTripListItem[]>(listKey);
       queryClient.setQueryData<ClubTripFull | null>(tripKey, (current) =>
-        current ? { ...current, myBooking: null } : current,
+        current ? { ...current, myBooking: null } : current
       );
       queryClient.setQueryData<ClubTripListItem[]>(listKey, (items) =>
-        items?.map((item) =>
-          item.tripId === tripId ? { ...item, myStatus: null } : item,
-        ),
+        items?.map((item) => (item.tripId === tripId ? { ...item, myStatus: null } : item))
       );
       return { previousTrip, previousList, tripKey, listKey };
     },

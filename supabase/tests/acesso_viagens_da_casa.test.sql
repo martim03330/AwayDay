@@ -241,6 +241,23 @@ select pg_temp.expect('an eleventh notice in a day is refused',
   pg_temp.refusal(format('select public.post_club_trip_notice(%L, ''Mais um'')', pg_temp.id('trip'))),
   'too_many_notices (22023)');
 
+-- The passenger list with names: managers only, and the name of someone they do not know comes with it.
+select pg_temp.as_user('ca700000-0000-4000-8000-0000000000a1');
+select pg_temp.expect('a manager gets the names, also of a stranger and of a person added by hand',
+  (select string_agg(display_name || ':' || is_manual, ',' order by display_name)
+   from public.club_trip_bookings(pg_temp.id('trip'))),
+  'Sara:false,Senhor Manuel:true');
+select pg_temp.as_user('ca700000-0000-4000-8000-0000000000a2');
+select pg_temp.expect('a passenger cannot read the passenger list',
+  pg_temp.refusal(format('select * from public.club_trip_bookings(%L)', pg_temp.id('trip'))),
+  'not_manager (42501)');
+select pg_temp.as_user('ca700000-0000-4000-8000-0000000000a3');
+select pg_temp.expect('nor can another fan',
+  pg_temp.refusal(format('select * from public.club_trip_bookings(%L)', pg_temp.id('trip'))),
+  'not_manager (42501)');
+
+select pg_temp.as_user('ca700000-0000-4000-8000-0000000000a1');
+
 -- Once Sara cancels, the notices are no longer hers to read.
 select pg_temp.as_user('ca700000-0000-4000-8000-0000000000a2');
 select public.cancel_my_club_booking(pg_temp.id('sara'));

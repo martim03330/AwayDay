@@ -1,7 +1,7 @@
 // Casas (supporters' clubs) and their trips. Amounts are integer cents and are always computed by the server.
 
-export type SupportersClubStatus = "pending" | "verified" | "suspended";
-export type SupportersClubRole = "owner" | "manager";
+export type SupportersClubStatus = 'pending' | 'verified' | 'suspended';
+export type SupportersClubRole = 'owner' | 'manager';
 
 export type SupportersClub = {
   id: string;
@@ -14,9 +14,9 @@ export type SupportersClub = {
   following: boolean;
 };
 
-export type ClubTripStatus = "open" | "closed" | "cancelled";
-export type ClubBookingStatus = "booked" | "waiting" | "cancelled";
-export type ClubVehicleKind = "autocarro" | "minibus" | "carrinha";
+export type ClubTripStatus = 'open' | 'closed' | 'cancelled';
+export type ClubBookingStatus = 'booked' | 'waiting' | 'cancelled';
+export type ClubVehicleKind = 'autocarro' | 'minibus' | 'carrinha';
 
 /** One row of `club_trips_for_fixture`. */
 export type ClubTripListItem = {
@@ -105,20 +105,21 @@ export type ClubTripFull = {
 };
 
 export type ClubTripErrorReason =
-  | "wrong_club"
-  | "bookings_closed"
-  | "member_code_required"
-  | "already_in_car"
-  | "already_on_club_trip"
-  | "vehicle_not_empty"
-  | "other";
+  | 'wrong_club'
+  | 'bad_member_code'
+  | 'bookings_closed'
+  | 'member_code_required'
+  | 'already_in_car'
+  | 'already_on_club_trip'
+  | 'vehicle_not_empty'
+  | 'other';
 
 export class ClubTripError extends Error {
   readonly reason: ClubTripErrorReason;
 
   constructor(reason: ClubTripErrorReason, message?: string) {
     super(message ?? reason);
-    this.name = "ClubTripError";
+    this.name = 'ClubTripError';
     this.reason = reason;
   }
 }
@@ -147,5 +148,4 @@ export type NewClubTrip = {
   vehicles: NewClubTripVehicle[];
 };
 
-export type ManageBookingAction =
-  "move" | "paid" | "unpaid" | "boarded" | "not_boarded" | "remove";
+export type ManageBookingAction = 'move' | 'paid' | 'unpaid' | 'boarded' | 'not_boarded' | 'remove';

@@ -1,9 +1,4 @@
-import {
-  skipToken,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   acceptSupportersClubInvite,
@@ -16,17 +11,16 @@ import {
   requestSupportersClub,
   rotateMemberCode,
   setSupportersClubFollow,
-} from "@/features/casas/api";
-import type { SupportersClub } from "@/features/casas/types";
+} from '@/features/casas/api';
+import type { SupportersClub } from '@/features/casas/types';
 
-export const CASAS_KEY = "casas";
+export const CASAS_KEY = 'casas';
 const STALE_MS = 60 * 1000;
 
-export const myCasasKey = () => [CASAS_KEY, "mine"] as const;
-export const casaKey = (id: string | null) => [CASAS_KEY, "one", id] as const;
-export const pendingCasasKey = () => [CASAS_KEY, "pending"] as const;
-export const memberCodeKey = (id: string | null) =>
-  [CASAS_KEY, "member-code", id] as const;
+export const myCasasKey = () => [CASAS_KEY, 'mine'] as const;
+export const casaKey = (id: string | null) => [CASAS_KEY, 'one', id] as const;
+export const pendingCasasKey = () => [CASAS_KEY, 'pending'] as const;
+export const memberCodeKey = (id: string | null) => [CASAS_KEY, 'member-code', id] as const;
 
 export function useMySupportersClubs() {
   return useQuery({
@@ -46,11 +40,14 @@ export function useSupportersClub(id: string | null) {
   });
 }
 
-/** Admins only; for anyone else RLS returns nothing. */
-export function usePendingSupportersClubs(enabled = true) {
+/**
+ * The Casas waiting for a decision. The select policy also shows a Casa to its own managers, so this is only
+ * the admin list when the caller is an admin: pass `isAdmin` (the screen gates on it too), otherwise it stays idle.
+ */
+export function usePendingSupportersClubs(isAdmin: boolean) {
   return useQuery({
     queryKey: pendingCasasKey(),
-    queryFn: enabled ? fetchPendingSupportersClubs : skipToken,
+    queryFn: isAdmin ? fetchPendingSupportersClubs : skipToken,
     staleTime: STALE_MS,
     meta: { persist: false },
   });
@@ -82,7 +79,7 @@ export function useRequestSupportersClub() {
 export function useDecideSupportersClub() {
   const invalidate = useInvalidateCasas();
   return useMutation({
-    mutationFn: (input: { id: string; status: "verified" | "suspended" }) =>
+    mutationFn: (input: { id: string; status: 'verified' | 'suspended' }) =>
       decideSupportersClub(input.id, input.status),
     onSettled: invalidate,
   });
@@ -114,9 +111,7 @@ export function useSetSupportersClubFollow() {
       setSupportersClubFollow(input.id, input.follow),
     onMutate: async ({ id, follow }) => {
       await queryClient.cancelQueries({ queryKey: [CASAS_KEY] });
-      const previousOne = queryClient.getQueryData<SupportersClub | null>(
-        casaKey(id),
-      );
+      const previousOne = queryClient.getQueryData<SupportersClub | null>(casaKey(id));
       if (previousOne) {
         queryClient.setQueryData(casaKey(id), {
           ...previousOne,
@@ -126,8 +121,7 @@ export function useSetSupportersClubFollow() {
       return { previousOne };
     },
     onError: (_error, { id }, context) => {
-      if (context?.previousOne)
-        queryClient.setQueryData(casaKey(id), context.previousOne);
+      if (context?.previousOne) queryClient.setQueryData(casaKey(id), context.previousOne);
     },
     onSettled: invalidate,
   });
