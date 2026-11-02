@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
 
+import { CasasPorAprovar } from "@/features/casas/components/CasasPorAprovar";
 import { SegundoFatorAdmin } from "@/features/profile/components/SegundoFatorAdmin";
 import { useMyProfile } from "@/features/profile/hooks/useMyProfile";
 import { useTheme } from "@/hooks/use-theme";
@@ -94,6 +95,7 @@ export default function AdministracaoScreen() {
             trailing={chevron}
           />
         </Card>
+        <CasasPorAprovar isAdmin={perfil.data.isAdmin} />
       </SegundoFatorAdmin>
     </Screen>
   );

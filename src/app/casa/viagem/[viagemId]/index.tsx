@@ -17,6 +17,7 @@ export default function ViagemDaCasaScreen() {
         <ViagemDaCasa
           tripId={viagemId}
           onAbrirCasa={(casaId) => router.push({ pathname: '/casa/[casaId]', params: { casaId } })}
+          onGerir={() => router.push({ pathname: '/casa/viagem/[viagemId]/gerir', params: { viagemId } })}
           renderMais={(nome) => (
             <BotaoMais
               nome={nome}

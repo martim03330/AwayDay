@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatarDiaCurto } from '@/lib/datas';
 import { obterClube } from '@/mocks/clubes';
 import { obterJogo } from '@/mocks/jogos';
+import { Aviso } from '@/ui/aviso';
 import { BotaoAlternar } from '@/ui/botao-alternar';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
@@ -35,10 +36,15 @@ function nomeDoJogo(fixtureId: string) {
 export function PaginaDaCasa({
   casaId,
   onAbrirViagem,
+  onNovaViagem,
+  onGestores,
   renderMais,
 }: {
   casaId: string;
   onAbrirViagem: (tripId: string) => void;
+  /** For the Casa's managers: a new trip (once the Casa is approved) and the managers. */
+  onNovaViagem?: () => void;
+  onGestores?: () => void;
   /** The «⋯» next to the name (to report the Casa); not shown to its own managers. */
   renderMais?: (nome: string) => ReactNode;
 }) {
@@ -97,6 +103,37 @@ export function PaginaDaCasa({
           />
         ) : null}
       </Card>
+
+      {dados.myRole !== null && dados.status === 'pending' ? (
+        <Aviso
+          title="À espera de aprovação"
+          message="Vamos confirmar a Casa com a direção. Depois disso já podes publicar viagens."
+        />
+      ) : null}
+
+      {dados.myRole !== null && (onNovaViagem || onGestores) ? (
+        <Card style={styles.lista}>
+          {onNovaViagem && dados.status === 'verified' ? (
+            <LinhaGrupo
+              onPress={onNovaViagem}
+              accessibilityLabel="Nova viagem. Toca para abrir."
+              leading={<IconCircle name={icons.mais} />}
+              title="Nova viagem"
+              trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
+              separador={onGestores !== undefined}
+            />
+          ) : null}
+          {onGestores ? (
+            <LinhaGrupo
+              onPress={onGestores}
+              accessibilityLabel="Gestores. Toca para abrir."
+              leading={<IconCircle name={icons.perfil} />}
+              title="Gestores"
+              trailing={<Icon name={icons.seguinte} size={18} color={theme.textMuted} />}
+            />
+          ) : null}
+        </Card>
+      ) : null}
 
       {dados.myRole === null && dados.status === 'verified' ? (
         <BotaoAlternar

@@ -1,10 +1,10 @@
-// A Casa's trip, from the fan's side (src/app/casa/viagem/[viagemId].tsx): booking with companions and the member code,
-// the waiting list, the server's refusals in plain Portuguese, and nothing to cancel or pay while the booking is
-// still only the app's guess. The test lives outside src/app so Expo Router never picks it up as a page.
+// A Casa's trip, from the fan's side (src/app/casa/viagem/[viagemId]/index.tsx): booking with companions and the
+// member code, the waiting list, the server's refusals in plain Portuguese, and nothing to cancel or pay while the
+// booking is still only the app's guess. The test lives outside src/app so Expo Router never picks it up as a page.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
-import ViagemDaCasaScreen from '@/app/casa/viagem/[viagemId]';
+import ViagemDaCasaScreen from '@/app/casa/viagem/[viagemId]/index';
 import {
   ClubTripError,
   type ClubTripFull,

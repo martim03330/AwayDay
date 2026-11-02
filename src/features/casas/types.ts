@@ -14,6 +14,14 @@ export type SupportersClub = {
   following: boolean;
 };
 
+/** A manager of a Casa, as the other managers see them. */
+export type SupportersClubManager = {
+  profileId: string;
+  name: string;
+  role: SupportersClubRole;
+  isMe: boolean;
+};
+
 export type ClubTripStatus = 'open' | 'closed' | 'cancelled';
 export type ClubBookingStatus = 'booked' | 'waiting' | 'cancelled';
 export type ClubVehicleKind = 'autocarro' | 'minibus' | 'carrinha';

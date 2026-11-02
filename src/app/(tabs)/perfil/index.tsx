@@ -7,6 +7,7 @@ import Svg, { Circle, Defs, Path, Pattern, Rect } from 'react-native-svg';
 
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AccountCard } from '@/features/auth/components/AccountCard';
+import { useMySupportersClubs } from '@/features/casas/hooks/useCasas';
 import { useClubSupporterCounts, useMyProfile } from '@/features/profile/hooks/useMyProfile';
 import { useLatestRecap } from '@/features/recap/hooks/useLatestRecap';
 import { seasonLabel } from '@/features/recap/stats';
@@ -82,6 +83,9 @@ export default function PerfilScreen() {
   const perfilDaConta = useMyProfile(userId);
   const adeptos = useClubSupporterCounts();
   const retrospetiva = useLatestRecap(userId);
+  // The Casa this person runs (for a board member), else the way to register one.
+  const minhasCasas = useMySupportersClubs();
+  const casaQueGiro = userId ? (minhasCasas.data ?? []).find((casa) => casa.myRole !== null) : undefined;
 
   const clube = obterClube(clubeFavoritoId);
   const clubeDaTerra = clubeDaTerraId ? obterClube(clubeDaTerraId) : undefined;
@@ -262,6 +266,23 @@ export default function PerfilScreen() {
                   onPress={() => router.push('/perfil/amigos')}
                   separador
                 />
+                {casaQueGiro ? (
+                  <Opcao
+                    icon={icons.casa}
+                    titulo="A tua Casa"
+                    onPress={() =>
+                      router.push({ pathname: '/casa/[casaId]', params: { casaId: casaQueGiro.id } })
+                    }
+                    separador
+                  />
+                ) : (
+                  <Opcao
+                    icon={icons.casa}
+                    titulo="Registar a minha Casa"
+                    onPress={() => router.push('/casa/registar')}
+                    separador
+                  />
+                )}
               </>
             ) : null}
             <Opcao

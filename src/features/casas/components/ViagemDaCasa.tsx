@@ -59,10 +59,13 @@ function textoDoJogo(fixtureId: string, agora: number) {
 export function ViagemDaCasa({
   tripId,
   onAbrirCasa,
+  onGerir,
   renderMais,
 }: {
   tripId: string;
   onAbrirCasa: (casaId: string) => void;
+  /** «Gerir», for the Casa's managers. */
+  onGerir?: () => void;
   /** The «⋯» next to the name (to report the trip); not shown to the Casa's own managers. */
   renderMais?: (nome: string) => ReactNode;
 }) {
@@ -153,6 +156,10 @@ export function ViagemDaCasa({
           </View>
         ) : null}
       </View>
+
+      {onGerir && (casa.data?.myRole ?? null) !== null ? (
+        <Button label="Gerir" icon={icons.lista} onPress={onGerir} />
+      ) : null}
 
       {casa.data ? (
         <Card style={styles.lista}>

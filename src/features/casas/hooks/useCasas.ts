@@ -8,6 +8,8 @@ import {
   fetchMySupportersClubs,
   fetchPendingSupportersClubs,
   fetchSupportersClub,
+  fetchSupportersClubManagers,
+  removeSupportersClubManager,
   requestSupportersClub,
   rotateMemberCode,
   setSupportersClubFollow,
@@ -20,6 +22,7 @@ const STALE_MS = 60 * 1000;
 export const myCasasKey = () => [CASAS_KEY, 'mine'] as const;
 export const casaKey = (id: string | null) => [CASAS_KEY, 'one', id] as const;
 export const pendingCasasKey = () => [CASAS_KEY, 'pending'] as const;
+export const managersKey = (id: string | null) => [CASAS_KEY, 'managers', id] as const;
 export const memberCodeKey = (id: string | null) => [CASAS_KEY, 'member-code', id] as const;
 
 export function useMySupportersClubs() {
@@ -63,6 +66,16 @@ export function useMemberCode(clubId: string | null, enabled: boolean) {
   });
 }
 
+/** The managers of a Casa; only its managers get them. */
+export function useSupportersClubManagers(clubId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: managersKey(clubId),
+    queryFn: clubId && enabled ? () => fetchSupportersClubManagers(clubId) : skipToken,
+    staleTime: STALE_MS,
+    meta: { persist: false },
+  });
+}
+
 function useInvalidateCasas() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: [CASAS_KEY] });
@@ -93,6 +106,15 @@ export function useAcceptSupportersClubInvite() {
   const invalidate = useInvalidateCasas();
   return useMutation({
     mutationFn: acceptSupportersClubInvite,
+    onSettled: invalidate,
+  });
+}
+
+export function useRemoveSupportersClubManager() {
+  const invalidate = useInvalidateCasas();
+  return useMutation({
+    mutationFn: (input: { clubId: string; profileId: string }) =>
+      removeSupportersClubManager(input.clubId, input.profileId),
     onSettled: invalidate,
   });
 }

@@ -4,7 +4,7 @@ import { PaginaDaCasa } from '@/features/casas/components/PaginaDaCasa';
 import { BotaoMais, useModeracao } from '@/features/moderation/components/Moderacao';
 import { Screen } from '@/ui/screen';
 
-/** A Casa's page: opened from one of its trips. */
+/** A Casa's page: opened from one of its trips, or from the profile by its managers. */
 export default function CasaScreen() {
   const { casaId } = useLocalSearchParams<{ casaId?: string }>();
   const router = useRouter();
@@ -19,6 +19,8 @@ export default function CasaScreen() {
           onAbrirViagem={(viagemId) =>
             router.push({ pathname: '/casa/viagem/[viagemId]', params: { viagemId } })
           }
+          onNovaViagem={() => router.push({ pathname: '/casa/[casaId]/nova-viagem', params: { casaId } })}
+          onGestores={() => router.push({ pathname: '/casa/[casaId]/gestores', params: { casaId } })}
           renderMais={(nome) => (
             <BotaoMais
               nome={nome}

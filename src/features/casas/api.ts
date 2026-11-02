@@ -13,6 +13,7 @@ import type {
   NewClubTrip,
   NewClubTripVehicle,
   SupportersClub,
+  SupportersClubManager,
   SupportersClubRole,
   SupportersClubStatus,
   SupportersClubTrip,
@@ -238,6 +239,43 @@ export async function createSupportersClubInvite(clubId: string): Promise<string
 /** Returns the id of the Casa the invite belongs to. */
 export async function acceptSupportersClubInvite(code: string): Promise<string> {
   return required(client().rpc('accept_supporters_club_invite', { p_code: code }));
+}
+
+/**
+ * The managers of a Casa (its managers only, by RLS), owner first. Names come from the profile cards, which hide
+ * people the caller does not know: those show as «Gestor».
+ */
+export async function fetchSupportersClubManagers(clubId: string): Promise<SupportersClubManager[]> {
+  const managers = await rows(
+    client()
+      .from('supporters_club_manager')
+      .select('profile_id, role, created_at')
+      .eq('club_id', clubId)
+      .order('created_at')
+  );
+  if (managers.length === 0) return [];
+  const cards = await rows(
+    client().rpc('profile_cards', { p_profile_ids: managers.map((row) => row.profile_id) })
+  );
+  const byId = new Map(cards.map((card) => [card.profile_id, card]));
+  return managers
+    .map((row): SupportersClubManager => {
+      const card = byId.get(row.profile_id);
+      return {
+        profileId: row.profile_id,
+        name: card?.display_name || 'Gestor',
+        role: row.role === 'owner' ? 'owner' : 'manager',
+        isMe: card?.is_me ?? false,
+      };
+    })
+    .sort((a, b) => (a.role === b.role ? 0 : a.role === 'owner' ? -1 : 1));
+}
+
+/** The owner takes a manager out of the Casa. */
+export async function removeSupportersClubManager(clubId: string, profileId: string): Promise<void> {
+  await run(
+    client().rpc('remove_supporters_club_manager', { p_club_id: clubId, p_profile_id: profileId })
+  );
 }
 
 export async function setSupportersClubFollow(id: string, follow: boolean): Promise<void> {

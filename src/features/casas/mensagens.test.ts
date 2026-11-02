@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { mensagemDeRecusa, textoListaDeEspera, textoLugaresLivres } from '@/features/casas/mensagens';
+import {
+  mensagemDaGestao,
+  mensagemDeRecusa,
+  textoListaDeEspera,
+  textoLugaresLivres,
+} from '@/features/casas/mensagens';
 import { ClubTripError, type ClubTripErrorReason } from '@/features/casas/types';
 
 const RAZOES: ClubTripErrorReason[] = [
@@ -63,5 +68,29 @@ describe('textoLugaresLivres', () => {
     expect(textoLugaresLivres(1)).toBe('1 lugar livre');
     expect(textoLugaresLivres(0)).toBe('Cheio');
     expect(textoLugaresLivres(-2)).toBe('Cheio');
+  });
+});
+
+describe('mensagemDaGestao', () => {
+  it('says what went wrong for the managers’ refusals, in plain Portuguese', () => {
+    expect(mensagemDaGestao(new ClubTripError('other', 'vehicle_full'))).toBe(
+      'Esse transporte não tem lugar para todos os desta inscrição.'
+    );
+    expect(mensagemDaGestao(new ClubTripError('vehicle_not_empty'))).toBe(
+      'Esse transporte ainda tem pessoas: muda-as primeiro para outro.'
+    );
+    expect(mensagemDaGestao(new ClubTripError('other', 'invite_expired'))).toBe(
+      'Esse código já expirou. Pede um novo a quem gere a Casa.'
+    );
+    expect(mensagemDaGestao(new ClubTripError('other', 'name_taken'))).toBe(
+      'Já há uma Casa com esse nome neste clube.'
+    );
+  });
+
+  it('falls back to a generic sentence, never the raw code', () => {
+    for (const erro of [new ClubTripError('other', 'something_new'), new Error('boom'), null]) {
+      const texto = mensagemDaGestao(erro);
+      expect(texto).toBe('Não deu. Tenta outra vez daqui a pouco.');
+    }
   });
 });
