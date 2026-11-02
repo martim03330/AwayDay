@@ -4957,6 +4957,21 @@ export type Database = {
           supporters: number
         }[]
       }
+      club_trip_bookings: {
+        Args: { p_trip_id: string }
+        Returns: {
+          boarded: boolean
+          booking_id: string
+          companions: string[]
+          display_name: string
+          is_manual: boolean
+          paid: boolean
+          people: number
+          status: string
+          stop_id: string
+          vehicle_id: string
+        }[]
+      }
       club_trip_cancel: { Args: { p_trip_id: string }; Returns: undefined }
       club_trip_clean_companions: {
         Args: { p_companions: string[] }
@@ -6361,6 +6376,15 @@ export type Database = {
         Returns: string
       }
       suggest_place_candidates: { Args: never; Returns: number }
+      supporters_club_managers: {
+        Args: { p_club_id: string }
+        Returns: {
+          created_at: string
+          display_name: string
+          profile_id: string
+          role: string
+        }[]
+      }
       supporters_club_member_code: {
         Args: { p_club_id: string }
         Returns: string

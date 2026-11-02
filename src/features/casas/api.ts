@@ -241,31 +241,11 @@ export async function acceptSupportersClubInvite(code: string): Promise<string> 
   return required(client().rpc('accept_supporters_club_invite', { p_code: code }));
 }
 
-type ManagerRow = {
-  profile_id: string;
-  display_name: string;
-  role: string;
-  created_at: string;
-};
-
-/**
- * `supporters_club_managers` is not in the generated types until `npm run db:types` runs after its migration
- * (20261029100000) is pushed, so the call goes through this narrow typed wrapper; delete the cast once the types
- * have it.
- */
-async function callSupportersClubManagers(clubId: string): Promise<ManagerRow[]> {
-  const call = client().rpc as unknown as (
-    name: 'supporters_club_managers',
-    args: { p_club_id: string }
-  ) => PromiseLike<{ data: ManagerRow[] | null; error: { message: string } | null }>;
-  return rows(call.call(client(), 'supporters_club_managers', { p_club_id: clubId }));
-}
-
 /** The managers of a Casa with their names, owner first; only its managers (and admins) get them. */
 export async function fetchSupportersClubManagers(clubId: string): Promise<SupportersClubManager[]> {
   const [{ data: session }, managers] = await Promise.all([
     client().auth.getSession(),
-    callSupportersClubManagers(clubId),
+    rows(client().rpc('supporters_club_managers', { p_club_id: clubId })),
   ]);
   const me = session.session?.user.id ?? null;
   return managers.map((row) => ({
@@ -495,36 +475,10 @@ export async function fetchClubTrip(tripId: string): Promise<ClubTripFull | null
   };
 }
 
-type BookingNameRow = {
-  booking_id: string;
-  display_name: string;
-  is_manual: boolean;
-  stop_id: string;
-  vehicle_id: string | null;
-  companions: string[];
-  people: number;
-  status: string;
-  paid: boolean;
-  boarded: boolean;
-};
-
-/**
- * The passenger list with names, for the Casa's managers (the function refuses anyone else). `club_trip_bookings`
- * is not in the generated types until `npm run db:types` runs after its migration is pushed, so the call goes
- * through this narrow typed wrapper; delete the cast once the types have it.
- */
-async function callClubTripBookings(tripId: string): Promise<BookingNameRow[]> {
-  const call = client().rpc as unknown as (
-    name: 'club_trip_bookings',
-    args: { p_trip_id: string }
-  ) => PromiseLike<{ data: BookingNameRow[] | null; error: { message: string } | null }>;
-  return rows(call.call(client(), 'club_trip_bookings', { p_trip_id: tripId }));
-}
-
 /** The passenger list; only the Casa's managers get it. */
 export async function fetchClubTripBookings(tripId: string): Promise<ClubBooking[]> {
   const [bookings, stops] = await Promise.all([
-    callClubTripBookings(tripId),
+    rows(client().rpc('club_trip_bookings', { p_trip_id: tripId })),
     rows(client().from('club_trip_stop').select('id, name').eq('trip_id', tripId)),
   ]);
   const stopNames = new Map(stops.map((stop) => [stop.id, stop.name]));
