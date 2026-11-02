@@ -190,7 +190,49 @@ describe('Booking a seat', () => {
   });
 });
 
+describe('A refused booking keeps what was filled in', () => {
+  it('a wrong member code shows the message in the sheet, with the stop, companions and code still there', async () => {
+    mockViagem = viagem({ membersOnly: true });
+    mockBook.mockRejectedValue(new ClubTripError('bad_member_code'));
+    abrir();
+    fireEvent.press(await screen.findByRole('button', { name: 'Inscrever-me' }));
+    fireEvent.press(screen.getByRole('button', { name: /Rotunda/ }));
+    fireEvent.changeText(screen.getByLabelText('Nome de quem vai contigo'), 'Rita');
+    fireEvent.press(screen.getByRole('button', { name: 'Acrescentar' }));
+    fireEvent.changeText(screen.getByLabelText('Código de sócio'), 'errado');
+    confirmarNaFolha();
+
+    expect(await screen.findByText('Esse código não está certo. Confirma-o com a Casa.')).toBeTruthy();
+    expect(screen.getByText('Rita')).toBeTruthy();
+    expect(screen.getByLabelText('Código de sócio').props.value).toBe('errado');
+    expect(screen.getByRole('button', { name: /Rotunda/ }).props.accessibilityState).toMatchObject({
+      selected: true,
+    });
+
+    // Fixed and sent again: the same stop and companion go with the new code.
+    mockBook.mockReset().mockResolvedValue('booked');
+    fireEvent.changeText(screen.getByLabelText('Código de sócio'), 'azul1893');
+    confirmarNaFolha();
+    await waitFor(() => expect(mockBook).toHaveBeenCalled());
+    expect(mockBook.mock.calls[0][0]).toEqual({
+      tripId: 't1',
+      stopId: 's2',
+      companions: ['Rita'],
+      memberCode: 'azul1893',
+    });
+  });
+});
+
 describe('My booking', () => {
+  it('on a cancelled trip, only the notice speaks: no booking, no amount', async () => {
+    mockViagem = viagem({ status: 'cancelled' }, reserva({ dueCents: 1500 }));
+    abrir();
+    expect(await screen.findByText('Viagem cancelada')).toBeTruthy();
+    expect(screen.queryByText('Inscrito')).toBeNull();
+    expect(screen.queryByText('A tua inscrição')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Cancelar inscrição' })).toBeNull();
+  });
+
   it('on the waiting list, shows the place in it', async () => {
     mockViagem = viagem({}, reserva({ status: 'waiting', vehicleLabel: null, positionInWaiting: 1 }));
     abrir();

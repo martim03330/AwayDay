@@ -10,6 +10,7 @@ import { Button } from '@/ui/button';
 import { Campo } from '@/ui/campo';
 import { Chip } from '@/ui/chip';
 import { LinkTexto } from '@/ui/link-texto';
+import { MensagemErro } from '@/ui/mensagem-erro';
 import { ThemedText } from '@/ui/themed-text';
 import { Valor } from '@/ui/valor';
 
@@ -29,7 +30,11 @@ type InscricaoFolhaProps = {
   stops: ClubTripStop[];
   membersOnly: boolean;
   priceCents: number;
-  onConfirmar: (pedido: PedidoDeInscricao) => void;
+  /** The server's refusal, shown in the sheet so nothing typed is lost. */
+  erro: string | null;
+  aEnviar: boolean;
+  /** Resolves true once the server booked (or queued) it: only then is the sheet wiped. */
+  onConfirmar: (pedido: PedidoDeInscricao) => Promise<boolean>;
   onFechar: () => void;
 };
 
@@ -42,6 +47,8 @@ export function InscricaoFolha({
   stops,
   membersOnly,
   priceCents,
+  erro,
+  aEnviar,
   onConfirmar,
   onFechar,
 }: InscricaoFolhaProps) {
@@ -77,14 +84,14 @@ export function InscricaoFolha({
     setNome('');
   }
 
-  function confirmar() {
-    if (!escolhida || !podeConfirmar) return;
-    onConfirmar({
+  async function confirmar() {
+    if (!escolhida || !podeConfirmar || aEnviar) return;
+    const feito = await onConfirmar({
       stopId: escolhida,
       companions: acompanhantes,
       memberCode: membersOnly ? codigo.trim() : null,
     });
-    limpar();
+    if (feito) limpar();
   }
 
   return (
@@ -155,7 +162,12 @@ export function InscricaoFolha({
           />
         ) : null}
 
-        <Button label="Inscrever-me" disabled={!podeConfirmar} onPress={confirmar} />
+        {erro ? <MensagemErro>{erro}</MensagemErro> : null}
+        <Button
+          label={aEnviar ? 'A inscrever…' : 'Inscrever-me'}
+          disabled={!podeConfirmar || aEnviar}
+          onPress={() => void confirmar()}
+        />
         <LinkTexto neutro label="Deixa estar" onPress={fechar} />
       </ScrollView>
     </Modal>

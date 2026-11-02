@@ -84,16 +84,16 @@ export function PaginaDaCasa({
         {clube ? (
           <LinhaGrupo
             leading={<Escudo clube={clube} size={36} />}
-            title={clube.nomeCurto}
-            subtitle="Clube"
+            title="Clube"
+            valor={clube.nomeCurto}
             separador={dados.municipalityName !== ''}
           />
         ) : null}
         {dados.municipalityName ? (
           <LinhaGrupo
             leading={<IconCircle name={icons.cidade} />}
-            title={dados.municipalityName}
-            subtitle="Concelho"
+            title="Concelho"
+            valor={dados.municipalityName}
           />
         ) : null}
       </Card>

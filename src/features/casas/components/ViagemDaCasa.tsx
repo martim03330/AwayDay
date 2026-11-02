@@ -78,6 +78,7 @@ export function ViagemDaCasa({
   const [folhaAberta, setFolhaAberta] = useState(false);
   const [aConfirmarCancelar, setAConfirmarCancelar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroDaFolha, setErroDaFolha] = useState<string | null>(null);
 
   if (consulta.isLoading) {
     return (
@@ -99,25 +100,30 @@ export function ViagemDaCasa({
   }
 
   const { trip } = viagem;
-  const minha = viagem.myBooking && viagem.myBooking.status !== 'cancelled' ? viagem.myBooking : null;
+  // On a cancelled trip only the «Viagem cancelada» notice speaks: no booking, no amount.
+  const minha =
+    trip.status !== 'cancelled' && viagem.myBooking && viagem.myBooking.status !== 'cancelled'
+      ? viagem.myBooking
+      : null;
   const prazoPassou = agora >= Date.parse(trip.bookingsCloseAt);
   const abertas = trip.status === 'open' && !prazoPassou;
   const jogo = textoDoJogo(trip.fixtureId, agora);
   const livres = lugaresLivres(viagem);
 
-  function inscreverMe(pedido: PedidoDeInscricao) {
-    setFolhaAberta(false);
+  /** The sheet stays open, with everything filled in, until the server says yes; a refusal shows inside it. */
+  async function inscreverMe(pedido: PedidoDeInscricao): Promise<boolean> {
+    setErroDaFolha(null);
     setErro(null);
-    inscrever.mutate(
-      { tripId, ...pedido },
-      {
-        onSuccess: () => vibrarSucesso(),
-        onError: (problema) => {
-          setErro(mensagemDeRecusa(problema, 'inscrever'));
-          vibrarErro();
-        },
-      }
-    );
+    try {
+      await inscrever.mutateAsync({ tripId, ...pedido });
+      setFolhaAberta(false);
+      vibrarSucesso();
+      return true;
+    } catch (problema) {
+      setErroDaFolha(mensagemDeRecusa(problema, 'inscrever'));
+      vibrarErro();
+      return false;
+    }
   }
 
   function cancelarInscricao(reserva: MyClubBooking) {
@@ -138,7 +144,7 @@ export function ViagemDaCasa({
           <ThemedText type="subtitle" style={styles.flex}>
             {trip.name}
           </ThemedText>
-          {renderMais && casa.data && casa.data.myRole === null ? renderMais(trip.name) : null}
+          {renderMais && !casa.isLoading && (casa.data?.myRole ?? null) === null ? renderMais(trip.name) : null}
         </View>
         {jogo ? <ThemedText themeColor="textSecondary">{jogo}</ThemedText> : null}
         {trip.membersOnly ? (
@@ -257,8 +263,13 @@ export function ViagemDaCasa({
         stops={viagem.stops}
         membersOnly={trip.membersOnly}
         priceCents={trip.priceCents}
+        erro={erroDaFolha}
+        aEnviar={inscrever.isPending}
         onConfirmar={inscreverMe}
-        onFechar={() => setFolhaAberta(false)}
+        onFechar={() => {
+          setFolhaAberta(false);
+          setErroDaFolha(null);
+        }}
       />
     </>
   );
