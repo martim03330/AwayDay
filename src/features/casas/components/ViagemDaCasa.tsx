@@ -239,7 +239,14 @@ export function ViagemDaCasa({
           ) : null}
         </>
       ) : abertas ? (
-        <Button label="Inscrever-me" icon={icons.autocarro} onPress={() => setFolhaAberta(true)} />
+        <Button
+          label="Inscrever-me"
+          icon={icons.autocarro}
+          onPress={() => {
+            setErroDaFolha(null);
+            setFolhaAberta(true);
+          }}
+        />
       ) : null}
 
       {erro ? <MensagemErro>{erro}</MensagemErro> : null}
