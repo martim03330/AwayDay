@@ -12,6 +12,7 @@ import {
 import { mensagemDaGestao } from '@/features/casas/mensagens';
 import type { SupportersClubManager } from '@/features/casas/types';
 import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
+import { Aviso } from '@/ui/aviso';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
 import { EmptyState } from '@/ui/empty-state';
@@ -38,6 +39,10 @@ export function GestoresDaCasa({ casaId }: { casaId: string }) {
 
   if (casa.isLoading) return <SkeletonCard lines={3} />;
 
+  if (casa.isError) {
+    return <EmptyState icon={icons.casa} title="Sem ligação" message="Tenta outra vez daqui a pouco." />;
+  }
+
   if (!casa.data || papel === null) {
     return (
       <EmptyState
@@ -50,6 +55,8 @@ export function GestoresDaCasa({ casaId }: { casaId: string }) {
 
   const nomeDaCasa = casa.data.name;
   const dono = papel === 'owner';
+  // The server refuses new invites for a suspended Casa.
+  const suspensa = casa.data.status === 'suspended';
   const lista = gestores.data ?? [];
 
   function novoCodigo() {
@@ -126,7 +133,9 @@ export function GestoresDaCasa({ casaId }: { casaId: string }) {
         </Card>
       )}
 
-      {dono ? (
+      {suspensa ? (
+        <Aviso tone="erro" title="Casa suspensa" message="Enquanto a Casa estiver suspensa, não dá para convidar gestores." />
+      ) : dono ? (
         <>
           <SectionHeader title="Convidar gestor" />
           {codigo ? (
@@ -135,8 +144,8 @@ export function GestoresDaCasa({ casaId }: { casaId: string }) {
                 {codigo}
               </ThemedText>
               <ThemedText themeColor="textSecondary">
-                Quem vai gerir contigo abre o Perfil, toca em «Registar a minha Casa» e depois em «Tenho um código
-                de gestor». O código serve uma vez e dura 7 dias.
+                Quem vai gerir contigo abre o Perfil, toca em «Registar a minha Casa» (ou em «A tua Casa», se já
+                gerir outra) e depois em «Tenho um código de gestor». O código serve uma vez e dura 7 dias.
               </ThemedText>
               <Button
                 label="Partilhar código"

@@ -74,6 +74,17 @@ const NA_GESTAO = new Map<string, string>(
     invite_used: 'Esse código já foi usado. Pede um novo a quem gere a Casa.',
     invite_expired: 'Esse código já expirou. Pede um novo a quem gere a Casa.',
     rate_limited: 'Fizeste isto muitas vezes seguidas. Tenta mais tarde.',
+    bad_companions: 'Confirma quem vai com esta pessoa: até 10 nomes, cada um com 2 a 60 letras.',
+    bad_action: 'Não deu. Tenta outra vez daqui a pouco.',
+    bad_status: 'Não deu. Tenta outra vez daqui a pouco.',
+    not_signed_in: 'Entra com a tua conta e tenta outra vez.',
+    not_admin: 'Só os administradores podem fazer isto.',
+    not_found: 'Esta Casa já não está disponível.',
+    trip_not_found: 'Esta viagem já não está disponível.',
+    booking_not_found: 'Essa inscrição já não está na viagem.',
+    already_booked: 'Essa pessoa já está inscrita nesta viagem.',
+    already_in_car: 'Essa pessoa já tem lugar num carro para este jogo.',
+    already_on_club_trip: 'Essa pessoa já está inscrita noutro transporte para este jogo.',
   })
 );
 

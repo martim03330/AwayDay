@@ -8,6 +8,7 @@ import {
   NOMES_DOS_TRANSPORTES,
   lerAcompanhantes,
   nomeDoTransporte,
+  problemaDosAcompanhantes,
 } from '@/features/casas/formulario';
 import { useMemberCode, useSupportersClub } from '@/features/casas/hooks/useCasas';
 import {
@@ -130,6 +131,12 @@ export function GerirViagem({ tripId }: { tripId: string }) {
     );
   }
 
+  if (casa.isError) {
+    return (
+      <EmptyState icon={icons.casa} title="Sem ligação" message="Tenta outra vez daqui a pouco." />
+    );
+  }
+
   if (!gestor) {
     return (
       <EmptyState
@@ -142,10 +149,14 @@ export function GerirViagem({ tripId }: { tripId: string }) {
 
   const { trip } = viagem;
   const cancelada = trip.status === 'cancelled';
+  // A suspended Casa's trips are cancelled and the server refuses every change: nothing to act on.
+  const suspensa = casa.data?.status === 'suspended';
+  const editavel = !cancelada && !suspensa;
   const soma = totais(viagem);
   const lista = reservas.data ?? [];
   const emEspera = lista.filter((reserva) => reserva.status === 'waiting');
-  const pessoasEmEspera = emEspera.reduce((total, reserva) => total + reserva.people, 0);
+  // The server repeats the trip's waiting people on every vehicle's row.
+  const pessoasEmEspera = viagem.summary[0]?.waitingPeople ?? 0;
   const jogo = textoDoJogo(trip.fixtureId, agora);
 
   function falhou(problema: unknown) {
@@ -235,7 +246,7 @@ export function GerirViagem({ tripId }: { tripId: string }) {
         key={reserva.id}
         reserva={reserva}
         separador={indice < doTransporte.length - 1}
-        onMais={() => abrirMenu(reserva)}
+        onMais={editavel ? () => abrirMenu(reserva) : undefined}
       />
     ));
 
@@ -302,7 +313,11 @@ export function GerirViagem({ tripId }: { tripId: string }) {
         </>
       ) : null}
 
-      {!cancelada ? (
+      {suspensa ? (
+        <Aviso tone="erro" title="Casa suspensa" message="Enquanto a Casa estiver suspensa, não dá para mudar nada." />
+      ) : null}
+
+      {editavel ? (
         <>
           <AcrescentarTransporte tripId={tripId} quantos={viagem.summary.length} />
           <InscreverAMao viagem={viagem} />
@@ -326,7 +341,7 @@ export function GerirViagem({ tripId }: { tripId: string }) {
 
       {cancelada ? (
         <Aviso tone="erro" title="Viagem cancelada" message="Os inscritos foram avisados." />
-      ) : (
+      ) : suspensa ? null : (
         <>
           <SectionHeader title="Inscrições" />
           <View style={styles.acoes}>
@@ -376,7 +391,8 @@ function LinhaDaReserva({
 }: {
   reserva: ClubBooking;
   separador: boolean;
-  onMais: () => void;
+  /** Absent when nothing can be changed (cancelled trip, suspended Casa). */
+  onMais?: () => void;
 }) {
   const detalhe = [
     reserva.stopName,
@@ -395,7 +411,7 @@ function LinhaDaReserva({
         <View style={styles.trailing}>
           {reserva.paid ? <Etiqueta label="Pago" tone="positivo" /> : null}
           {reserva.boarded ? <Etiqueta label="Entrou" tone="info" /> : null}
-          <BotaoReticencias nome={reserva.name} onPress={onMais} />
+          {onMais ? <BotaoReticencias nome={reserva.name} onPress={onMais} /> : null}
         </View>
       }
       separador={separador}
@@ -494,13 +510,16 @@ function InscreverAMao({ viagem }: { viagem: ClubTripFull }) {
 
   function enviar() {
     if (!paragem) return;
-    setErro(null);
+    const companions = lerAcompanhantes(acompanhantes);
+    const problema = problemaDosAcompanhantes(companions);
+    setErro(problema);
+    if (problema) return;
     inscrever.mutate(
       {
         tripId: viagem.trip.id,
         name: nome.trim(),
         stopId: paragem,
-        companions: lerAcompanhantes(acompanhantes),
+        companions,
       },
       {
         onSuccess: () => {

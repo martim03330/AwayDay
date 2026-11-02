@@ -43,6 +43,19 @@ export function lerAcompanhantes(texto: string): string[] {
     .filter((nome) => nome.length > 0);
 }
 
+/** The same limits as the server's `club_trip_companions_ok`. */
+export const MAXIMO_ACOMPANHANTES = 10;
+const ACOMPANHANTE_MIN = 2;
+const ACOMPANHANTE_MAX = 60;
+
+/** What is wrong with a list of companions, as a sentence, or `null` when the server will take it. */
+export function problemaDosAcompanhantes(nomes: string[]): string | null {
+  if (nomes.length > MAXIMO_ACOMPANHANTES) return `No máximo ${MAXIMO_ACOMPANHANTES} pessoas a acompanhar.`;
+  const mau = nomes.find((nome) => nome.length < ACOMPANHANTE_MIN || nome.length > ACOMPANHANTE_MAX);
+  if (mau !== undefined) return `Cada nome tem de ter de ${ACOMPANHANTE_MIN} a ${ACOMPANHANTE_MAX} letras.`;
+  return null;
+}
+
 /** «Autocarro 2». */
 export function nomeDoTransporte(kind: ClubVehicleKind, numero: number): string {
   return `${NOMES_DOS_TRANSPORTES[kind]} ${numero}`;

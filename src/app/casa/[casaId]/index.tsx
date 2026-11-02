@@ -21,6 +21,7 @@ export default function CasaScreen() {
           }
           onNovaViagem={() => router.push({ pathname: '/casa/[casaId]/nova-viagem', params: { casaId } })}
           onGestores={() => router.push({ pathname: '/casa/[casaId]/gestores', params: { casaId } })}
+          onTenhoCodigo={() => router.push('/casa/entrar')}
           renderMais={(nome) => (
             <BotaoMais
               nome={nome}

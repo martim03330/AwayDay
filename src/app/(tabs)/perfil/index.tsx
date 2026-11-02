@@ -266,7 +266,8 @@ export default function PerfilScreen() {
                   onPress={() => router.push('/perfil/amigos')}
                   separador
                 />
-                {casaQueGiro ? (
+                {/* Decided only once the list has loaded, so the row never flips under the finger. */}
+                {minhasCasas.data === undefined ? null : casaQueGiro ? (
                   <Opcao
                     icon={icons.casa}
                     titulo="A tua Casa"

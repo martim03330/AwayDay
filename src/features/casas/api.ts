@@ -241,34 +241,39 @@ export async function acceptSupportersClubInvite(code: string): Promise<string> 
   return required(client().rpc('accept_supporters_club_invite', { p_code: code }));
 }
 
+type ManagerRow = {
+  profile_id: string;
+  display_name: string;
+  role: string;
+  created_at: string;
+};
+
 /**
- * The managers of a Casa (its managers only, by RLS), owner first. Names come from the profile cards, which hide
- * people the caller does not know: those show as «Gestor».
+ * `supporters_club_managers` is not in the generated types until `npm run db:types` runs after its migration
+ * (20261029100000) is pushed, so the call goes through this narrow typed wrapper; delete the cast once the types
+ * have it.
  */
+async function callSupportersClubManagers(clubId: string): Promise<ManagerRow[]> {
+  const call = client().rpc as unknown as (
+    name: 'supporters_club_managers',
+    args: { p_club_id: string }
+  ) => PromiseLike<{ data: ManagerRow[] | null; error: { message: string } | null }>;
+  return rows(call.call(client(), 'supporters_club_managers', { p_club_id: clubId }));
+}
+
+/** The managers of a Casa with their names, owner first; only its managers (and admins) get them. */
 export async function fetchSupportersClubManagers(clubId: string): Promise<SupportersClubManager[]> {
-  const managers = await rows(
-    client()
-      .from('supporters_club_manager')
-      .select('profile_id, role, created_at')
-      .eq('club_id', clubId)
-      .order('created_at')
-  );
-  if (managers.length === 0) return [];
-  const cards = await rows(
-    client().rpc('profile_cards', { p_profile_ids: managers.map((row) => row.profile_id) })
-  );
-  const byId = new Map(cards.map((card) => [card.profile_id, card]));
-  return managers
-    .map((row): SupportersClubManager => {
-      const card = byId.get(row.profile_id);
-      return {
-        profileId: row.profile_id,
-        name: card?.display_name || 'Gestor',
-        role: row.role === 'owner' ? 'owner' : 'manager',
-        isMe: card?.is_me ?? false,
-      };
-    })
-    .sort((a, b) => (a.role === b.role ? 0 : a.role === 'owner' ? -1 : 1));
+  const [{ data: session }, managers] = await Promise.all([
+    client().auth.getSession(),
+    callSupportersClubManagers(clubId),
+  ]);
+  const me = session.session?.user.id ?? null;
+  return managers.map((row) => ({
+    profileId: row.profile_id,
+    name: row.display_name,
+    role: row.role === 'owner' ? 'owner' : 'manager',
+    isMe: row.profile_id === me,
+  }));
 }
 
 /** The owner takes a manager out of the Casa. */

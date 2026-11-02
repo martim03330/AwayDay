@@ -6,6 +6,7 @@ import {
   lerHora,
   nomeDoTransporte,
   problemaDaViagem,
+  problemaDosAcompanhantes,
   type RascunhoDaViagem,
 } from '@/features/casas/formulario';
 
@@ -98,5 +99,21 @@ describe('problemaDaViagem', () => {
     expect(problemaDaViagem({ ...base, transportes: [{ label: ' ', seats: 50 }] }, agora)).toBe(
       'Dá um nome a cada transporte.'
     );
+  });
+});
+
+describe('problemaDosAcompanhantes', () => {
+  it('takes up to 10 names of 2 to 60 letters', () => {
+    expect(problemaDosAcompanhantes([])).toBeNull();
+    expect(problemaDosAcompanhantes(['Ana', 'Rui'])).toBeNull();
+    expect(problemaDosAcompanhantes(Array.from({ length: 10 }, (_, i) => `Pessoa ${i}`))).toBeNull();
+  });
+
+  it('refuses more than 10, or a name too short or too long', () => {
+    expect(problemaDosAcompanhantes(Array.from({ length: 11 }, (_, i) => `Pessoa ${i}`))).toBe(
+      'No máximo 10 pessoas a acompanhar.'
+    );
+    expect(problemaDosAcompanhantes(['A'])).toBe('Cada nome tem de ter de 2 a 60 letras.');
+    expect(problemaDosAcompanhantes(['x'.repeat(61)])).toBe('Cada nome tem de ter de 2 a 60 letras.');
   });
 });

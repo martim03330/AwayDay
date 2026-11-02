@@ -9,9 +9,12 @@ export type AcaoDoMenu = { label: string; perigo?: boolean; onPress: () => void 
 
 export type MenuAberto = { titulo: string; acoes: AcaoDoMenu[] };
 
+/** How long the menu takes to fade away before the chosen action runs. */
+export const DEPOIS_DE_FECHAR_MS = 450;
+
 /**
- * A small sheet at the bottom with one line per action, title only. The menu closes before the action runs, so an
- * action may open another menu (e.g. «Mudar de transporte» → the vehicles).
+ * A small sheet at the bottom with one line per action, title only. The action runs once the menu has faded away,
+ * so it may show an alert or open another menu (e.g. «Mudar de transporte» → the vehicles).
  */
 export function MenuDeAcoes({ menu, onFechar }: { menu: MenuAberto | null; onFechar: () => void }) {
   const theme = useTheme();
@@ -41,7 +44,8 @@ export function MenuDeAcoes({ menu, onFechar }: { menu: MenuAberto | null; onFec
               key={acao.label}
               onPress={() => {
                 onFechar();
-                acao.onPress();
+                // iOS drops an alert (or another sheet) asked for while this one is still fading away.
+                setTimeout(acao.onPress, DEPOIS_DE_FECHAR_MS);
               }}
               accessibilityRole="button"
               style={({ pressed }) => [

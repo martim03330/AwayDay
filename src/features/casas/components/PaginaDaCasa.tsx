@@ -17,6 +17,7 @@ import { Escudo } from '@/ui/escudo';
 import { Etiqueta } from '@/ui/etiqueta';
 import { Icon, IconCircle, icons } from '@/ui/icon';
 import { LinhaGrupo } from '@/ui/linha-grupo';
+import { LinkTexto } from '@/ui/link-texto';
 import { SectionHeader } from '@/ui/section-header';
 import { SkeletonCard } from '@/ui/skeleton';
 import { ThemedText } from '@/ui/themed-text';
@@ -38,6 +39,7 @@ export function PaginaDaCasa({
   onAbrirViagem,
   onNovaViagem,
   onGestores,
+  onTenhoCodigo,
   renderMais,
 }: {
   casaId: string;
@@ -45,6 +47,8 @@ export function PaginaDaCasa({
   /** For the Casa's managers: a new trip (once the Casa is approved) and the managers. */
   onNovaViagem?: () => void;
   onGestores?: () => void;
+  /** For managers too: a manager's code for another Casa. */
+  onTenhoCodigo?: () => void;
   /** The «⋯» next to the name (to report the Casa); not shown to its own managers. */
   renderMais?: (nome: string) => ReactNode;
 }) {
@@ -103,6 +107,10 @@ export function PaginaDaCasa({
           />
         ) : null}
       </Card>
+
+      {dados.myRole !== null && dados.status === 'suspended' ? (
+        <Aviso tone="erro" title="Casa suspensa" message="Para saberes porquê, vê «Sobre e contactos» nas Definições." />
+      ) : null}
 
       {dados.myRole !== null && dados.status === 'pending' ? (
         <Aviso
@@ -168,6 +176,10 @@ export function PaginaDaCasa({
           })}
         </Card>
       )}
+
+      {dados.myRole !== null && onTenhoCodigo ? (
+        <LinkTexto neutro label="Tenho um código de gestor" onPress={onTenhoCodigo} />
+      ) : null}
     </>
   );
 }

@@ -30,6 +30,8 @@ jest.mock('@/hooks/use-now', () => ({ useNow: () => Date.parse('2026-11-01T10:00
 jest.mock('@/mocks/jogos', () => ({ obterJogo: () => undefined }));
 
 let mockPapel: SupportersClub['myRole'] = 'owner';
+let mockEstado: SupportersClub['status'] = 'verified';
+let mockCasaFalha = false;
 const mockManage = jest.fn();
 jest.mock('@/features/casas/api', () => ({
   fetchClubTrip: () => Promise.resolve(mockViagem()),
@@ -37,15 +39,17 @@ jest.mock('@/features/casas/api', () => ({
   fetchClubTripNotices: () => Promise.resolve([]),
   fetchMemberCode: () => Promise.resolve(null),
   fetchSupportersClub: (): Promise<SupportersClub> =>
-    Promise.resolve({
-      id: 'c1',
-      clubId: 'clube-1',
-      name: 'Casa da Terra',
-      municipalityName: 'Terra',
-      status: 'verified',
-      myRole: mockPapel,
-      following: false,
-    }),
+    mockCasaFalha
+      ? Promise.reject(new Error('offline'))
+      : Promise.resolve({
+          id: 'c1',
+          clubId: 'clube-1',
+          name: 'Casa da Terra',
+          municipalityName: 'Terra',
+          status: mockEstado,
+          myRole: mockPapel,
+          following: false,
+        }),
   manageClubBooking: (...args: unknown[]) => mockManage(...args),
 }));
 
@@ -70,7 +74,7 @@ function mockViagem(): ClubTripFull {
         kind: 'autocarro',
         seats: 2,
         occupied: 2,
-        waitingPeople: 1,
+        waitingPeople: 3,
         paidPeople: 0,
         dueCents: 2720,
       },
@@ -80,7 +84,7 @@ function mockViagem(): ClubTripFull {
         kind: 'carrinha',
         seats: 3,
         occupied: 1,
-        waitingPeople: 1,
+        waitingPeople: 3,
         paidPeople: 1,
         dueCents: 0,
       },
@@ -129,6 +133,8 @@ function abrir() {
 beforeEach(() => {
   definirUtilizador(UTILIZADORES.comConta);
   mockPapel = 'owner';
+  mockEstado = 'verified';
+  mockCasaFalha = false;
   mockManage.mockReset().mockResolvedValue(undefined);
 });
 afterEach(() => {
@@ -144,6 +150,8 @@ describe('Managing a Casa trip', () => {
     expect(screen.getByText('2/2')).toBeTruthy();
     expect(screen.getByText('1/3')).toBeTruthy();
     expect(screen.getByText('Por receber 27,20 €')).toBeTruthy();
+    // The waiting people as the server counted them, not a sum over the list.
+    expect(screen.getByText('Em espera 3 pessoas')).toBeTruthy();
     expect(await screen.findByText('Rui')).toBeTruthy();
     expect(screen.getByText('Tiago')).toBeTruthy();
   });
@@ -152,7 +160,8 @@ describe('Managing a Casa trip', () => {
     abrir();
     fireEvent.press(await screen.findByRole('button', { name: 'Mais opções sobre Rui' }));
     fireEvent.press(screen.getByRole('button', { name: 'Mudar de transporte' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Carrinha 1' }));
+    // The second menu opens once the first one has faded away.
+    fireEvent.press(await screen.findByRole('button', { name: 'Carrinha 1' }));
     await waitFor(() => expect(mockManage).toHaveBeenCalledWith('b1', 'move', 'v2'));
   });
 
@@ -168,6 +177,9 @@ describe('Managing a Casa trip', () => {
     abrir();
     fireEvent.press(await screen.findByRole('button', { name: 'Mais opções sobre Rui' }));
     fireEvent.press(screen.getByRole('button', { name: 'Tirar da viagem' }));
+    // The alert waits for the menu to fade away (iOS drops one asked for while a modal is closing).
+    expect(alertas).not.toHaveBeenCalled();
+    await waitFor(() => expect(alertas).toHaveBeenCalledTimes(1));
     expect(mockManage).not.toHaveBeenCalled();
     carregarNoAlerta(alertas, 'Tirar');
     await waitFor(() => expect(mockManage).toHaveBeenCalledWith('b1', 'remove', undefined));
@@ -178,5 +190,22 @@ describe('Managing a Casa trip', () => {
     abrir();
     expect(await screen.findByText('Só para quem gere a Casa')).toBeTruthy();
     expect(screen.queryByText('Lista de espera · 1')).toBeNull();
+  });
+
+  it('shows a connection error before deciding who manages the Casa', async () => {
+    mockCasaFalha = true;
+    abrir();
+    expect(await screen.findByText('Sem ligação')).toBeTruthy();
+    expect(screen.queryByText('Só para quem gere a Casa')).toBeNull();
+  });
+
+  it('offers nothing to change while the Casa is suspended', async () => {
+    mockEstado = 'suspended';
+    abrir();
+    expect(await screen.findByText('Casa suspensa')).toBeTruthy();
+    expect(await screen.findByText('Rui')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Mais opções sobre Rui' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Acrescentar transporte' })).toBeNull();
+    expect(screen.queryByText('Cancelar viagem')).toBeNull();
   });
 });

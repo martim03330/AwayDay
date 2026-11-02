@@ -94,3 +94,28 @@ describe('mensagemDaGestao', () => {
     }
   });
 });
+
+describe('mensagemDaGestao, codes the manager functions raise', () => {
+  it('has its own sentence for each of them', () => {
+    const codigos = [
+      'bad_companions',
+      'not_signed_in',
+      'not_admin',
+      'not_found',
+      'trip_not_found',
+      'booking_not_found',
+      'already_booked',
+      'club_suspended',
+      'too_many_bookings',
+      'last_owner',
+    ];
+    for (const codigo of codigos) {
+      const texto = mensagemDaGestao(new ClubTripError('other', codigo));
+      expect(texto).not.toBe('Não deu. Tenta outra vez daqui a pouco.');
+      expect(texto).not.toContain('_');
+    }
+    expect(mensagemDaGestao(new ClubTripError('already_in_car'))).toBe(
+      'Essa pessoa já tem lugar num carro para este jogo.'
+    );
+  });
+});

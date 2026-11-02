@@ -82,6 +82,10 @@ export function NovaViagem({ casaId, onCriada }: { casaId: string; onCriada: (tr
 
   if (casa.isLoading) return <SkeletonCard lines={3} />;
 
+  if (casa.isError) {
+    return <EmptyState icon={icons.casa} title="Sem ligação" message="Tenta outra vez daqui a pouco." />;
+  }
+
   if (!casa.data || casa.data.myRole === null) {
     return (
       <EmptyState

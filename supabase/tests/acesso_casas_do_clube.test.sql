@@ -188,6 +188,10 @@ select pg_temp.expect('Marta is now a manager',
   'manager');
 select pg_temp.expect('a manager sees all the managers of the Casa',
   (select count(*)::integer from public.supporters_club_manager where club_id = pg_temp.id('casa')), 2);
+select pg_temp.expect('a manager gets the names of the other managers, owner first',
+  (select string_agg(display_name || ':' || role, ',')
+   from public.supporters_club_managers(pg_temp.id('casa'))),
+  'Óscar:owner,Marta:manager');
 select pg_temp.expect('a manager (not owner) cannot create an invite',
   pg_temp.refusal(format('select public.create_supporters_club_invite(%L)', pg_temp.id('casa'))),
   'not_owner (42501)');
@@ -208,6 +212,9 @@ select pg_temp.expect('an unknown code is refused',
   'invite_not_found (P0002)');
 select pg_temp.expect('and Xana did not become a manager',
   public.is_supporters_club_manager(pg_temp.id('casa')), false);
+select pg_temp.expect('someone who does not manage the Casa cannot list its managers',
+  pg_temp.refusal(format('select public.supporters_club_managers(%L)', pg_temp.id('casa'))),
+  'not_manager (42501)');
 
 -- An expired code is refused.
 select pg_temp.as_user('ca500000-0000-4000-8000-000000000001');
@@ -288,6 +295,7 @@ select pg_temp.expect('anon cannot execute any Casa function',
      'public.create_supporters_club_invite(uuid)',
      'public.accept_supporters_club_invite(text)',
      'public.remove_supporters_club_manager(uuid, uuid)',
+     'public.supporters_club_managers(uuid)',
      'public.update_supporters_club(uuid, text, text)',
      'public.set_supporters_club_follow(uuid, boolean)'
    ]) as f),
@@ -301,6 +309,7 @@ select pg_temp.expect('authenticated can execute them all',
      'public.create_supporters_club_invite(uuid)',
      'public.accept_supporters_club_invite(text)',
      'public.remove_supporters_club_manager(uuid, uuid)',
+     'public.supporters_club_managers(uuid)',
      'public.update_supporters_club(uuid, text, text)',
      'public.set_supporters_club_follow(uuid, boolean)'
    ]) as f),
