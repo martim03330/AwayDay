@@ -99,6 +99,9 @@ export function InscricaoFolha({
       <ScrollView
         style={{ backgroundColor: theme.background }}
         keyboardShouldPersistTaps="handled"
+        // Without it the keyboard covers the member code, the last field.
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
         contentContainerStyle={[styles.conteudo, { paddingBottom: insets.bottom + Spacing.four }]}>
         <ThemedText type="title" style={styles.titulo}>
           Inscrição
