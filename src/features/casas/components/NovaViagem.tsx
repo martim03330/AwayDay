@@ -370,7 +370,9 @@ export function NovaViagem({ casaId, onCriada }: { casaId: string; onCriada: (tr
 
       {jogo ? (
         <ThemedText type="small" themeColor="textSecondary">
-          {`O jogo começa às ${formatarHora(new Date(jogo.inicio))}, hora de Portugal continental.`}
+          {jogo.horaConfirmada
+            ? `O jogo começa às ${formatarHora(new Date(jogo.inicio))}, hora de Portugal continental.`
+            : 'O jogo ainda não tem hora marcada.'}
         </ThemedText>
       ) : null}
       {erro ? <MensagemErro>{erro}</MensagemErro> : null}
