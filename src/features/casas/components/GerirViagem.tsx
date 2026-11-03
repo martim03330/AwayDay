@@ -207,7 +207,14 @@ export function GerirViagem({ tripId }: { tripId: string }) {
   function abrirMenu(reserva: ClubBooking) {
     const inscrito = reserva.status === 'booked';
     setMenu({
-      titulo: reserva.name,
+      titulo: [
+        reserva.name,
+        reserva.companions.length > 0 ? `com ${reserva.companions.join(', ')}` : null,
+        reserva.stopName,
+        reserva.isManual ? 'inscrito à mão' : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
       acoes: [
         ...(!cancelada ? [{ label: 'Mudar de transporte', onPress: () => escolherTransporte(reserva) }] : []),
         reserva.paid
@@ -383,7 +390,10 @@ export function GerirViagem({ tripId }: { tripId: string }) {
   );
 }
 
-/** One booking: the name, how many and where they get on, and the «⋯» with what can be done. */
+/**
+ * One booking, kept to a line under the name: where they get on (up to the first comma) and how many. Who goes with
+ * them and the stop's full name are in the «⋯» menu's title.
+ */
 function LinhaDaReserva({
   reserva,
   separador,
@@ -394,18 +404,12 @@ function LinhaDaReserva({
   /** Absent when nothing can be changed (cancelled trip, suspended Casa). */
   onMais?: () => void;
 }) {
-  const detalhe = [
-    reserva.stopName,
-    reserva.companions.length > 0 ? `com ${reserva.companions.join(', ')}` : null,
-    reserva.isManual ? 'inscrito à mão' : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const paragem = reserva.stopName.split(',')[0].trim();
+  const detalhe = reserva.people > 1 ? `${paragem} · ${plural(reserva.people, 'pessoa', 'pessoas')}` : paragem;
   return (
     <LinhaGrupo
       leading={<IconCircle name={icons.perfil} tone="neutral" />}
       title={reserva.name}
-      valor={reserva.people > 1 ? plural(reserva.people, 'pessoa', 'pessoas') : undefined}
       subtitle={detalhe}
       trailing={
         <View style={styles.trailing}>
