@@ -177,7 +177,7 @@ export function PaginaDaCasa({
         </Card>
       )}
 
-      {dados.myRole === null && onTenhoCodigo ? (
+      {dados.myRole !== null && onTenhoCodigo ? (
         <LinkTexto neutro label="Tenho um código de gestor" onPress={onTenhoCodigo} />
       ) : null}
     </>
