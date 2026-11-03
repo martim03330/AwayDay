@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Share, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { MenuDeAcoes, Reticencias, type MenuAberto } from '@/features/casas/components/MenuDeAcoes';
@@ -10,7 +10,7 @@ import {
   nomeDoTransporte,
   problemaDosAcompanhantes,
 } from '@/features/casas/formulario';
-import { useMemberCode, useSupportersClub } from '@/features/casas/hooks/useCasas';
+import { useMemberCode, useRotateMemberCode, useSupportersClub } from '@/features/casas/hooks/useCasas';
 import {
   useAddClubTripVehicle,
   useAddManualClubBooking,
@@ -285,13 +285,12 @@ export function GerirViagem({ tripId }: { tripId: string }) {
       </Card>
 
       {trip.membersOnly && codigo.data ? (
-        <Card style={styles.lista}>
-          <LinhaGrupo
-            leading={<IconCircle name={icons.password} />}
-            title="Código de sócio"
-            valor={codigo.data}
-          />
-        </Card>
+        <CodigoDeSocio
+          clubId={trip.supportersClubId}
+          nomeDaCasa={casa.data?.name ?? 'a Casa'}
+          codigo={codigo.data}
+          podeMudar={!suspensa}
+        />
       ) : null}
 
       {reservas.isError ? <MensagemErro>Não deu para carregar os inscritos.</MensagemErro> : null}
@@ -420,6 +419,59 @@ function LinhaDaReserva({
       }
       separador={separador}
     />
+  );
+}
+
+/**
+ * The member code «só sócios» trips ask for. The Casa hands it to its members outside the app (their WhatsApp group,
+ * the sede): «Partilhar código» opens the share sheet with it; «Novo código» replaces it when it has spread.
+ */
+function CodigoDeSocio({
+  clubId,
+  nomeDaCasa,
+  codigo,
+  podeMudar,
+}: {
+  clubId: string;
+  nomeDaCasa: string;
+  codigo: string;
+  podeMudar: boolean;
+}) {
+  const mudar = useRotateMemberCode();
+
+  function novoCodigo() {
+    Alert.alert('Criar um código novo?', 'O código atual deixa de servir. Quem já está inscrito continua inscrito.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Criar código novo',
+        onPress: () =>
+          mudar.mutate(clubId, {
+            onSuccess: () => vibrarSucesso(),
+            onError: (erro) => {
+              vibrarErro();
+              Alert.alert('Não deu', mensagemDaGestao(erro));
+            },
+          }),
+      },
+    ]);
+  }
+
+  return (
+    <Card style={styles.codigo}>
+      <LinhaGrupo leading={<IconCircle name={icons.password} />} title="Código de sócio" valor={codigo} />
+      <Button
+        label="Partilhar código"
+        icon={icons.partilhar}
+        onPress={() =>
+          void Share.share({
+            message: `Código de sócio de ${nomeDaCasa} no AwayDay: ${codigo}`,
+          }).catch(() => undefined)
+        }
+      />
+      {podeMudar ? (
+        <LinkTexto neutro label={mudar.isPending ? 'A criar…' : 'Novo código'} onPress={novoCodigo} />
+      ) : null}
+    </Card>
   );
 }
 
@@ -658,6 +710,9 @@ const styles = StyleSheet.create({
   },
   seccao: {
     gap: Spacing.three,
+  },
+  codigo: {
+    gap: Spacing.two,
   },
   lista: {
     gap: 0,

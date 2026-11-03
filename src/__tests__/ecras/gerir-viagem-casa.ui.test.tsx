@@ -2,6 +2,7 @@
 // each, the waiting list, the totals the server counted, and the «⋯» on each booking (move, paid, take off).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { Share } from 'react-native';
 
 import GerirViagemScreen from '@/app/casa/viagem/[viagemId]/gerir';
 import type { ClubBooking, ClubTripFull, SupportersClub } from '@/features/casas/types';
@@ -32,12 +33,15 @@ jest.mock('@/mocks/jogos', () => ({ obterJogo: () => undefined }));
 let mockPapel: SupportersClub['myRole'] = 'owner';
 let mockEstado: SupportersClub['status'] = 'verified';
 let mockCasaFalha = false;
+let mockSoSocios = false;
 const mockManage = jest.fn();
+const mockRotate = jest.fn();
 jest.mock('@/features/casas/api', () => ({
   fetchClubTrip: () => Promise.resolve(mockViagem()),
   fetchClubTripBookings: () => Promise.resolve(mockReservas()),
   fetchClubTripNotices: () => Promise.resolve([]),
-  fetchMemberCode: () => Promise.resolve(null),
+  fetchMemberCode: () => Promise.resolve(mockSoSocios ? 'douro2026x' : null),
+  rotateMemberCode: (...args: unknown[]) => mockRotate(...args),
   fetchSupportersClub: (): Promise<SupportersClub> =>
     mockCasaFalha
       ? Promise.reject(new Error('offline'))
@@ -61,7 +65,7 @@ function mockViagem(): ClubTripFull {
       fixtureId: 'f1',
       name: 'Autocarro da sede',
       priceCents: 1360,
-      membersOnly: false,
+      membersOnly: mockSoSocios,
       bookingsCloseAt: '2026-11-07T20:00:00Z',
       note: null,
       status: 'open',
@@ -135,7 +139,9 @@ beforeEach(() => {
   mockPapel = 'owner';
   mockEstado = 'verified';
   mockCasaFalha = false;
+  mockSoSocios = false;
   mockManage.mockReset().mockResolvedValue(undefined);
+  mockRotate.mockReset().mockResolvedValue('novo1234ab');
 });
 afterEach(() => {
   cliente?.clear();
@@ -207,5 +213,30 @@ describe('Managing a Casa trip', () => {
     expect(screen.queryByRole('button', { name: 'Mais opções sobre Rui' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Acrescentar transporte' })).toBeNull();
     expect(screen.queryByText('Cancelar viagem')).toBeNull();
+  });
+
+  it('shares the member code of a «só sócios» trip, so the Casa can send it to its members', async () => {
+    mockSoSocios = true;
+    const partilha = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
+    abrir();
+    expect(await screen.findByText('douro2026x')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Partilhar código' }));
+    expect(partilha).toHaveBeenCalledWith({ message: 'Código de sócio de Casa da Terra no AwayDay: douro2026x' });
+  });
+
+  it('asks before replacing the member code', async () => {
+    mockSoSocios = true;
+    const alertas = espiarAlertas();
+    abrir();
+    fireEvent.press(await screen.findByRole('button', { name: 'Novo código' }));
+    expect(mockRotate).not.toHaveBeenCalled();
+    carregarNoAlerta(alertas, 'Criar código novo');
+    await waitFor(() => expect(mockRotate.mock.calls[0]?.[0]).toBe('c1'));
+  });
+
+  it('shows no member code on a trip open to everyone', async () => {
+    abrir();
+    expect(await screen.findByText('Rui')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Partilhar código' })).toBeNull();
   });
 });
