@@ -14,7 +14,7 @@ import { mensagemDeRecusa, textoListaDeEspera, textoLugaresLivres } from '@/feat
 import type { ClubTripFull, MyClubBooking } from '@/features/casas/types';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { obterClube } from '@/mocks/clubes';
@@ -198,7 +198,7 @@ export function ViagemDaCasa({
         <LinhaGrupo
           leading={<IconCircle name={icons.horario} />}
           title="Inscrições até"
-          valor={formatarDiaEHora(new Date(trip.bookingsCloseAt), agora)}
+          valor={`${formatarDiaCurto(new Date(trip.bookingsCloseAt), agora)} às ${formatarHora(new Date(trip.bookingsCloseAt))}`}
         />
       </Card>
 
