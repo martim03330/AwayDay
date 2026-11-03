@@ -30,6 +30,7 @@ export function MenuDeAcoes({ menu, onFechar }: { menu: MenuAberto | null; onFec
           accessibilityLabel="Fechar"
         />
         <View
+          testID="menu-de-acoes"
           style={[
             styles.menu,
             { backgroundColor: theme.backgroundElement, marginBottom: insets.bottom + Spacing.two },
@@ -77,6 +78,16 @@ export function MenuDeAcoes({ menu, onFechar }: { menu: MenuAberto | null; onFec
 }
 
 /** The discreet «⋯» at the end of a row. */
+/** The «⋯» alone, for a row that is itself the button (the whole row opens the menu). */
+export function Reticencias() {
+  const theme = useTheme();
+  return (
+    <View style={styles.mais}>
+      <ThemedText style={[styles.reticencias, { color: theme.textMuted }]}>⋯</ThemedText>
+    </View>
+  );
+}
+
 export function BotaoReticencias({ nome, onPress }: { nome: string; onPress: () => void }) {
   const theme = useTheme();
   return (

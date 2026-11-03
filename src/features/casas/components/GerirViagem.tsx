@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
-import { BotaoReticencias, MenuDeAcoes, type MenuAberto } from '@/features/casas/components/MenuDeAcoes';
+import { MenuDeAcoes, Reticencias, type MenuAberto } from '@/features/casas/components/MenuDeAcoes';
 import {
   LUGARES_POR_OMISSAO,
   NOMES_DOS_TRANSPORTES,
@@ -31,7 +31,7 @@ import type {
   ManageBookingAction,
 } from '@/features/casas/types';
 import { useNow } from '@/hooks/use-now';
-import { formatarDiaEHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { somarCentimos } from '@/lib/money';
 import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
@@ -71,7 +71,7 @@ function textoDoJogo(fixtureId: string, agora: number) {
   const casa = obterClube(jogo.casaId);
   const fora = obterClube(jogo.foraId);
   if (!casa || !fora) return null;
-  return `${casa.nomeCurto} x ${fora.nomeCurto} · ${formatarDiaEHora(new Date(jogo.inicio), agora)}`;
+  return `${casa.nomeCurto} x ${fora.nomeCurto} · ${formatarDiaCurto(new Date(jogo.inicio), agora)} às ${formatarHora(new Date(jogo.inicio))}`;
 }
 
 /** The totals across the vehicles, as the server counted them. */
@@ -210,6 +210,7 @@ export function GerirViagem({ tripId }: { tripId: string }) {
       titulo: [
         reserva.name,
         reserva.companions.length > 0 ? `com ${reserva.companions.join(', ')}` : null,
+        reserva.people > 1 ? plural(reserva.people, 'pessoa', 'pessoas') : null,
         reserva.stopName,
         reserva.isManual ? 'inscrito à mão' : null,
       ]
@@ -391,8 +392,8 @@ export function GerirViagem({ tripId }: { tripId: string }) {
 }
 
 /**
- * One booking, kept to a line under the name: where they get on (up to the first comma) and how many. Who goes with
- * them and the stop's full name are in the «⋯» menu's title.
+ * One booking: only the name and whether they paid or got on. Tapping the name or the «⋯» opens the menu, whose title
+ * carries the rest (who goes with them, how many, the stop).
  */
 function LinhaDaReserva({
   reserva,
@@ -404,18 +405,17 @@ function LinhaDaReserva({
   /** Absent when nothing can be changed (cancelled trip, suspended Casa). */
   onMais?: () => void;
 }) {
-  const paragem = reserva.stopName.split(',')[0].trim();
-  const detalhe = reserva.people > 1 ? `${paragem} · ${plural(reserva.people, 'pessoa', 'pessoas')}` : paragem;
   return (
     <LinhaGrupo
       leading={<IconCircle name={icons.perfil} tone="neutral" />}
       title={reserva.name}
-      subtitle={detalhe}
+      onPress={onMais}
+      accessibilityLabel={onMais ? `Mais opções sobre ${reserva.name}` : undefined}
       trailing={
         <View style={styles.trailing}>
           {reserva.paid ? <Etiqueta label="Pago" tone="positivo" /> : null}
           {reserva.boarded ? <Etiqueta label="Entrou" tone="info" /> : null}
-          {onMais ? <BotaoReticencias nome={reserva.name} onPress={onMais} /> : null}
+          {onMais ? <Reticencias /> : null}
         </View>
       }
       separador={separador}

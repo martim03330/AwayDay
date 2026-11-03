@@ -49,7 +49,7 @@ function textoDoJogo(fixtureId: string, agora: number) {
   const casa = obterClube(jogo.casaId);
   const fora = obterClube(jogo.foraId);
   if (!casa || !fora) return null;
-  return `${casa.nomeCurto} x ${fora.nomeCurto} · ${formatarDiaEHora(new Date(jogo.inicio), agora)}`;
+  return `${casa.nomeCurto} x ${fora.nomeCurto} · ${formatarDiaCurto(new Date(jogo.inicio), agora)} às ${formatarHora(new Date(jogo.inicio))}`;
 }
 
 /**

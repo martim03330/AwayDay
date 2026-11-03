@@ -1,7 +1,7 @@
 // A Casa's trip, from the managers' side (src/app/casa/viagem/[viagemId]/gerir.tsx): the vehicles with who is in
 // each, the waiting list, the totals the server counted, and the «⋯» on each booking (move, paid, take off).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import GerirViagemScreen from '@/app/casa/viagem/[viagemId]/gerir';
 import type { ClubBooking, ClubTripFull, SupportersClub } from '@/features/casas/types';
@@ -168,7 +168,7 @@ describe('Managing a Casa trip', () => {
   it('marks a booking as paid', async () => {
     abrir();
     fireEvent.press(await screen.findByRole('button', { name: 'Mais opções sobre Rui' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Pago' }));
+    fireEvent.press(within(screen.getByTestId('menu-de-acoes')).getByRole('button', { name: 'Pago' }));
     await waitFor(() => expect(mockManage).toHaveBeenCalledWith('b1', 'paid', undefined));
   });
 
