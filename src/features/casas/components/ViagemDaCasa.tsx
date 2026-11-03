@@ -14,7 +14,7 @@ import { mensagemDeRecusa, textoListaDeEspera, textoLugaresLivres } from '@/feat
 import type { ClubTripFull, MyClubBooking } from '@/features/casas/types';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
-import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
 import { obterClube } from '@/mocks/clubes';
@@ -264,7 +264,7 @@ export function ViagemDaCasa({
           {(avisos.data ?? []).map((aviso) => (
             <Card key={aviso.id} style={styles.aviso}>
               <ThemedText type="small" themeColor="textSecondary">
-                {formatarDiaEHora(new Date(aviso.createdAt), agora)}
+                {`${formatarDiaCurto(new Date(aviso.createdAt), agora)} às ${formatarHora(new Date(aviso.createdAt))}`}
               </ThemedText>
               <ThemedText>{aviso.body}</ThemedText>
             </Card>

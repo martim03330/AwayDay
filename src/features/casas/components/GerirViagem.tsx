@@ -31,7 +31,7 @@ import type {
   ManageBookingAction,
 } from '@/features/casas/types';
 import { useNow } from '@/hooks/use-now';
-import { formatarDiaCurto, formatarDiaEHora, formatarHora } from '@/lib/datas';
+import { formatarDiaCurto, formatarHora } from '@/lib/datas';
 import { plural } from '@/lib/formatos';
 import { somarCentimos } from '@/lib/money';
 import { vibrarErro, vibrarSucesso } from '@/lib/vibrar';
@@ -339,7 +339,7 @@ export function GerirViagem({ tripId }: { tripId: string }) {
           {(avisos.data ?? []).map((aviso) => (
             <Card key={aviso.id} style={styles.aviso}>
               <ThemedText type="small" themeColor="textSecondary">
-                {formatarDiaEHora(new Date(aviso.createdAt), agora)}
+                {`${formatarDiaCurto(new Date(aviso.createdAt), agora)} às ${formatarHora(new Date(aviso.createdAt))}`}
               </ThemedText>
               <ThemedText>{aviso.body}</ThemedText>
             </Card>
