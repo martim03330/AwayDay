@@ -2,8 +2,8 @@ import { AbsoluteFill, Img, interpolate, Sequence, staticFile, useCurrentFrame }
 
 import { alturaTelefone, TelefoneInteiro } from '../componentes';
 import { COR, LETRA_TEXTO, LETRA_TITULO } from '../tema';
-import type { Passo } from './passos';
-import { CAPITULOS_CASA as CAPITULOS } from './passos-casa';
+import type { Capitulo, Passo } from './passos';
+import { CAPITULOS_CASA } from './passos-casa';
 
 /**
  * Viagens da Casa for the fan clubs that answered (16:9, captions only, no voice): register the Casa, set up a trip,
@@ -24,10 +24,10 @@ type Bloco =
   | { tipo: 'passo'; de: number; duracao: number; capitulo: number; passo: Passo }
   | { tipo: 'fecho'; de: number; duracao: number };
 
-function linhaDoTempo(): Bloco[] {
+function linhaDoTempo(capitulos: Capitulo[]): Bloco[] {
   const blocos: Bloco[] = [{ tipo: 'abertura', de: 0, duracao: ABERTURA }];
   let de = ABERTURA;
-  CAPITULOS.forEach((c, i) => {
+  capitulos.forEach((c, i) => {
     blocos.push({ tipo: 'cartao', de, duracao: CARTAO, capitulo: i });
     de += CARTAO;
     for (const passo of c.passos) {
@@ -39,8 +39,13 @@ function linhaDoTempo(): Bloco[] {
   return blocos;
 }
 
-const BLOCOS = linhaDoTempo();
-export const DURACAO_VIAGENS_CASA = BLOCOS[BLOCOS.length - 1].de + FECHO;
+/** The video's length in frames with these chapters (each club's version has its own recordings). */
+export function duracaoViagensCasa(capitulos: Capitulo[]) {
+  const blocos = linhaDoTempo(capitulos);
+  return blocos[blocos.length - 1].de + FECHO;
+}
+
+export const DURACAO_VIAGENS_CASA = duracaoViagensCasa(CAPITULOS_CASA);
 
 function Fundo() {
   return (
@@ -67,16 +72,16 @@ function Abertura() {
   );
 }
 
-function Cartao({ capitulo }: { capitulo: number }) {
+function Cartao({ capitulos, capitulo }: { capitulos: Capitulo[]; capitulo: number }) {
   const frame = useCurrentFrame();
-  const c = CAPITULOS[capitulo];
+  const c = capitulos[capitulo];
   const a = interpolate(frame, [0, 8, CARTAO - 8, CARTAO], [0, 1, 1, 0], clamp);
   const y = interpolate(frame, [0, 12], [30, 0], clamp);
   return (
     <AbsoluteFill style={{ background: COR.relvaEscura, justifyContent: 'center', paddingLeft: 160, opacity: a }}>
       <div style={{ transform: `translateY(${y}px)` }}>
         <div style={{ fontFamily: LETRA_TEXTO, fontWeight: 800, fontSize: 36, letterSpacing: 4, color: COR.amarelo }}>
-          PARTE {capitulo + 1} DE {CAPITULOS.length}
+          PARTE {capitulo + 1} DE {capitulos.length}
         </div>
         <div style={{ fontFamily: LETRA_TITULO, fontWeight: 900, fontSize: 168, color: COR.branco, lineHeight: 1, marginTop: 18 }}>{c.titulo}</div>
         <div style={{ fontFamily: LETRA_TEXTO, fontWeight: 500, fontSize: 50, color: 'rgba(255,255,255,0.85)', marginTop: 26 }}>{c.frase}</div>
@@ -115,9 +120,9 @@ function Toques({ passo, k }: { passo: Passo; k: number }) {
   );
 }
 
-function PassoNoEcra({ capitulo, passo }: { capitulo: number; passo: Passo }) {
+function PassoNoEcra({ capitulos, capitulo, passo }: { capitulos: Capitulo[]; capitulo: number; passo: Passo }) {
   const frame = useCurrentFrame();
-  const c = CAPITULOS[capitulo];
+  const c = capitulos[capitulo];
   const a = interpolate(frame, [0, 6], [0, 1], clamp);
   const y = interpolate(frame, [0, 8], [16, 0], clamp);
   return (
@@ -153,10 +158,10 @@ function PassoNoEcra({ capitulo, passo }: { capitulo: number; passo: Passo }) {
   );
 }
 
-function Progresso({ capitulo }: { capitulo: number }) {
+function Progresso({ capitulos, capitulo }: { capitulos: Capitulo[]; capitulo: number }) {
   return (
     <div style={{ position: 'absolute', left: 130, bottom: 70, width: 1000, display: 'flex', gap: 10 }}>
-      {CAPITULOS.map((c, i) => (
+      {capitulos.map((c, i) => (
         <div key={c.titulo} style={{ flex: 1, height: 8, borderRadius: 4, background: i <= capitulo ? COR.relva : 'rgba(19,36,27,0.12)' }} />
       ))}
     </div>
@@ -179,18 +184,19 @@ function Fecho() {
   );
 }
 
-export function ViagensDaCasa() {
+export function ViagensDaCasa({ capitulos = CAPITULOS_CASA }: { capitulos?: Capitulo[] }) {
+  const blocos = linhaDoTempo(capitulos);
   return (
     <AbsoluteFill>
       <Fundo />
-      {BLOCOS.map((b) => (
+      {blocos.map((b) => (
         <Sequence key={`${b.tipo}-${b.de}`} from={b.de} durationInFrames={b.duracao} premountFor={30}>
           {b.tipo === 'abertura' ? <Abertura /> : null}
-          {b.tipo === 'cartao' ? <Cartao capitulo={b.capitulo} /> : null}
+          {b.tipo === 'cartao' ? <Cartao capitulos={capitulos} capitulo={b.capitulo} /> : null}
           {b.tipo === 'passo' ? (
             <>
-              <PassoNoEcra capitulo={b.capitulo} passo={b.passo} />
-              <Progresso capitulo={b.capitulo} />
+              <PassoNoEcra capitulos={capitulos} capitulo={b.capitulo} passo={b.passo} />
+              <Progresso capitulos={capitulos} capitulo={b.capitulo} />
             </>
           ) : null}
           {b.tipo === 'fecho' ? <Fecho /> : null}
