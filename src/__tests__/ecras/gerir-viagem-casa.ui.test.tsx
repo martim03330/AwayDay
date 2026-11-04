@@ -36,6 +36,7 @@ let mockCasaFalha = false;
 let mockSoSocios = false;
 const mockManage = jest.fn();
 const mockRotate = jest.fn();
+const mockMembersOnly = jest.fn();
 jest.mock('@/features/casas/api', () => ({
   fetchClubTrip: () => Promise.resolve(mockViagem()),
   fetchClubTripBookings: () => Promise.resolve(mockReservas()),
@@ -55,6 +56,7 @@ jest.mock('@/features/casas/api', () => ({
           following: false,
         }),
   manageClubBooking: (...args: unknown[]) => mockManage(...args),
+  setClubTripMembersOnly: (...args: unknown[]) => mockMembersOnly(...args),
 }));
 
 function mockViagem(): ClubTripFull {
@@ -142,6 +144,7 @@ beforeEach(() => {
   mockSoSocios = false;
   mockManage.mockReset().mockResolvedValue(undefined);
   mockRotate.mockReset().mockResolvedValue('novo1234ab');
+  mockMembersOnly.mockReset().mockResolvedValue(undefined);
 });
 afterEach(() => {
   cliente?.clear();
@@ -232,6 +235,42 @@ describe('Managing a Casa trip', () => {
     expect(mockRotate).not.toHaveBeenCalled();
     carregarNoAlerta(alertas, 'Criar código novo');
     await waitFor(() => expect(mockRotate.mock.calls[0]?.[0]).toBe('c1'));
+  });
+
+  it('asks before opening a «só sócios» trip to every fan of the club', async () => {
+    mockSoSocios = true;
+    const alertas = espiarAlertas();
+    abrir();
+    fireEvent.press(await screen.findByRole('button', { name: 'Abrir a todos' }));
+    expect(mockMembersOnly).not.toHaveBeenCalled();
+    expect(alertas.mock.calls[0]?.[1]).toContain('Quem já está inscrito continua inscrito.');
+    carregarNoAlerta(alertas, 'Abrir a todos');
+    await waitFor(() => expect(mockMembersOnly).toHaveBeenCalledWith('t1', false));
+  });
+
+  it('makes an open trip «só sócios» again', async () => {
+    const alertas = espiarAlertas();
+    abrir();
+    fireEvent.press(await screen.findByRole('button', { name: 'Só sócios' }));
+    carregarNoAlerta(alertas, 'Só sócios');
+    await waitFor(() => expect(mockMembersOnly).toHaveBeenCalledWith('t1', true));
+  });
+
+  it('leaves who can book unchanged when the manager says no', async () => {
+    mockSoSocios = true;
+    const alertas = espiarAlertas();
+    abrir();
+    fireEvent.press(await screen.findByRole('button', { name: 'Abrir a todos' }));
+    carregarNoAlerta(alertas, 'Cancelar');
+    expect(mockMembersOnly).not.toHaveBeenCalled();
+  });
+
+  it('offers no change to who can book while the Casa is suspended', async () => {
+    mockEstado = 'suspended';
+    abrir();
+    expect(await screen.findByText('Casa suspensa')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Só sócios' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abrir a todos' })).toBeNull();
   });
 
   it('shows no member code on a trip open to everyone', async () => {

@@ -2,6 +2,19 @@
 
 Registo das decisões estruturais, com data e razão. A mais recente fica em cima.
 
+## 2026-11-04 — Viagens da Casa: «Abrir a todos» depois de publicada
+
+Uma Casa pode passar uma viagem já publicada de «Só sócios» para aberta a todos, e voltar atrás, no ecrã
+Gerir (função `set_club_trip_members_only`, só para gestores, recusada numa viagem cancelada ou numa Casa
+suspensa).
+
+- **Razão:** as Casas enchem primeiro com sócios e, se sobrarem lugares, querem abrir a quem não é sócio.
+  Antes, `members_only` ficava fixo na criação.
+- **«Aberta a todos» continua a ser só para adeptos do clube da Casa.** A regra `wrong_club` não muda.
+- **Quem já está inscrito continua inscrito**, nos dois sentidos. A mudança só vale para inscrições novas.
+- Passar a «Só sócios» cria o código de sócio da Casa se ainda não existir, como em `create_club_trip`.
+- Não avisa os seguidores. Já foram avisados quando a viagem foi publicada.
+
 ## 2026-10-27 — Botões e linhas só com título
 
 - **Porquê:** o dono quer menus limpos: «todos esses componentes tenham apenas título». A passagem de 2026-10-15

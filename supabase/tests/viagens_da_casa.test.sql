@@ -54,6 +54,22 @@ exception when others then
 end;
 $$;
 
+-- Runs a call that must be accepted, then undoes it; returns 'accepted', or 'message (sqlstate)' when refused.
+create function pg_temp.accepted_undone(p_sql text)
+returns text
+language plpgsql
+as $$
+begin
+  execute p_sql;
+  raise exception 'undo_test_call';
+exception when others then
+  if sqlerrm = 'undo_test_call' then
+    return 'accepted';
+  end if;
+  return sqlerrm || ' (' || sqlstate || ')';
+end;
+$$;
+
 -- The status of a booking, with its vehicle's label (or its cancel reason).
 -- Security definer (owned by the test session's superuser): the checks see every row, whoever is signed in.
 create function pg_temp.booking(p_key text)
@@ -441,6 +457,47 @@ select pg_temp.expect('the old code no longer works',
     pg_temp.id('socios'), pg_temp.id('stop_s'), current_setting('test.code'))),
   'bad_member_code (22023)');
 
+-- Opening a published «só sócios» trip to every fan of the club, and back.
+select pg_temp.expect('a fan who is not a manager cannot open the trip',
+  pg_temp.refusal(format('select public.set_club_trip_members_only(%L, false)', pg_temp.id('socios'))),
+  'not_manager (42501)');
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
+select public.set_club_trip_members_only(pg_temp.id('socios'), false);
+select pg_temp.expect('the manager opens the trip to all',
+  (select members_only from public.club_trip where id = pg_temp.id('socios')), false);
+select pg_temp.expect('Paula stays booked when the trip opens', pg_temp.booking('bk_p'), 'booked|Minibus');
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000e3');
+select pg_temp.expect('once open, a fan books without the code',
+  pg_temp.accepted_undone(format('select public.book_club_trip(%L, %L, null, null)', pg_temp.id('socios'), pg_temp.id('stop_s'))),
+  'accepted');
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
+select public.set_club_trip_members_only(pg_temp.id('socios'), true);
+select pg_temp.expect('the manager makes it «só sócios» again',
+  (select members_only from public.club_trip where id = pg_temp.id('socios')), true);
+select pg_temp.expect('making it «só sócios» again keeps the code',
+  public.supporters_club_member_code(pg_temp.id('casa')), current_setting('test.new_code'));
+select pg_temp.expect('Paula is still booked', pg_temp.booking('bk_p'), 'booked|Minibus');
+select pg_temp.expect('null is refused',
+  pg_temp.refusal(format('select public.set_club_trip_members_only(%L, null)', pg_temp.id('socios'))),
+  'bad_members_only (22023)');
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000e3');
+select pg_temp.expect('«só sócios» again: without the code the booking is refused',
+  pg_temp.refusal(format('select public.book_club_trip(%L, %L, null, null)', pg_temp.id('socios'), pg_temp.id('stop_s'))),
+  'member_code_required (22023)');
+
+-- A Casa with no member code yet gets one when a trip becomes «só sócios».
+reset role;
+update public.supporters_club set member_code = null where id = pg_temp.id('casa');
+set local role authenticated;
+select pg_temp.as_user('ca600000-0000-4000-8000-0000000000a9');
+select public.set_club_trip_members_only(pg_temp.id('socios'), false);
+select public.set_club_trip_members_only(pg_temp.id('socios'), true);
+select pg_temp.expect('making a trip «só sócios» creates the member code when there is none',
+  public.supporters_club_member_code(pg_temp.id('casa')) ~ '^[a-z0-9]{10}$', true);
+reset role;
+update public.supporters_club set member_code = current_setting('test.new_code') where id = pg_temp.id('casa');
+set local role authenticated;
+
 -- ---------------------------------------------------------------------------------------------------------------------
 -- 7. Who can book, and until when.
 
@@ -605,6 +662,9 @@ select pg_temp.expect('Bruno, Eva and the manual booking were cancelled with the
    where trip_id = pg_temp.id('trip') and cancel_reason = 'trip_cancelled'), 3);
 select pg_temp.expect('a cancelled trip cannot be reopened',
   pg_temp.refusal(format('select public.set_club_trip_status(%L, ''open'')', pg_temp.id('trip'))),
+  'trip_cancelled (22023)');
+select pg_temp.expect('nor opened to all or made «só sócios»',
+  pg_temp.refusal(format('select public.set_club_trip_members_only(%L, true)', pg_temp.id('trip'))),
   'trip_cancelled (22023)');
 select pg_temp.as_user('ca600000-0000-4000-8000-0000000000b1');
 select pg_temp.expect('once cancelled, Bruno can ask for a car seat again',

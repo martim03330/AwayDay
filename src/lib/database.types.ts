@@ -6236,6 +6236,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_club_trip_members_only: {
+        Args: { p_members_only: boolean; p_trip_id: string }
+        Returns: undefined
+      }
       set_club_trip_status: {
         Args: { p_status: string; p_trip_id: string }
         Returns: undefined

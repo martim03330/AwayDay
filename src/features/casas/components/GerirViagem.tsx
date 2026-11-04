@@ -19,6 +19,7 @@ import {
   useClubTripNotices,
   useManageClubBooking,
   usePostClubTripNotice,
+  useSetClubTripMembersOnly,
   useSetClubTripStatus,
 } from '@/features/casas/hooks/useClubTrips';
 import { mensagemDaGestao } from '@/features/casas/mensagens';
@@ -90,7 +91,8 @@ function livres(vehicle: ClubTripVehicleSummary) {
 
 /**
  * A Casa's trip as its managers run it: the totals, each vehicle with who is in it, the waiting list, and the
- * actions (move, paid, boarded, take off; add a vehicle, book someone by hand, notices, close, reopen, cancel).
+ * actions (move, paid, boarded, take off; add a vehicle, book someone by hand, notices, close, reopen, open to all or
+ * members only, cancel).
  * Every amount and count comes from the server.
  */
 export function GerirViagem({ tripId }: { tripId: string }) {
@@ -108,6 +110,7 @@ export function GerirViagem({ tripId }: { tripId: string }) {
   );
   const gerir = useManageClubBooking();
   const mudarEstado = useSetClubTripStatus();
+  const mudarSocios = useSetClubTripMembersOnly();
   const [menu, setMenu] = useState<MenuAberto | null>(null);
   const [aConfirmarCancelar, setAConfirmarCancelar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -248,6 +251,36 @@ export function GerirViagem({ tripId }: { tripId: string }) {
     );
   }
 
+  // Who can book from now on: only members (with the code) or every fan of the club. Bookings already made stay.
+  function mudarQuemSeInscreve() {
+    const soSocios = !trip.membersOnly;
+    Alert.alert(
+      soSocios ? 'Só para sócios?' : 'Abrir a todos?',
+      soSocios
+        ? 'Quem se inscrever a partir de agora precisa do código de sócio. Quem já está inscrito continua inscrito.'
+        : 'Qualquer adepto do clube se pode inscrever, sem código. Quem já está inscrito continua inscrito.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: soSocios ? 'Só sócios' : 'Abrir a todos',
+          onPress: () => {
+            setErro(null);
+            mudarSocios.mutate(
+              { tripId, membersOnly: soSocios },
+              {
+                onSuccess: () => vibrarSucesso(),
+                onError: (problema) => {
+                  vibrarErro();
+                  setErro(mensagemDaGestao(problema));
+                },
+              }
+            );
+          },
+        },
+      ]
+    );
+  }
+
   const linhas = (doTransporte: ClubBooking[]) =>
     doTransporte.map((reserva, indice) => (
       <LinhaDaReserva
@@ -365,6 +398,11 @@ export function GerirViagem({ tripId }: { tripId: string }) {
                 onPress={() => definirEstado('open')}
               />
             )}
+            <LinkTexto
+              label={trip.membersOnly ? 'Abrir a todos' : 'Só sócios'}
+              disabled={mudarSocios.isPending}
+              onPress={mudarQuemSeInscreve}
+            />
             {aConfirmarCancelar ? null : (
               <LinkTexto perigo label="Cancelar viagem" onPress={() => setAConfirmarCancelar(true)} />
             )}

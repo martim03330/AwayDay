@@ -14,6 +14,7 @@ import {
   manageClubBooking,
   postClubTripNotice,
   removeClubTripVehicle,
+  setClubTripMembersOnly,
   setClubTripStatus,
   updateClubTripVehicle,
 } from '@/features/casas/api';
@@ -127,6 +128,15 @@ export function useSetClubTripStatus() {
   return useMutation({
     mutationFn: (input: { tripId: string; status: ClubTripStatus }) =>
       setClubTripStatus(input.tripId, input.status),
+    onSettled: invalidate,
+  });
+}
+
+export function useSetClubTripMembersOnly() {
+  const invalidate = useInvalidateCasas();
+  return useMutation({
+    mutationFn: (input: { tripId: string; membersOnly: boolean }) =>
+      setClubTripMembersOnly(input.tripId, input.membersOnly),
     onSettled: invalidate,
   });
 }

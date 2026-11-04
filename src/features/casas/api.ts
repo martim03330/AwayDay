@@ -344,6 +344,16 @@ export async function setClubTripStatus(tripId: string, status: ClubTripStatus):
   );
 }
 
+/** «Só sócios» on or off for a published trip; bookings already made stay. */
+export async function setClubTripMembersOnly(tripId: string, membersOnly: boolean): Promise<void> {
+  await run(
+    client().rpc('set_club_trip_members_only', {
+      p_trip_id: tripId,
+      p_members_only: membersOnly,
+    })
+  );
+}
+
 export async function bookClubTrip(input: {
   tripId: string;
   stopId: string;
