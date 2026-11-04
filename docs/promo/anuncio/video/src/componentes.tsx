@@ -415,12 +415,14 @@ export const alturaTelefone = (largura: number) => {
  * A whole phone with a recording (`clipe`, held after `toca` seconds) or a still (`imagem`) on its screen. The
  * screen's content gets the scale `k` (capture pixels → screen pixels) through `filhos`, for overlays.
  */
-export function TelefoneInteiro({ largura, clipe, imagem, inicio = 0, toca = 0, filhos }: {
+export function TelefoneInteiro({ largura, clipe, imagem, inicio = 0, toca = 0, velocidade = 1, filhos }: {
   largura: number;
   clipe?: string;
   imagem?: string;
   inicio?: number;
   toca?: number;
+  /** Playback rate of the recording; `toca` is in output seconds. */
+  velocidade?: number;
   filhos?: (k: number) => ReactNode;
 }) {
   const frame = useCurrentFrame();
@@ -440,6 +442,7 @@ export function TelefoneInteiro({ largura, clipe, imagem, inicio = 0, toca = 0, 
             <OffthreadVideo
               src={staticFile(clipe)}
               trimBefore={Math.round(inicio * fps)}
+              playbackRate={velocidade}
               muted
               style={{ position: 'absolute', left: 0, top: 0, width: ECRA_W, height: ECRA_H, transformOrigin: '0 0', transform: `scale(${k})` }}
             />
